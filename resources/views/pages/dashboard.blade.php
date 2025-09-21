@@ -20,7 +20,7 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-start mb-10">
                                 <div>
-                                    <p class="text-muted mb-5">Customer</p>
+                                    <p class="text-muted mb-5">Customerss</p>
                                     <h3 class="mb-0 fw-medium">35,458</h3>
                                 </div>
                                 <div

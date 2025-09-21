@@ -5,8 +5,13 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 
 Route::get('/', function () {
-    return view('index');
+    return view('pages.dashboard');
 });
+// Route::middleware(['guest'])->group(function () {
+//     Route::get('/login', [AuthController::class, 'login'])->name('login');
+//     Route::post('/login', [AuthController::class, 'authenticating']);
+// });
+
 Route::get('{any}', [DashboardController::class, 'index'])->where('any', '.*'); // Catch-all route for the dashboard.
 
 Route::prefix('sasaran-strategis')->group(function () {

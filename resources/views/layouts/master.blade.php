@@ -14,25 +14,25 @@
 <link rel="shortcut icon" href="assets/images/k_favicon_32x.png">
 
 @yield('css')
-@include('partials.head-css')
+@include('include.head-css')
 
 <body>
 
-    @include('partials.header')
-    @include('partials.sidebar')
-    @include('partials.horizontal')
+    @include('include.header')
+    @include('include.sidebar')
+    @include('include.horizontal')
 
     <main class="app-wrapper">
         <div class="container-fluid">
 
-            @include('partials.page-title')
+            @include('include.page-title')
 
             @yield('content')
-            @include('partials.switcher')
-            @include('partials.scroll-to-top')
-            @include('partials.footer')
+            @include('include.switcher')
+            @include('include.scroll-to-top')
+            @include('include.footer')
 
-            @include('partials.vendor-scripts')
+            @include('include.vendor-scripts')
 
             @yield('js')
 

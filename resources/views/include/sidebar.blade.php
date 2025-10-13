@@ -54,15 +54,21 @@
 
                 </ul>
             </li>
+            @php
+                $menu_anggaran = ['anggaran', 'anggaran/*'];
+            @endphp
             <li class="pe-slide pe-has-sub">
-                <a href="#collapseInvoices" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseInvoices">
+                <a href="#collapseInvoices" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'active' : '' }}" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseInvoices">
                     <i class="bi bi-receipt pe-nav-icon"></i>
                     <span class="pe-nav-content">Budget Control</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
-                <ul class="pe-slide-menu collapse" id="collapseInvoices">
+                <ul class="pe-slide-menu collapse {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'show' : '' }}" id="collapseInvoices">
+                    @php
+                        $menu_anggaran_detail = ['anggaran', 'anggaran/*'];
+                    @endphp
                     <li class="pe-slide-item">
-                        <a href="apps-invoice-list" class="pe-nav-link">
+                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran_detail)) ? 'active' : '' }}">
                             Anggaran
                         </a>
                     </li>

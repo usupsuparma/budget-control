@@ -198,9 +198,9 @@
 
                             <div class="col-xl-12">
                                 <div class="text-end">
-                                    <a href="{{ route('kpi.index') }}" role="button"
+                                    <a href="{{ route('anggaran.index') }}" role="button"
                                         class="btn btn-light-primary">Batalkan</a>
-                                    <a href="{{ route('kpi.index') }}" role="button"
+                                    <a href="{{ route('anggaran.index') }}" role="button"
                                         class="btn btn-primary">Tambah Data</a>
                                 </div>
                             </div>

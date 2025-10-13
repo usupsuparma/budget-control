@@ -1,8 +1,8 @@
 @extends('layouts.master')
 
-@section('title', 'Sasaran Strategis | Budget Control')
+@section('title', 'KPI | Budget Control')
 
-@section('title-sub', 'Sasaran Strategis')
+@section('title-sub', 'KPI')
 @section('pagetitle', 'Edit Data')
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
@@ -39,8 +39,8 @@
                             </div>
 
                             <div class="col-xl-12">
-                                <label class="form-label" for="product-cost-add">Sasaran Strategis</label>
-                                <input placeholder="Sasaran Strategis" type="text" id="product-cost-add" class="form-control">
+                                <label class="form-label" for="product-cost-add">KPI</label>
+                                <input placeholder="KPI" type="text" id="product-cost-add" class="form-control">
                             </div>
 
                             <div class="col-12">

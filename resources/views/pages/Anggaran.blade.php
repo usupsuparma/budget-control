@@ -1,9 +1,9 @@
 @extends('layouts.master')
 
-@section('title', 'KPI | Budget Control')
+@section('title', 'Anggaran | Budget Control')
 
-@section('title-sub', 'KPI')
-@section('pagetitle', 'KPI & Program Kerja')
+@section('title-sub', 'Budget Control')
+@section('pagetitle', 'Anggaran')
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 @endsection
@@ -32,8 +32,8 @@
                             </select> --}}
                         </div>
                         <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
-                            <a href="{{ route('kpi.create') }}">
-                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input KPI & Program Kerja</button>
+                            <a href="{{ route('anggaran.create') }}">
+                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input Anggaran</button>
                             </a>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -174,7 +174,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -232,7 +232,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -297,7 +297,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -351,7 +351,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -409,7 +409,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -463,7 +463,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -528,7 +528,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -590,7 +590,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -648,7 +648,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>
@@ -702,7 +702,7 @@
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
-                                            <a href="{{ route('kpi.edit',1) }}">
+                                            <a href="{{ route('anggaran.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
                                                     class="bi bi-pencil-square"></i></button>
                                             </a>

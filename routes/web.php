@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
+use App\Http\Controllers\AnggaranController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index']);      // Tampilkan dashboard
@@ -25,4 +26,14 @@ Route::prefix('kpi')->group(function () {
     Route::get('/{id}/edit', [KpiController::class, 'edit'])->name('kpi.edit'); // Form edit produk
     Route::put('/{id}', [KpiController::class, 'update'])->name('kpi.update'); // Update produk
     Route::delete('/{id}', [KpiController::class, 'destroy'])->name('kpi.destroy'); // Hapus produk
+});
+
+Route::prefix('anggaran')->group(function () {
+    Route::get('/', [AnggaranController::class, 'index'])->name('anggaran.index');      // Tampilkan semua produk
+    Route::get('/create', [AnggaranController::class, 'create'])->name('anggaran.create'); // Form tambah produk
+    Route::post('/', [AnggaranController::class, 'store'])->name('anggaran.store');     // Simpan produk baru
+    Route::get('/{id}', [AnggaranController::class, 'show'])->name('anggaran.show');    // Detail produk
+    Route::get('/{id}/edit', [AnggaranController::class, 'edit'])->name('anggaran.edit'); // Form edit produk
+    Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
+    Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
 });

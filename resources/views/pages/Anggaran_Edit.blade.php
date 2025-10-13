@@ -3,7 +3,7 @@
 @section('title', 'Anggaran | Budget Control')
 
 @section('title-sub', 'Anggaran')
-@section('pagetitle', 'Tambah Data')
+@section('pagetitle', 'Edit Data')
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 @endsection
@@ -198,10 +198,8 @@
 
                             <div class="col-xl-12">
                                 <div class="text-end">
-                                    <a href="{{ route('kpi.index') }}" role="button"
-                                        class="btn btn-light-primary">Batalkan</a>
-                                    <a href="{{ route('kpi.index') }}" role="button"
-                                        class="btn btn-primary">Tambah Data</a>
+                                    <a href="{{ route('anggaran.index') }}" role="button"  class="btn btn-light-primary">Batalkan</a>
+                                    <a href="{{ route('anggaran.index') }}" role="button" class="btn btn-primary">Update Data</a>
                                 </div>
                             </div>
 

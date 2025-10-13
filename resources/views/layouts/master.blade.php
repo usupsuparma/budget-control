@@ -8,10 +8,10 @@
 <meta content="Pixeleyez" name="author" />
 
 <!-- layout setup -->
-<script type="module" src="assets/js/layout-setup.js"></script>
+<script type="module" src="{{ asset('assets/js/layout-setup.js') }}"></script>
 
 <!-- App favicon -->
-<link rel="shortcut icon" href="assets/images/k_favicon_32x.png">
+<link rel="shortcut icon" href="{{ asset('assets/images/k_favicon_32x.png') }}">
 
 @yield('css')
 @include('include.head-css')

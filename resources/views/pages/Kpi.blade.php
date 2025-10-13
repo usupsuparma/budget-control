@@ -1,9 +1,9 @@
 @extends('layouts.master')
 
-@section('title', 'Sasaran Strategis | Budget Control')
+@section('title', 'KPI | Budget Control')
 
 @section('title-sub', 'KPI')
-@section('pagetitle', 'Sasaran Strategis')
+@section('pagetitle', 'KPI & Program Kerja')
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 @endsection
@@ -33,7 +33,7 @@
                         </div>
                         <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
                             <a href="{{ route('sasaran-strategis.create') }}">
-                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input Sasaran Strategis</button>
+                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input KPI & Program Kerja</button>
                             </a>
                         </div>
                     </div>
@@ -42,11 +42,22 @@
                             <table class="table text-nowrap align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Sasaran Strategis</th>
-                                        <th scope="col">Deskripsi</th>
-                                        <th scope="col">Target</th>
-                                        <th scope="col">Satuan</th>
-                                        <th scope="col">Catatan</th>
+                                        <th scope="col">Program Kerja</th>
+                                        <th scope="col">Uraian Anggaran</th>
+                                        <th scope="col">Beban Anggaran</th>
+                                        <th scope="col">Nominal</th>
+                                        <th scope="col">Jan</th>
+                                        <th scope="col">Feb</th>
+                                        <th scope="col">Mar</th>
+                                        <th scope="col">Apr</th>
+                                        <th scope="col">Mei</th>
+                                        <th scope="col">Jun</th>
+                                        <th scope="col">Jul</th>
+                                        <th scope="col">Agu</th>
+                                        <th scope="col">Sep</th>
+                                        <th scope="col">Okt</th>
+                                        <th scope="col">Nov</th>
+                                        <th scope="col">Des</th>
                                         <th scope="col">Actions</th>
                                     </tr>
                                 </thead>
@@ -92,7 +103,18 @@
                                             </div>
                                         </td>
                                         <td>01 Jan 2025</td>
-                                        <td><span class="badge bg-info-subtle text-info">In Progress</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -139,7 +161,18 @@
                                             </div>
                                         </td>
                                         <td>30 Jun 2025</td>
-                                        <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -186,7 +219,18 @@
                                             </div>
                                         </td>
                                         <td>01 Oct 2024</td>
-                                        <td><span class="badge bg-danger-subtle text-danger">On Hold</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -240,7 +284,18 @@
                                             </div>
                                         </td>
                                         <td>15 Jul 2024</td>
-                                        <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -283,7 +338,18 @@
                                             </div>
                                         </td>
                                         <td>31 Dec 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -330,7 +396,18 @@
                                             </div>
                                         </td>
                                         <td>01 Dec 2024</td>
-                                        <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -373,7 +450,18 @@
                                             </div>
                                         </td>
                                         <td>01 Dec 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -427,7 +515,18 @@
                                             </div>
                                         </td>
                                         <td>30 Sep 2024</td>
-                                        <td><span class="badge bg-info-subtle text-info">In Progress</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -478,7 +577,18 @@
                                             </div>
                                         </td>
                                         <td>15 Nov 2024</td>
-                                        <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -525,7 +635,18 @@
                                             </div>
                                         </td>
                                         <td>01 Jul 2024</td>
-                                        <td><span class="badge bg-info-subtle text-info">In Progress</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i
@@ -568,7 +689,18 @@
                                             </div>
                                         </td>
                                         <td>30 Aug 2024</td>
-                                        <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td>
                                             <a href="{{ route('sasaran-strategis.edit',1) }}">
                                             <button type="button" class="btn btn-light-primary icon-btn-sm"><i

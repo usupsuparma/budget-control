@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let statusChoice = document.getElementById('status-choice');
     if (statusChoice) {
         const choices = new Choices('#status-choice', {
-            placeholderValue: 'Select Satus',
+            placeholderValue: 'Select Tahun',
             searchPlaceholderValue: 'Search...',
             removeItemButton: true,
             itemSelectText: 'Press to select',

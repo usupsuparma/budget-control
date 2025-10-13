@@ -229,75 +229,75 @@ horizontalToggle?.addEventListener("click", () => {
 });
 
 // Function to handle sidebar menu active links
-let currentUrl = window.location.pathname; // Get the current URL
-const menuLinks = document.querySelectorAll("#sidebar .pe-main-menu .pe-nav-link"); // Select all menu links
-if (currentUrl === "/")
-    currentUrl = "/index.html";
-const currentLayout = htmlElement.getAttribute("data-layout");
-const currentSidebar = htmlElement.getAttribute("data-sidebar");
+// let currentUrl = window.location.pathname; // Get the current URL
+// const menuLinks = document.querySelectorAll("#sidebar .pe-main-menu .pe-nav-link"); // Select all menu links
+// if (currentUrl === "/")
+//     currentUrl = "/index.html";
+// const currentLayout = htmlElement.getAttribute("data-layout");
+// const currentSidebar = htmlElement.getAttribute("data-sidebar");
 
-menuLinks.forEach((link) => {
-    const linkHref = link.getAttribute("href"); // Get the href attribute of the link
+// menuLinks.forEach((link) => {
+//     const linkHref = link.getAttribute("href"); // Get the href attribute of the link
 
-    // Check if the current URL contains the link's href
-    if (currentUrl.includes(linkHref)) {
-        link.classList.add("active"); // Add active class to the link
+//     // Check if the current URL contains the link's href
+//     if (currentUrl.includes(linkHref)) {
+//         link.classList.add("active"); // Add active class to the link
 
-        // Function to open all parent dropdowns
-        const openParentDropdowns = (element) => {
-            let parentDropdown = element.closest(".pe-has-sub");
-            while (parentDropdown) {
-                const collapseId = parentDropdown
-                    .querySelector(".pe-nav-link")
-                    .getAttribute("aria-controls");
-                const collapseElement = document.getElementById(collapseId);
-                if (collapseElement) {
-                    parentDropdown.children[0].classList.add("active"); // Add active class to the parent link
-                    if (currentLayout !== "horizontal" && currentSidebar !== "icon") {
-                        collapseElement.classList.add("show"); // Open the dropdown
-                        parentDropdown.children[0].setAttribute("aria-expanded", "true"); // Add active class to the parent link
-                        parentDropdown
-                            .querySelector(".pe-nav-arrow")
-                            .classList.add("open"); // Add open class to the arrow
-                    }
-                }
-                parentDropdown = parentDropdown.parentElement.closest(".pe-has-sub"); // Move to the next parent dropdown
-            }
-        };
-        // Open all parent dropdowns for the active link
-        openParentDropdowns(link);
-    }
-});
+//         // Function to open all parent dropdowns
+//         const openParentDropdowns = (element) => {
+//             let parentDropdown = element.closest(".pe-has-sub");
+//             while (parentDropdown) {
+//                 const collapseId = parentDropdown
+//                     .querySelector(".pe-nav-link")
+//                     .getAttribute("aria-controls");
+//                 const collapseElement = document.getElementById(collapseId);
+//                 if (collapseElement) {
+//                     parentDropdown.children[0].classList.add("active"); // Add active class to the parent link
+//                     if (currentLayout !== "horizontal" && currentSidebar !== "icon") {
+//                         collapseElement.classList.add("show"); // Open the dropdown
+//                         parentDropdown.children[0].setAttribute("aria-expanded", "true"); // Add active class to the parent link
+//                         parentDropdown
+//                             .querySelector(".pe-nav-arrow")
+//                             .classList.add("open"); // Add open class to the arrow
+//                     }
+//                 }
+//                 parentDropdown = parentDropdown.parentElement.closest(".pe-has-sub"); // Move to the next parent dropdown
+//             }
+//         };
+//         // Open all parent dropdowns for the active link
+//         openParentDropdowns(link);
+//     }
+// });
 
-// active horizontal menu
-const horizontalMenuLinks = document.querySelectorAll("#horizontal-menu .pe-nav-link");
+// // active horizontal menu
+// const horizontalMenuLinks = document.querySelectorAll("#horizontal-menu .pe-nav-link");
 
-horizontalMenuLinks.forEach((link) => {
-    const linkHref = link.getAttribute("href"); // Get the href attribute of the link
-    if (currentUrl.includes(linkHref)) {
-        link.classList.add("active");
-        const parentDropdown = link.closest(".pe-has-sub");
-        if (parentDropdown) {
-            const collapseId = parentDropdown
-                .querySelector(".pe-nav-link")
-                .getAttribute("aria-controls");
-            const collapseElement = document.getElementById(collapseId);
-            if (collapseElement) {
-                parentDropdown.children[0].classList.add("active"); // Add active class to the parent link
-                const parentParentDropdown = parentDropdown.parentElement.closest(".pe-has-sub");
-                if (parentParentDropdown) {
-                    const parentCollapseId = parentParentDropdown
-                        .querySelector(".pe-nav-link")
-                        .getAttribute("aria-controls");
-                    const parentCollapseElement = document.getElementById(parentCollapseId);
-                    if (parentCollapseElement) {
-                        parentParentDropdown.children[0].classList.add("active"); // Add active class to the parent link
-                    }
-                }
-            }
-        }
-    }
-})
+// horizontalMenuLinks.forEach((link) => {
+//     const linkHref = link.getAttribute("href"); // Get the href attribute of the link
+//     if (currentUrl.includes(linkHref)) {
+//         link.classList.add("active");
+//         const parentDropdown = link.closest(".pe-has-sub");
+//         if (parentDropdown) {
+//             const collapseId = parentDropdown
+//                 .querySelector(".pe-nav-link")
+//                 .getAttribute("aria-controls");
+//             const collapseElement = document.getElementById(collapseId);
+//             if (collapseElement) {
+//                 parentDropdown.children[0].classList.add("active"); // Add active class to the parent link
+//                 const parentParentDropdown = parentDropdown.parentElement.closest(".pe-has-sub");
+//                 if (parentParentDropdown) {
+//                     const parentCollapseId = parentParentDropdown
+//                         .querySelector(".pe-nav-link")
+//                         .getAttribute("aria-controls");
+//                     const parentCollapseElement = document.getElementById(parentCollapseId);
+//                     if (parentCollapseElement) {
+//                         parentParentDropdown.children[0].classList.add("active"); // Add active class to the parent link
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// })
 
 // rest layout to default
 const resetBtn = document.getElementById("resetBtn"); // Get the resetBtn

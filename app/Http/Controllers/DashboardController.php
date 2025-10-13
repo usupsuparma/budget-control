@@ -8,10 +8,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        if (view()->exists($request->path())) {
-            return view($request->path());
-        } else {
-            abort(404);
-        }
+        $title = 'Dashboard';
+        return view('pages.dashboard', compact('title'));
     }
 }

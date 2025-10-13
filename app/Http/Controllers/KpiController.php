@@ -4,19 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class SasaranStrategisController extends Controller
+class KpiController extends Controller
 {
     public function index()
     {
-        $title = 'Sasaran Strategis';
-        return view('pages.SasaranStrategis', compact('title'));
+        $title = 'KPI';
+        return view('pages.Kpi', compact('title'));
     }
 
     public function create()
     {
         // Menampilkan form tambah produk
-        $title = 'Input Sasaran Strategis';
-        return view('pages.SasaranStrategis_Create', compact('title'));
+        $title = 'Input KPI';
+        return view('pages.Kpi_Create', compact('title'));
     }
 
     public function store(Request $request)
@@ -32,8 +32,8 @@ class SasaranStrategisController extends Controller
     public function edit($id)
     {
         // Menampilkan form edit produk
-        $title = 'Edit Sasaran Strategis';
-        return view('pages.SasaranStrategis_Edit', compact('title'));
+        $title = 'Edit KPI';
+        return view('pages.Kpi_Edit', compact('title'));
     }
 
     public function update(Request $request, $id)

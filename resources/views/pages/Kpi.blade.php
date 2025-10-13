@@ -42,10 +42,11 @@
                             <table class="table text-nowrap align-middle">
                                 <thead>
                                     <tr>
+                                        <th scope="col">Sasaran Strategis</th>
+                                        <th scope="col">KPI</th>
+                                        <th scope="col">Target</th>
+                                        <th scope="col">Satuan</th>
                                         <th scope="col">Program Kerja</th>
-                                        <th scope="col">Uraian Anggaran</th>
-                                        <th scope="col">Beban Anggaran</th>
-                                        <th scope="col">Nominal</th>
                                         <th scope="col">Jan</th>
                                         <th scope="col">Feb</th>
                                         <th scope="col">Mar</th>
@@ -102,6 +103,7 @@
                                                 <div class="progress-bar" style="width: 50%"></div>
                                             </div>
                                         </td>
+                                        <td>01 Jan 2025</td>
                                         <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -161,6 +163,7 @@
                                             </div>
                                         </td>
                                         <td>30 Jun 2025</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -219,6 +222,7 @@
                                             </div>
                                         </td>
                                         <td>01 Oct 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -284,6 +288,7 @@
                                             </div>
                                         </td>
                                         <td>15 Jul 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -338,6 +343,7 @@
                                             </div>
                                         </td>
                                         <td>31 Dec 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -396,6 +402,7 @@
                                             </div>
                                         </td>
                                         <td>01 Dec 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -450,6 +457,7 @@
                                             </div>
                                         </td>
                                         <td>01 Dec 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -515,6 +523,7 @@
                                             </div>
                                         </td>
                                         <td>30 Sep 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -577,6 +586,7 @@
                                             </div>
                                         </td>
                                         <td>15 Nov 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -635,6 +645,7 @@
                                             </div>
                                         </td>
                                         <td>01 Jul 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
@@ -689,6 +700,7 @@
                                             </div>
                                         </td>
                                         <td>30 Aug 2024</td>
+                                        <td>01 Jan 2025</td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>
                                         <td><span class="badge bg-warning-subtle text-warning"></span></td>

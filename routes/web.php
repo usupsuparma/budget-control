@@ -37,3 +37,5 @@ Route::prefix('anggaran')->group(function () {
     Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
     Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
 });
+
+Route::get('/company-policy', [CompanyPolicyController::class, 'index'])->name('company-policy.index');

@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notification', function (Blueprint $table) {
+        Schema::create('job_level', function (Blueprint $table) {
             $table->id();
-            $table->string('notification_name', 100)->nullable();
-            $table->string('employee_id', 100)->nullable();
-            $table->text('message')->nullable();
-            $table->string('route', 100)->nullable();
-            $table->text('notes')->nullable();
+            $table->string('job_level_id', 100)->nullable();
+            $table->string('job_level_name', 100)->nullable();
             $table->string('status', 100)->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notification');
+        Schema::dropIfExists('job_level');
     }
 };

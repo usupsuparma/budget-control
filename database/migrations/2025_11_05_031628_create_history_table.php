@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('history', function (Blueprint $table) {
             $table->id();
+            $table->string('history_name', 100)->nullable();
+            $table->string('employee_id', 100)->nullable();
+            $table->text('notes')->nullable();
+            $table->string('status', 100)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

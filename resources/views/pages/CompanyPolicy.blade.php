@@ -17,11 +17,11 @@
                 <div class="card">
                     <div class="card-header d-flex">
                         <div class="col-md-4 col-xl-3 col-xxl-2 me-2">
-                            <select id="status-choice2">
-                                <option value="all">Semua Data</option>
-                                <option value="uk1">Unit Kerja 1</option>
-                                <option value="uk2">Unit Kerja 2</option>
-                                <option value="uk3">Unit Kerja 3</option>
+                            <select id="status-choice">
+                                <option value="all">All Years</option>
+                                <option value="uk1">2025</option>
+                                <option value="uk2">2024</option>
+                                <option value="uk3">2023</option>
                             </select>
                         </div>
                         <div class="col-md-4 col-xl-3 col-xxl-2">
@@ -31,694 +31,404 @@
                                 <option value="java">Low</option>
                             </select> --}}
                         </div>
-                        {{-- <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
-                            <a href="{{ route('realisasi.create') }}">
-                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input Realisasi</button>
+                        <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
+                            <a href="{{ route('company-policy.create') }}">
+                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Add Company Policy</button>
                             </a>
-                        </div> --}}
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-box table-responsive">
+                            <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+                                rel="stylesheet">
+
+                            <style>
+                                /* Tambahan kecil agar panah animasi saat dibuka */
+                                .accordion-toggle i.bi-chevron-down {
+                                    transition: transform 0.2s ease-in-out;
+                                }
+
+                                .accordion-toggle[aria-expanded="true"] i.bi-chevron-down {
+                                    transform: rotate(180deg);
+                                }
+                            </style>
+
                             <table class="table text-nowrap align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Akun</th>
-                                        <th scope="col">Beban</th>
-                                        <th scope="col">Anggaran</th>
-                                        <th scope="col">Realisasi</th>
-                                        <th scope="col">Jan</th>
-                                        <th scope="col">Feb</th>
-                                        <th scope="col">Mar</th>
-                                        <th scope="col">Apr</th>
-                                        <th scope="col">Mei</th>
-                                        <th scope="col">Jun</th>
-                                        <th scope="col">Jul</th>
-                                        <th scope="col">Agu</th>
-                                        <th scope="col">Sep</th>
-                                        <th scope="col">Okt</th>
-                                        <th scope="col">Nov</th>
-                                        <th scope="col">Des</th>
-                                        <th scope="col">Actions</th>
+                                        <th scope="col" style="width: 5%;">No.</th>
+                                        <th scope="col" style="width: 15%;">Year</th>
+                                        <th scope="col" style="width: 70%;">Document</th>
+                                        <th scope="col" style="width: 10%;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
+                                    <!-- Row utama -->
+                                    <tr data-bs-toggle="collapse" data-bs-target="#accordionRow1" aria-expanded="false"
+                                        aria-controls="accordionRow1" class="accordion-toggle">
+                                        <td>1</td>
+                                        <td>2025</td>
                                         <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck01" id="CustomflexCheck01">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck01">
-                                                        <h6 class="mb-1">Deploy The App To App Stores</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 07 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
+                                            <h6 class="mb-1 d-flex align-items-center">
+                                                <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                                                Document Company Policy
+                                            </h6>
                                         </td>
                                         <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-1.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-2.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-4.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
+                                            <div class="d-flex align-items-center">
+                                                <button type="button" class="btn btn-light-info btn-sm me-2">
+                                                    <i class="bi bi-file-earmark-text text-primary me-2"></i> View Document
+                                                </button>
+                                                <a href="{{ route('company-policy.edit', 1) }}" class="me-1">
+                                                    <button type="button" class="btn btn-light-primary icon-btn-sm">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                </a>
+                                                <button type="button" class="btn btn-light-danger icon-btn-sm me-2">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                                <!-- Panah accordion -->
+                                                <i class="bi bi-chevron-down ms-auto text-secondary"></i>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">50%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 50%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Jan 2025</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
                                         </td>
                                     </tr>
+
+                                    <!-- Accordion Detail Row -->
                                     <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck02" id="CustomflexCheck02">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck02">
-                                                        <h6 class="mb-1">Develop Mobile Application</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 15 Feb 2024</p>
-                                                    </label>
+                                        <td colspan="6" class="p-0">
+                                            <div id="accordionRow1" class="accordion-collapse collapse"
+                                                data-bs-parent=".table">
+                                                <div class="p-3">
+                                                    <h6 class="fw-bold mb-2">Detail Company Policy (2025)</h6>
+                                                    <table class="table table-sm table-bordered mb-0">
+                                                        <thead class="table-secondary">
+                                                            <tr>
+                                                                <th scope="col">No.</th>
+                                                                <th scope="col">Company Policy (Eng)</th>
+                                                                <th scope="col">Company Policy (Ina)</th>
+                                                                <th scope="col">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td style="width: 5%;"">1</td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Safety first in all
+                                                                        activities and keep a stable Plant operation
+                                                                        (Target: Zero accidents,
+                                                                        plant troubles by internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP consistently maintains plant operational
+                                                                        stability by
+                                                                        ensuring WS conditions, raw material
+                                                                        quality, and utilities meet
+                                                                        established standards, along with regulatory
+                                                                        compliance, in
+                                                                        order to achieve production targets and zero
+                                                                        customer
+                                                                        complaints. <br>PIP will seek
+                                                                        alternative suppliers for AAQ,
+                                                                        PSC, DIBC, and other materials to ensure
+                                                                        the continuity of plant
+                                                                        operations in the event of supply
+                                                                        disruptions from current
+                                                                        suppliers.
+                                                                    </p>
+                                                                </td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Mengutamakan keselamatan
+                                                                        dalam semua aktivitas dan menjaga kestabilan
+                                                                        operasi pabrik
+                                                                        (Target: Zero accidents, plant troubles by
+                                                                        internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP senantiasa menjaga stabilitas
+                                                                        operasional pabrik dengan
+                                                                        memastikan kondisi WS, kualitas bahan
+                                                                        baku, dan utilitas sesuai
+                                                                        standar, serta kepatuhan terhadap
+                                                                        regulasi, guna mencapai target
+                                                                        produksi dan zero customer complaint.
+                                                                        <br>PIP akan mencari
+                                                                        alternatif pemasok untuk AAQ, PSC, DIBC,
+                                                                        dan bahan lainnya guna
+                                                                        memastikan keberlangsungan operasional
+                                                                        pabrik apabila terjadi
+                                                                        gangguan pasokan dari pemasok yang ada
+                                                                        saat ini.
+                                                                    </p>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ route('company-policy.edit', 1) }}">
+                                                                        <button type="button"
+                                                                            class="btn btn-light-primary icon-btn-sm"><i
+                                                                                class="bi bi-pencil-square"></i></button>
+                                                                    </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-light-danger icon-btn-sm"><i
+                                                                            class="ri-delete-bin-line"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="width: 5%;"">2</td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Safety first in all
+                                                                        activities and keep a stable Plant operation
+                                                                        (Target: Zero accidents,
+                                                                        plant troubles by internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP consistently maintains plant operational
+                                                                        stability by
+                                                                        ensuring WS conditions, raw material
+                                                                        quality, and utilities meet
+                                                                        established standards, along with regulatory
+                                                                        compliance, in
+                                                                        order to achieve production targets and zero
+                                                                        customer
+                                                                        complaints. <br>PIP will seek
+                                                                        alternative suppliers for AAQ,
+                                                                        PSC, DIBC, and other materials to ensure
+                                                                        the continuity of plant
+                                                                        operations in the event of supply
+                                                                        disruptions from current
+                                                                        suppliers.
+                                                                    </p>
+                                                                </td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Mengutamakan keselamatan
+                                                                        dalam semua aktivitas dan menjaga kestabilan
+                                                                        operasi pabrik
+                                                                        (Target: Zero accidents, plant troubles by
+                                                                        internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP senantiasa menjaga stabilitas
+                                                                        operasional pabrik dengan
+                                                                        memastikan kondisi WS, kualitas bahan
+                                                                        baku, dan utilitas sesuai
+                                                                        standar, serta kepatuhan terhadap
+                                                                        regulasi, guna mencapai target
+                                                                        produksi dan zero customer complaint.
+                                                                        <br>PIP akan mencari
+                                                                        alternatif pemasok untuk AAQ, PSC, DIBC,
+                                                                        dan bahan lainnya guna
+                                                                        memastikan keberlangsungan operasional
+                                                                        pabrik apabila terjadi
+                                                                        gangguan pasokan dari pemasok yang ada
+                                                                        saat ini.
+                                                                    </p>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ route('company-policy.edit', 1) }}">
+                                                                        <button type="button"
+                                                                            class="btn btn-light-primary icon-btn-sm"><i
+                                                                                class="bi bi-pencil-square"></i></button>
+                                                                    </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-light-danger icon-btn-sm"><i
+                                                                            class="ri-delete-bin-line"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="width: 5%;"">3</td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Safety first in all
+                                                                        activities and keep a stable Plant operation
+                                                                        (Target: Zero accidents,
+                                                                        plant troubles by internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP consistently maintains plant operational
+                                                                        stability by
+                                                                        ensuring WS conditions, raw material
+                                                                        quality, and utilities meet
+                                                                        established standards, along with regulatory
+                                                                        compliance, in
+                                                                        order to achieve production targets and zero
+                                                                        customer
+                                                                        complaints. <br>PIP will seek
+                                                                        alternative suppliers for AAQ,
+                                                                        PSC, DIBC, and other materials to ensure
+                                                                        the continuity of plant
+                                                                        operations in the event of supply
+                                                                        disruptions from current
+                                                                        suppliers.
+                                                                    </p>
+                                                                </td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Mengutamakan keselamatan
+                                                                        dalam semua aktivitas dan menjaga kestabilan
+                                                                        operasi pabrik
+                                                                        (Target: Zero accidents, plant troubles by
+                                                                        internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP senantiasa menjaga stabilitas
+                                                                        operasional pabrik dengan
+                                                                        memastikan kondisi WS, kualitas bahan
+                                                                        baku, dan utilitas sesuai
+                                                                        standar, serta kepatuhan terhadap
+                                                                        regulasi, guna mencapai target
+                                                                        produksi dan zero customer complaint.
+                                                                        <br>PIP akan mencari
+                                                                        alternatif pemasok untuk AAQ, PSC, DIBC,
+                                                                        dan bahan lainnya guna
+                                                                        memastikan keberlangsungan operasional
+                                                                        pabrik apabila terjadi
+                                                                        gangguan pasokan dari pemasok yang ada
+                                                                        saat ini.
+                                                                    </p>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ route('company-policy.edit', 1) }}">
+                                                                        <button type="button"
+                                                                            class="btn btn-light-primary icon-btn-sm"><i
+                                                                                class="bi bi-pencil-square"></i></button>
+                                                                    </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-light-danger icon-btn-sm"><i
+                                                                            class="ri-delete-bin-line"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="width: 5%;"">4</td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Safety first in all
+                                                                        activities and keep a stable Plant operation
+                                                                        (Target: Zero accidents,
+                                                                        plant troubles by internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP consistently maintains plant operational
+                                                                        stability by
+                                                                        ensuring WS conditions, raw material
+                                                                        quality, and utilities meet
+                                                                        established standards, along with regulatory
+                                                                        compliance, in
+                                                                        order to achieve production targets and zero
+                                                                        customer
+                                                                        complaints. <br>PIP will seek
+                                                                        alternative suppliers for AAQ,
+                                                                        PSC, DIBC, and other materials to ensure
+                                                                        the continuity of plant
+                                                                        operations in the event of supply
+                                                                        disruptions from current
+                                                                        suppliers.
+                                                                    </p>
+                                                                </td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Mengutamakan keselamatan
+                                                                        dalam semua aktivitas dan menjaga kestabilan
+                                                                        operasi pabrik
+                                                                        (Target: Zero accidents, plant troubles by
+                                                                        internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP senantiasa menjaga stabilitas
+                                                                        operasional pabrik dengan
+                                                                        memastikan kondisi WS, kualitas bahan
+                                                                        baku, dan utilitas sesuai
+                                                                        standar, serta kepatuhan terhadap
+                                                                        regulasi, guna mencapai target
+                                                                        produksi dan zero customer complaint.
+                                                                        <br>PIP akan mencari
+                                                                        alternatif pemasok untuk AAQ, PSC, DIBC,
+                                                                        dan bahan lainnya guna
+                                                                        memastikan keberlangsungan operasional
+                                                                        pabrik apabila terjadi
+                                                                        gangguan pasokan dari pemasok yang ada
+                                                                        saat ini.
+                                                                    </p>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ route('company-policy.edit', 1) }}">
+                                                                        <button type="button"
+                                                                            class="btn btn-light-primary icon-btn-sm"><i
+                                                                                class="bi bi-pencil-square"></i></button>
+                                                                    </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-light-danger icon-btn-sm"><i
+                                                                            class="ri-delete-bin-line"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="width: 5%;"">5</td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Safety first in all
+                                                                        activities and keep a stable Plant operation
+                                                                        (Target: Zero accidents,
+                                                                        plant troubles by internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP consistently maintains plant operational
+                                                                        stability by
+                                                                        ensuring WS conditions, raw material
+                                                                        quality, and utilities meet
+                                                                        established standards, along with regulatory
+                                                                        compliance, in
+                                                                        order to achieve production targets and zero
+                                                                        customer
+                                                                        complaints. <br>PIP will seek
+                                                                        alternative suppliers for AAQ,
+                                                                        PSC, DIBC, and other materials to ensure
+                                                                        the continuity of plant
+                                                                        operations in the event of supply
+                                                                        disruptions from current
+                                                                        suppliers.
+                                                                    </p>
+                                                                </td>
+                                                                <td
+                                                                    style="width: 45%; white-space: normal; word-wrap: break-word; text-align: justify;">
+                                                                    <h6 class="mb-1">Mengutamakan keselamatan
+                                                                        dalam semua aktivitas dan menjaga kestabilan
+                                                                        operasi pabrik
+                                                                        (Target: Zero accidents, plant troubles by
+                                                                        internal causes: max 3
+                                                                        troubles).</h6>
+                                                                    <p class="mb-0 fs-12 text-muted">
+                                                                        PIP senantiasa menjaga stabilitas
+                                                                        operasional pabrik dengan
+                                                                        memastikan kondisi WS, kualitas bahan
+                                                                        baku, dan utilitas sesuai
+                                                                        standar, serta kepatuhan terhadap
+                                                                        regulasi, guna mencapai target
+                                                                        produksi dan zero customer complaint.
+                                                                        <br>PIP akan mencari
+                                                                        alternatif pemasok untuk AAQ, PSC, DIBC,
+                                                                        dan bahan lainnya guna
+                                                                        memastikan keberlangsungan operasional
+                                                                        pabrik apabila terjadi
+                                                                        gangguan pasokan dari pemasok yang ada
+                                                                        saat ini.
+                                                                    </p>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ route('company-policy.edit', 1) }}">
+                                                                        <button type="button"
+                                                                            class="btn btn-light-primary icon-btn-sm"><i
+                                                                                class="bi bi-pencil-square"></i></button>
+                                                                    </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-light-danger icon-btn-sm"><i
+                                                                            class="ri-delete-bin-line"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-5.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-6.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-7.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">75%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="75"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 75%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Jun 2025</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck03" id="CustomflexCheck03">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck03">
-                                                        <h6 class="mb-1">Launch New Marketing Campaign</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 01 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">25%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="25"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 25%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Oct 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck04" id="CustomflexCheck04">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck04">
-                                                        <h6 class="mb-1">Update Website Content</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 10 Jan 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item avatar-sm fw-semibold avatar-title bg-primary">
-                                                    3+
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">100%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="100"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 100%"></div>
-                                            </div>
-                                        </td>
-                                        <td>15 Jul 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck05" id="CustomflexCheck05">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck05">
-                                                        <h6 class="mb-1">Improve Search Engine Optimization (SEO)</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 25 Feb 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-2.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">10%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="10"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 10%"></div>
-                                            </div>
-                                        </td>
-                                        <td>31 Dec 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck06" id="CustomflexCheck06">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck06">
-                                                        <h6 class="mb-1">Redesign Website User Interface</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 20 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">65%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="65"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 65%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Dec 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck07" id="CustomflexCheck07">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck06">
-                                                        <h6 class="mb-1">Redesign Website User Interface</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 20 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">65%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="65"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 65%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Dec 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck08" id="CustomflexCheck08">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck07">
-                                                        <h6 class="mb-1">Create New Dashboard Design</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 15 Apr 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-2.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-7.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item avatar-sm fw-semibold avatar-title bg-primary">
-                                                    4+
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">30%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="30"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 30%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Sep 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck09" id="CustomflexCheck09">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck08">
-                                                        <h6 class="mb-1">Implement Analytics System</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 10 Feb 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-7.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">90%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="90"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 90%"></div>
-                                            </div>
-                                        </td>
-                                        <td>15 Nov 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck10" id="CustomflexCheck10">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck09">
-                                                        <h6 class="mb-1">Cloud Infrastructure Migration</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 01 Apr 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-3.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">50%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 50%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Jul 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck11" id="CustomflexCheck11">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck10">
-                                                        <h6 class="mb-1">Build Reporting Dashboard</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 05 Jun 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">80%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="80"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 80%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Aug 2024</td>
-                                        
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('realisasi.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>

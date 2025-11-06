@@ -44,7 +44,7 @@
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('sasaran-strategis.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_sasaranstrategis)) ? 'active' : '' }}">
-                            Sasaran Strategis
+                            Strategic Goals <!-- Sasaran Strategis -->
                         </a>
                     </li>
                     @php
@@ -52,12 +52,12 @@
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('kpi.index') }}" class="pe-nav-link  {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_kpi_detail)) ? 'active' : '' }}">
-                            KPI & Program Kerja
+                            KPI & Work Program <!-- KPI & Program Kerja -->
                         </a>
                     </li>
                     <li class="pe-slide-item">
                         <a href="pages-faqs" class="pe-nav-link">
-                            Approval
+                            Approvals
                         </a>
                     </li>
 
@@ -78,7 +78,7 @@
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran_detail)) ? 'active' : '' }}">
-                            Anggaran
+                            Budgets <!-- Anggaran -->
                         </a>
                     </li>
                     @php
@@ -86,12 +86,12 @@
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_realisasi_detail)) ? 'active' : '' }}">
-                            Realisasi
+                            Realization <!-- Realisasi -->
                         </a>
                     </li>
                     <li class="pe-slide-item">
                         <a href="apps-invoice-create" class="pe-nav-link">
-                            Perubahan
+                            Amendment<!-- Perubahan -->
                         </a>
                     </li>
                 </ul>
@@ -99,18 +99,18 @@
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseEcommerce" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseEcommerce">
                     <i class="bi bi-cart4 pe-nav-icon"></i>
-                    <span class="pe-nav-content">Transaksi</span>
+                    <span class="pe-nav-content">Transactions</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
                 <ul class="pe-slide-menu collapse" id="collapseEcommerce">
                     <li class="pe-slide-item">
                         <a href="apps-ecommerce-products" class="pe-nav-link">
-                            Pengajuan User
+                            User Submission <!-- Pengajuan User -->
                         </a>
                     </li>
                     <li class="pe-slide-item">
                         <a href="apps-ecommerce-products-details" class="pe-nav-link">
-                            Pengajuan Admin
+                            Admin Submission <!-- Pengajuan Admin -->
                         </a>
                     </li>
                 </ul>

@@ -15,6 +15,8 @@ class CompanyPolicyController extends Controller
     public function create()
     {
         // Menampilkan form tambah company policy
+        $title = 'Add Company Policy';
+        return view('pages.CompanyPolicy_Create', compact('title'));
     }
 
     public function store(Request $request)
@@ -30,6 +32,8 @@ class CompanyPolicyController extends Controller
     public function edit($id)
     {
         // Menampilkan form edit company policy
+        $title = 'Edit Company Policy';
+        return view('pages.CompanyPolicy_Edit', compact('title'));
     }
 
     public function update(Request $request, $id)

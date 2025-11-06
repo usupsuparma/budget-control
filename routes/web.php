@@ -5,6 +5,8 @@ use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\RealisasiController;
+use App\Http\Controllers\CompanyPolicyController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index']);      // Tampilkan dashboard
@@ -38,5 +40,18 @@ Route::prefix('anggaran')->group(function () {
     Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
     Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
 });
+
+Route::prefix('realisasi')->group(function () {
+    Route::get('/', [RealisasiController::class, 'index'])->name('realisasi.index');      // Tampilkan semua produk
+    Route::get('/realisasiunitkerja', [RealisasiController::class, 'index_unitkerja'])->name('realisasiunitkerja.index');      // Tampilkan semua produk
+    Route::get('/create', [RealisasiController::class, 'create'])->name('realisasi.create'); // Form tambah produk
+    Route::post('/', [RealisasiController::class, 'store'])->name('realisasi.store');     // Simpan produk baru
+    Route::get('/{id}', [RealisasiController::class, 'show'])->name('realisasi.show');    // Detail produk
+    Route::get('/{id}/edit', [RealisasiController::class, 'edit'])->name('realisasi.edit'); // Form edit produk
+    Route::put('/{id}', [RealisasiController::class, 'update'])->name('realisasi.update'); // Update produk
+    Route::delete('/{id}', [RealisasiController::class, 'destroy'])->name('realisasi.destroy'); // Hapus produk
+});
+
+Route::get('/company-policy', [CompanyPolicyController::class, 'index'])->name('company-policy.index');
 
 Route::get('/master', [MasterController::class, 'index'])->name('master');

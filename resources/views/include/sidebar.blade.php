@@ -2,7 +2,7 @@
     <div class="pe-app-sidebar-logo px-6 d-flex align-items-center position-relative">
         <!--begin::Brand Image-->
         <a href="index" class="fs-18 fw-semibold">
-            <img height="30" class="pe-app-sidebar-logo-default d-none" alt="Logo" src="{{ asset('assets/images/logo-dark.png') }}">
+            <img height="80" class="pe-app-sidebar-logo-default d-none" alt="Logo" src="{{ asset('assets/images/logo-dark.png') }}">
             <img height="30" class="pe-app-sidebar-logo-light d-none" alt="Logo" src="{{ asset('assets/images/logo-light.png') }}">
             <img height="30" class="pe-app-sidebar-logo-minimize d-none" alt="Logo" src="{{ asset('assets/images/logo-md.png') }}">
             <img height="30" class="pe-app-sidebar-logo-minimize-light d-none" alt="Logo" src="{{ asset('assets/images/logo-md-light.png') }}">
@@ -13,10 +13,19 @@
     <nav class="pe-app-sidebar-menu nav nav-pills" data-simplebar id="sidebar-simplebar">
         <ul class="pe-main-menu list-unstyled">
 
+            <!-- DASHBOARD -->
             <li class="pe-slide pe-has-sub">
-                <a href="/" class="pe-nav-link {{ Request::is('/') ? 'active' : '' }}">
+                <a href="{{ url('/') }}" class="pe-nav-link {{ Request::is('/') ? 'active' : '' }}">
                     <i class="bi bi-speedometer2 pe-nav-icon"></i>
                     <span class="pe-nav-content">Dashboards</span>
+                </a>
+            </li>
+
+            <!-- COMPANY POLICY -->
+            <li class="pe-slide pe-has-sub">
+                <a href="{{ route('company-policy.index') }}" class="pe-nav-link {{ Request::is('company-policy*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text pe-nav-icon"></i>
+                    <span class="pe-nav-content">Company Policy</span>
                 </a>
             </li>
 
@@ -55,7 +64,7 @@
                 </ul>
             </li>
             @php
-            $menu_anggaran = ['anggaran', 'anggaran/*'];
+            $menu_anggaran = ['anggaran', 'anggaran/*','realisasi', 'realisasi/*'];
             @endphp
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseInvoices" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'active' : '' }}" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseInvoices">
@@ -72,8 +81,11 @@
                             Anggaran
                         </a>
                     </li>
+                    @php
+                    $menu_realisasi_detail = ['realisasi', 'realisasi/*'];
+                    @endphp
                     <li class="pe-slide-item">
-                        <a href="apps-invoice-detail" class="pe-nav-link">
+                        <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_realisasi_detail)) ? 'active' : '' }}">
                             Realisasi
                         </a>
                     </li>

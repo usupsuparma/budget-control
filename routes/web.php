@@ -52,6 +52,10 @@ Route::prefix('realisasi')->group(function () {
     Route::delete('/{id}', [RealisasiController::class, 'destroy'])->name('realisasi.destroy'); // Hapus produk
 });
 
-Route::get('/company-policy', [CompanyPolicyController::class, 'index'])->name('company-policy.index');
+Route::prefix('company-policy')->group(function () {
+    Route::get('/', [CompanyPolicyController::class, 'index'])->name('company-policy.index');      // Tampilkan semua produk
+    Route::get('/create', [CompanyPolicyController::class, 'create'])->name('company-policy.create'); // Form tambah produk
+    Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])->name('company-policy.edit'); // Form edit produk
+});
 
 Route::get('/master', [MasterController::class, 'index'])->name('master');

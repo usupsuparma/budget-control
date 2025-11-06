@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
+use App\Http\Controllers\MasterController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index']);      // Tampilkan dashboard
@@ -37,3 +38,5 @@ Route::prefix('anggaran')->group(function () {
     Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
     Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
 });
+
+Route::get('/master', [MasterController::class, 'index'])->name('master');

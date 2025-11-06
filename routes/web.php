@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
+use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
 use Illuminate\Support\Facades\Route;
@@ -56,3 +57,5 @@ Route::prefix('company-policy')->group(function () {
     Route::get('/create', [CompanyPolicyController::class, 'create'])->name('company-policy.create'); // Form tambah produk
     Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])->name('company-policy.edit'); // Form edit produk
 });
+
+Route::get('/master', [MasterController::class, 'index'])->name('master');

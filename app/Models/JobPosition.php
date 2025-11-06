@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class JobPosition extends Model
 {
-    //
+    protected $table = 'job_position';
+    protected $guarded = [];
 }

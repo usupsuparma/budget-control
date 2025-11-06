@@ -30,7 +30,7 @@
             </li>
 
             @php
-                $menu_kpi = ['sasaran-strategis', 'sasaran-strategis/*', 'kpi', 'kpi/*'];
+            $menu_kpi = ['sasaran-strategis', 'sasaran-strategis/*', 'kpi', 'kpi/*'];
             @endphp
             <li class="pe-slide pe-has-sub">
                 <a href="#collapsePages" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_kpi)) ? 'active' : '' }}" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapsePages">
@@ -40,7 +40,7 @@
                 </a>
                 <ul class="pe-slide-menu collapse {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_kpi)) ? 'show' : '' }}" id="collapsePages">
                     @php
-                        $menu_sasaranstrategis = ['sasaran-strategis', 'sasaran-strategis/*'];
+                    $menu_sasaranstrategis = ['sasaran-strategis', 'sasaran-strategis/*'];
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('sasaran-strategis.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_sasaranstrategis)) ? 'active' : '' }}">
@@ -48,7 +48,7 @@
                         </a>
                     </li>
                     @php
-                        $menu_kpi_detail = ['kpi', 'kpi/*'];
+                    $menu_kpi_detail = ['kpi', 'kpi/*'];
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('kpi.index') }}" class="pe-nav-link  {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_kpi_detail)) ? 'active' : '' }}">
@@ -64,7 +64,7 @@
                 </ul>
             </li>
             @php
-                $menu_anggaran = ['anggaran', 'anggaran/*','realisasi', 'realisasi/*'];
+            $menu_anggaran = ['anggaran', 'anggaran/*','realisasi', 'realisasi/*'];
             @endphp
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseInvoices" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'active' : '' }}" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseInvoices">
@@ -74,7 +74,7 @@
                 </a>
                 <ul class="pe-slide-menu collapse {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'show' : '' }}" id="collapseInvoices">
                     @php
-                        $menu_anggaran_detail = ['anggaran', 'anggaran/*'];
+                    $menu_anggaran_detail = ['anggaran', 'anggaran/*'];
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran_detail)) ? 'active' : '' }}">
@@ -82,7 +82,7 @@
                         </a>
                     </li>
                     @php
-                        $menu_realisasi_detail = ['realisasi', 'realisasi/*'];
+                    $menu_realisasi_detail = ['realisasi', 'realisasi/*'];
                     @endphp
                     <li class="pe-slide-item">
                         <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_realisasi_detail)) ? 'active' : '' }}">
@@ -124,7 +124,7 @@
                 <ul class="pe-slide-menu collapse" id="collapseCMS">
 
                     <li class="pe-slide-item">
-                        <a href="apps-cms-content" class="pe-nav-link">
+                        <a href="{{ route('master') }}" class="pe-nav-link">
                             Master
                         </a>
                     </li>

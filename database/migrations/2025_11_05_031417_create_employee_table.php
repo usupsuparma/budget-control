@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('email', 100)->nullable();
             $table->string('password', 100)->nullable();
+            $table->rememberToken()->nullable();
             $table->string('first_name', 100)->nullable();
             $table->string('last_name', 100)->nullable();
             $table->integer('role_id')->nullable();

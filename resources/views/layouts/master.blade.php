@@ -28,13 +28,15 @@
             @include('include.page-title')
 
             @yield('content')
-            @include('include.switcher')
-            @include('include.scroll-to-top')
-            @include('include.footer')
+        </div>
+    </main>
+    @include('include.switcher')
+    @include('include.scroll-to-top')
+    @include('include.footer')
 
-            @include('include.vendor-scripts')
+    @include('include.vendor-scripts')
 
-            @yield('js')
+    @yield('js')
 
 </body>
 

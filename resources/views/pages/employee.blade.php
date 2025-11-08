@@ -1,16 +1,17 @@
 <div id="layout-wrapper">
-
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex">
-
-                    <div class="col-md-12 col-xl-12 col-xxl-12 text-end">
+                    <div class="col-md-12 text-end">
                         <a href="{{ route('company-policy.create') }}">
-                            <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Add Data</button>
+                            <button class="btn btn-primary">
+                                <i class="bi bi-plus-circle-dotted me-2"></i>Add Data
+                            </button>
                         </a>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <table id="employeeTable" class="table table-bordered table-striped w-100">
                         <thead class="table-light">
@@ -23,6 +24,29 @@
                                 <th width="15%">Action</th>
                             </tr>
                         </thead>
+                        <tbody>
+                            @foreach($employee as $emp)
+                            <tr>
+                                <td>{{ $emp->id }}</td>
+                                <td>{{ $emp->email }}</td>
+                                <td>{{ $emp->first_name }} {{ $emp->last_name }}</td>
+                                <td>{{ $emp->role_id }}</td>
+                                <td>
+                                    @if($emp->status == 'Active')
+                                    <span class="badge bg-success">Active</span>
+                                    @else
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-warning">Edit</button>
+                                        <button class="btn btn-sm btn-danger">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -30,50 +54,17 @@
     </div>
 </div>
 
-
 @push('scripts')
-<!-- DataTables & jQuery -->
+<!-- DataTables -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-    $(function() {
+    $(document).ready(function() {
         $('#employeeTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: '/master/employee/data',
-
-            columns: [{
-                    data: 'id',
-                    name: 'id'
-                },
-                {
-                    data: 'email',
-                    name: 'email'
-                },
-                {
-                    data: 'fullname',
-                    name: 'fullname',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'role_id',
-                    name: 'role_id'
-                },
-                {
-                    data: 'status',
-                    name: 'status'
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false
-                },
-            ],
+            pageLength: 10,
             order: [
                 [0, 'asc']
             ]

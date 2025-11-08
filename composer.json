@@ -11,7 +11,7 @@
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
         "power-components/livewire-powergrid": "^6.6",
-        "yajra/laravel-datatables-oracle": "dev-master"
+        "yajra/laravel-datatables-oracle": "12.x-dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

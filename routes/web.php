@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/login');
+        return redirect('/');
     })->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');      // Tampilkan dashboard
@@ -72,5 +72,4 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/master', [MasterController::class, 'index'])->name('master');
-    Route::get('/master/employee/data', [MasterController::class, 'data'])->name('employee.data');
 });

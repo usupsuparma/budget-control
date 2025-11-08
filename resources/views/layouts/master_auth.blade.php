@@ -14,15 +14,16 @@
 <link rel="shortcut icon" href="{{ asset('assets/images/k_favicon_32x.png') }}">
 
 @yield('css')
-@include('partials.head-css') 
+@include('partials.head-css')
 
 <body>
 
-@yield('content')
+    @yield('content')
 
-@include('partials.vendor-scripts')  
+    @include('partials.vendor-scripts')
 
-@yield('js')
+    @yield('js')
+
 
 </body>
 

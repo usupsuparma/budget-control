@@ -12,7 +12,8 @@ class MasterController extends Controller
     {
         $title = 'Master Data';
 
-        $employee = Employee::where('status', 1)->get();
+        $employee = Employee::where('status', 'Active')->get();
+        // dd($employee);
 
 
         return view('pages.master', compact('title', 'employee'));
@@ -34,6 +35,13 @@ class MasterController extends Controller
                 })
                 ->rawColumns(['action'])
                 ->make(true);
+
+            // 🧩 Return ke browser, baik AJAX maupun langsung
+            if ($request->ajax()) {
+                return $datatable;
+            } else {
+                return response()->json($datatable->getData());
+            }
         }
     }
 }

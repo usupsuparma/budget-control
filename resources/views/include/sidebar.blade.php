@@ -15,11 +15,25 @@
 
             <!-- DASHBOARD -->
             <li class="pe-slide pe-has-sub">
-                <a href="{{ url('/') }}" class="pe-nav-link {{ Request::is('/') ? 'active' : '' }}">
+                <a href="{{ route('dash.executive') }}" class="pe-nav-link {{ Request::is('dashboard/dash') ? 'active' : '' }}">
                     <i class="bi bi-speedometer2 pe-nav-icon"></i>
                     <span class="pe-nav-content">Dashboards</span>
                 </a>
+
             </li>
+            <!-- <li class="pe-slide pe-has-sub">
+                <a href="{{ url('/') }}" class="pe-nav-link {{ Request::is('/') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                    <span class="pe-nav-content">Dashboards Div</span>
+                </a>
+            </li>
+            <li class="pe-slide pe-has-sub">
+                <a href="{{ url('/') }}" class="pe-nav-link {{ Request::is('/') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                    <span class="pe-nav-content">Dashboards Dev</span>
+                </a>
+            </li> -->
+
 
             <!-- COMPANY POLICY -->
             <li class="pe-slide pe-has-sub">

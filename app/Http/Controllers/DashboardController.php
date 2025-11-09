@@ -11,4 +11,9 @@ class DashboardController extends Controller
         $title = 'Dashboard';
         return view('pages.dashboard', compact('title'));
     }
+    public function executive(Request $request)
+    {
+        $title = 'Dashboard Executive';
+        return view('pages.dash-executive', compact('title'));
+    }
 }

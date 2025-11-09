@@ -11,7 +11,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
+use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::get('/', Login::class)->name('login');
 Route::middleware('auth')->group(function () {
@@ -72,4 +72,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/master', [MasterController::class, 'index'])->name('master');
+
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/dash', [DashboardController::class, 'executive'])->name('dash.executive');
+    });
 });

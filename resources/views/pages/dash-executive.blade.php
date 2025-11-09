@@ -11,7 +11,7 @@
         <div class="col-12">
             <div class="card bg-secondary-subtle border-0">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4" style="text-align: center;">Company Policy 2026</h5>
+                    <h5 class="fw-bold mb-4" style="text-align: center;">Company Policy 2026 (Strategic Goals)</h5>
 
                     <div class="table-responsive">
                         <table class="table table-borderless align-middle text-center mb-0">

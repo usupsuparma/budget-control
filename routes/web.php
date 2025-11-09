@@ -22,7 +22,7 @@ Route::middleware('auth')->group(function () {
         return redirect('/');
     })->name('logout');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');      // Tampilkan dashboard
+    Route::get('/dashboard', [DashboardController::class, 'executive'])->name('dashboard');      // Tampilkan dashboard
 
     Route::prefix('sasaran-strategis')->group(function () {
         Route::get('/', [SasaranStrategisController::class, 'index'])->name('sasaran-strategis.index');      // Tampilkan semua produk

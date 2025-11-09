@@ -5,753 +5,228 @@
 @section('title-sub', 'Budget Control')
 @section('pagetitle', 'Anggaran')
 @section('css')
-    <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 @endsection
 @section('content')
 
-    <!-- Begin page -->
-    <div id="layout-wrapper">
+<!-- Begin page -->
+<div id="layout-wrapper">
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex">
-                        <div class="col-md-4 col-xl-3 col-xxl-2 me-2">
-                            <select id="status-choice">
-                                <option value="2025">2025</option>
-                                <option value="2024">2024</option>
-                                <option value="2023">2023</option>
-                                <option value="2022">2022</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 col-xl-3 col-xxl-2">
-                            {{-- <select id="priority-choice">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex">
+                    <div class="col-md-4 col-xl-3 col-xxl-2 me-2">
+                        <select id="status-choice">
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-xl-3 col-xxl-2">
+                        {{-- <select id="priority-choice">
                                 <option value="javascript">High</option>
                                 <option value="python">Medium</option>
                                 <option value="java">Low</option>
                             </select> --}}
-                        </div>
-                        <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
-                            <a href="{{ route('anggaran.create') }}">
-                                <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input Anggaran</button>
-                            </a>
-                        </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-box table-responsive">
-                            <table class="table text-nowrap align-middle">
+                    <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
+                        <a href="{{ route('anggaran.create') }}">
+                            <button class="btn btn-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Input Anggaran</button>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-box table-responsive">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle text-center" style="font-size: 12px;">
                                 <thead>
-                                    <tr>
-                                        <th scope="col">Program Kerja</th>
-                                        <th scope="col">Uraian Anggaran</th>
-                                        <th scope="col">Beban Anggaran</th>
-                                        <th scope="col">Nominal</th>
-                                        <th scope="col">Jan</th>
-                                        <th scope="col">Feb</th>
-                                        <th scope="col">Mar</th>
-                                        <th scope="col">Apr</th>
-                                        <th scope="col">Mei</th>
-                                        <th scope="col">Jun</th>
-                                        <th scope="col">Jul</th>
-                                        <th scope="col">Agu</th>
-                                        <th scope="col">Sep</th>
-                                        <th scope="col">Okt</th>
-                                        <th scope="col">Nov</th>
-                                        <th scope="col">Des</th>
-                                        <th scope="col">Actions</th>
+                                    <tr class="table-warning">
+                                        <th rowspan="2" style="vertical-align: middle;">DESCRIPTION<br><small>(1)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">Program ID<br><small>(2)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">STOCK CODE<br><small>(3)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">BUDGET CODE<br><small>(4)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">Product Line<br><small>(5)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">Cost Centre<br><small>(6)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">BEG BALANCE<br>(PROGNOSIS)<br><small>(7)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">SUPPLIER<br><small>(8)</small></th>
+                                        <th rowspan="2" style="vertical-align: middle;">UNIT<br><small>(9)</small></th>
+                                        <th colspan="13" style="background-color: #FFF9C4;">2025</th>
+                                        <th colspan="2" class="table-info">Price Estimation</th>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <th>JAN<br><small>(10)</small></th>
+                                        <th>FEB<br><small>(11)</small></th>
+                                        <th>MAR<br><small>(12)</small></th>
+                                        <th>APR<br><small>(13)</small></th>
+                                        <th>MAY<br><small>(14)</small></th>
+                                        <th>JUN<br><small>(15)</small></th>
+                                        <th>JUL<br><small>(16)</small></th>
+                                        <th>AUG<br><small>(17)</small></th>
+                                        <th>SEP<br><small>(18)</small></th>
+                                        <th>OCT<br><small>(19)</small></th>
+                                        <th>NOV<br><small>(20)</small></th>
+                                        <th>DEC<br><small>(21)</small></th>
+                                        <th>TOTAL<br><small>(22)</small></th>
+                                        <th class="table-info">Estimation<br><small>(23)</small></th>
+                                        <th class="table-info">Estimation Description<br><small>(24)</small></th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck01" id="CustomflexCheck01">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck01">
-                                                        <h6 class="mb-1">Deploy The App To App Stores</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 07 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-1.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-2.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-4.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">50%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 50%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Jan 2025</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
+                                        <td class="text-start">Biaya Pemeliharaan Sistem ERP</td>
+                                        <td>PRG-001</td>
+                                        <td>STK-1001</td>
+                                        <td>BDG-110</td>
+                                        <td>IT Digitalization</td>
+                                        <td>Finance</td>
+                                        <td>Rp 50.000.000</td>
+                                        <td>PT Aplikasi Jaya</td>
+                                        <td>Paket</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>10</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>10</td>
+                                        <td>10</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+
+                                        <td>Rp 200.000.000</td>
+                                        <td>Langganan sistem & maintenance ERP Budget Control</td>
                                     </tr>
+
                                     <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck02" id="CustomflexCheck02">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck02">
-                                                        <h6 class="mb-1">Develop Mobile Application</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 15 Feb 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-5.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-6.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm" src="{{ asset('assets/images/avatar/avatar-7.jpg') }}"
-                                                        alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">75%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="75"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 75%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Jun 2025</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
+                                        <td class="text-start">Audit Keuangan Eksternal</td>
+                                        <td>PRG-002</td>
+                                        <td>STK-1102</td>
+                                        <td>BDG-210</td>
+                                        <td>Financial Governance</td>
+                                        <td>Finance</td>
+                                        <td>Rp 25.000.000</td>
+                                        <td>KAP ABC</td>
+                                        <td>Paket</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>10</td>
+                                        <td>10</td>
+                                        <td>10</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>35</td>
+                                        <td>Rp 150.000.000</td>
+                                        <td>Jasa audit laporan keuangan tahunan oleh auditor eksternal</td>
                                     </tr>
+
                                     <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck03" id="CustomflexCheck03">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck03">
-                                                        <h6 class="mb-1">Launch New Marketing Campaign</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 01 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">25%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="25"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 25%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Oct 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
+                                        <td class="text-start">Pelatihan Pajak & Akuntansi</td>
+                                        <td>PRG-003</td>
+                                        <td>STK-2010</td>
+                                        <td>BDG-310</td>
+                                        <td>Training</td>
+                                        <td>HR</td>
+                                        <td>Rp 10.000.000</td>
+                                        <td>TaxEdu Indonesia</td>
+                                        <td>Orang</td>
+                                        <td>0</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>10</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>35</td>
+                                        <td>Rp 75.000.000</td>
+                                        <td>Pelatihan kompetensi staf keuangan bidang perpajakan & akuntansi</td>
                                     </tr>
+
                                     <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck04" id="CustomflexCheck04">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck04">
-                                                        <h6 class="mb-1">Update Website Content</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 10 Jan 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item avatar-sm fw-semibold avatar-title bg-primary">
-                                                    3+
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">100%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="100"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 100%"></div>
-                                            </div>
-                                        </td>
-                                        <td>15 Jul 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck05" id="CustomflexCheck05">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck05">
-                                                        <h6 class="mb-1">Improve Search Engine Optimization (SEO)</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 25 Feb 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-2.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">10%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="10"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 10%"></div>
-                                            </div>
-                                        </td>
-                                        <td>31 Dec 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck06" id="CustomflexCheck06">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck06">
-                                                        <h6 class="mb-1">Redesign Website User Interface</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 20 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">65%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="65"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 65%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Dec 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck07" id="CustomflexCheck07">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck06">
-                                                        <h6 class="mb-1">Redesign Website User Interface</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 20 Mar 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">65%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="65"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 65%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Dec 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck08" id="CustomflexCheck08">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck07">
-                                                        <h6 class="mb-1">Create New Dashboard Design</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 15 Apr 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-2.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-7.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item avatar-sm fw-semibold avatar-title bg-primary">
-                                                    4+
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">30%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="30"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 30%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Sep 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck09" id="CustomflexCheck09">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck08">
-                                                        <h6 class="mb-1">Implement Analytics System</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 10 Feb 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-7.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-8.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-4.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-6.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">90%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="90"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 90%"></div>
-                                            </div>
-                                        </td>
-                                        <td>15 Nov 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck10" id="CustomflexCheck10">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck09">
-                                                        <h6 class="mb-1">Cloud Infrastructure Migration</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 01 Apr 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-1.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-3.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">50%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 50%"></div>
-                                            </div>
-                                        </td>
-                                        <td>01 Jul 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        value="CustomflexCheck11" id="CustomflexCheck11">
-                                                    <label class="form-check-label ms-3" for="CustomflexCheck10">
-                                                        <h6 class="mb-1">Build Reporting Dashboard</h6>
-                                                        <p class="mb-0 fs-12 text-muted">Assigned - 05 Jun 2024</p>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-9.jpg') }}" alt="avatar image">
-                                                </div>
-                                                <div class="avatar-item">
-                                                    <img class="img-fluid avatar-sm"
-                                                        src="{{ asset('assets/images/avatar/avatar-5.jpg') }}" alt="avatar image">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fs-12 fw-semibold">80%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="80"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 80%"></div>
-                                            </div>
-                                        </td>
-                                        <td>30 Aug 2024</td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td><span class="badge bg-warning-subtle text-warning"></span></td>
-                                        <td>
-                                            <a href="{{ route('anggaran.edit',1) }}">
-                                            <button type="button" class="btn btn-light-primary icon-btn-sm"><i
-                                                    class="bi bi-pencil-square"></i></button>
-                                            </a>
-                                            <button type="button" class="btn btn-light-danger icon-btn-sm"><i
-                                                    class="ri-delete-bin-line"></i></button>
-                                        </td>
+                                        <td class="text-start">Pemeliharaan Database Keuangan</td>
+                                        <td>PRG-004</td>
+                                        <td>STK-2201</td>
+                                        <td>BDG-410</td>
+                                        <td>System</td>
+                                        <td>IT</td>
+                                        <td>Rp 15.000.000</td>
+                                        <td>PT DataTech</td>
+                                        <td>Paket</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>5</td>
+                                        <td>10</td>
+                                        <td>10</td>
+                                        <td>10</td>
+                                        <td>5</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>55</td>
+                                        <td>Rp 120.000.000</td>
+                                        <td>Pemeliharaan database & backup server keuangan setiap semester</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="d-flex flex-wrap align-items-center gap-4 m-5">
-                            <div class="fw-medium"> Showing 1 - 10 of 18 Entries</div>
-                            <div class="ms-auto">
-                                <nav aria-label="Page navigation example">
-                                    <ul class="pagination pagination-primary mb-0">
-                                        <li class="page-item">
-                                            <a class="page-link" href="javascript:void(0)">
-                                                <i class="ri-arrow-left-s-line fw-semibold"></i>
-                                            </a>
-                                        </li>
-                                        <li class="page-item"><a class="page-link" href="javascript:void(0)">1</a></li>
-                                        <li class="page-item active"><a class="page-link" href="javascript:void(0)">2</a>
-                                        </li>
-                                        <li class="page-item"><a class="page-link" href="javascript:void(0)">3</a></li>
-                                        <li class="page-item"><a class="page-link" href="javascript:void(0)">4</a></li>
-                                        <li class="page-item"><a class="page-link" href="javascript:void(0)">5</a></li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="javascript:void(0)">
-                                                <i class="ri-arrow-right-s-line fw-semibold"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            </div>
+
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-4 m-5">
+                        <div class="fw-medium"> Showing 1 - 10 of 18 Entries</div>
+                        <div class="ms-auto">
+                            <nav aria-label="Page navigation example">
+                                <ul class="pagination pagination-primary mb-0">
+                                    <li class="page-item">
+                                        <a class="page-link" href="javascript:void(0)">
+                                            <i class="ri-arrow-left-s-line fw-semibold"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item"><a class="page-link" href="javascript:void(0)">1</a></li>
+                                    <li class="page-item active"><a class="page-link" href="javascript:void(0)">2</a>
+                                    </li>
+                                    <li class="page-item"><a class="page-link" href="javascript:void(0)">3</a></li>
+                                    <li class="page-item"><a class="page-link" href="javascript:void(0)">4</a></li>
+                                    <li class="page-item"><a class="page-link" href="javascript:void(0)">5</a></li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="javascript:void(0)">
+                                            <i class="ri-arrow-right-s-line fw-semibold"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    </main>
+</div>
+</main>
 @endsection
 
 @section('js')
 
-    <!-- App js -->
-    <script type="module" src="{{ asset('assets/js/app.js') }}"></script>
+<!-- App js -->
+<script type="module" src="{{ asset('assets/js/app.js') }}"></script>
 
-    <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 
-    <script src="{{ asset('assets/js/app/project-list.init.js') }}"></script>
+<script src="{{ asset('assets/js/app/project-list.init.js') }}"></script>
 @endsection

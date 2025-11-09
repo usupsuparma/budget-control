@@ -6,10 +6,16 @@ use Illuminate\Http\Request;
 
 class AnggaranController extends Controller
 {
+
     public function index()
     {
         $title = 'Anggaran';
         return view('pages.Anggaran', compact('title'));
+    }
+    public function resume()
+    {
+        $title = 'Resume';
+        return view('pages.Anggaran_resume', compact('title'));
     }
 
     public function create()

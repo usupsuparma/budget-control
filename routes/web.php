@@ -8,6 +8,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\SubmissionController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [AnggaranController::class, 'edit'])->name('anggaran.edit'); // Form edit produk
         Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
         Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
+    });
+
+    Route::prefix('resume-anggaran')->group(function () {
+        Route::get('/', [AnggaranController::class, 'resume'])->name('resume-anggaran.index');      // Tampilkan semua produk
+    });
+
+    Route::prefix('admission')->group(function () {
+        Route::get('/user', [SubmissionController::class, 'user'])->name('userSubmission.index');
+        Route::get('/admin', [SubmissionController::class, 'admin'])->name('adminSubmission.index');
     });
 
     Route::prefix('realisasi')->group(function () {

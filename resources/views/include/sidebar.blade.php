@@ -78,57 +78,85 @@
                 </ul>
             </li>
             @php
-            $menu_anggaran = ['anggaran', 'anggaran/*','realisasi', 'realisasi/*'];
+            $menu_anggaran = ['anggaran*', 'realisasi*', 'resume*'];
             @endphp
+
             <li class="pe-slide pe-has-sub">
-                <a href="#collapseInvoices" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'active' : '' }}" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseInvoices">
+                <a href="#collapseInvoices"
+                    class="pe-nav-link {{ Request::is($menu_anggaran) ? 'active' : '' }}"
+                    data-bs-toggle="collapse"
+                    aria-expanded="{{ Request::is($menu_anggaran) ? 'true' : 'false' }}"
+                    aria-controls="collapseInvoices">
                     <i class="bi bi-receipt pe-nav-icon"></i>
                     <span class="pe-nav-content">Budget Control</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
-                <ul class="pe-slide-menu collapse {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran)) ? 'show' : '' }}" id="collapseInvoices">
-                    @php
-                    $menu_anggaran_detail = ['anggaran', 'anggaran/*'];
-                    @endphp
+
+                <ul class="pe-slide-menu collapse {{ Request::is($menu_anggaran) ? 'show' : '' }}" id="collapseInvoices">
                     <li class="pe-slide-item">
-                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_anggaran_detail)) ? 'active' : '' }}">
-                            Budgets <!-- Anggaran -->
+                        <a href="{{ route('anggaran.index') }}"
+                            class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
+                            Budgets
                         </a>
                     </li>
-                    @php
-                    $menu_realisasi_detail = ['realisasi', 'realisasi/*'];
-                    @endphp
+
                     <li class="pe-slide-item">
-                        <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_realisasi_detail)) ? 'active' : '' }}">
-                            Realization <!-- Realisasi -->
+                        <a href="{{ route('resume-anggaran.index') }}"
+                            class="pe-nav-link {{ Request::is('resume*') ? 'active' : '' }}">
+                            Resume Budgets
                         </a>
                     </li>
+
+                    <li class="pe-slide-item">
+                        <a href="{{ route('realisasi.index') }}"
+                            class="pe-nav-link {{ Request::is('realisasi*') ? 'active' : '' }}">
+                            Realization
+                        </a>
+                    </li>
+
                     <li class="pe-slide-item">
                         <a href="apps-invoice-create" class="pe-nav-link">
-                            Amendment<!-- Perubahan -->
+                            Amendment
                         </a>
                     </li>
                 </ul>
             </li>
+
+            @php
+            $menu_transaction = ['admission/user*', 'admission/admin*'];
+            @endphp
+
             <li class="pe-slide pe-has-sub">
-                <a href="#collapseEcommerce" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseEcommerce">
-                    <i class="bi bi-cart4 pe-nav-icon"></i>
+                <a href="#collapseSubmission"
+                    class="pe-nav-link {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_transaction)) ? 'active' : '' }}"
+                    data-bs-toggle="collapse"
+                    aria-expanded="{{ in_array(true, array_map(fn($p) => Request::is($p), $menu_transaction)) ? 'true' : 'false' }}"
+                    aria-controls="collapseSubmission">
+                    <i class="bi bi-receipt pe-nav-icon"></i>
                     <span class="pe-nav-content">Transactions</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
-                <ul class="pe-slide-menu collapse" id="collapseEcommerce">
+
+                <ul class="pe-slide-menu collapse {{ in_array(true, array_map(fn($p) => Request::is($p), $menu_transaction)) ? 'show' : '' }}"
+                    id="collapseSubmission">
+
                     <li class="pe-slide-item">
-                        <a href="apps-ecommerce-products" class="pe-nav-link">
-                            User Submission <!-- Pengajuan User -->
+                        <a href="{{ route('userSubmission.index') }}"
+                            class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
+                            User Submission
                         </a>
                     </li>
+
                     <li class="pe-slide-item">
-                        <a href="apps-ecommerce-products-details" class="pe-nav-link">
-                            Admin Submission <!-- Pengajuan Admin -->
+                        <a href="{{ route('adminSubmission.index') }}"
+                            class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                            Admin Submission
                         </a>
                     </li>
                 </ul>
             </li>
+
+
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseCMS" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseCMS">
                     <i class="bi bi-book pe-nav-icon"></i>

@@ -23,9 +23,13 @@ class Login extends Component
 
         session()->flash('error', 'Email atau password salah.');
     }
+
+    /**
+     * @return \Livewire\Features\SupportLayouts\LayoutView
+     */
     public function render()
     {
         return view('livewire.auth.login')
-            ->layout('components.layouts.app');
+            ->layout('layouts.auth');
     }
 }

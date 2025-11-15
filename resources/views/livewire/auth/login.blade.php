@@ -1,31 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="light" data-layout="vertical">
-
-<head>
-    <meta charset="utf-8" />
-    <title>Sign In | Budget Control</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta content="Admin & Dashboards Template" name="description" />
-    <meta content="BudgetControl" name="author" />
-
-    <!-- layout setup -->
-    <script type="module" src="{{ asset('assets/js/layout-setup.js') }}"></script>
-
-    <!-- App favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets/images/k_favicon_32x.png') }}">
-
-    <!-- CSS dependencies -->
-    <link rel="stylesheet" href="{{ asset('assets/libs/simplebar/simplebar.min.css') }}">
-    <link href="{{ asset('assets/libs/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/libs/nouislider/nouislider.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css">
-
-    @livewireStyles
-</head>
-
-<body>
+<div>
     <!-- START -->
     <div>
         <!-- Background -->
@@ -42,12 +15,10 @@
 
                             <h6 class="mb-3 fw-medium text-center text-muted">Login to Your Account</h6>
 
-                            {{-- ✅ ALERT ERROR --}}
                             @if (session('error'))
-                            <div class="alert alert-danger text-center py-2">{{ session('error') }}</div>
+                                <div class="alert alert-danger text-center py-2">{{ session('error') }}</div>
                             @endif
 
-                            <!-- Livewire Login Form -->
                             <form wire:submit.prevent="login">
                                 <div class="row g-4">
                                     <div class="col-12">
@@ -99,13 +70,4 @@
             </div>
         </div>
     </div>
-
-    <!-- JS -->
-    <script src="{{ asset('assets/libs/swiper/swiper-bundle.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
-    <script src="{{ asset('assets/js/scroll-top.init.js') }}"></script>
-    @livewireScripts
-</body>
-
-</html>
+</div>

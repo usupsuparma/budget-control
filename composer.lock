@@ -1648,16 +1648,16 @@
         },
         {
             "name": "league/flysystem",
-            "version": "3.30.1",
+            "version": "3.30.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem.git",
-                "reference": "c139fd65c1f796b926f4aec0df37f6caa959a8da"
+                "reference": "5966a8ba23e62bdb518dd9e0e665c2dbd4b5b277"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/c139fd65c1f796b926f4aec0df37f6caa959a8da",
-                "reference": "c139fd65c1f796b926f4aec0df37f6caa959a8da",
+                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/5966a8ba23e62bdb518dd9e0e665c2dbd4b5b277",
+                "reference": "5966a8ba23e62bdb518dd9e0e665c2dbd4b5b277",
                 "shasum": ""
             },
             "require": {
@@ -1725,22 +1725,22 @@
             ],
             "support": {
                 "issues": "https://github.com/thephpleague/flysystem/issues",
-                "source": "https://github.com/thephpleague/flysystem/tree/3.30.1"
+                "source": "https://github.com/thephpleague/flysystem/tree/3.30.2"
             },
-            "time": "2025-10-20T15:35:26+00:00"
+            "time": "2025-11-10T17:13:11+00:00"
         },
         {
             "name": "league/flysystem-local",
-            "version": "3.30.0",
+            "version": "3.30.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem-local.git",
-                "reference": "6691915f77c7fb69adfb87dcd550052dc184ee10"
+                "reference": "ab4f9d0d672f601b102936aa728801dd1a11968d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem-local/zipball/6691915f77c7fb69adfb87dcd550052dc184ee10",
-                "reference": "6691915f77c7fb69adfb87dcd550052dc184ee10",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-local/zipball/ab4f9d0d672f601b102936aa728801dd1a11968d",
+                "reference": "ab4f9d0d672f601b102936aa728801dd1a11968d",
                 "shasum": ""
             },
             "require": {
@@ -1774,9 +1774,9 @@
                 "local"
             ],
             "support": {
-                "source": "https://github.com/thephpleague/flysystem-local/tree/3.30.0"
+                "source": "https://github.com/thephpleague/flysystem-local/tree/3.30.2"
             },
-            "time": "2025-05-21T10:34:19+00:00"
+            "time": "2025-11-10T11:23:37+00:00"
         },
         {
             "name": "league/mime-type-detection",
@@ -2668,25 +2668,25 @@
         },
         {
             "name": "power-components/livewire-powergrid",
-            "version": "v6.6.7",
+            "version": "v6.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Power-Components/livewire-powergrid.git",
-                "reference": "cdccf65770ebb1456671672cbac979713fd6126f"
+                "reference": "88bf56b4952fd5fe217a7f91f30e780da61ebbba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Power-Components/livewire-powergrid/zipball/cdccf65770ebb1456671672cbac979713fd6126f",
-                "reference": "cdccf65770ebb1456671672cbac979713fd6126f",
+                "url": "https://api.github.com/repos/Power-Components/livewire-powergrid/zipball/88bf56b4952fd5fe217a7f91f30e780da61ebbba",
+                "reference": "88bf56b4952fd5fe217a7f91f30e780da61ebbba",
                 "shasum": ""
             },
             "require": {
                 "laravel/prompts": "*",
-                "livewire/livewire": "^3.6.0",
+                "livewire/livewire": "^3.6.0 || ^4.0",
                 "php": "^8.2"
             },
             "require-dev": {
-                "composer/composer": "^2.7.9",
+                "composer/composer": "^2.8",
                 "laradumps/laradumps": "^3.2|^4.0",
                 "larastan/larastan": "^2.0|^3.0",
                 "laravel/pint": "^1.24",
@@ -2734,7 +2734,7 @@
             "homepage": "https://github.com/power-components/livewire-powergrid",
             "support": {
                 "issues": "https://github.com/Power-Components/livewire-powergrid/issues",
-                "source": "https://github.com/Power-Components/livewire-powergrid/tree/v6.6.7"
+                "source": "https://github.com/Power-Components/livewire-powergrid/tree/v6.7.0"
             },
             "funding": [
                 {
@@ -2742,7 +2742,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-05T11:57:29+00:00"
+            "time": "2025-11-06T12:08:05+00:00"
         },
         {
             "name": "psr/clock",

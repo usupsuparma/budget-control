@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('organization_id', 100)->nullable();
             $table->string('organization_name', 100)->nullable();
+            $table->string('job_level_id', 100)->nullable();
+            $table->string('job_level_name', 100)->nullable();
             $table->string('status', 100)->nullable();
             $table->timestamps();
             $table->softDeletes();

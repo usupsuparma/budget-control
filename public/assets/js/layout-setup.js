@@ -165,19 +165,21 @@ document.querySelectorAll('.layout-customizer input[type="radio"]').forEach((rad
 const toggleMode = document.getElementById("toggleMode");
 const lightModeButton = document.getElementById("lightModeBtn");
 const darkModeButton = document.getElementById("darkModeBtn");
-toggleMode.addEventListener("click", () => {
-    const currentTheme = htmlElement.getAttribute("data-bs-theme");
-    const newTheme = currentTheme === "light" ? "dark" : "light";
-    setAndSaveAttribute("data-bs-theme", newTheme);
-    setTheme(newTheme);
-    if (newTheme === "dark") {
-        lightModeButton.classList.remove("active");
-        darkModeButton.classList.add("active");
-    } else {
-        darkModeButton.classList.remove("active");
-        lightModeButton.classList.add("active");
-    }
-});
+if (toggleMode) {
+    toggleMode.addEventListener("click", () => {
+        const currentTheme = htmlElement.getAttribute("data-bs-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        setAndSaveAttribute("data-bs-theme", newTheme);
+        setTheme(newTheme);
+        if (newTheme === "dark") {
+            lightModeButton.classList.remove("active");
+            darkModeButton.classList.add("active");
+        } else {
+            darkModeButton.classList.remove("active");
+            lightModeButton.classList.add("active");
+        }
+    });
+}
 
 // vertical toggle button
 const toggleButton = document.getElementById("toggleSidebar");

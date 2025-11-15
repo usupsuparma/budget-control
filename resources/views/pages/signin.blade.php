@@ -1,6 +1,6 @@
 @extends('layouts.master_auth')
 
-@section('title', 'Sign In| FabKin Admin & Dashboards Template')
+@section('title', 'Sign In | FabKin Admin & Dashboards Template')
 
 @section('content')
 
@@ -12,11 +12,14 @@
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100 py-10">
             <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                <div class="card mx-xxl-8">
+
+                <!-- Transparent Card -->
+                <div class="card mx-xxl-8 auth-transparent">
                     <div class="card-body py-12 px-8">
                         <img src="assets/images/logo-dark.png" alt="Logo Dark" height="30"
                             class="mb-4 mx-auto d-block">
                         <h6 class="mb-3 mb-8 fw-medium text-center">Register to Unlock Your Benefits</h6>
+
                         <form>
                             <div class="row g-4">
                                 <div class="col-12">
@@ -25,12 +28,14 @@
                                     <input type="text" class="form-control" id="username"
                                         placeholder="Enter your username" required>
                                 </div>
+
                                 <div class="col-12">
                                     <label for="password" class="form-label">Password <span
                                             class="text-danger">*</span></label>
                                     <input type="password" class="form-control" id="password"
                                         placeholder="Enter your password" required>
                                 </div>
+
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="form-check">
@@ -39,29 +44,40 @@
                                         </div>
                                         <div class="form-text">
                                             <a href="auth-create-password"
-                                                class="link link-primary text-muted text-decoration-underline">Forgot
-                                                password?</a>
+                                                class="link link-primary text-muted text-decoration-underline">
+                                                Forgot password?</a>
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="col-12 mt-8">
-                                    <button type="submit" class="btn btn-primary w-full mb-4">Sign In<i
-                                            class="bi bi-box-arrow-in-right ms-1 fs-16"></i></button>
+                                    <button type="submit" class="btn btn-primary w-full mb-4">
+                                        Sign In <i class="bi bi-box-arrow-in-right ms-1 fs-16"></i>
+                                    </button>
                                 </div>
                             </div>
+
                             <button type="submit"
-                                class="mb-10 btn btn-outline-light w-full mb-4 d-flex align-items-center gap-2 justify-content-center text-muted"><img
-                                    src="assets/images/google.png" alt="Google Image" class="h-20px w-20px">Sign in with
-                                google</button>
-                            <p class="mb-0 fw-semibold position-relative text-center fs-12">Don't have an account? <a
-                                    href="auth-signup" class="text-decoration-underline text-primary">Sign up here</a>
+                                class="mb-10 btn btn-outline-light w-full mb-4 d-flex align-items-center gap-2 justify-content-center text-muted">
+                                <img src="assets/images/google.png" alt="Google Image" class="h-20px w-20px">
+                                Sign in with Google
+                            </button>
+
+                            <p class="mb-0 fw-semibold position-relative text-center fs-12">
+                                Don't have an account?
+                                <a href="auth-signup" class="text-decoration-underline text-primary">
+                                    Sign up here
+                                </a>
                             </p>
                         </form>
-                        <div class="text-center">
-                        </div>
+
+                        <div class="text-center"></div>
                     </div>
                 </div>
-                <p class="position-relative text-center fs-12 mb-0">© 2025 Fabkin. Crafted with ❤️ by Pixeleyez</p>
+
+                <p class="position-relative text-center fs-12 mb-0">
+                    © 2025 Fabkin. Crafted with ❤️ by Pixeleyez
+                </p>
             </div>
         </div>
     </div>
@@ -69,4 +85,21 @@
 @endsection
 
 @section('js')
+<style>
+    /* === Transparent Auth Card === */
+    .auth-transparent {
+        background: rgba(255, 255, 255, 0.5) !important;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-radius: 1rem;
+    }
+
+    /* === Dark Mode Style === */
+    .dark .auth-transparent {
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
 @endsection

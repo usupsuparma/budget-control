@@ -16,7 +16,14 @@ class MasterController extends Controller
         // dd($employee);
 
 
-        return view('pages.master', compact('title', 'employee'));
+        return view('pages.Settings', compact('title', 'employee'));
+    }
+
+    public function index2()
+    {
+        $title = 'Master Data';
+
+        return view('pages.Settings', compact('title'));
     }
 
     public function data(Request $request)

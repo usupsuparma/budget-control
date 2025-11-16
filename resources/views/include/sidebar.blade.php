@@ -156,23 +156,40 @@
                 </ul>
             </li>
 
-
+            @php
+            $menu_setting= ['master*', 'user*', 'history*','auth.roles*'];
+            @endphp
             <li class="pe-slide pe-has-sub">
-                <a href="#collapseCMS" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseCMS">
-                    <i class="bi bi-book pe-nav-icon"></i>
-                    <span class="pe-nav-content">Setting</span>
+                <a href="#collapseSetting"
+                    class="pe-nav-link {{ Request::is($menu_setting) ? 'active' : '' }}"
+                    data-bs-toggle="collapse"
+                    aria-expanded="{{ Request::is($menu_setting) ? 'true' : 'false' }}"
+                    aria-controls="collapseSetting">
+                    <i class="bi bi-receipt pe-nav-icon"></i>
+                    <span class="pe-nav-content">Settings</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
-                <ul class="pe-slide-menu collapse" id="collapseCMS">
 
+                <ul class="pe-slide-menu collapse {{ Request::is($menu_setting) ? 'show' : '' }}" id="collapseSetting">
                     <li class="pe-slide-item">
-                        <a href="{{ route('master') }}" class="pe-nav-link">
+                        <a href="{{ route('master') }}"
+                            class="pe-nav-link {{ Request::is('master*') ? 'active' : '' }}">
                             Master
                         </a>
                     </li>
                     <li class="pe-slide-item">
-                        <a href="apps-cms-add-content" class="pe-nav-link">
-                            COA
+                        <a href="{{ route('user') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
+                            Users
+                        </a>
+                    </li>
+                    <li class="pe-slide-item">
+                        <a href="{{ route('auth.roles') }}" class="pe-nav-link {{ Request::is('auth.roles*') ? 'active' : '' }}">
+                            Authorization
+                        </a>
+                    </li>
+                    <li class="pe-slide-item">
+                        <a href="{{ route('history') }}" class="pe-nav-link {{ Request::is('history*') ? 'active' : '' }}">
+                            History
                         </a>
                     </li>
                 </ul>

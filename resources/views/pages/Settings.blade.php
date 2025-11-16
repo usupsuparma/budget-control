@@ -14,16 +14,11 @@
         <div class="card-body">
             <div class="row">
                 <!-- LEFT SIDEBAR (Tab) -->
-                <div class="col-md-3 border-end">
+                <div class="col-md-2 border-end">
                     <ul class="nav nav-pills flex-column" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link active" data-bs-toggle="tab" href="#employee" role="tab">
                                 <i class="fas fa-user me-2"></i> Employee
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#employment" role="tab">
-                                <i class="fas fa-briefcase me-2"></i> Employment
                             </a>
                         </li>
                         <li class="nav-item">
@@ -42,8 +37,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#history" role="tab">
-                                <i class="fas fa-history me-2"></i> History
+                            <a class="nav-link" data-bs-toggle="tab" href="#coa" role="tab">
+                                <i class="fas fa-history me-2"></i> COA
                             </a>
                         </li>
                         <li class="nav-item">
@@ -55,24 +50,21 @@
                 </div>
 
                 <!-- RIGHT CONTENT -->
-                <div class="col-md-9">
+                <div class="col-md-10">
                     <div class="tab-content pt-3">
                         <div class="tab-pane fade show active" id="employee">
                             @include('pages.employee')
                         </div>
-                        <div class="tab-pane fade" id="employment">
-                            <p>Employment content...</p>
-                        </div>
                         <div class="tab-pane fade" id="organization">
-                            <p>Organization content...</p>
+                            @include('pages.Organization')
                         </div>
                         <div class="tab-pane fade" id="job_level">
-                            <p>Job Level content...</p>
+                            @include('pages.JobLevel')
                         </div>
                         <div class="tab-pane fade" id="job_position">
-                            <p>Job Position content...</p>
+                            @include('pages.JobPosition')
                         </div>
-                        <div class="tab-pane fade" id="history">
+                        <div class="tab-pane fade" id="coa">
                             <p>History content...</p>
                         </div>
                         <div class="tab-pane fade" id="authorization">

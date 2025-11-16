@@ -4,10 +4,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
+use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\JobLevelController;
+use App\Http\Controllers\JobPositionController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\SubmissionController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
@@ -82,8 +86,55 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/master', [MasterController::class, 'index'])->name('master');
+    Route::get('/user', [MasterController::class, 'user'])->name('user');
+    Route::get('/history', [MasterController::class, 'history'])->name('history');
+
+    Route::prefix('employee')->group(function () {
+        Route::get('/datatables', [EmployeeController::class, 'getData'])->name('employee.data');
+        Route::get('/', [EmployeeController::class, 'store'])->name('employee.create');
+        Route::get('/{id}/edit', [EmployeeController::class, 'edit'])->name('employee.edit');
+    });
+
+    Route::prefix('organization')->group(function () {
+        Route::get('/datatables', [OrganizationController::class, 'getData'])->name('organization.data');
+        Route::get('/', [OrganizationController::class, 'store'])->name('organization.create');
+        Route::get('/{id}/edit', [OrganizationController::class, 'edit'])->name('organization.edit');
+    });
+
+    Route::prefix('jobPosition')->group(function () {
+        Route::get('/datatables', [JobPositionController::class, 'getData'])->name('jobPosition.data');
+        Route::get('/', [JobPositionController::class, 'store'])->name('jobPosition.create');
+        Route::get('/{id}/edit', [JobPositionController::class, 'edit'])->name('jobPosition.edit');
+    });
+
+    Route::prefix('jobLevel')->group(function () {
+        Route::get('/datatables', [JobLevelController::class, 'getData'])->name('jobLevel.data');
+        Route::get('/', [JobLevelController::class, 'store'])->name('jobLevel.create');
+        Route::get('/{id}/edit', [JobLevelController::class, 'edit'])->name('jobLevel.edit');
+    });
 
     Route::prefix('dashboard')->group(function () {
         Route::get('/dash', [DashboardController::class, 'executive'])->name('dash.executive');
+    });
+
+    Route::prefix('authorization')->group(function () {
+
+        // Role
+        Route::get('/roles', [AuthorizationController::class, 'roles'])->name('auth.roles');
+        Route::post('/roles/store', [AuthorizationController::class, 'roleStore'])->name('auth.roles.store');
+        Route::post('/roles/update/{id}', [AuthorizationController::class, 'roleUpdate'])->name('auth.roles.update');
+        Route::delete('/roles/delete/{id}', [AuthorizationController::class, 'roleDelete'])->name('auth.roles.delete');
+
+        // Permission
+        Route::get('/permissions', [AuthorizationController::class, 'permissions'])->name('auth.permissions');
+        Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('auth.permissions.store');
+        Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
+
+        // Assign Permission to Role
+        Route::get('/roles/{id}/permissions', [AuthorizationController::class, 'rolePermissions'])->name('auth.roles.permissions');
+        Route::post('/roles/{id}/permissions/update', [AuthorizationController::class, 'rolePermissionsUpdate'])->name('auth.roles.permissions.update');
+
+        // Assign Role to User
+        Route::post('/assign-role', [AuthorizationController::class, 'assignRole'])->name('auth.assign.role');
     });
 });

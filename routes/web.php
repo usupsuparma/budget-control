@@ -82,7 +82,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('company-policy')->group(function () {
         Route::get('/', [CompanyPolicyController::class, 'index'])->name('company-policy.index');      // Tampilkan semua produk
         Route::get('/create', [CompanyPolicyController::class, 'create'])->name('company-policy.create'); // Form tambah produk
+        Route::post('/', [CompanyPolicyController::class, 'store'])->name('company-policy.store');     // Simpan produk baru
         Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])->name('company-policy.edit'); // Form edit produk
+        Route::delete('/{id}', [CompanyPolicyController::class, 'destroy'])->name('company-policy.destroy'); // Hapus produk
     });
 
     Route::get('/master', [MasterController::class, 'index'])->name('master');

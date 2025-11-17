@@ -84,7 +84,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [CompanyPolicyController::class, 'create'])->name('company-policy.create'); // Form tambah produk
         Route::post('/', [CompanyPolicyController::class, 'store'])->name('company-policy.store');     // Simpan produk baru
         Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])->name('company-policy.edit'); // Form edit produk
-        Route::delete('/{id}', [CompanyPolicyController::class, 'destroy'])->name('company-policy.destroy'); // Hapus produk
+        Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])->name('company-policy.destroy'); // Hapus produk
     });
 
     Route::get('/master', [MasterController::class, 'index'])->name('master');

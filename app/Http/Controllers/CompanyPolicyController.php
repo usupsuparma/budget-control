@@ -63,7 +63,7 @@ class CompanyPolicyController extends Controller
                 ]);
             }
 
-            return redirect()->route('company-policy.index')->with('success', 'Dokumen & detail berhasil disimpan.');
+            return redirect()->route('company-policy.index')->with('success', 'Dokumen dan detail berhasil disimpan.');
         } catch (\Exception $e) {
 
             return back()

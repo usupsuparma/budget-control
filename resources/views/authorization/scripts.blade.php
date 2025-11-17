@@ -1,196 +1,204 @@
 <script>
     $(document).ready(function() {
 
-        // ============================================================
-        // INITIALIZE DATATABLE
-        // ============================================================
-        var table = $('#roleTable').DataTable();
-
-
-        // ============================================================
-        // ADD ROLE MODAL — OPEN
-        // ============================================================
-        $('#modalAddRole').on('show.bs.modal', function() {
-            $('#role_id').val('');
-            $('#role_name').val('');
-            $('.modal-title', this).text('Add Role');
-        });
-
-        // ============================================================
-        // EDIT ROLE — OPEN MODAL
-        // ============================================================
-        $('.editRole').click(function() {
-            let id = $(this).data('id');
-            let name = $(this).data('name');
-
-            $('#role_id').val(id);
-            $('#role_name').val(name);
-
-            $('#modalAddRole .modal-title').text('Edit Role');
-            $('#modalAddRole').modal('show');
-        });
-
-
-        // ============================================================
-        // SAVE ROLE (Add / Edit)
-        // ============================================================
-        $('#btnSaveRole').click(function() {
-
-            let id = $('#role_id').val();
-            let name = $('#role_name').val();
-
-            if (name.trim() === '') {
-                alert('Role name cannot be empty!');
-                return;
-            }
-
-            let url = id === '' ?
-                "{{ route('auth.roles.store') }}" :
-                "{{ url('authorization/roles/update') }}/" + id;
+        // ==============================
+        // 1. ADD ROLE
+        // ==============================
+        $('#formAddRole').on('submit', function(e) {
+            e.preventDefault();
 
             $.ajax({
-                url: url,
-                method: 'POST',
-                data: {
-                    name: name,
-                    _token: "{{ csrf_token() }}"
-                },
+                url: "{{ route('auth.roles.store') }}",
+                type: "POST",
+                data: $(this).serialize(),
                 success: function(res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Role created successfully',
+                        timer: 1200
+                    });
                     $('#modalAddRole').modal('hide');
-                    location.reload(); // reload table
+                    location.reload();
+                },
+                error: function() {
+                    Swal.fire('Error', 'Unable to create role', 'error');
                 }
             });
         });
 
+        // ==============================
+        // 2. EDIT ROLE (OPEN MODAL)
+        // ==============================
+        $('.editRole').on('click', function() {
 
-
-        // ============================================================
-        // DELETE ROLE
-        // ============================================================
-        $('.deleteRole').click(function() {
             let id = $(this).data('id');
+            let name = $(this).data('name');
 
-            if (!confirm("Delete this role?")) return;
+            $('#edit_role_id').val(id);
+            $('#edit_role_name').val(name);
+
+            $('#modalEditRole').modal('show');
+        });
+
+        // ==============================
+        // 3. UPDATE ROLE
+        // ==============================
+        $('#formEditRole').on('submit', function(e) {
+            e.preventDefault();
+
+            let id = $('#edit_role_id').val();
 
             $.ajax({
-                url: "{{ url('authorization/roles/delete') }}/" + id,
-                method: 'DELETE',
-                data: {
-                    _token: "{{ csrf_token() }}"
-                },
+                url: "/authorization/roles/update/" + id,
+                type: "POST",
+                data: $(this).serialize(),
                 success: function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Role updated successfully',
+                        timer: 1200
+                    });
+                    $('#modalEditRole').modal('hide');
                     location.reload();
                 }
             });
         });
 
+        // ==============================
+        // 4. DELETE ROLE
+        // ==============================
+        $('.deleteRole').on('click', function() {
 
+            let id = $(this).data('id');
 
-        // ============================================================
-        // MANAGE PERMISSIONS — OPEN MODAL
-        // ============================================================
-        $('.managePermission').click(function() {
+            Swal.fire({
+                    title: "Are you sure?",
+                    text: "This role will be deleted!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
 
-            let role_id = $(this).data('id');
+                        $.ajax({
+                            url: "/authorization/roles/delete/" + id,
+                            type: "DELETE",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function() {
+                                Swal.fire('Deleted!', 'Role has been deleted.', 'success');
+                                location.reload();
+                            }
+                        });
 
-            $('#perm_role_id').val(role_id);
+                    }
+                });
+        });
+
+        // ==============================
+        // 5. MANAGE PERMISSIONS (OPEN)
+        // ==============================
+        $('.managePermission').on('click', function() {
+
+            let roleId = $(this).data('id');
+
+            $('#perm_role_id').val(roleId);
+            $('#loadingPermissions').show();
+            $('#permissionContainer').html('');
+
+            $('#modalManagePermission').modal('show');
 
             $.ajax({
-                url: "{{ url('authorization/roles') }}/" + role_id + "/permissions",
-                method: "GET",
+                url: "/authorization/roles/" + roleId + "/permissions",
+                type: "GET",
                 success: function(res) {
 
-                    $('#perm_role_name').text(res.role.name);
+                    $('#loadingPermissions').hide();
+                    $('#roleNameLabel').text(res.role);
 
-                    let html = "";
-                    let allPermissions = res.permissions;
-                    let selected = res.selected;
+                    let html = `<div class="row">`;
 
-                    allPermissions.forEach(function(p) {
+                    res.permissions.forEach(p => {
+                        let checked = res.assigned.includes(p.name) ? 'checked' : '';
+
                         html += `
                         <div class="col-md-4 mb-2">
                             <div class="form-check">
-                                <input class="form-check-input permCheck" type="checkbox" 
-                                       value="${p.name}"
-                                       ${selected.includes(p.name) ? 'checked' : ''}>
+                                <input type="checkbox"
+                                       class="form-check-input permissionCheckbox"
+                                       value="${p.name}" ${checked}>
                                 <label class="form-check-label">${p.name}</label>
                             </div>
                         </div>
                     `;
                     });
 
-                    $('#permissionList').html(html);
+                    html += `</div>`;
 
-                    $('#modalPermissions').modal('show');
+                    $('#permissionContainer').html(html);
                 }
             });
         });
 
+        // ==============================
+        // 6. SAVE PERMISSION UPDATE
+        // ==============================
+        $('#formManagePermission').on('submit', function(e) {
+            e.preventDefault();
 
+            let id = $('#perm_role_id').val();
 
-        // ============================================================
-        // SAVE PERMISSIONS FOR ROLE
-        // ============================================================
-        $('#btnSavePermissions').click(function() {
-
-            let role_id = $('#perm_role_id').val();
-
-            let selectedPermissions = [];
-            $('.permCheck:checked').each(function() {
-                selectedPermissions.push($(this).val());
+            let selected = [];
+            $('.permissionCheckbox:checked').each(function() {
+                selected.push($(this).val());
             });
 
             $.ajax({
-                url: "{{ url('authorization/roles') }}/" + role_id + "/permissions/update",
-                method: "POST",
+                url: "/authorization/roles/" + id + "/permissions/update",
+                type: "POST",
                 data: {
-                    permissions: selectedPermissions,
+                    permissions: selected,
                     _token: "{{ csrf_token() }}"
                 },
                 success: function() {
-                    $('#modalPermissions').modal('hide');
+                    Swal.fire({
+                        icon: "success",
+                        title: "Permissions Updated",
+                        timer: 1200
+                    });
+                    $('#modalManagePermission').modal('hide');
                     location.reload();
                 }
             });
         });
 
+        // ==============================
+        // 7. ASSIGN ROLE TO USER
+        // ==============================
+        $('.assignRole').on('click', function() {
 
-
-        // ============================================================
-        // ASSIGN ROLE TO USER — OPEN MODAL
-        // ============================================================
-        $('.assignRole').click(function() {
-            $('#assign_user_id').val('');
-            $('#assign_user_select').val('');
-            $('#assign_role_select').val('');
+            let id = $(this).data('id');
+            $('#assign_role_id').val(id);
 
             $('#modalAssignRole').modal('show');
         });
 
-
-
-        // ============================================================
-        // SAVE ASSIGN ROLE TO USER
-        // ============================================================
-        $('#btnSaveAssignRole').click(function() {
-
-            let user_id = $('#assign_user_select').val();
-            let role_name = $('#assign_role_select').val();
-
-            if (!user_id || !role_name) {
-                alert("Please select user and role.");
-                return;
-            }
+        $('#formAssignRole').on('submit', function(e) {
+            e.preventDefault();
 
             $.ajax({
                 url: "{{ route('auth.assign.role') }}",
-                method: 'POST',
-                data: {
-                    user_id: user_id,
-                    role: role_name,
-                    _token: "{{ csrf_token() }}"
-                },
+                type: "POST",
+                data: $(this).serialize(),
                 success: function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Role assigned to user',
+                        timer: 1200
+                    });
+
                     $('#modalAssignRole').modal('hide');
                     location.reload();
                 }

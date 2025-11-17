@@ -16,10 +16,12 @@ use App\Http\Controllers\SubmissionController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::get('/', Login::class)->name('login');
+
 Route::middleware('auth')->group(function () {
+
+    /* LOGOUT */
     Route::post('/logout', function () {
         Auth::logout();
         request()->session()->invalidate();
@@ -27,116 +29,299 @@ Route::middleware('auth')->group(function () {
         return redirect('/');
     })->name('logout');
 
-    Route::get('/dashboard', [DashboardController::class, 'executive'])->name('dashboard');      // Tampilkan dashboard
 
-    Route::prefix('sasaran-strategis')->group(function () {
-        Route::get('/', [SasaranStrategisController::class, 'index'])->name('sasaran-strategis.index');      // Tampilkan semua produk
-        Route::get('/create', [SasaranStrategisController::class, 'create'])->name('sasaran-strategis.create'); // Form tambah produk
-        Route::post('/', [SasaranStrategisController::class, 'store'])->name('sasaran-strategis.store');     // Simpan produk baru
-        Route::get('/{id}', [SasaranStrategisController::class, 'show'])->name('sasaran-strategis.show');    // Detail produk
-        Route::get('/{id}/edit', [SasaranStrategisController::class, 'edit'])->name('sasaran-strategis.edit'); // Form edit produk
-        Route::put('/{id}', [SasaranStrategisController::class, 'update'])->name('sasaran-strategis.update'); // Update produk
-        Route::delete('/{id}', [SasaranStrategisController::class, 'destroy'])->name('sasaran-strategis.destroy'); // Hapus produk
+    /* ========================
+        DASHBOARD
+    ======================== */
+
+    Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
+        Route::get('/dashboard/dash', [DashboardController::class, 'executive'])
+            ->name('dash.executive');
+    });
+    Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'executive'])
+            ->name('dashboard');   // <- WAJIB ADA
     });
 
-    Route::prefix('kpi')->group(function () {
-        Route::get('/', [KpiController::class, 'index'])->name('kpi.index');      // Tampilkan semua produk
-        Route::get('/create', [KpiController::class, 'create'])->name('kpi.create'); // Form tambah produk
-        Route::post('/', [KpiController::class, 'store'])->name('kpi.store');     // Simpan produk baru
-        Route::get('/{id}', [KpiController::class, 'show'])->name('kpi.show');    // Detail produk
-        Route::get('/{id}/edit', [KpiController::class, 'edit'])->name('kpi.edit'); // Form edit produk
-        Route::put('/{id}', [KpiController::class, 'update'])->name('kpi.update'); // Update produk
-        Route::delete('/{id}', [KpiController::class, 'destroy'])->name('kpi.destroy'); // Hapus produk
-    });
 
-    Route::prefix('anggaran')->group(function () {
-        Route::get('/', [AnggaranController::class, 'index'])->name('anggaran.index');      // Tampilkan semua produk
-        Route::get('/create', [AnggaranController::class, 'create'])->name('anggaran.create'); // Form tambah produk
-        Route::post('/', [AnggaranController::class, 'store'])->name('anggaran.store');     // Simpan produk baru
-        Route::get('/{id}', [AnggaranController::class, 'show'])->name('anggaran.show');    // Detail produk
-        Route::get('/{id}/edit', [AnggaranController::class, 'edit'])->name('anggaran.edit'); // Form edit produk
-        Route::put('/{id}', [AnggaranController::class, 'update'])->name('anggaran.update'); // Update produk
-        Route::delete('/{id}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy'); // Hapus produk
-    });
 
-    Route::prefix('resume-anggaran')->group(function () {
-        Route::get('/', [AnggaranController::class, 'resume'])->name('resume-anggaran.index');      // Tampilkan semua produk
-    });
+    /* ========================
+        SASARAN STRATEGIS
+    ======================== */
+    Route::prefix('sasaran-strategis')
+        ->middleware('permission:kpi.sasaranstrategis.view')
+        ->group(function () {
 
+            Route::get('/', [SasaranStrategisController::class, 'index'])
+                ->name('sasaran-strategis.index');
+
+            Route::get('/create', [SasaranStrategisController::class, 'create'])
+                ->middleware('permission:kpi.sasaranstrategis.create')
+                ->name('sasaran-strategis.create');
+
+            Route::post('/', [SasaranStrategisController::class, 'store'])
+                ->middleware('permission:kpi.sasaranstrategis.create')
+                ->name('sasaran-strategis.store');
+
+            Route::get('/{id}/edit', [SasaranStrategisController::class, 'edit'])
+                ->middleware('permission:kpi.sasaranstrategis.edit')
+                ->name('sasaran-strategis.edit');
+
+            Route::put('/{id}', [SasaranStrategisController::class, 'update'])
+                ->middleware('permission:kpi.sasaranstrategis.edit')
+                ->name('sasaran-strategis.update');
+
+            Route::delete('/{id}', [SasaranStrategisController::class, 'destroy'])
+                ->middleware('permission:kpi.sasaranstrategis.delete')
+                ->name('sasaran-strategis.destroy');
+        });
+
+
+    /* ========================
+        KPI
+    ======================== */
+    Route::prefix('kpi')
+        ->middleware('permission:kpi.view')
+        ->group(function () {
+
+            Route::get('/', [KpiController::class, 'index'])->name('kpi.index');
+
+            Route::get('/create', [KpiController::class, 'create'])
+                ->middleware('permission:kpi.create')
+                ->name('kpi.create');
+
+            Route::post('/', [KpiController::class, 'store'])
+                ->middleware('permission:kpi.create')
+                ->name('kpi.store');
+
+            Route::get('/{id}/edit', [KpiController::class, 'edit'])
+                ->middleware('permission:kpi.edit')
+                ->name('kpi.edit');
+
+            Route::put('/{id}', [KpiController::class, 'update'])
+                ->middleware('permission:kpi.edit')
+                ->name('kpi.update');
+
+            Route::delete('/{id}', [KpiController::class, 'destroy'])
+                ->middleware('permission:kpi.delete')
+                ->name('kpi.destroy');
+        });
+
+
+    /* ========================
+        COMPANY POLICY
+    ======================== */
+    Route::prefix('company-policy')
+        ->middleware('permission:companypolicy.view')
+        ->group(function () {
+
+            Route::get('/', [CompanyPolicyController::class, 'index'])
+                ->name('company-policy.index');
+
+            Route::get('/create', [CompanyPolicyController::class, 'create'])
+                ->middleware('permission:companypolicy.create')
+                ->name('company-policy.create');
+
+            Route::post('/', [CompanyPolicyController::class, 'store'])
+                ->middleware('permission:companypolicy.create')
+                ->name('company-policy.store');
+
+            Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])
+                ->middleware('permission:companypolicy.edit')
+                ->name('company-policy.edit');
+
+            Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])
+                ->middleware('permission:companypolicy.delete')
+                ->name('company-policy.destroy');
+        });
+
+
+    /* ========================
+        ANGGARAN
+    ======================== */
+    Route::prefix('anggaran')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [AnggaranController::class, 'index'])
+                ->name('anggaran.index');
+
+            Route::get('/create', [AnggaranController::class, 'create'])
+                ->middleware('permission:budget.create')
+                ->name('anggaran.create');
+
+            Route::post('/', [AnggaranController::class, 'store'])
+                ->middleware('permission:budget.create')
+                ->name('anggaran.store');
+
+            Route::get('/{id}/edit', [AnggaranController::class, 'edit'])
+                ->middleware('permission:budget.edit')
+                ->name('anggaran.edit');
+
+            Route::put('/{id}', [AnggaranController::class, 'update'])
+                ->middleware('permission:budget.edit')
+                ->name('anggaran.update');
+
+            Route::delete('/{id}', [AnggaranController::class, 'destroy'])
+                ->middleware('permission:budget.delete')
+                ->name('anggaran.destroy');
+        });
+
+
+    Route::prefix('resume-anggaran')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [AnggaranController::class, 'resume'])
+                ->name('resume-anggaran.index');
+        });
+
+
+    /* ========================
+        ADMISSION
+    ======================== */
     Route::prefix('admission')->group(function () {
-        Route::get('/user', [SubmissionController::class, 'user'])->name('userSubmission.index');
-        Route::get('/admin', [SubmissionController::class, 'admin'])->name('adminSubmission.index');
+
+        Route::get('/user', [SubmissionController::class, 'user'])
+            ->middleware('permission:transaction.user.view')
+            ->name('userSubmission.index');
+
+        Route::get('/admin', [SubmissionController::class, 'admin'])
+            ->middleware('permission:transaction.admin.view')
+            ->name('adminSubmission.index');
     });
 
-    Route::prefix('realisasi')->group(function () {
-        Route::get('/', [RealisasiController::class, 'index'])->name('realisasi.index');      // Tampilkan semua produk
-        Route::get('/realisasiunitkerja', [RealisasiController::class, 'index_unitkerja'])->name('realisasiunitkerja.index');      // Tampilkan semua produk
-        Route::get('/create', [RealisasiController::class, 'create'])->name('realisasi.create'); // Form tambah produk
-        Route::post('/', [RealisasiController::class, 'store'])->name('realisasi.store');     // Simpan produk baru
-        Route::get('/{id}', [RealisasiController::class, 'show'])->name('realisasi.show');    // Detail produk
-        Route::get('/{id}/edit', [RealisasiController::class, 'edit'])->name('realisasi.edit'); // Form edit produk
-        Route::put('/{id}', [RealisasiController::class, 'update'])->name('realisasi.update'); // Update produk
-        Route::delete('/{id}', [RealisasiController::class, 'destroy'])->name('realisasi.destroy'); // Hapus produk
-    });
 
-    Route::prefix('company-policy')->group(function () {
-        Route::get('/', [CompanyPolicyController::class, 'index'])->name('company-policy.index');      // Tampilkan semua produk
-        Route::get('/create', [CompanyPolicyController::class, 'create'])->name('company-policy.create'); // Form tambah produk
-        Route::post('/', [CompanyPolicyController::class, 'store'])->name('company-policy.store');     // Simpan produk baru
-        Route::get('/{id}/edit', [CompanyPolicyController::class, 'edit'])->name('company-policy.edit'); // Form edit produk
-        Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])->name('company-policy.destroy'); // Hapus produk
-    });
+    /* ========================
+        REALISASI
+    ======================== */
+    Route::prefix('realisasi')
+        ->middleware('permission:realisasi.view')
+        ->group(function () {
 
-    Route::get('/master', [MasterController::class, 'index'])->name('master');
-    Route::get('/user', [MasterController::class, 'user'])->name('user');
-    Route::get('/history', [MasterController::class, 'history'])->name('history');
+            Route::get('/', [RealisasiController::class, 'index'])
+                ->name('realisasi.index');
 
-    Route::prefix('employee')->group(function () {
-        Route::get('/datatables', [EmployeeController::class, 'getData'])->name('employee.data');
-        Route::get('/', [EmployeeController::class, 'store'])->name('employee.create');
-        Route::get('/{id}/edit', [EmployeeController::class, 'edit'])->name('employee.edit');
-    });
+            Route::get('/create', [RealisasiController::class, 'create'])
+                ->middleware('permission:realisasi.create')
+                ->name('realisasi.create');
 
-    Route::prefix('organization')->group(function () {
-        Route::get('/datatables', [OrganizationController::class, 'getData'])->name('organization.data');
-        Route::get('/', [OrganizationController::class, 'store'])->name('organization.create');
-        Route::get('/{id}/edit', [OrganizationController::class, 'edit'])->name('organization.edit');
-    });
+            Route::post('/', [RealisasiController::class, 'store'])
+                ->middleware('permission:realisasi.create')
+                ->name('realisasi.store');
 
-    Route::prefix('jobPosition')->group(function () {
-        Route::get('/datatables', [JobPositionController::class, 'getData'])->name('jobPosition.data');
-        Route::get('/', [JobPositionController::class, 'store'])->name('jobPosition.create');
-        Route::get('/{id}/edit', [JobPositionController::class, 'edit'])->name('jobPosition.edit');
-    });
+            Route::get('/{id}/edit', [RealisasiController::class, 'edit'])
+                ->middleware('permission:realisasi.edit')
+                ->name('realisasi.edit');
 
-    Route::prefix('jobLevel')->group(function () {
-        Route::get('/datatables', [JobLevelController::class, 'getData'])->name('jobLevel.data');
-        Route::get('/', [JobLevelController::class, 'store'])->name('jobLevel.create');
-        Route::get('/{id}/edit', [JobLevelController::class, 'edit'])->name('jobLevel.edit');
-    });
+            Route::put('/{id}', [RealisasiController::class, 'update'])
+                ->middleware('permission:realisasi.edit')
+                ->name('realisasi.update');
 
-    Route::prefix('dashboard')->group(function () {
-        Route::get('/dash', [DashboardController::class, 'executive'])->name('dash.executive');
-    });
+            Route::delete('/{id}', [RealisasiController::class, 'destroy'])
+                ->middleware('permission:realisasi.delete')
+                ->name('realisasi.destroy');
+        });
 
-    Route::prefix('authorization')->group(function () {
 
-        // Role
-        Route::get('/roles', [AuthorizationController::class, 'roles'])->name('auth.roles');
-        Route::post('/roles/store', [AuthorizationController::class, 'roleStore'])->name('auth.roles.store');
-        Route::post('/roles/update/{id}', [AuthorizationController::class, 'roleUpdate'])->name('auth.roles.update');
-        Route::delete('/roles/delete/{id}', [AuthorizationController::class, 'roleDelete'])->name('auth.roles.delete');
+    /* ========================
+        MASTER
+    ======================== */
 
-        // Permission
-        Route::get('/permissions', [AuthorizationController::class, 'permissions'])->name('auth.permissions');
-        Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('auth.permissions.store');
-        Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
+    Route::prefix('employee')
+        ->middleware('permission:employee.view')
+        ->group(function () {
 
-        // Assign Permission to Role
-        Route::get('/roles/{id}/permissions', [AuthorizationController::class, 'rolePermissions'])->name('auth.roles.permissions');
-        Route::post('/roles/{id}/permissions/update', [AuthorizationController::class, 'rolePermissionsUpdate'])->name('auth.roles.permissions.update');
+            Route::get('/datatables', [EmployeeController::class, 'getData'])
+                ->name('employee.data');
 
-        // Assign Role to User
-        Route::post('/assign-role', [AuthorizationController::class, 'assignRole'])->name('auth.assign.role');
-    });
+            Route::get('/create', [EmployeeController::class, 'create'])
+                ->middleware('permission:employee.create')
+                ->name('employee.create');
+
+            Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
+                ->middleware('permission:employee.edit')
+                ->name('employee.edit');
+        });
+
+    Route::prefix('organization')
+        ->middleware('permission:organization.view')
+        ->group(function () {
+
+            Route::get('/datatables', [OrganizationController::class, 'getData'])
+                ->name('organization.data');
+
+            Route::get('/create', [OrganizationController::class, 'create'])
+                ->middleware('permission:organization.create')
+                ->name('organization.create');
+
+            Route::get('/{id}/edit', [OrganizationController::class, 'edit'])
+                ->middleware('permission:organization.edit')
+                ->name('organization.edit');
+        });
+
+    Route::prefix('jobPosition')
+        ->middleware('permission:jobposition.view')
+        ->group(function () {
+
+            Route::get('/datatables', [JobPositionController::class, 'getData'])
+                ->name('jobPosition.data');
+
+            Route::get('/create', [JobPositionController::class, 'create'])
+                ->middleware('permission:jobposition.create')
+                ->name('jobPosition.create');
+
+            Route::get('/{id}/edit', [JobPositionController::class, 'edit'])
+                ->middleware('permission:jobposition.edit')
+                ->name('jobPosition.edit');
+        });
+
+    Route::prefix('jobLevel')
+        ->middleware('permission:joblevel.view')
+        ->group(function () {
+
+            Route::get('/datatables', [JobLevelController::class, 'getData'])
+                ->name('jobLevel.data');
+
+            Route::get('/create', [JobLevelController::class, 'create'])
+                ->middleware('permission:joblevel.create')
+                ->name('jobLevel.create');
+
+            Route::get('/{id}/edit', [JobLevelController::class, 'edit'])
+                ->middleware('permission:joblevel.edit')
+                ->name('jobLevel.edit');
+        });
+
+
+    /* ========================
+        SETTINGS
+    ======================== */
+    Route::middleware('permission:setting.master.view')->get('/master', [MasterController::class, 'index'])->name('master');
+    Route::middleware('permission:setting.users.view')->get('/user', [MasterController::class, 'user'])->name('user');
+    Route::middleware('permission:setting.history.view')->get('/history', [MasterController::class, 'history'])->name('history');
+
+
+    /* ========================
+        AUTHORIZATION
+    ======================== */
+    Route::prefix('authorization')
+        ->middleware('permission:authorization.view')
+        ->group(function () {
+
+            Route::get('/roles', [AuthorizationController::class, 'roles'])->name('auth.roles');
+            Route::post('/roles/store', [AuthorizationController::class, 'roleStore'])->name('auth.roles.store');
+            Route::post('/roles/update/{id}', [AuthorizationController::class, 'roleUpdate'])->name('auth.roles.update');
+            Route::delete('/roles/delete/{id}', [AuthorizationController::class, 'roleDelete'])->name('auth.roles.delete');
+
+            Route::get('/permissions', [AuthorizationController::class, 'permissions'])->name('auth.permissions');
+            Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('auth.permissions.store');
+            Route::post('/permissions/update/{id}', [AuthorizationController::class, 'permissionUpdate'])->name('auth.permissions.update');
+            Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
+
+            Route::get('/roles/{id}/permissions', [AuthorizationController::class, 'rolePermissions'])->name('auth.roles.permissions');
+            Route::post('/roles/{id}/permissions/update', [AuthorizationController::class, 'rolePermissionsUpdate'])->name('auth.roles.permissions.update');
+
+            Route::get('/assign-role/{id}', [AuthorizationController::class, 'assignRoleView'])->name('auth.assign.view');
+            Route::post('/assign-role', [AuthorizationController::class, 'assignRole'])->name('auth.assign.role');
+        });
 });

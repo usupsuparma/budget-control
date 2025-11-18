@@ -279,17 +279,20 @@ Route::middleware('auth')->group(function () {
     Route::prefix('jobLevel')
         ->middleware('permission:joblevel.view')
         ->group(function () {
-
             Route::get('/datatables', [JobLevelController::class, 'getData'])
                 ->name('jobLevel.data');
-
-            Route::get('/create', [JobLevelController::class, 'create'])
+            Route::post('/create', [JobLevelController::class, 'store'])
                 ->middleware('permission:joblevel.create')
-                ->name('jobLevel.create');
-
+                ->name('jobLevel.store');
             Route::get('/{id}/edit', [JobLevelController::class, 'edit'])
                 ->middleware('permission:joblevel.edit')
                 ->name('jobLevel.edit');
+            Route::post('/update/{id}', [JobLevelController::class, 'update'])
+                ->middleware('permission:joblevel.edit')
+                ->name('jobLevel.update');
+            Route::delete('delete/{id}', [JobLevelController::class, 'destroy'])
+                ->middleware('permission:joblevel.delete')
+                ->name('jobLevel.delete');
         });
 
 

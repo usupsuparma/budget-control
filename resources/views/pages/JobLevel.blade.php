@@ -38,7 +38,7 @@
 
             <!-- Header -->
             <div class="modal-header">
-                <h5 class="modal-title">Add Job LEvel</h5>
+                <h5 class="modal-title">Add Job Level</h5>
                 <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
                     <i class="ri-close-large-line fw-semibold"></i>
                 </button>
@@ -46,7 +46,7 @@
 
             <!-- Body -->
             <div class="modal-body">
-                <form id="jobLevelCreateForm" method="POST" action="{{ route('jobLevel.create') }}">
+                <form id="jobLevelCreateForm" method="POST" action="{{ route('jobLevel.store') }}">
                     @csrf
 
                     <div class="row g-3">
@@ -75,6 +75,46 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="editJobLevel" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Job Level</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="jobLevelEditForm" method="POST">
+                    @csrf
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label">Job Level Name</label>
+                            <input type="text" name="jobLevel_name" id="edit_jobLevel_name" class="form-control" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label> Status </label>
+                            <select name="status" id="edit_status" class="form-control">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" form="jobLevelEditForm">Update</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 <!-- Submit Section -->
 
@@ -121,5 +161,90 @@
         });
     });
 </script>
+
+@if(session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: "{{ session('success') }}",
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+    });
+</script>
+@endif
+
+<script>
+    $(document).ready(function() {
+
+        $(document).on('click', '.edit-btn', function() {
+            var id = $(this).data('id');
+
+            // Buat URL edit dengan dummy ID
+            var editUrl = "{{ route('jobLevel.edit', ['id' => 0]) }}";
+            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+
+            $.get(editUrl, function(response) {
+
+                // response = data dari controller
+                $('#edit_jobLevel_name').val(response.job_level_name);
+                $('#edit_status').val(response.status);
+
+                // Atur URL update
+                var updateUrl = "{{ route('jobLevel.update', ['id' => 0]) }}";
+                updateUrl = updateUrl.replace('/0', '/' + id);
+
+                $('#jobLevelEditForm').attr('action', updateUrl);
+
+                $('#editJobLevel').modal('show');
+            });
+        });
+    });
+
+    // DELETE
+    $(document).on('click', '.delete-btn', function() {
+        var id = $(this).data('id');
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Data will be deleted permanently!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete!",
+            cancelButtonText: "Cancel",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                var deleteUrl = "{{ route('jobLevel.delete', ['id' => 0]) }}";
+                deleteUrl = deleteUrl.replace('/0', '/' + id);
+
+                $.ajax({
+                    url: deleteUrl,
+                    type: "DELETE",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+
+                        $('#jobLevelTable').DataTable().ajax.reload();
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted!",
+                            text: "Data has been removed",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+
+            }
+        });
+    });
+</script>
+
+
 
 @endpush

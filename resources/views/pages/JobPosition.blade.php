@@ -47,7 +47,7 @@
 
             <!-- Body -->
             <div class="modal-body">
-                <form id="jobPositionCreateForm" method="POST" action="{{ route('jobPosition.create') }}">
+                <form id="jobPositionCreateForm" method="POST" action="{{ route('jobPosition.store') }}">
                     @csrf
 
                     <div class="row g-3">
@@ -63,11 +63,10 @@
                             <label class="form-label">Organization</label>
                             <select name="job_level_name" class="form-select" required>
                                 <option value="" selected disabled>-- Select Job Level --</option>
-                                <option value="Director">Director</option>
-                                <option value="Division">Division</option>
-                                <option value="Department">Department</option>
-                                <option value="Section">Section</option>
-                                <option value="Staff">Staff</option>
+                                @foreach ($jobLevel as $level)
+                                <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
+                                @endforeach
+
                             </select>
                         </div>
 
@@ -88,6 +87,45 @@
     </div>
 </div>
 
+<div class="modal fade" id="editJobPosition" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Job Position</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="jobPositionEditForm" method="POST">
+                    @csrf
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label">Job Position Name</label>
+                            <input type="text" name="jobPosition_name" id="edit_jobPosition_name" class="form-control" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label> Status </label>
+                            <select name="status" id="edit_status_jobPosition" class="form-control">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" form="jobLevelEditForm">Update</button>
+            </div>
+
+        </div>
+    </div>
+</div>
 <!-- Submit Section -->
 
 
@@ -132,10 +170,93 @@
                 }
             ],
             order: [
-                [0, 'asc']
+                [0, 'desc']
             ]
         });
     });
 </script>
+@if(session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: "{{ session('success') }}",
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+    });
+</script>
+@endif
+
+<script>
+    $(document).ready(function() {
+
+        $(document).on('click', '.edit-btn', function() {
+            var id = $(this).data('id');
+
+            // Buat URL edit dengan dummy ID
+            var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}";
+            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+
+            $.get(editUrl, function(response) {
+
+                // response = data dari controller
+                $('#edit_jobPosition_name').val(response.job_position_name);
+                $('#edit_status_jobPosition').val(response.status);
+
+                // Atur URL update
+                var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}";
+                updateUrl = updateUrl.replace('/0', '/' + id);
+
+                $('#jobPositionEditForm').attr('action', updateUrl);
+
+                $('#editJobPosition').modal('show');
+            });
+        });
+    });
+
+    // DELETE
+    $(document).on('click', '.delete-btn', function() {
+        var id = $(this).data('id');
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Data will be deleted permanently!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete!",
+            cancelButtonText: "Cancel",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                var deleteUrl = "{{ route('jobPosition.delete', ['id' => 0]) }}";
+                deleteUrl = deleteUrl.replace('/0', '/' + id);
+
+                $.ajax({
+                    url: deleteUrl,
+                    type: "DELETE",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+
+                        $('#jobPositionTable').DataTable().ajax.reload();
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted!",
+                            text: "Data has been removed",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+
+            }
+        });
+    });
+</script>
+
 
 @endpush

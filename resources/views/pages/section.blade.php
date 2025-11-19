@@ -13,7 +13,7 @@
                 </div>
 
                 <div class="card-body">
-                    <table id="jobLevelTable" class="table table-bordered table-striped w-100">
+                    <table id="sectionTable" class="table table-bordered table-striped w-100">
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
@@ -32,7 +32,7 @@
 </div>
 <!-- Create Modal -->
 <!-- Create Employee Modal -->
-<div class="modal fade" id="addJobLevel" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createJobLevelLabel" aria-hidden="true">
+<div class="modal fade" id="addSection" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createSectionLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md" role="document">
         <div class="modal-content">
 
@@ -46,7 +46,7 @@
 
             <!-- Body -->
             <div class="modal-body">
-                <form id="jobLevelCreateForm" method="POST" action="{{ route('jobLevel.store') }}">
+                <form id="sectionCreateForm" method="POST" action="{{ route('section.store') }}">
                     @csrf
 
                     <div class="row g-3">
@@ -75,7 +75,7 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="editJobLevel" tabindex="-1">
+<div class="modal fade" id="editSection" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
 
@@ -85,7 +85,7 @@
             </div>
 
             <div class="modal-body">
-                <form id="jobLevelEditForm" method="POST">
+                <form id="sectionEditForm" method="POST">
                     @csrf
                     <div class="row g-3">
 
@@ -129,10 +129,10 @@
 
 <script>
     $(document).ready(function() {
-        $('#jobLevelTable').DataTable({
+        $('#sectionTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('jobLevel.data') }}",
+            ajax: "{{ route('section.data') }}",
             columns: [{
                     data: 'id',
                     name: 'id'

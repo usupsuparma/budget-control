@@ -57,7 +57,8 @@ class JobLevelController extends Controller
     {
         $validated = $request->validate([
             'jobLevel_name' => 'required|string|max:255',
-            'status' => 'required|in:0,1',
+            'status' => 'required|in:Active,Inactive',
+
         ]);
 
         $jobLevel = JobLevel::findOrFail($id);

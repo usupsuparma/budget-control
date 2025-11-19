@@ -8,10 +8,14 @@ use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DirectorController;
+use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\JobPositionController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubmissionController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
@@ -266,14 +270,18 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/datatables', [JobPositionController::class, 'getData'])
                 ->name('jobPosition.data');
-
-            Route::get('/create', [JobPositionController::class, 'create'])
+            Route::post('/create', [JobPositionController::class, 'store'])
                 ->middleware('permission:jobposition.create')
-                ->name('jobPosition.create');
-
+                ->name('jobPosition.store');
             Route::get('/{id}/edit', [JobPositionController::class, 'edit'])
                 ->middleware('permission:jobposition.edit')
                 ->name('jobPosition.edit');
+            Route::post('/update/{id}', [JobPositionController::class, 'update'])
+                ->middleware('permission:jobposition.edit')
+                ->name('jobPosition.update');
+            Route::delete('delete/{id}', [JobPositionController::class, 'destroy'])
+                ->middleware('permission:jobposition.delete')
+                ->name('jobPosition.delete');
         });
 
     Route::prefix('jobLevel')
@@ -293,6 +301,82 @@ Route::middleware('auth')->group(function () {
             Route::delete('delete/{id}', [JobLevelController::class, 'destroy'])
                 ->middleware('permission:joblevel.delete')
                 ->name('jobLevel.delete');
+        });
+
+    Route::prefix('section')
+        ->middleware('permission:section.view')
+        ->group(function () {
+            Route::get('/datatables', [SectionController::class, 'getData'])
+                ->name('section.data');
+            Route::post('/create', [SectionController::class, 'store'])
+                ->middleware('permission:section.create')
+                ->name('section.store');
+            Route::get('/{id}/edit', [SectionController::class, 'edit'])
+                ->middleware('permission:section.edit')
+                ->name('section.edit');
+            Route::post('/update/{id}', [SectionController::class, 'update'])
+                ->middleware('permission:section.edit')
+                ->name('section.update');
+            Route::delete('/delete/{id}', [SectionController::class, 'destroy'])
+                ->middleware('permission:section.delete')
+                ->name('section.delete');
+        });
+
+    Route::prefix('department')
+        ->middleware('permission:department.view')
+        ->group(function () {
+            Route::get('/datatables', [DepartmentController::class, 'getData'])
+                ->name('department.data');
+            Route::post('/create', [DepartmentController::class, 'store'])
+                ->middleware('permission:department.create')
+                ->name('department.store');
+            Route::get('/{id}/edit', [DepartmentController::class, 'edit'])
+                ->middleware('permission:department.edit')
+                ->name('department.edit');
+            Route::post('/update/{id}', [DepartmentController::class, 'update'])
+                ->middleware('permission:department.edit')
+                ->name('department.update');
+            Route::delete('/delete/{id}', [DepartmentController::class, 'destroy'])
+                ->middleware('permission:department.delete')
+                ->name('department.delete');
+        });
+
+    Route::prefix('division')
+        ->middleware('permission:division.view')
+        ->group(function () {
+            Route::get('/datatables', [DivisionController::class, 'getData'])
+                ->name('division.data');
+            Route::post('/create', [DivisionController::class, 'store'])
+                ->middleware('permission:division.create')
+                ->name('division.store');
+            Route::get('/{id}/edit', [DivisionController::class, 'edit'])
+                ->middleware('permission:division.edit')
+                ->name('division.edit');
+            Route::post('/update/{id}', [DivisionController::class, 'update'])
+                ->middleware('permission:division.edit')
+                ->name('division.update');
+            Route::delete('delete/{id}', [DivisionController::class, 'destroy'])
+                ->middleware('permission:division.delete')
+                ->name('division.delete');
+        });
+
+    Route::prefix('director')
+        ->middleware('permission:director.view')
+        ->group(function () {
+            Route::get('/datatables', [DirectorController::class, 'getData'])
+                ->name('director.data');
+            Route::post('/create', [DirectorController::class, 'store'])
+                ->middleware('permission:director.create')
+                ->name('director.store');
+            Route::get('/{id}/edit', [DirectorController::class, 'edit'])
+                ->middleware('permission:director.edit')
+                ->name('director.edit');
+            Route::post('/update/{id}', [DirectorController::class, 'update'])
+                ->middleware('permission:director.edit')
+                ->name('director.update');
+            Route::delete('delete/{id}', [DirectorController::class, 'destroy'])
+                ->middleware('permission:director.delete')
+                ->name('director.delete');
         });
 
 

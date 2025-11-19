@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\JobLevel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -13,10 +14,11 @@ class MasterController extends Controller
         $title = 'Master Data';
 
         $employee = Employee::where('status', 'Active')->get();
+        $jobLevel = JobLevel::where('status', 'Active')->get();
         // dd($employee);
 
 
-        return view('pages.Settings', compact('title', 'employee'));
+        return view('pages.Settings', compact('title', 'employee', 'jobLevel'));
     }
 
     public function index2()

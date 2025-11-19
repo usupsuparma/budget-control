@@ -22,8 +22,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
-                                <i class="fas fa-building me-2"></i> Organization
+                            <a class="nav-link" data-bs-toggle="tab" href="#job_position" role="tab">
+                                <i class="fas fa-user-tie me-2"></i> Job Position
                             </a>
                         </li>
                         <li class="nav-item">
@@ -32,8 +32,28 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#job_position" role="tab">
-                                <i class="fas fa-user-tie me-2"></i> Job Position
+                            <a class="nav-link" data-bs-toggle="tab" href="#section" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Section
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#department" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Department
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#division" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Division
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#director" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Director
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
+                                <i class="fas fa-building me-2"></i> Organization
                             </a>
                         </li>
                         <li class="nav-item">
@@ -55,14 +75,26 @@
                         <div class="tab-pane fade show active" id="employee">
                             @include('pages.employee')
                         </div>
-                        <div class="tab-pane fade" id="organization">
-                            @include('pages.Organization')
+                        <div class="tab-pane fade" id="job_position">
+                            @include('pages.JobPosition')
                         </div>
                         <div class="tab-pane fade" id="job_level">
                             @include('pages.JobLevel')
                         </div>
-                        <div class="tab-pane fade" id="job_position">
-                            @include('pages.JobPosition')
+                        <div class="tab-pane fade" id="section">
+                            @include('pages.section')
+                        </div>
+                        <div class="tab-pane fade" id="department">
+                            @include('pages.department')
+                        </div>
+                        <div class="tab-pane fade" id="division">
+                            @include('pages.division')
+                        </div>
+                        <div class="tab-pane fade" id="director">
+                            @include('pages.director')
+                        </div>
+                        <div class="tab-pane fade" id="organization">
+                            @include('pages.Organization')
                         </div>
                         <div class="tab-pane fade" id="coa">
                             <p>History content...</p>

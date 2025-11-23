@@ -149,6 +149,7 @@
             'setting.master.view',
             'setting.users.view',
             'setting.coa.view',
+            'setting.approval.view',
             'setting.authorization.view',
             'setting.history.view'
             ])
@@ -179,6 +180,12 @@
                     @can('setting.coa.view')
                     <li class="pe-slide-item">
                         <a href="{{ route('coa') }}" class="pe-nav-link">COA</a>
+                    </li>
+                    @endcan
+
+                    @can('setting.approval.view')
+                    <li class="pe-slide-item">
+                        <a href="{{ route('approval') }}" class="pe-nav-link">Approval</a>
                     </li>
                     @endcan
 

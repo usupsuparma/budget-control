@@ -370,14 +370,40 @@ Route::middleware('auth')->group(function () {
                 ->name('director.delete');
         });
 
+    Route::prefix('approval')
+        ->middleware('permission:approval.view')
+        ->group(function () {
+            Route::get('/datatables', [DirectorController::class, 'getData'])
+                ->name('director.data');
+            Route::post('/create', [DirectorController::class, 'store'])
+                ->middleware('permission:director.create')
+                ->name('director.store');
+            Route::get('/{id}/edit', [DirectorController::class, 'edit'])
+                ->middleware('permission:director.edit')
+                ->name('director.edit');
+            Route::post('/update/{id}', [DirectorController::class, 'update'])
+                ->middleware('permission:director.edit')
+                ->name('director.update');
+            Route::delete('delete/{id}', [DirectorController::class, 'destroy'])
+                ->middleware('permission:director.delete')
+                ->name('director.delete');
+        });
 
     /* ========================
         SETTINGS
     ======================== */
-    Route::middleware('permission:setting.master.view')->get('/master', [MasterController::class, 'index'])->name('master');
-    Route::middleware('permission:setting.users.view')->get('/user', [MasterController::class, 'user'])->name('user');
-    Route::middleware('permission:setting.history.view')->get('/history', [MasterController::class, 'history'])->name('history');
-    Route::middleware('permission:setting.coa.view')->get('/coa', [MasterController::class, 'coa'])->name('coa');
+    Route::middleware('permission:setting.master.view')
+        ->get('/master', [MasterController::class, 'index'])
+        ->name('master');
+    Route::middleware('permission:setting.users.view')
+        ->get('/user', [MasterController::class, 'user'])
+        ->name('user');
+    Route::middleware('permission:setting.history.view')
+        ->get('/history', [MasterController::class, 'history'])
+        ->name('history');
+    Route::middleware('permission:setting.coa.view')
+        ->get('/coa', [MasterController::class, 'coa'])
+        ->name('coa');
 
 
 

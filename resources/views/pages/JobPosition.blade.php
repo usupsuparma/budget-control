@@ -62,10 +62,7 @@
                             </select>
                         </div>
                         <div id="dynamicOrganization"></div>
-
-
                     </div>
-
                 </form>
             </div>
 
@@ -106,6 +103,9 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="col-12 mt-3" id="dynamicEditOrganization"></div>
+
 
                         <div class="col-12">
                             <label>Status</label>
@@ -254,18 +254,20 @@
     $(document).on('click', '.jobPosition-edit-btn', function() {
         var id = $(this).data('id');
 
-        var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}"
-            .replace('/0/edit', '/' + id + '/edit');
+        var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}".replace('/0/edit', '/' + id + '/edit');
 
         $.get(editUrl, function(res) {
 
+            // Isi field dasar
             $('#edit_jobPosition_name').val(res.job_position_name);
             $('#edit_job_level_id').val(res.job_level_id).change();
             $('#edit_status_jobPosition').val(res.status);
 
-            var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}"
-                .replace('/0', '/' + id);
+            // LOAD STRUCTURE BERDASARKAN job_level_id
+            loadEditStructure(res.job_level_id, res.structure_id);
 
+            // Set update URL
+            var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}".replace('/0', '/' + id);
             $('#jobPositionEditForm').attr('action', updateUrl);
 
             $('#editJobPosition').modal('show');
@@ -273,6 +275,51 @@
     });
 </script>
 
+<script>
+    function loadEditStructure(levelId, selectedStructureId = null) {
+        $('#dynamicEditOrganization').html("");
+
+        $.ajax({
+            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL_ID']) }}"
+                .replace('LEVEL_ID', levelId),
+            method: "GET",
+            success: function(res) {
+
+                if (!res.items || res.items.length === 0) {
+                    $('#dynamicEditOrganization').html(
+                        `<div class="mt-2"><small class="text-danger">No related data found.</small></div>`
+                    );
+                    return;
+                }
+
+                let html = `
+                <label class="form-label">Parent Structure</label>
+                <select name="structure_id" id="edit_structure_id" class="form-select" required>
+                    <option value="" disabled>-- Select --</option>
+            `;
+
+                res.items.forEach(item => {
+                    html += `<option value="${item.id}">${item.name}</option>`;
+                });
+
+                html += `</select>`;
+
+                $('#dynamicEditOrganization').html(html);
+
+                // SET SELECTED VALUE
+                if (selectedStructureId) {
+                    $('#edit_structure_id').val(selectedStructureId);
+                }
+            }
+        });
+    }
+</script>
+<script>
+    $('#edit_job_level_id').on('change', function() {
+        let levelId = $(this).val();
+        loadEditStructure(levelId, null); // ketika ganti level, kosongkan pilihan
+    });
+</script>
 <!-- UPDATE -->
 <script>
     $('#jobPositionEditForm').submit(function(e) {

@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
+use App\Models\Director;
+use App\Models\Division;
+use App\Models\JobLevel;
 use App\Models\JobPosition;
+use App\Models\Section;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -10,85 +15,131 @@ class JobPositionController extends Controller
 {
     public function getData()
     {
-        $query = JobPosition::select(['id', 'job_position_id', 'job_position_name', 'status']);
+        $query = JobPosition::select([
+            'id',
+            'job_position_name',
+            'job_level_id',
+            'job_level_name',
+            'structure_id',
+            'structure_name',
+            'status'
+        ]);
 
         return DataTables::of($query)
-
-
-            ->addColumn('status_badge', function ($row) {
-                if ($row->status == 'Active') {
-                    return '<span class="badge bg-success">Active</span>';
-                }
-                return '<span class="badge bg-secondary">Inactive</span>';
-            })
             ->addColumn('organization', function ($row) {
-                return '';
+                return $row->job_level_name ?? '-';
+            })
+            ->addColumn('structure', function ($row) {
+                return $row->structure_name ?? '-';
+            })
+            ->addColumn('status_badge', function ($row) {
+                return $row->status === 'Active'
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>';
             })
             ->addColumn('action', function ($row) {
-
-                $editUrl = route('jobPosition.edit', $row->id);
-
                 return '
+                <button class="btn btn-light-primary icon-btn-sm jobPosition-edit-btn" data-id="' . $row->id . '">
+                    <i class="bi bi-pencil-square"></i>
+                </button>
 
-            <a href="' . $editUrl . '" class="btn btn-light-primary icon-btn-sm">
-                <i class="bi bi-pencil-square"></i>
-            </a>
-
-            <button type="button" 
-                    class="btn btn-light-danger icon-btn-sm delete-btn" 
-                    data-id="' . $row->id . '">
-                <i class="ri-delete-bin-line"></i>
-            </button>
-        </div>
-    ';
+                <button class="btn btn-light-danger icon-btn-sm jobPosition-delete-btn" data-id="' . $row->id . '">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            ';
             })
-
             ->rawColumns(['status_badge', 'action'])
             ->make(true);
+    }
+
+    public function getOrganizationByLevel($level_id)
+    {
+        // Ambil data level
+        $level = JobLevel::find($level_id);
+
+        if (!$level) {
+            return response()->json([]);
+        }
+
+        // Mapping nama untuk model
+        switch (strtolower($level->job_level_name)) {
+            case 'director':
+                $data = Director::select('id', 'name')->get();
+                break;
+
+            case 'division':
+                $data = Division::select('id', 'name')->get();
+                break;
+
+            case 'department':
+                $data = Department::select('id', 'name')->get();
+                break;
+
+            case 'section':
+                $data = Section::select('id', 'name')->get();
+                break;
+
+            default:
+                $data = [];
+        }
+
+        return response()->json([
+            'items' => $data
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'jobPosition_name' => 'required|string|max:255',
+            'job_position_name' => 'required|string|max:255',
+            'job_level_id'      => 'required',
+            'structure_id'      => 'required',
         ]);
 
-        // Pastikan model JobLevel memiliki fillable untuk job_level_name dan status
         JobPosition::create([
-            'job_position_name' => $validated['jobPosition_name'],
-            'job_level_name' => $request['job_level_name'],
-            'status' => 'Active', // default aktif
+            'job_position_name' => $validated['job_position_name'],
+            'job_level_id'      => $validated['job_level_id'],
+            'job_level_name'    => JobLevel::find($validated['job_level_id'])->job_level_name,
+            'structure_id'      => $validated['structure_id'],
+            'status'            => 'Active'
         ]);
 
-        return redirect()->back()->with('success', 'Job Level berhasil dibuat.');
+        return response()->json(['success' => true]);
     }
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'jobLevel_name' => 'required|string|max:255',
-            'status' => 'required|in:Active,Inactive',
 
-        ]);
-
-        $jobLevel = JobPosition::findOrFail($id);
-        $jobLevel->job_level_name = $validated['jobLevel_name'];
-        $jobLevel->status = $validated['status'];
-        $jobLevel->save();
-
-        return redirect()->back()->with('success', 'Job Level berhasil diperbarui.');
-    }
 
     public function edit($id)
     {
         $data = JobPosition::findOrFail($id);
+
         return response()->json($data);
     }
 
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'job_position_name' => 'required|string|max:255',
+            'job_level_id'      => 'required',
+            'structure_id'      => 'required',
+            'status'            => 'required|in:Active,Inactive'
+        ]);
+
+        $jp = JobPosition::findOrFail($id);
+        $jp->job_position_name = $validated['job_position_name'];
+        $jp->job_level_id      = $validated['job_level_id'];
+        $jp->job_level_name    = JobLevel::find($validated['job_level_id'])->job_level_name;
+        $jp->structure_id      = $validated['structure_id'];
+        $jp->status            = $validated['status'];
+        $jp->save();
+
+        return response()->json(['success' => true]);
+    }
+
+
     public function destroy($id)
     {
-        $data = JobPosition::findOrFail($id);
-        $data->delete();
-
+        JobPosition::findOrFail($id)->delete();
         return response()->json(['success' => true]);
     }
 }

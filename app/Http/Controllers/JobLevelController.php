@@ -24,11 +24,11 @@ class JobLevelController extends Controller
             ->addColumn('action', function ($row) {
 
                 return '
-        <button class="btn btn-light-primary icon-btn-sm edit-btn" data-id="' . $row->id . '">
+        <button class="btn btn-light-primary icon-btn-sm jobLevel-edit-btn" data-id="' . $row->id . '">
             <i class="bi bi-pencil-square"></i>
         </button>
 
-        <button class="btn btn-light-danger icon-btn-sm delete-btn" data-id="' . $row->id . '">
+        <button class="btn btn-light-danger icon-btn-sm jobLevel-delete-btn" data-id="' . $row->id . '">
             <i class="ri-delete-bin-line"></i>
         </button>
     ';
@@ -75,10 +75,11 @@ class JobLevelController extends Controller
         return response()->json($data);
     }
 
+
     public function destroy($id)
     {
-        $data = JobLevel::findOrFail($id);
-        $data->delete();
+
+        JobLevel::findOrFail($id)->delete();
 
         return response()->json(['success' => true]);
     }

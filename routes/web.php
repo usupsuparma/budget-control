@@ -248,21 +248,7 @@ Route::middleware('auth')->group(function () {
                 ->name('employee.edit');
         });
 
-    Route::prefix('organization')
-        ->middleware('permission:organization.view')
-        ->group(function () {
 
-            Route::get('/datatables', [OrganizationController::class, 'getData'])
-                ->name('organization.data');
-
-            Route::get('/create', [OrganizationController::class, 'create'])
-                ->middleware('permission:organization.create')
-                ->name('organization.create');
-
-            Route::get('/{id}/edit', [OrganizationController::class, 'edit'])
-                ->middleware('permission:organization.edit')
-                ->name('organization.edit');
-        });
 
     Route::prefix('jobPosition')
         ->middleware('permission:jobposition.view')
@@ -270,6 +256,11 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/datatables', [JobPositionController::class, 'getData'])
                 ->name('jobPosition.data');
+            Route::get(
+                '/organization/by-level/{level_id}',
+                [JobPositionController::class, 'getOrganizationByLevel']
+            )
+                ->name('jobPosition.orgByLevel');
             Route::post('/create', [JobPositionController::class, 'store'])
                 ->middleware('permission:jobposition.create')
                 ->name('jobPosition.store');
@@ -386,6 +377,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.master.view')->get('/master', [MasterController::class, 'index'])->name('master');
     Route::middleware('permission:setting.users.view')->get('/user', [MasterController::class, 'user'])->name('user');
     Route::middleware('permission:setting.history.view')->get('/history', [MasterController::class, 'history'])->name('history');
+    Route::middleware('permission:setting.coa.view')->get('/coa', [MasterController::class, 'coa'])->name('coa');
+
 
 
     /* ========================

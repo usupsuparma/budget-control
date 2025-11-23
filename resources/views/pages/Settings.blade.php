@@ -32,13 +32,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#section" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Section
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#department" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Department
+                            <a class="nav-link" data-bs-toggle="tab" href="#director" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Director
                             </a>
                         </li>
                         <li class="nav-item">
@@ -47,25 +42,17 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#director" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Director
+                            <a class="nav-link" data-bs-toggle="tab" href="#department" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Department
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
-                                <i class="fas fa-building me-2"></i> Organization
+                            <a class="nav-link" data-bs-toggle="tab" href="#section" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Section
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#coa" role="tab">
-                                <i class="fas fa-history me-2"></i> COA
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#authorization" role="tab">
-                                <i class="fas fa-lock me-2"></i> Authorization
-                            </a>
-                        </li>
+
+
                     </ul>
                 </div>
 
@@ -81,27 +68,20 @@
                         <div class="tab-pane fade" id="job_level">
                             @include('pages.JobLevel')
                         </div>
-                        <div class="tab-pane fade" id="section">
-                            @include('pages.section')
-                        </div>
-                        <div class="tab-pane fade" id="department">
-                            @include('pages.department')
+                        <div class="tab-pane fade" id="director">
+                            @include('pages.director')
                         </div>
                         <div class="tab-pane fade" id="division">
                             @include('pages.division')
                         </div>
-                        <div class="tab-pane fade" id="director">
-                            @include('pages.director')
+                        <div class="tab-pane fade" id="department">
+                            @include('pages.department')
                         </div>
-                        <div class="tab-pane fade" id="organization">
-                            @include('pages.Organization')
+                        <div class="tab-pane fade" id="section">
+                            @include('pages.section')
                         </div>
-                        <div class="tab-pane fade" id="coa">
-                            <p>History content...</p>
-                        </div>
-                        <div class="tab-pane fade" id="authorization">
-                            <p>Authorization content...</p>
-                        </div>
+
+
                     </div>
                 </div>
             </div>

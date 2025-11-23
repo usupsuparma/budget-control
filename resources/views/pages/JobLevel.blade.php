@@ -177,9 +177,53 @@
 @endif
 
 <script>
+    $(document).on('click', '.jobLevel-delete-btn', function() {
+        var id = $(this).data('id');
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Data will be deleted permanently!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete!",
+            cancelButtonText: "Cancel",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                let deleteUrl = "{{ route('jobLevel.delete', ['id' => ':id']) }}";
+                deleteUrl = deleteUrl.replace(':id', id);
+
+                $.ajax({
+                    url: deleteUrl,
+                    method: "POST",
+                    data: {
+                        _method: "DELETE",
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function() {
+                        $('#jobLevelTable').DataTable().ajax.reload();
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted!",
+                            text: "Data has been removed",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        console.log(xhr.responseText);
+                    }
+                });
+
+            }
+        });
+    });
+</script>
+<script>
     $(document).ready(function() {
 
-        $(document).on('click', '.edit-btn', function() {
+        $(document).on('click', '.jobLevel-edit-btn', function() {
             var id = $(this).data('id');
 
             // Buat URL edit dengan dummy ID
@@ -200,47 +244,6 @@
 
                 $('#editJobLevel').modal('show');
             });
-        });
-    });
-
-    // DELETE
-    $(document).on('click', '.delete-btn', function() {
-        var id = $(this).data('id');
-
-        Swal.fire({
-            title: "Are you sure?",
-            text: "Data will be deleted permanently!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete!",
-            cancelButtonText: "Cancel",
-        }).then((result) => {
-            if (result.isConfirmed) {
-
-                var deleteUrl = "{{ route('jobLevel.delete', ['id' => 0]) }}";
-                deleteUrl = deleteUrl.replace('/0', '/' + id);
-
-                $.ajax({
-                    url: deleteUrl,
-                    type: "DELETE",
-                    data: {
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-
-                        $('#jobLevelTable').DataTable().ajax.reload();
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Deleted!",
-                            text: "Data has been removed",
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    }
-                });
-
-            }
         });
     });
 </script>

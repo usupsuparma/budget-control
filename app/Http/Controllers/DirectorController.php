@@ -20,16 +20,17 @@ class DirectorController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                    <button class="btn btn-light-primary icon-btn-sm edit-btn" data-id="' . $row->id . '">
+                    <button class="btn btn-light-primary icon-btn-sm director-edit-btn" data-id="' . $row->id . '">
+                   
+
                         <i class="bi bi-pencil-square"></i>
                     </button>
 
                     <button type="button"
-                            class="btn btn-light-danger icon-btn-sm delete-btn"
+                            class="btn btn-light-danger icon-btn-sm director-delete-btn"
                             data-id="' . $row->id . '">
                         <i class="ri-delete-bin-line"></i>
-                    </button>
-                ';
+                    </button>';
             })
             ->rawColumns(['status_badge', 'action'])
             ->make(true);
@@ -38,11 +39,11 @@ class DirectorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'director_name' => 'required|string|max:255',
         ]);
 
         Director::create([
-            'name' => $validated['name'],
+            'name' => $validated['director_name'],
             'status' => 'Active', // default
         ]);
 
@@ -58,20 +59,25 @@ class DirectorController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'director_name' => 'required|string|max:255',
             'status' => 'required|in:Active,Inactive',
         ]);
 
         $director = Director::findOrFail($id);
-        $director->name = $validated['name'];
+        $director->name = $validated['director_name'];
         $director->status = $validated['status'];
         $director->save();
 
-        return redirect()->back()->with('success', 'Director berhasil diperbarui.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Director updated'
+        ]);
     }
+
 
     public function destroy($id)
     {
+        // dd('$id');
         Director::findOrFail($id)->delete();
 
         return response()->json(['success' => true]);

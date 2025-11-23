@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('division', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
+            $table->integer('director_id')->nullable();
             $table->string('status', 100);
             $table->timestamps();
             $table->softDeletes();

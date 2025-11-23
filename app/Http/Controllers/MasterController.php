@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
+use App\Models\Director;
+use App\Models\Division;
 use App\Models\Employee;
 use App\Models\JobLevel;
+use App\Models\Section;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -15,10 +19,15 @@ class MasterController extends Controller
 
         $employee = Employee::where('status', 'Active')->get();
         $jobLevel = JobLevel::where('status', 'Active')->get();
+        $director = Director::where('status', 'Active')->orderBy('name', 'asc')->get();
+        $division = Division::where('status', 'Active')->with('director')->orderBy('name', 'asc')->get();
+        $department = Department::where('status', 'Active')->orderBy('name', 'asc')->get();
+        $section = Section::where('status', 'Active')->orderBy('name', 'asc')->get();
+
         // dd($employee);
 
 
-        return view('pages.Settings', compact('title', 'employee', 'jobLevel'));
+        return view('pages.Settings', compact('title', 'employee', 'jobLevel', 'director', 'division', 'department', 'section'));
     }
 
     public function index2()

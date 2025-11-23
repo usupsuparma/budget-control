@@ -5,19 +5,20 @@
                 <div class="card-header d-flex">
                     <div class="col-md-12 text-end">
 
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobLevel">
-                            <i class="bi bi-plus-lg me-1"></i>Add Job Level
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDivision">
+                            <i class="bi bi-plus-lg me-1"></i>Add Division
                         </button>
 
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <table id="jobLevelTable" class="table table-bordered table-striped w-100">
+                    <table id="divisionTable" class="table table-bordered table-striped w-100">
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
-                                <th>Job Level</th>
+                                <th>Division</th>
+                                <th>Director (Parent)</th>
                                 <th>Status</th>
                                 <th width="15%">Action</th>
                             </tr>
@@ -32,13 +33,13 @@
 </div>
 <!-- Create Modal -->
 <!-- Create Employee Modal -->
-<div class="modal fade" id="addJobLevel" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createJobLevelLabel" aria-hidden="true">
+<div class="modal fade" id="addDivision" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDivisionLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md" role="document">
         <div class="modal-content">
 
             <!-- Header -->
             <div class="modal-header">
-                <h5 class="modal-title">Add Job Level</h5>
+                <h5 class="modal-title">Add Division</h5>
                 <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
                     <i class="ri-close-large-line fw-semibold"></i>
                 </button>
@@ -46,17 +47,25 @@
 
             <!-- Body -->
             <div class="modal-body">
-                <form id="jobLevelCreateForm" method="POST" action="{{ route('jobLevel.store') }}">
+                <form id="divisionCreateForm" method="POST" action="{{ route('division.store') }}">
                     @csrf
 
                     <div class="row g-3">
 
                         <!-- Organization Name -->
                         <div class="col-12">
-                            <label class="form-label">Job Level Name</label>
-                            <input type="text" name="jobLevel_name" class="form-control" placeholder="Enter Job Level Name" required>
+                            <label class="form-label">Division Name</label>
+                            <input type="text" name="division_name" class="form-control" placeholder="Enter Division Name" required>
                         </div>
-
+                        <div class="col-12">
+                            <label class="form-label">Director</label>
+                            <select name="director_id" id="edit_director_id" class="form-control" required>
+                                <option value="" selected disabled>-- Select Director --</option>
+                                @foreach ($director as $dir)
+                                <option value="{{ $dir->id }}">{{ $dir->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
 
                     </div>
@@ -67,36 +76,44 @@
             <!-- Footer -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary" form="jobLevelCreateForm">
-                    Save Data
-                </button>
+                <button class="btn btn-primary" id="btnCreateDivision">Save Data</button>
             </div>
 
         </div>
     </div>
 </div>
-<div class="modal fade" id="editJobLevel" tabindex="-1">
+<div class="modal fade" id="editDivision" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Edit Job Level</h5>
+                <h5 class="modal-title">Edit Division</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <form id="jobLevelEditForm" method="POST">
+                <form id="divisionEditForm" method="POST">
                     @csrf
                     <div class="row g-3">
 
                         <div class="col-12">
-                            <label class="form-label">Job Level Name</label>
-                            <input type="text" name="jobLevel_name" id="edit_jobLevel_name" class="form-control" required>
+                            <label class="form-label">Division Name</label>
+                            <input type="text" name="division_name" id="edit_division_name" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Director</label>
+                            <select name="director_id" id="edit_director_division_name" class="form-control" required>
+                                <option value="" disabled>-- Select Director --</option>
+                                @foreach ($director as $dir)
+                                <option value="{{ $dir->id }}">{{ $dir->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
+
                         <div class="col-12">
-                            <label> Status </label>
-                            <select name="status" id="edit_status_jobLevel" class="form-control">
+                            <label>Status</label>
+                            <select name="status" id="edit_status_division" class="form-control">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
@@ -104,11 +121,12 @@
 
                     </div>
                 </form>
+
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" form="jobLevelEditForm">Update</button>
+                <button class="btn btn-primary" form="divisionEditForm">Update</button>
             </div>
 
         </div>
@@ -120,7 +138,7 @@
 
 
 
-@push('scripts')
+@push('page-scripts')
 <!-- DataTables -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
@@ -129,18 +147,22 @@
 
 <script>
     $(document).ready(function() {
-        $('#jobLevelTable').DataTable({
+        $('#divisionTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('jobLevel.data') }}",
+            ajax: "{{ route('division.data') }}",
             columns: [{
                     data: 'id',
                     name: 'id'
                 },
 
                 {
-                    data: 'job_level_name',
-                    name: 'job_level_name'
+                    data: 'name',
+                    name: 'name'
+                },
+                {
+                    data: 'director',
+                    name: 'director'
                 },
                 {
                     data: 'status_badge',
@@ -156,7 +178,7 @@
                 }
             ],
             order: [
-                [0, 'asc']
+                [0, 'desc']
             ]
         });
     });
@@ -177,69 +199,138 @@
 @endif
 
 <script>
-    $(document).ready(function() {
+    // CREATE (AJAX)
+    $('#btnCreateDivision').click(function(e) {
+        e.preventDefault();
 
-        $(document).on('click', '.edit-btn', function() {
-            var id = $(this).data('id');
+        let form = $('#divisionCreateForm');
+        let url = form.attr('action');
 
-            // Buat URL edit dengan dummy ID
-            var editUrl = "{{ route('jobLevel.edit', ['id' => 0]) }}";
-            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: form.serialize(),
+            success: function(res) {
 
-            $.get(editUrl, function(response) {
+                // Tutup modal
+                $('#addDivision').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
 
-                // response = data dari controller
-                $('#edit_jobLevel_name').val(response.job_level_name);
-                $('#edit_status_jobLevel').val(response.status);
+                // Reload DataTable tanpa reload halaman
+                $('#divisionTable').DataTable().ajax.reload(null, false);
 
-                // Atur URL update
-                var updateUrl = "{{ route('jobLevel.update', ['id' => 0]) }}";
-                updateUrl = updateUrl.replace('/0', '/' + id);
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: "Section added successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
-                $('#jobLevelEditForm').attr('action', updateUrl);
-
-                $('#editJobLevel').modal('show');
-            });
+                // Reset form
+                form.trigger('reset');
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Failed to add data"
+                });
+            }
         });
     });
-
-    // DELETE
-    $(document).on('click', '.delete-btn', function() {
+</script>
+<script>
+    $(document).on('click', '.division-delete-btn', function() {
         var id = $(this).data('id');
 
         Swal.fire({
-            title: "Are you sure?",
-            text: "Data will be deleted permanently!",
+            title: "Delete Division?",
+            text: "This action cannot be undone.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Yes, delete!",
-            cancelButtonText: "Cancel",
+            confirmButtonText: "Delete",
+            cancelButtonText: "Cancel"
         }).then((result) => {
             if (result.isConfirmed) {
 
-                var deleteUrl = "{{ route('jobLevel.delete', ['id' => 0]) }}";
-                deleteUrl = deleteUrl.replace('/0', '/' + id);
+
+                let deleteUrl = "/division/delete/" + id;
+
 
                 $.ajax({
                     url: deleteUrl,
-                    type: "DELETE",
+                    type: "POST",
                     data: {
+                        _method: "DELETE",
                         _token: "{{ csrf_token() }}"
                     },
-                    success: function(response) {
+                    success: function() {
 
-                        $('#jobLevelTable').DataTable().ajax.reload();
+                        $('#divisionTable').DataTable().ajax.reload(null, false);
 
                         Swal.fire({
                             icon: "success",
-                            title: "Deleted!",
-                            text: "Data has been removed",
+                            title: "Deleted",
+                            text: "Division deleted successfully",
                             timer: 1500,
                             showConfirmButton: false
                         });
+                    },
+                    error: function(xhr) {
+                        console.log(xhr.responseText);
                     }
                 });
+            }
+        });
+    });
+</script>
+<script>
+    $(document).on('click', '.division-edit-btn', function() {
+        var id = $(this).data('id');
 
+        $.get("{{ url('/division') }}/" + id + "/edit", function(data) {
+            $('#edit_division_name').val(data.name);
+            $('#edit_director_division_name').val(data.director_id).change();
+            $('#edit_status_division').val(data.status);
+
+            $('#divisionEditForm').attr('action', "{{ url('/division/update') }}/" + id);
+            $('#editDivision').modal('show');
+        });
+    });
+
+
+    $('#divisionEditForm').submit(function(e) {
+        e.preventDefault();
+
+        let form = $(this);
+        let url = form.attr('action');
+
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: form.serialize(),
+            success: function(res) {
+                $('#editDivision').modal('hide');
+
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#divisionTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Division updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });

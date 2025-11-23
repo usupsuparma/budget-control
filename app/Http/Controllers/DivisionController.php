@@ -10,9 +10,12 @@ class DivisionController extends Controller
 {
     public function getData()
     {
-        $query = Division::select(['id', 'name', 'status']);
+        $query = Division::with('director')->select(['id', 'name', 'director_id', 'status']);
 
         return DataTables::of($query)
+            ->addColumn('director', function ($row) {
+                return $row->director->name ?? '';
+            })
             ->addColumn('status_badge', function ($row) {
                 return $row->status == 'Active'
                     ? '<span class="badge bg-success">Active</span>'
@@ -20,11 +23,11 @@ class DivisionController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                    <button class="btn btn-light-primary icon-btn-sm edit-btn" data-id="' . $row->id . '">
+                    <button class="btn btn-light-primary icon-btn-sm division-edit-btn" data-id="' . $row->id . '">
                         <i class="bi bi-pencil-square"></i>
                     </button>
 
-                    <button class="btn btn-light-danger icon-btn-sm delete-btn" data-id="' . $row->id . '">
+                    <button class="btn btn-light-danger icon-btn-sm division-delete-btn" data-id="' . $row->id . '">
                         <i class="ri-delete-bin-line"></i>
                     </button>
                 ';
@@ -36,11 +39,12 @@ class DivisionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'division_name' => 'required|string|max:255',
         ]);
 
         Division::create([
-            'name' => $validated['name'],
+            'name' => $validated['division_name'],
+            'director_id' => $request['director_id'],
             'status' => 'Active', // default
         ]);
 
@@ -49,19 +53,27 @@ class DivisionController extends Controller
 
     public function edit($id)
     {
-        $data = Division::findOrFail($id);
-        return response()->json($data);
+        $data = Division::with('director')->findOrFail($id);
+
+        return response()->json([
+            'id' => $data->id,
+            'name' => $data->name,
+            'status' => $data->status,
+            'director_id' => $data->director_id,
+            'director_name' => $data->director ? $data->director->name : null
+        ]);
     }
 
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'division_name' => 'required|string|max:255',
             'status' => 'required|in:Active,Inactive',
         ]);
 
         $division = Division::findOrFail($id);
-        $division->name = $validated['name'];
+        $division->name = $validated['division_name'];
+        $division->director_id = $request['director_id'];
         $division->status = $validated['status'];
         $division->save();
 

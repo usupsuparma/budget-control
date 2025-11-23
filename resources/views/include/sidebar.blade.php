@@ -148,7 +148,8 @@
             @canany([
             'setting.master.view',
             'setting.users.view',
-            'authorization.view',
+            'setting.coa.view',
+            'setting.authorization.view',
             'setting.history.view'
             ])
             <li class="pe-slide pe-has-sub">
@@ -175,7 +176,13 @@
                     </li>
                     @endcan
 
-                    @can('authorization.view')
+                    @can('setting.coa.view')
+                    <li class="pe-slide-item">
+                        <a href="{{ route('coa') }}" class="pe-nav-link">COA</a>
+                    </li>
+                    @endcan
+
+                    @can('setting.authorization.view')
                     <li class="pe-slide-item">
                         <a href="{{ route('auth.roles') }}" class="pe-nav-link">Authorization</a>
                     </li>

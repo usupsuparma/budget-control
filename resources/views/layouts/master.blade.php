@@ -36,6 +36,7 @@
 
     @include('include.vendor-scripts')
     @stack('scripts')
+    @stack('page-scripts')
     @yield('js')
 
 </body>

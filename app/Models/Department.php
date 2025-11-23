@@ -8,4 +8,9 @@ class Department extends Model
 {
     protected $table = 'Department';
     protected $guarded = [];
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class, 'division_id');
+    }
 }

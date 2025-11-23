@@ -31,62 +31,54 @@
         </div>
     </div>
 </div>
+
 <!-- Create Modal -->
-<!-- Create Employee Modal -->
-<div class="modal fade" id="addJobPosition" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createJobPositionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md" role="document">
+<div class="modal fade" id="addJobPosition" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
 
-            <!-- Header -->
             <div class="modal-header">
                 <h5 class="modal-title">Add Job Position</h5>
-                <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="ri-close-large-line fw-semibold"></i>
-                </button>
+                <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal"></button>
             </div>
 
-            <!-- Body -->
             <div class="modal-body">
                 <form id="jobPositionCreateForm" method="POST" action="{{ route('jobPosition.store') }}">
                     @csrf
 
                     <div class="row g-3">
-
-                        <!-- Organization Name -->
                         <div class="col-12">
                             <label class="form-label">Job Position Name</label>
-                            <input type="text" name="jobPosition_name" class="form-control" placeholder="Enter Job Position Name" required>
+                            <input type="text" name="job_position_name" class="form-control" required>
                         </div>
 
-                        <!-- Job Level -->
                         <div class="col-12">
                             <label class="form-label">Organization</label>
-                            <select name="job_level_name" class="form-select" required>
-                                <option value="" selected disabled>-- Select Job Level --</option>
+                            <select name="job_level_id" class="form-select" required>
+                                <option value="" disabled selected>-- Select Job Level --</option>
                                 @foreach ($jobLevel as $level)
                                 <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
                                 @endforeach
-
                             </select>
                         </div>
+                        <div id="dynamicOrganization"></div>
+
 
                     </div>
 
                 </form>
             </div>
 
-            <!-- Footer -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary" form="jobPositionCreateForm">
-                    Save Data
-                </button>
+                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="btnCreateJobPosition">Save Data</button>
             </div>
 
         </div>
     </div>
 </div>
 
+<!-- Edit Modal -->
 <div class="modal fade" id="editJobPosition" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -103,12 +95,21 @@
 
                         <div class="col-12">
                             <label class="form-label">Job Position Name</label>
-                            <input type="text" name="jobPosition_name" id="edit_jobPosition_name" class="form-control" required>
+                            <input type="text" name="job_position_name" id="edit_jobPosition_name" class="form-control" required>
                         </div>
 
                         <div class="col-12">
-                            <label> Status </label>
-                            <select name="status" id="edit_status_jobPosition" class="form-control">
+                            <label class="form-label">Organization</label>
+                            <select name="job_level_id" id="edit_job_level_id" class="form-select" required>
+                                @foreach ($jobLevel as $level)
+                                <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label>Status</label>
+                            <select name="status" id="edit_status_jobPosition" class="form-select">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
@@ -120,26 +121,21 @@
 
             <div class="modal-footer">
                 <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" form="jobLevelEditForm">Update</button>
+                <button class="btn btn-primary" form="jobPositionEditForm">Update</button>
             </div>
 
         </div>
     </div>
 </div>
-<!-- Submit Section -->
-
-
 
 @push('scripts')
-<!-- DataTables -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
+    let jobPositionTable;
+
     $(document).ready(function() {
-        $('#jobPositionTable').DataTable({
+
+        jobPositionTable = $('#jobPositionTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('jobPosition.data') }}",
@@ -147,7 +143,6 @@
                     data: 'id',
                     name: 'id'
                 },
-
                 {
                     data: 'job_position_name',
                     name: 'job_position_name'
@@ -167,96 +162,190 @@
                     name: 'action',
                     orderable: false,
                     searchable: false
-                }
+                },
             ],
             order: [
                 [0, 'desc']
             ]
         });
+
     });
 </script>
-@if(session('success'))
-<script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: "{{ session('success') }}",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-    });
-</script>
-@endif
 
 <script>
-    $(document).ready(function() {
+    $('select[name="job_level_id"]').on('change', function() {
 
-        $(document).on('click', '.edit-btn', function() {
-            var id = $(this).data('id');
+        let levelId = $(this).val();
 
-            // Buat URL edit dengan dummy ID
-            var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}";
-            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+        // Hapus input sebelumnya
+        $('#dynamicOrganization').html("");
 
-            $.get(editUrl, function(response) {
+        $.ajax({
+            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL_ID']) }}"
+                .replace('LEVEL_ID', levelId),
 
-                // response = data dari controller
-                $('#edit_jobPosition_name').val(response.job_position_name);
-                $('#edit_status_jobPosition').val(response.status);
+            method: "GET",
+            success: function(res) {
 
-                // Atur URL update
-                var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}";
-                updateUrl = updateUrl.replace('/0', '/' + id);
+                if (res.items.length === 0) {
+                    $('#dynamicOrganization').html(
+                        `<div class="mt-2"><small class="text-danger">No related data found.</small></div>`
+                    );
+                    return;
+                }
 
-                $('#jobPositionEditForm').attr('action', updateUrl);
+                // Buat dropdown
+                let html = `
+                <div class="col-12 mt-3">
+                    <label class="form-label">Parent Structure</label>
+                    <select name="structure_id" class="form-select" required>
+                        <option value="" disabled selected>-- Select --</option>
+            `;
 
-                $('#editJobPosition').modal('show');
-            });
-        });
-    });
-
-    // DELETE
-    $(document).on('click', '.delete-btn', function() {
-        var id = $(this).data('id');
-
-        Swal.fire({
-            title: "Are you sure?",
-            text: "Data will be deleted permanently!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete!",
-            cancelButtonText: "Cancel",
-        }).then((result) => {
-            if (result.isConfirmed) {
-
-                var deleteUrl = "{{ route('jobPosition.delete', ['id' => 0]) }}";
-                deleteUrl = deleteUrl.replace('/0', '/' + id);
-
-                $.ajax({
-                    url: deleteUrl,
-                    type: "DELETE",
-                    data: {
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-
-                        $('#jobPositionTable').DataTable().ajax.reload();
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Deleted!",
-                            text: "Data has been removed",
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    }
+                res.items.forEach(item => {
+                    html += `<option value="${item.id}">${item.name}</option>`;
                 });
 
+                html += `</select></div>`;
+
+                $('#dynamicOrganization').html(html);
+            }
+        });
+
+    });
+</script>
+
+<!-- CREATE (AJAX) -->
+<script>
+    $('#btnCreateJobPosition').click(function(e) {
+        e.preventDefault();
+
+        let form = $('#jobPositionCreateForm');
+        let url = form.attr('action');
+
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: form.serialize(),
+            success: function() {
+
+                $('#addJobPosition').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                jobPositionTable.ajax.reload(null, false);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: "Job Position added successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                form.trigger('reset');
             }
         });
     });
 </script>
 
+<!-- EDIT -->
+<script>
+    $(document).on('click', '.jobPosition-edit-btn', function() {
+        var id = $(this).data('id');
+
+        var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}"
+            .replace('/0/edit', '/' + id + '/edit');
+
+        $.get(editUrl, function(res) {
+
+            $('#edit_jobPosition_name').val(res.job_position_name);
+            $('#edit_job_level_id').val(res.job_level_id).change();
+            $('#edit_status_jobPosition').val(res.status);
+
+            var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}"
+                .replace('/0', '/' + id);
+
+            $('#jobPositionEditForm').attr('action', updateUrl);
+
+            $('#editJobPosition').modal('show');
+        });
+    });
+</script>
+
+<!-- UPDATE -->
+<script>
+    $('#jobPositionEditForm').submit(function(e) {
+        e.preventDefault();
+
+        let form = $(this);
+        let url = form.attr('action');
+
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: form.serialize(),
+            success: function() {
+
+                $('#editJobPosition').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                jobPositionTable.ajax.reload(null, false);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Job Position updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        });
+    });
+</script>
+
+<!-- DELETE -->
+<script>
+    $(document).on('click', '.jobPosition-delete-btn', function() {
+
+        var id = $(this).data('id');
+
+        Swal.fire({
+            title: "Delete Job Position?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                var deleteUrl = "{{ route('jobPosition.delete', ['id' => 0]) }}"
+                    .replace('/0', '/' + id);
+
+                $.ajax({
+                    url: deleteUrl,
+                    type: "POST",
+                    data: {
+                        _method: "DELETE",
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function() {
+
+                        jobPositionTable.ajax.reload(null, false);
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted",
+                            text: "Job Position deleted successfully",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>
 
 @endpush

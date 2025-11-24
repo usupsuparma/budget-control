@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
@@ -472,20 +473,23 @@ Route::middleware('auth')->group(function () {
     Route::prefix('approval')
         ->middleware('permission:approval.view')
         ->group(function () {
-            Route::get('/datatables', [DirectorController::class, 'getData'])
-                ->name('director.data');
-            Route::post('/create', [DirectorController::class, 'store'])
-                ->middleware('permission:director.create')
-                ->name('director.store');
-            Route::get('/{id}/edit', [DirectorController::class, 'edit'])
-                ->middleware('permission:director.edit')
-                ->name('director.edit');
-            Route::post('/update/{id}', [DirectorController::class, 'update'])
-                ->middleware('permission:director.edit')
-                ->name('director.update');
-            Route::delete('delete/{id}', [DirectorController::class, 'destroy'])
-                ->middleware('permission:director.delete')
-                ->name('director.delete');
+            Route::get('/', [ApprovalController::class, 'index'])
+                ->middleware('permission:approval.view')
+                ->name('approval');
+            Route::get('/datatables', [ApprovalController::class, 'getData'])
+                ->name('approval.data');
+            Route::post('/create', [ApprovalController::class, 'store'])
+                ->middleware('permission:approval.create')
+                ->name('approval.store');
+            Route::get('/{id}/edit', [ApprovalController::class, 'edit'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.edit');
+            Route::post('/update/{id}', [ApprovalController::class, 'update'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.update');
+            Route::delete('delete/{id}', [ApprovalController::class, 'destroy'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.delete');
         });
 
     /* ========================

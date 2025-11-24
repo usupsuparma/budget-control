@@ -47,27 +47,29 @@
 
                 <ul class="pe-slide-menu collapse {{ Request::is('sasaran-strategis*') || Request::is('kpi*') ? 'show' : '' }}" id="collapsePages">
 
-                    @can('kpi.sasaranstrategis.view')
+                    {{-- @can('kpi.kpidivision.view') --}}
                     <li class="pe-slide-item">
-                        <a href="{{ route('sasaran-strategis.index') }}" class="pe-nav-link {{ Request::is('sasaran-strategis*') ? 'active' : '' }}">
-                            Strategic Goals
+                        <a href="{{ route('kpidivision.index') }}" class="pe-nav-link {{ Request::is('kpidivision*') ? 'active' : '' }}">
+                            Division
                         </a>
                     </li>
-                    @endcan
+                    {{-- @endcan --}}
 
-                    @can('kpi.view')
+                    {{-- @can('kpi.department.view') --}}
                     <li class="pe-slide-item">
-                        <a href="{{ route('kpi.index') }}" class="pe-nav-link {{ Request::is('kpi*') ? 'active' : '' }}">
-                            KPI & Work Program
+                        <a href="{{ route('kpidepartment.index') }}" class="pe-nav-link {{ Request::is('kpidepartment*') ? 'active' : '' }}">
+                            Departement
                         </a>
                     </li>
-                    @endcan
+                    {{-- @endcan --}}
 
-                    @can('kpi.approval')
+                    {{-- @can('kpi.section.view') --}}
                     <li class="pe-slide-item">
-                        <a href="pages-faqs" class="pe-nav-link">Approvals</a>
+                        <a href="{{ route('kpisection.index') }}" class="pe-nav-link {{ Request::is('kpisection*') ? 'active' : '' }}">
+                            Section
+                        </a>
                     </li>
-                    @endcan
+                    {{-- @endcan --}}
 
                 </ul>
             </li>

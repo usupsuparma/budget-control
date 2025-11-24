@@ -171,6 +171,9 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [KPIDivisionController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpidivision.delete')
                 ->name('kpidivision.destroy');
+
+            Route::patch('/{id}/inline', [KpiDivisionController::class, 'inlineUpdate'])
+                ->name('kpidivision.inline');
         });
 
     /* ========================

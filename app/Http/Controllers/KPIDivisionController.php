@@ -141,9 +141,9 @@ class KPIDivisionController extends Controller
     {
         $kpi = KpiDivision::find($id);
 
-        if (!$kpi) {
+        if (! $kpi) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Data tidak ditemukan.',
             ], 404);
         }
@@ -152,15 +152,97 @@ class KPIDivisionController extends Controller
             $kpi->delete();
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'KPI Division berhasil dihapus.',
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+                'status' => 'error',
+                'message' => 'Gagal menghapus data: '.$e->getMessage(),
             ], 500);
         }
     }
 
+    public function inlineUpdate(Request $request, $id)
+    {
+        $kpi = KpiDivision::find($id);
+
+        if (! $kpi) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data tidak ditemukan.',
+            ], 404);
+        }
+
+        $field = $request->input('field');
+        $value = $request->input('value');
+
+        // daftar kolom yang boleh di-edit inline
+        $allowed = [
+            'year',
+            'division_goals',
+            'target_division',
+            'duration_days',
+            'schedule_start',
+            'schedule_end',
+            'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+            'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+            'revenue_cost',
+            'pic',
+            'description',
+        ];
+
+        if (! in_array($field, $allowed, true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Field tidak boleh diubah inline.',
+            ], 422);
+        }
+
+        // sedikit casting tipe
+        if ($field === 'year') {
+            $request->validate([
+                'value' => ['required', 'integer'],
+            ]);
+            $kpi->year = (int) $value;
+        } elseif ($field === 'duration_days') {
+            $kpi->duration_days = $value !== null ? (int) $value : null;
+        } elseif (in_array($field, ['schedule_start', 'schedule_end'], true)) {
+            $request->validate([
+                'value' => ['nullable', 'date'],
+            ]);
+            $kpi->{$field} = $value ?: null;
+        } elseif (in_array($field, ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], true)) {
+            // terima 1/0, yes/no, true/false
+            $toBool = function ($v) {
+                if ($v === null) {
+                    return false;
+                }
+                $v = strtolower((string) $v);
+
+                return in_array($v, ['1', 'true', 'yes', 'y', 'ya'], true);
+            };
+            $kpi->{$field} = $toBool($value);
+        } else {
+            // sisanya anggap string biasa
+            $kpi->{$field} = $value;
+        }
+
+        $kpi->save();
+
+        // tampilan text di tabel (misal for Yes/No)
+        $displayValue = $value;
+
+        if (in_array($field, ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], true)) {
+            $displayValue = $kpi->{$field} ? 'Yes' : 'No';
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data berhasil diperbarui.',
+            'field' => $field,
+            'value' => $kpi->{$field},
+            'display_value' => $displayValue,
+        ]);
+    }
 }

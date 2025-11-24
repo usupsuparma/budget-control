@@ -149,13 +149,13 @@
             'setting.master.view',
             'setting.users.view',
             'setting.coa.view',
-            'setting.approval.view',
+            'approval.view',
             'setting.authorization.view',
             'setting.history.view'
             ])
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseSetting"
-                    class="pe-nav-link {{ Request::is('master*') || Request::is('auth.roles*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-gear pe-nav-icon"></i>
@@ -163,42 +163,44 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('auth.roles*') ? 'show' : '' }}" id="collapseSetting">
+                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
 
                     @can('setting.master.view')
                     <li class="pe-slide-item">
-                        <a href="{{ route('master') }}" class="pe-nav-link">Master</a>
+                        <a href="{{ route('master') }}" class="pe-nav-link {{ Request::is('master*') ? 'active' : '' }}">
+                            Master
+                        </a>
                     </li>
                     @endcan
 
                     @can('setting.users.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('user') }}" class="pe-nav-link">Users</a>
-                    </li>
+                    <a href="{{ route('user') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
+                        Users
+                    </a>
                     @endcan
 
                     @can('setting.coa.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('coa') }}" class="pe-nav-link">COA</a>
-                    </li>
+                    <a href="{{ route('coa') }}" class="pe-nav-link {{ Request::is('coa*') ? 'active' : '' }}">
+                        COA
+                    </a>
                     @endcan
 
-                    @can('setting.approval.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('approval') }}" class="pe-nav-link">Approval</a>
-                    </li>
+                    @can('approval.view')
+                    <a href="{{ route('approval') }}" class="pe-nav-link {{ Request::is('approval*') ? 'active' : '' }}">
+                        Approval
+                    </a>
                     @endcan
 
                     @can('setting.authorization.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('auth.roles') }}" class="pe-nav-link">Authorization</a>
-                    </li>
+                    <a href="{{ route('auth.roles') }}" class="pe-nav-link {{ Request::is('auth.roles*') ? 'active' : '' }}">
+                        Authorization
+                    </a>
                     @endcan
 
                     @can('setting.history.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('history') }}" class="pe-nav-link">History</a>
-                    </li>
+                    <a href="{{ route('history') }}" class="pe-nav-link {{ Request::is('history*') ? 'active' : '' }}">
+                        History
+                    </a>
                     @endcan
 
                 </ul>

@@ -13,4 +13,13 @@ class Division extends Model
     {
         return $this->belongsTo(Director::class, 'director_id');
     }
+
+    /**
+     * Relasi ke KPI Division
+     * division.id → kpi_division.division_id
+     */
+    public function kpiDivisions()
+    {
+        return $this->hasMany(KpiDivision::class, 'division_id');
+    }
 }

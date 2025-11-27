@@ -33,18 +33,16 @@
             <div class="row">
                 <div class="col-xl-12">
                     <div class="card card-h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">KPI Division</h6>
+                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add New KPI Division
+                            </button>
+                        </div>
                         <div class="card-body">
                             <div class="row g-5">
                                 <div class="col-xl-12">
                                     <div class="p-3">
-                                        <div class="mb-3">
-                                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary">
-                                                <i class="bi bi-plus-circle"></i> Add New KPI Division
-                                            </button>
-                                        </div>
-
-                                        <h6 class="fw-bold mb-2">KPI Division</h6>
-
                                         <div class="table-responsive" style="overflow-x: auto;">
                                             <table id="kpi_division_table" class="display" style="width:100%">
                                                 <thead>

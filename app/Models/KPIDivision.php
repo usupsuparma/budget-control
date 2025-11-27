@@ -97,4 +97,10 @@ class KPIDivision extends Model
     {
         return $query->where('division_id', $divisionId);
     }
+
+    public function kpiDepartments()
+    {
+        return $this->hasMany(KpiDepartment::class, 'kpi_division_id');
+    }
+
 }

@@ -80,7 +80,7 @@
             @can('budget.view')
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseInvoices"
-                    class="pe-nav-link {{ Request::is('anggaran*') || Request::is('resume*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-receipt pe-nav-icon"></i>
@@ -88,22 +88,28 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('anggaran*') || Request::is('resume*') ? 'show' : '' }}" id="collapseInvoices">
+                <ul class="pe-slide-menu collapse {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'show' : '' }}"  id="collapseInvoices">
+                    <li class="pe-slide-item">
+                        <a href="{{ route('workplan.index') }}" class="pe-nav-link {{ Request::is('workplan*') ? 'active' : '' }}">
+                            <i class="bi bi-calendar-check"></i> Work Plan
+                        </a>
+                    </li>
+
                     <li class="pe-slide-item">
                         <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
-                            Budgets
+                            <i class="bi bi-wallet2"></i> Budgets
                         </a>
                     </li>
 
                     <li class="pe-slide-item">
                         <a href="{{ route('resume-anggaran.index') }}" class="pe-nav-link {{ Request::is('resume*') ? 'active' : '' }}">
-                            Resume Budgets
+                            <i class="bi bi-file-earmark-text"></i> Resume Budgets
                         </a>
                     </li>
 
                     <li class="pe-slide-item">
                         <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ Request::is('realisasi*') ? 'active' : '' }}">
-                            Realization
+                            <i class="bi bi-graph-up"></i> Realization
                         </a>
                     </li>
                 </ul>

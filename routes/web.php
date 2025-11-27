@@ -172,68 +172,80 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [KPIDivisionController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpidivision.delete')
                 ->name('kpidivision.destroy');
+
+            Route::patch('/{id}/inline', [KpiDivisionController::class, 'inlineUpdate'])
+                // ->middleware('permission:kpi.kpidivision.inline')
+                ->name('kpidivision.inline');
         });
 
     /* ========================
         KPI Department
     ======================== */
     Route::prefix('kpidepartment')
-        ->middleware('permission:kpi.kpidepartment.view')
+        // ->middleware('permission:kpi.kpidepartment.view')
         ->group(function () {
 
             Route::get('/', [KPIDepartmentController::class, 'index'])
                 ->name('kpidepartment.index');
 
             Route::get('/create', [KPIDepartmentController::class, 'create'])
-                ->middleware('permission:kpi.kpidepartment.create')
+                // ->middleware('permission:kpi.kpidepartment.create')
                 ->name('kpidepartment.create');
 
             Route::post('/', [KPIDepartmentController::class, 'store'])
-                ->middleware('permission:kpi.kpidepartment.create')
+                // ->middleware('permission:kpi.kpidepartment.create')
                 ->name('kpidepartment.store');
 
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
-                ->middleware('permission:kpi.kpidepartment.edit')
+                // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.edit');
 
             Route::put('/{id}', [KPIDepartmentController::class, 'update'])
-                ->middleware('permission:kpi.kpidepartment.edit')
+                // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.update');
 
-            Route::delete('/{id}', [KPIDepartmentController::class, 'destroy'])
-                ->middleware('permission:kpi.kpidepartment.delete')
+            Route::delete('/{kpiDepartment}', [KPIDepartmentController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidepartment.delete')
                 ->name('kpidepartment.destroy');
+
+            Route::patch('/{kpiDepartment}/inline', [KPIDepartmentController::class, 'inlineUpdate'])
+                // ->middleware('permission:kpi.kpidepartment.inline')
+                ->name('kpidepartment.inline');
         });
 
     /* ========================
         KPI Section
     ======================== */
     Route::prefix('kpisection')
-        ->middleware('permission:kpi.kpisection.view')
+        // ->middleware('permission:kpi.kpisection.view')
         ->group(function () {
 
             Route::get('/', [KPISectionController::class, 'index'])
                 ->name('kpisection.index');
 
             Route::get('/create', [KPISectionController::class, 'create'])
-                ->middleware('permission:kpi.kpisection.create')
+                // ->middleware('permission:kpi.kpisection.create')
                 ->name('kpisection.create');
 
             Route::post('/', [KPISectionController::class, 'store'])
-                ->middleware('permission:kpi.kpisection.create')
+                // ->middleware('permission:kpi.kpisection.create')
                 ->name('kpisection.store');
 
             Route::get('/{id}/edit', [KPISectionController::class, 'edit'])
-                ->middleware('permission:kpi.kpisection.edit')
+                // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.edit');
 
             Route::put('/{id}', [KPISectionController::class, 'update'])
-                ->middleware('permission:kpi.kpisection.edit')
+                // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.update');
 
-            Route::delete('/{id}', [KPISectionController::class, 'destroy'])
-                ->middleware('permission:kpi.kpisection.delete')
+            Route::delete('/{kpiSection}', [KPISectionController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpisection.delete')
                 ->name('kpisection.destroy');
+
+            Route::patch('/{kpiSection}/inline', [KPISectionController::class, 'inlineUpdate'])
+                // ->middleware('permission:kpi.kpisection.inline')
+                ->name('kpisection.inline');
         });
 
 

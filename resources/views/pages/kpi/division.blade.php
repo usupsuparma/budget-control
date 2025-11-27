@@ -33,18 +33,16 @@
             <div class="row">
                 <div class="col-xl-12">
                     <div class="card card-h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">KPI Division</h6>
+                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary  btn-sm">
+                                <i class="bi bi-plus-circle"></i> Add New KPI Division
+                            </button>
+                        </div>
                         <div class="card-body">
                             <div class="row g-5">
                                 <div class="col-xl-12">
                                     <div class="p-3">
-                                        <div class="mb-3">
-                                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary">
-                                                <i class="bi bi-plus-circle"></i> Add New KPI Division
-                                            </button>
-                                        </div>
-
-                                        <h6 class="fw-bold mb-2">KPI Division</h6>
-
                                         <div class="table-responsive" style="overflow-x: auto;">
                                             <table id="kpi_division_table" class="display" style="width:100%">
                                                 <thead>
@@ -79,76 +77,106 @@
                                                 <tbody>
                                                     @php $i = 1; @endphp
                                                     @foreach ($kpidivisions as $kpidiv)
-                                                        <tr data-id="{{ $kpidiv->id }}" data-year="{{ $kpidiv->year }}"
-                                                            data-company_policy_id="{{ $kpidiv->company_policy_id }}"
-                                                            data-division_id="{{ $kpidiv->division_id }}"
-                                                            data-jan="{{ (int) $kpidiv->jan }}"
-                                                            data-feb="{{ (int) $kpidiv->feb }}"
-                                                            data-mar="{{ (int) $kpidiv->mar }}"
-                                                            data-apr="{{ (int) $kpidiv->apr }}"
-                                                            data-may="{{ (int) $kpidiv->may }}"
-                                                            data-jun="{{ (int) $kpidiv->jun }}"
-                                                            data-jul="{{ (int) $kpidiv->jul }}"
-                                                            data-aug="{{ (int) $kpidiv->aug }}"
-                                                            data-sep="{{ (int) $kpidiv->sep }}"
-                                                            data-oct="{{ (int) $kpidiv->oct }}"
-                                                            data-nov="{{ (int) $kpidiv->nov }}"
-                                                            data-dec="{{ (int) $kpidiv->dec }}"
-                                                            data-revenue_cost="{{ $kpidiv->revenue_cost }}"
-                                                            data-pic="{{ $kpidiv->pic }}">
-                                                            {{-- 0. No --}}
-                                                            <td>{{ $i++ }}</td>
+                                                        <tr data-id="{{ $kpidiv->id }}">
+                                                            <td>{{ $i++ }}</td> {{-- No (tidak editable) --}}
 
-                                                            {{-- 1. Year --}}
-                                                            <td>{{ $kpidiv->year }}</td>
-
-                                                            {{-- 2. Company Policy (ambil dari relasi) --}}
-                                                            <td>{{ $kpidiv->companyPolicy->strategic_goal }}
+                                                            <td class="editable" data-field="year">
+                                                                {{ $kpidiv->year }}
                                                             </td>
 
-                                                            {{-- 3. Division --}}
-                                                            <td>{{ optional($kpidiv->division)->name ?? 'Division #' . $kpidiv->division_id }}
-                                                            </td>
-
-                                                            {{-- 4. Division Goals --}}
-                                                            <td>{{ $kpidiv->division_goals }}</td>
-
-                                                            {{-- 5. Target Division --}}
-                                                            <td>{{ $kpidiv->target_division }}</td>
-
-                                                            {{-- 6. Duration (Days) --}}
-                                                            <td>{{ $kpidiv->duration_days }}</td>
-
-                                                            {{-- 7–8. Schedule --}}
-                                                            <td>{{ date("Y-m-d", strtotime($kpidiv->schedule_start)) }}</td>
-                                                            <td>{{ date("Y-m-d", strtotime($kpidiv->schedule_end)) }}</td>
-
-                                                            {{-- 9–20. Jan–Dec (Yes/No) --}}
-                                                            <td>{{ $kpidiv->jan ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->feb ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->mar ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->apr ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->may ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->jun ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->jul ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->aug ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->sep ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->oct ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->nov ? 'Yes' : 'No' }}</td>
-                                                            <td>{{ $kpidiv->dec ? 'Yes' : 'No' }}</td>
-
-                                                            {{-- 21. Revenue/Cost --}}
-                                                            <td>{{ $kpidiv->revenue_cost }}</td>
-
-                                                            {{-- 22. PIC --}}
-                                                            <td>{{ $kpidiv->pic }}</td>
-
-                                                            {{-- 23. Description --}}
-                                                            <td>{{ $kpidiv->description }}</td>
-
-                                                            {{-- 24. Action --}}
                                                             <td>
-                                                                <button type="button" class="btn btn-sm btn-danger btn-delete">
+                                                                {{ $kpidiv->companyPolicy->strategic_goal }}
+                                                            </td>
+
+                                                            <td>
+                                                                {{ optional($kpidiv->division)->name ?? 'Division #' . $kpidiv->division_id }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="division_goals">
+                                                                {{ $kpidiv->division_goals }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="target_division">
+                                                                {{ $kpidiv->target_division }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="duration_days">
+                                                                {{ $kpidiv->duration_days }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="schedule_start">
+                                                                {{ $kpidiv->schedule_start }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="schedule_end">
+                                                                {{ $kpidiv->schedule_end }}
+                                                            </td>
+
+                                                            {{-- contoh bulan, ditampilkan Yes/No tapi disimpan boolean di DB --}}
+                                                            <td style="{{ $kpidiv->jan ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="jan">
+                                                                {{ $kpidiv->jan ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->feb ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="feb">
+                                                                {{ $kpidiv->feb ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->mar ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="mar">
+                                                                {{ $kpidiv->mar ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->apr ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="apr">
+                                                                {{ $kpidiv->apr ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->may ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="may">
+                                                                {{ $kpidiv->may ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->jun ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="jun">
+                                                                {{ $kpidiv->jun ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->jul ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="jul">
+                                                                {{ $kpidiv->jul ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->aug ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="aug">
+                                                                {{ $kpidiv->aug ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->sep ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="sep">
+                                                                {{ $kpidiv->sep ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->okt ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="okt">
+                                                                {{ $kpidiv->okt ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->nov ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="nov">
+                                                                {{ $kpidiv->nov ? 'Yes' : 'No' }}
+                                                            </td>
+                                                            <td style="{{ $kpidiv->dec ? 'background-color:limegreen' : '' }} ;"
+                                                                class="editable" data-field="dec">
+                                                                {{ $kpidiv->dec ? 'Yes' : 'No' }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="revenue_cost">
+                                                                {{ $kpidiv->revenue_cost }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="pic">
+                                                                {{ $kpidiv->pic }}
+                                                            </td>
+
+                                                            <td class="editable" data-field="description">
+                                                                {{ $kpidiv->description }}
+                                                            </td>
+
+                                                            <td>
+                                                                <button type="button"
+                                                                    class="btn btn-sm btn-danger btn-delete">
                                                                     <i class="bi bi-trash"></i> Delete
                                                                 </button>
                                                             </td>
@@ -492,7 +520,7 @@
                         var node = row.node();
                         $(node).removeClass('adding').addClass('saved-row');
                         $(node).attr('data-id', response
-                        .id); // simpan id untuk update/delete nanti
+                            .id); // simpan id untuk update/delete nanti
 
                         Swal.fire({
                             icon: 'success',
@@ -526,7 +554,20 @@
             $('#kpi_division_table tbody').on('click', '.btn-delete', function() {
                 let $tr = $(this).closest('tr');
                 let row = table.row($tr);
-                let id = $tr.data('id'); // ID dari DB
+                let id = $tr.data('id'); // mengambil ID dari database
+
+                if (!id) {
+                    // data baru yang belum tersimpan
+                    row.remove().draw(false);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted',
+                        text: 'Baris baru dibatalkan.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
 
                 Swal.fire({
                     title: 'Yakin hapus?',
@@ -539,17 +580,161 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // kalau mau, di sini panggil AJAX DELETE ke server pakai id
-                        row.remove().draw(false);
 
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Terhapus!',
-                            text: 'Baris data berhasil dihapus (front-end).',
-                            timer: 1500,
-                            showConfirmButton: false
+                        $.ajax({
+                            url: "{{ url('/kpidivision') }}/" + id,
+                            method: "DELETE",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                if (res.status === 'success') {
+                                    row.remove().draw(false);
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus',
+                                        text: res.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: res.message,
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: xhr.responseJSON?.message ||
+                                        'Gagal menghapus data.',
+                                });
+                            }
                         });
+
                     }
+                });
+            });
+
+            const inlineUrl = "{{ route('kpidivision.inline', ['id' => '__ID__']) }}";
+
+            $('#kpi_division_table tbody').on('dblclick', 'td.editable', function() {
+                var cell = table.cell(this);
+                var $td = $(this);
+                var $tr = $td.closest('tr');
+
+                var id = $tr.data('id');
+                var field = $td.data('field');
+
+                if (!id || !field) return;
+
+                // kalau sudah ada input di sel ini, jangan buat lagi
+                if ($td.find('input,select,textarea').length > 0) return;
+
+                var originalDisplay = cell.data(); // text yang terlihat sekarang
+                var originalText = $('<div>').html(originalDisplay).text().trim();
+
+                // buat input (default text)
+                var $input = $('<input type="text" class="form-control form-control-sm">')
+                    .val(originalText);
+
+                // untuk field Yes/No bulan, boleh diganti dropdown
+                if (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+                    .includes(field)) {
+                    $input = $('<select class="form-select form-select-sm">' +
+                        '<option value="0">No</option>' +
+                        '<option value="1">Yes</option>' +
+                        '</select>');
+
+                    if (originalText.toLowerCase() === 'yes') {
+                        $input.val('1');
+                    } else {
+                        $input.val('0');
+                    }
+                }
+
+                // tanggal bisa pakai input type date
+                if (['schedule_start', 'schedule_end'].includes(field)) {
+                    $input = $('<input type="date" class="form-control form-control-sm">')
+                        .val(originalText);
+                }
+
+                // isi sel dengan input
+                $td.empty().append($input);
+                $input.focus().select();
+
+                // fungsi untuk submit perubahan
+                function saveInline() {
+                    var newValue = $input.val();
+
+                    // kalau tidak berubah, kembalikan saja
+                    if (newValue == originalText) {
+                        cell.data(originalDisplay).draw(false);
+                        return;
+                    }
+
+                    $.ajax({
+                        url: inlineUrl.replace('__ID__', id),
+                        method: 'PATCH',
+                        dataType: 'json',
+                        data: {
+                            _token: csrfToken,
+                            field: field,
+                            value: newValue
+                        },
+                        success: function(res) {
+                            if (res.status === 'success') {
+                                // gunakan display_value dari server (misal Yes/No)
+                                cell.data(res.display_value).draw(false);
+
+                                // update data-* di tr kalau perlu
+                                $tr.attr('data-' + field, res.value);
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Tersimpan',
+                                    text: 'Kolom berhasil diperbarui.',
+                                    timer: 1200,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                cell.data(originalDisplay).draw(false);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: res.message || 'Gagal menyimpan data.'
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            cell.data(originalDisplay).draw(false);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                            });
+                        }
+                    });
+                }
+
+                // Enter = simpan, Esc = batal
+                $input.on('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveInline();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cell.data(originalDisplay).draw(false);
+                    }
+                });
+
+                // blur = simpan juga (boleh kamu matikan kalau mau hanya Enter)
+                $input.on('blur', function() {
+                    saveInline();
                 });
             });
 

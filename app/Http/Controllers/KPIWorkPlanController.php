@@ -151,6 +151,18 @@ class KPIWorkPlanController extends Controller
                 'plan_nov' => $request->boolean('plan_nov'),
                 'plan_dec' => $request->boolean('plan_dec'),
                 'budget' => $request->budget,
+                'real_jan' => $request->boolean('real_jan'),
+                'real_feb' => $request->boolean('real_feb'),
+                'real_mar' => $request->boolean('real_mar'),
+                'real_apr' => $request->boolean('real_apr'),
+                'real_may' => $request->boolean('real_may'),
+                'real_jun' => $request->boolean('real_jun'),
+                'real_jul' => $request->boolean('real_jul'),
+                'real_aug' => $request->boolean('real_aug'),
+                'real_sep' => $request->boolean('real_sep'),
+                'real_oct' => $request->boolean('real_oct'),
+                'real_nov' => $request->boolean('real_nov'),
+                'real_dec' => $request->boolean('real_dec'),
                 'description' => $request->description,
                 'status' => 'draft'
             ]);
@@ -199,6 +211,18 @@ class KPIWorkPlanController extends Controller
                 'plan_nov' => $request->boolean('plan_nov'),
                 'plan_dec' => $request->boolean('plan_dec'),
                 'budget' => $request->budget,
+                'real_jan' => $request->boolean('real_jan'),
+                'real_feb' => $request->boolean('real_feb'),
+                'real_mar' => $request->boolean('real_mar'),
+                'real_apr' => $request->boolean('real_apr'),
+                'real_may' => $request->boolean('real_may'),
+                'real_jun' => $request->boolean('real_jun'),
+                'real_jul' => $request->boolean('real_jul'),
+                'real_aug' => $request->boolean('real_aug'),
+                'real_sep' => $request->boolean('real_sep'),
+                'real_oct' => $request->boolean('real_oct'),
+                'real_nov' => $request->boolean('real_nov'),
+                'real_dec' => $request->boolean('real_dec'),
                 'description' => $request->description
             ]);
 
@@ -257,6 +281,46 @@ class KPIWorkPlanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to approve work plan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update realization data only
+     */
+    public function updateRealization(Request $request, $id)
+    {
+        try {
+            $workplan = KPIWorkPlan::findOrFail($id);
+            
+            // Update only realization fields
+            $realizationData = [];
+            $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            
+            foreach ($months as $month) {
+                if ($request->has("real_{$month}")) {
+                    $realizationData["real_{$month}"] = $request->boolean("real_{$month}");
+                }
+            }
+            
+            if (empty($realizationData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No realization data to update'
+                ], 400);
+            }
+            
+            $workplan->update($realizationData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Realization updated successfully',
+                'data' => $this->formatWorkplan($workplan->fresh())
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update realization: ' . $e->getMessage()
             ], 500);
         }
     }

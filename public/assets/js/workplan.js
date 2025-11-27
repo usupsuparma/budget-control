@@ -58,6 +58,17 @@ function initializeEventListeners() {
     $(document).on('blur', '.budget-input', function() {
         formatBudget($(this));
     });
+
+    // Auto-save realization checkbox when changed
+    $(document).on('change', '.real-month', function() {
+        const row = $(this).closest('tr');
+        const workplanId = row.data('workplan-id');
+        
+        // Only auto-save for existing workplans (not new ones)
+        if (workplanId && workplanId !== 'new') {
+            updateRealization(row);
+        }
+    });
 }
 
 function loadKpiData() {
@@ -432,6 +443,9 @@ function saveWorkplan(row) {
         data[`real_${month}`] = $(this).is(':checked') ? 1 : 0;
     });
 
+    console.log('Saving workplan data:', data);
+    console.log('Workplan ID:', workplanId, 'Is New:', isNew);
+
     if (!data.activity) {
         Swal.fire({
             icon: 'warning',
@@ -456,16 +470,26 @@ function saveWorkplan(row) {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil',
-                    text: response.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+                // Update row dengan data baru tanpa reload
+                if (isNew) {
+                    // Update row ID untuk workplan baru
+                    row.attr('data-workplan-id', response.data.id);
+                    row.removeClass('new-row');
+                }
                 
-                // Reload data
-                loadKpiData();
+                // Update button actions
+                updateRowActions(row, response.data);
+                
+                // Show success toast (non-blocking)
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Work plan berhasil disimpan',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
             } else {
                 showError(response.message || 'Gagal menyimpan work plan');
             }
@@ -481,12 +505,113 @@ function saveWorkplan(row) {
     });
 }
 
+function updateRealization(row) {
+    const workplanId = row.data('workplan-id');
+    
+    if (workplanId === 'new') {
+        // For new rows, don't show error, just return silently
+        return;
+    }
+
+    const data = {};
+    
+    // Collect realization months
+    row.find('.real-month').each(function() {
+        const month = $(this).data('month');
+        data[`real_${month}`] = $(this).is(':checked') ? 1 : 0;
+    });
+
+    $.ajax({
+        url: `/workplan/${workplanId}/update-realization`,
+        method: 'PATCH',
+        data: data,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.success) {
+                // Show brief success toast (minimal distraction)
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1000,
+                    timerProgressBar: false,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Realization updated',
+                    text: ''
+                });
+                
+                console.log('Realization updated successfully:', response.data);
+            } else {
+                showError(response.message || 'Failed to update realization');
+            }
+        },
+        error: function(xhr) {
+            console.error('Update realization error:', xhr);
+            const errorMsg = xhr.responseJSON?.message || xhr.statusText || 'Unknown error';
+            showError('Failed to update realization: ' + errorMsg);
+        }
+    });
+}
+
+function updateRowActions(row, workplan) {
+    const actionsCell = row.find('.action-column');
+    const isApproved = workplan.status === 'approved';
+    
+    let actionsHtml = '';
+    
+    if (isApproved) {
+        actionsHtml = `
+            <button class="btn btn-success btn-action btn-sm" disabled>
+                <i class="bi bi-check-circle"></i> Approved
+            </button>
+        `;
+    } else {
+        actionsHtml = `
+            <button class="btn btn-primary btn-action btn-save-workplan">
+                <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-action btn-delete-workplan">
+                <i class="bi bi-trash"></i>
+            </button>
+            ${workplan.status === 'draft' ? `
+            <button class="btn btn-success btn-action btn-approve-workplan" data-id="${workplan.id}">
+                <i class="bi bi-check"></i>
+            </button>
+            ` : ''}
+        `;
+    }
+    
+    actionsCell.html(actionsHtml);
+}
+
 function deleteWorkplan(row) {
     const workplanId = row.data('workplan-id');
 
     if (workplanId === 'new') {
         // Just remove the row for unsaved workplan
-        row.remove();
+        row.fadeOut(300, function() {
+            $(this).remove();
+            // Check if table is empty, show no-data message
+            const tbody = row.closest('tbody');
+            if (tbody.find('tr').length === 0) {
+                tbody.html(`
+                    <tr class="no-data-row">
+                        <td colspan="29" class="text-center text-muted py-3">
+                            <i>Belum ada work plan. Klik tombol "Add Work Plan" untuk menambahkan.</i>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
         return;
     }
 
@@ -512,16 +637,32 @@ function deleteWorkplan(row) {
                 success: function(response) {
                     hideLoading();
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Terhapus!',
-                            text: response.message,
-                            timer: 1500,
-                            showConfirmButton: false
+                        // Remove row dengan animasi tanpa reload
+                        row.fadeOut(300, function() {
+                            $(this).remove();
+                            // Check if table is empty, show no-data message
+                            const tbody = row.closest('tbody');
+                            if (tbody.find('tr').length === 0) {
+                                tbody.html(`
+                                    <tr class="no-data-row">
+                                        <td colspan="29" class="text-center text-muted py-3">
+                                            <i>Belum ada work plan. Klik tombol "Add Work Plan" untuk menambahkan.</i>
+                                        </td>
+                                    </tr>
+                                `);
+                            }
                         });
                         
-                        // Reload data
-                        loadKpiData();
+                        // Show success toast
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Work plan berhasil dihapus',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
                     }
                 },
                 error: function(xhr) {
@@ -556,16 +697,32 @@ function approveWorkplan(workplanId) {
                 success: function(response) {
                     hideLoading();
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Approved!',
-                            text: response.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
+                        // Update row tanpa reload
+                        const row = $(`tr[data-workplan-id="${workplanId}"]`);
                         
-                        // Reload data
-                        loadKpiData();
+                        // Disable semua input
+                        row.find('input').prop('readonly', true).prop('disabled', true);
+                        
+                        // Update action buttons
+                        row.find('.action-column').html(`
+                            <button class="btn btn-success btn-action btn-sm" disabled>
+                                <i class="bi bi-check-circle"></i> Approved
+                            </button>
+                        `);
+                        
+                        // Add approved styling
+                        row.addClass('table-success');
+                        
+                        // Show success toast
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Work plan berhasil di-approve',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
                     }
                 },
                 error: function(xhr) {

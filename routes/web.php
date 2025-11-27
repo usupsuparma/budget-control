@@ -366,6 +366,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/approve', [KPIWorkPlanController::class, 'approve'])
                 ->name('workplan.approve');
 
+            Route::patch('/{id}/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
+                ->name('workplan.updateRealization');
+
         });
 
     /* ========================

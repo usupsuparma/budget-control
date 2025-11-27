@@ -170,6 +170,26 @@
         .loading-overlay.show {
             display: flex;
         }
+
+        /* Approved row styling */
+        tr.table-success {
+            background-color: #d1e7dd !important;
+        }
+
+        tr.table-success input {
+            background-color: #f0f8f3 !important;
+            cursor: not-allowed;
+        }
+
+        /* Smooth animations */
+        .workplan-table tbody tr {
+            transition: background-color 0.3s ease;
+        }
+
+        /* Toast notification custom style */
+        .swal2-toast {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        }
     </style>
 @endsection
 

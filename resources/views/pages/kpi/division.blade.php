@@ -35,7 +35,7 @@
                     <div class="card card-h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">KPI Division</h6>
-                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary  btn-sm">
+                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary btn-sm">
                                 <i class="bi bi-plus-circle"></i> Add New KPI Division
                             </button>
                         </div>
@@ -114,52 +114,64 @@
 
                                                             {{-- contoh bulan, ditampilkan Yes/No tapi disimpan boolean di DB --}}
                                                             <td style="{{ $kpidiv->jan ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="jan">
-                                                                {{ $kpidiv->jan ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="jan">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" {{ $kpidiv->jan ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->feb ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="feb">
-                                                                {{ $kpidiv->feb ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="feb">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->feb ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->mar ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="mar">
-                                                                {{ $kpidiv->mar ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="mar">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->mar ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->apr ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="apr">
-                                                                {{ $kpidiv->apr ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="apr">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->apr ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->may ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="may">
-                                                                {{ $kpidiv->may ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="may">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->may ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->jun ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="jun">
-                                                                {{ $kpidiv->jun ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="jun">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->jun ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->jul ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="jul">
-                                                                {{ $kpidiv->jul ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="jul">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->jul ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->aug ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="aug">
-                                                                {{ $kpidiv->aug ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="aug">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->aug ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->sep ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="sep">
-                                                                {{ $kpidiv->sep ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="sep">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->sep ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->okt ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="okt">
-                                                                {{ $kpidiv->okt ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="oct">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->oct ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->nov ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="nov">
-                                                                {{ $kpidiv->nov ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="nov">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->nov ? 'checked' : '' }} disabled>
                                                             </td>
                                                             <td style="{{ $kpidiv->dec ? 'background-color:limegreen' : '' }} ;"
-                                                                class="editable" data-field="dec">
-                                                                {{ $kpidiv->dec ? 'Yes' : 'No' }}
+                                                                class="editable text-center" data-field="dec">
+                                                                <input class="form-check-input month-checkbox" type="checkbox"
+                                                                            value="" id="flexCheckLarge" {{ $kpidiv->dec ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="editable" data-field="revenue_cost">
@@ -347,30 +359,18 @@
                     '<input type="number" class="form-control new-duration" min="0" placeholder="Days">',
                     '<input type="date" class="form-control new-start">',
                     '<input type="date" class="form-control new-end">',
-                    '<select class="form-select new-jan" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-feb" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-mar" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-apr" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-may" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-jun" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-jul" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-aug" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-sep" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-oct" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-nov" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
-                    '<select class="form-select new-dec" style="width: 80px !important;">' +
-                    yesNoOptionsHtml + '</select>',
+                    '<input type="checkbox" class="form-check-input new-jan">',
+                    '<input type="checkbox" class="form-check-input new-feb">',
+                    '<input type="checkbox" class="form-check-input new-mar">',
+                    '<input type="checkbox" class="form-check-input new-apr">',
+                    '<input type="checkbox" class="form-check-input new-may">',
+                    '<input type="checkbox" class="form-check-input new-jun">',
+                    '<input type="checkbox" class="form-check-input new-jul">',
+                    '<input type="checkbox" class="form-check-input new-aug">',
+                    '<input type="checkbox" class="form-check-input new-sep">',
+                    '<input type="checkbox" class="form-check-input new-oct">',
+                    '<input type="checkbox" class="form-check-input new-nov">',
+                    '<input type="checkbox" class="form-check-input new-dec">',
                     '<select class="form-select new-revenue" style="width: 150px !important;">' +
                     revenueCostOptionsHtml + '</select>',
                     '<select class="form-select new-pic" style="width: 150px !important;">' +
@@ -405,30 +405,30 @@
                 var start = $row.find('.new-start').val();
                 var end = $row.find('.new-end').val();
 
-                var jan = $row.find('.new-jan').val();
-                var janText = $row.find('.new-jan option:selected').text();
-                var feb = $row.find('.new-feb').val();
-                var febText = $row.find('.new-feb option:selected').text();
-                var mar = $row.find('.new-mar').val();
-                var marText = $row.find('.new-mar option:selected').text();
-                var apr = $row.find('.new-apr').val();
-                var aprText = $row.find('.new-apr option:selected').text();
-                var may = $row.find('.new-may').val();
-                var mayText = $row.find('.new-may option:selected').text();
-                var jun = $row.find('.new-jun').val();
-                var junText = $row.find('.new-jun option:selected').text();
-                var jul = $row.find('.new-jul').val();
-                var julText = $row.find('.new-jul option:selected').text();
-                var aug = $row.find('.new-aug').val();
-                var augText = $row.find('.new-aug option:selected').text();
-                var sep = $row.find('.new-sep').val();
-                var sepText = $row.find('.new-sep option:selected').text();
-                var oct = $row.find('.new-oct').val();
-                var octText = $row.find('.new-oct option:selected').text();
-                var nov = $row.find('.new-nov').val();
-                var novText = $row.find('.new-nov option:selected').text();
-                var dec = $row.find('.new-dec').val();
-                var decText = $row.find('.new-dec option:selected').text();
+                var jan = $row.find('.new-jan').is(':checked') ? 1 : 0;
+                var janText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (jan ? 'checked' : '') + '>';
+                var feb = $row.find('.new-feb').is(':checked') ? 1 : 0;
+                var febText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (feb ? 'checked' : '') + '>';
+                var mar = $row.find('.new-mar').is(':checked') ? 1 : 0;
+                var marText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (mar ? 'checked' : '') + '>';
+                var apr = $row.find('.new-apr').is(':checked') ? 1 : 0;
+                var aprText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (apr ? 'checked' : '') + '>';
+                var may = $row.find('.new-may').is(':checked') ? 1 : 0;
+                var mayText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (may ? 'checked' : '') + '>';
+                var jun = $row.find('.new-jun').is(':checked') ? 1 : 0;
+                var junText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (jun ? 'checked' : '') + '>';
+                var jul = $row.find('.new-jul').is(':checked') ? 1 : 0;
+                var julText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (jul ? 'checked' : '') + '>';
+                var aug = $row.find('.new-aug').is(':checked') ? 1 : 0;
+                var augText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (aug ? 'checked' : '') + '>';
+                var sep = $row.find('.new-sep').is(':checked') ? 1 : 0;
+                var sepText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (sep ? 'checked' : '') + '>';
+                var oct = $row.find('.new-oct').is(':checked') ? 1 : 0;
+                var octText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (oct ? 'checked' : '') + '>';
+                var nov = $row.find('.new-nov').is(':checked') ? 1 : 0;
+                var novText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (nov ? 'checked' : '') + '>';
+                var dec = $row.find('.new-dec').is(':checked') ? 1 : 0;
+                var decText = '<input type="checkbox" class="form-check-input month-checkbox" ' + (dec ? 'checked' : '') + '>';
 
                 var revenueCost = $row.find('.new-revenue').val();
                 var revenueCostText = $row.find('.new-revenue option:selected').text();

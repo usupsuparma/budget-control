@@ -1,25 +1,25 @@
 @extends('layouts.master')
 
-@section('title', 'KPI Department | Budget Control')
-@section('title-sub', 'KPI Department')
+@section('title', 'KPI Section | Budget Control')
+@section('title-sub', 'KPI Section')
 @section('pagetitle', 'Add Data')
 
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <style>
-        #kpi_department_table thead th {
+        #kpi_section_table thead th {
             font-size: 11px;
             white-space: nowrap;
             text-align: center;
         }
-        #kpi_department_table tbody td {
+        #kpi_section_table tbody td {
             font-size: 11px;
             vertical-align: middle;
             white-space: nowrap;
         }
-        #kpi_department_table input,
-        #kpi_department_table textarea,
-        #kpi_department_table select {
+        #kpi_section_table input,
+        #kpi_section_table textarea,
+        #kpi_section_table select {
             width: 100% !important;
             font-size: 11px !important;
         }
@@ -28,28 +28,29 @@
 
 @section('content')
 <div id="layout-wrapper">
-    {{-- Tabel KPI Department --}}
+
+    {{-- Table KPI Section --}}
     <div class="row">
         <div class="col-xl-12">
             <div class="card card-h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">KPI Department</h6>
-                    <button id="btnAddRow" type="button" class="btn btn-primary  btn-sm">
-                        <i class="bi bi-plus-circle"></i> Add New KPI Department
+                    <h6 class="mb-0">KPI Section</h6>
+                    <button id="btnAddRow" type="button" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add New KPI Section
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive" style="overflow-x:auto;">
-                        <table id="kpi_department_table" class="display" style="width:100%;">
+                        <table id="kpi_section_table" class="display" style="width:100%;">
                             <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Year</th>
-                                    <th>KPI Division</th>
-                                    <th>Department</th>
                                     <th>KPI Department</th>
-                                    <th>Department Activities</th>
-                                    <th>Target Department</th>
+                                    <th>Section</th>
+                                    <th>KPI Section</th>
+                                    <th>Section Activities</th>
+                                    <th>Target Section</th>
                                     <th>Duration (Days)</th>
                                     <th>Schedule Start</th>
                                     <th>Schedule End</th>
@@ -66,14 +67,14 @@
                                     <th>Nov</th>
                                     <th>Dec</th>
                                     <th>Revenue/Cost</th>
-                                    <th>PIC</th>
+                                    <th>Unit ID</th>
                                     <th>Description</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @php $i = 1; @endphp
-                                @foreach ($kpiDepartments as $kpi)
+                                @foreach ($kpiSections as $kpi)
                                     <tr
                                         data-id="{{ $kpi->id }}"
                                         data-jan="{{ (int) $kpi->jan }}"
@@ -89,15 +90,15 @@
                                         data-nov="{{ (int) $kpi->nov }}"
                                         data-dec="{{ (int) $kpi->dec }}"
                                         data-revenue_cost="{{ $kpi->revenue_cost }}"
-                                        data-pic="{{ $kpi->pic }}"
+                                        data-unit_id="{{ $kpi->unit_id }}"
                                     >
                                         <td>{{ $i++ }}</td>
-                                        <td class="editable" data-field="year">{{ $kpi->year }}</td>
-                                        <td class="editable" data-field="division_goals">{{ $kpi->division_goals }}</td>
-                                        <td class="editable" data-field="department_id">{{ $kpi->department_id }}</td>
+                                        <td class="editable" data-field="section_year">{{ $kpi->year }}</td>
                                         <td class="editable" data-field="department_goals">{{ $kpi->department_goals }}</td>
-                                        <td class="editable" data-field="department_activities">{{ $kpi->department_activities }}</td>
-                                        <td class="editable" data-field="target_department">{{ $kpi->target_department }}</td>
+                                        <td class="editable" data-field="department_goals">{{ $kpi->section_id }}</td>
+                                        <td class="editable" data-field="section_goals">{{ $kpi->section_goals }}</td>
+                                        <td class="editable" data-field="activities">{{ $kpi->activities }}</td>
+                                        <td class="editable" data-field="target_section">{{ $kpi->target_section }}</td>
                                         <td class="editable" data-field="duration_days">{{ $kpi->duration_days }}</td>
                                         <td class="editable" data-field="schedule_start">{{ $kpi->schedule_start }}</td>
                                         <td class="editable" data-field="schedule_end">{{ $kpi->schedule_end }}</td>
@@ -116,7 +117,7 @@
                                         <td class="editable" data-field="dec">{{ $kpi->dec ? 'Yes' : 'No' }}</td>
 
                                         <td class="editable" data-field="revenue_cost">{{ $kpi->revenue_cost }}</td>
-                                        <td class="editable" data-field="pic">{{ $kpi->pic }}</td>
+                                        <td class="editable" data-field="unit_id">{{ $kpi->unit_id }}</td>
                                         <td class="editable" data-field="description">{{ $kpi->description }}</td>
 
                                         <td>
@@ -142,13 +143,26 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    const storeUrl  = "{{ route('kpidepartment.store', ['kpiDivision' => 1, 'department' => 1]) }}";
-    const inlineUrl = "{{ route('kpidepartment.inline', ['kpiDivision' => 1, 'department' => 1, 'kpiDepartment' => '__ID__']) }}";
-    const deleteUrl = "{{ route('kpidepartment.destroy', ['kpiDivision' => 1, 'department' => 1, 'kpiDepartment' => '__ID__']) }}";
-    const csrfToken = "{{ csrf_token() }}";
+    const storeUrl  = "{{ route('kpisection.store', ['kpiDepartment' => 1, 'section' => 1]) }}";
+    const inlineUrl = "{{ route('kpisection.inline', ['kpiDepartment' => 1, 'section' => 1, 'kpiSection' => '__ID__']) }}";
+    const deleteUrl = "{{ route('kpisection.destroy', ['kpiDepartment' => 1, 'section' => 1, 'kpiSection' => '__ID__']) }}";
+    const csrfToken    = "{{ csrf_token() }}";
+
+    function buildInlineUrl(id) {
+        if (!id) return null;
+        return inlineUrlTpl.replace('__ID__', id);
+    }
+    function buildDeleteUrl(id) {
+        if (!id) return null;
+        return deleteUrlTpl.replace('__ID__', id);
+    }
 
     $(document).ready(function () {
-        const table = $('#kpi_department_table').DataTable({
+        @php
+            $years = range(2023, date('Y') + 5);
+        @endphp
+
+        const table = $('#kpi_section_table').DataTable({
             scrollX: true,
             scrollCollapse: true,
             autoWidth: false,
@@ -156,13 +170,10 @@
                 { orderable: false, searchable: false, targets: -1 }
             ]
         });
-        @php
-            $years = range(2023, date('Y') + 5);
-        @endphp
 
         // --- ADD NEW ROW ---
         $('#btnAddRow').on('click', function () {
-            if ($('#kpi_department_table tbody tr.adding').length > 0) {
+            if ($('#kpi_section_table tbody tr.adding').length > 0) {
                 Swal.fire({ icon: 'error', title: 'Selesaikan dulu baris yang sedang ditambah.' });
                 return;
             }
@@ -174,16 +185,16 @@
                     <option value="{{ $y }}">{{ $y }}</option>
                 @endforeach
             `;
-            const departmentOptionsHtml = `
-                <option value="">Select Department</option>
-                @foreach ($department ?? [] as $departmen)
-                    <option value="{{ $departmen->id }}">{{ $departmen->name }}</option>
+            const kpideptOptionsHtml = `
+                <option value="">Select KPI Department</option>
+                @foreach ($kpiDepartment ?? [] as $buff)
+                    <option value="{{ $buff->id }}">{{ $buff->department_goals }}</option>
                 @endforeach
             `;
-            const kpidivisionOptionsHtml = `
-                <option value="">Select KPI Division</option>
-                @foreach ($kpiDivisions ?? [] as $kpiDivision)
-                    <option value="{{ $kpiDivision->id }}">{{ $kpiDivision->division_goals }}</option>
+            const sectionOptionsHtml = `
+                <option value="">Select Section</option>
+                @foreach ($section ?? [] as $buff)
+                    <option value="{{ $buff->id }}">{{ $buff->name }}</option>
                 @endforeach
             `;
             const yesNoSelect = '<select class="form-select form-select-sm new-month"><option value="0">No</option><option value="1">Yes</option></select>';
@@ -192,20 +203,20 @@
                 no,
                 '<select class="form-select new-year" style="width: 100px !important;">' +
                     yearOptionsHtml + '</select>',
-                '<select class="form-select department_id" style="width: 100px !important;">' +
-                    departmentOptionsHtml + '</select>',
-                '<select class="form-select new-division-goals" style="width: 100px !important;">' +
-                    kpidivisionOptionsHtml + '</select>',
-                '<textarea class="form-control form-control-sm new-dept-goals" rows="2"></textarea>',
-                '<textarea class="form-control form-control-sm new-dept-act" rows="2"></textarea>',
-                '<input type="text" class="form-control form-control-sm new-target-dept">',
+                '<select class="form-select new-dept-goals" style="width: 100px !important;">' +
+                    kpideptOptionsHtml + '</select>',
+                '<select class="form-select new-section" style="width: 100px !important;">' +
+                    sectionOptionsHtml + '</select>',
+                '<textarea class="form-control form-control-sm new-sec-goals" rows="2"></textarea>',
+                '<textarea class="form-control form-control-sm new-activities" rows="2"></textarea>',
+                '<input type="text" class="form-control form-control-sm new-target-sec">',
                 '<input type="number" class="form-control form-control-sm new-duration">',
                 '<input type="date" class="form-control form-control-sm new-start">',
                 '<input type="date" class="form-control form-control-sm new-end">',
                 yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect,
                 yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect, yesNoSelect,
                 '<input type="text" class="form-control form-control-sm new-revenue">',
-                '<input type="text" class="form-control form-control-sm new-pic">',
+                '<input type="text" class="form-control form-control-sm new-unit">',
                 '<textarea class="form-control form-control-sm new-desc" rows="2"></textarea>',
                 '<button type="button" class="btn btn-sm btn-success btn-save-new">Save</button> ' +
                 '<button type="button" class="btn btn-sm btn-secondary btn-cancel-new">Cancel</button>'
@@ -215,28 +226,25 @@
         });
 
         // SAVE new row
-        $('#kpi_department_table tbody').on('click', '.btn-save-new', function () {
+        $('#kpi_section_table tbody').on('click', '.btn-save-new', function () {
             const $tr = $(this).closest('tr');
             const row = table.row($tr);
             const no  = row.data()[0];
 
-            const year  = $tr.find('.new-year').val().trim();
-            const deptId = $tr.find('.department_id').val();
-            const deptText = $tr.find('.department_id option:selected').text();
-            const divGoalsId = $tr.find('.new-division-goals').val();
-            const divGoalsText = $tr.find('.new-division-goals option:selected').text();
             const deptGoals = $tr.find('.new-dept-goals').val().trim();
-            const deptAct   = $tr.find('.new-dept-act').val().trim();
-            const target    = $tr.find('.new-target-dept').val().trim();
+            const section = $tr.find('.new-section').val().trim();
+            const secGoals  = $tr.find('.new-sec-goals').val().trim();
+            const acts      = $tr.find('.new-activities').val().trim();
+            const target    = $tr.find('.new-target-sec').val().trim();
             const duration  = $tr.find('.new-duration').val();
             const start     = $tr.find('.new-start').val();
             const end       = $tr.find('.new-end').val();
             const revenue   = $tr.find('.new-revenue').val().trim();
-            const pic       = $tr.find('.new-pic').val().trim();
+            const unit      = $tr.find('.new-unit').val().trim();
             const desc      = $tr.find('.new-desc').val().trim();
 
-            if (!deptGoals) {
-                Swal.fire({ icon: 'error', title: 'Department Goals wajib diisi.' });
+            if (!secGoals) {
+                Swal.fire({ icon: 'error', title: 'Section Goals wajib diisi.' });
                 return;
             }
 
@@ -253,25 +261,26 @@
                 dataType: 'json',
                 data: Object.assign({
                     _token: csrfToken,
-                    year: year,
-                    depatment_id: deptId,
-                    division_goals: divGoalsId,
                     department_goals: deptGoals,
-                    department_activities: deptAct,
-                    target_department: target,
+                    section_id: section,
+                    section_goals: secGoals,
+                    activities: acts,
+                    target_section: target,
                     duration_days: duration,
                     schedule_start: start,
                     schedule_end: end,
                     revenue_cost: revenue,
-                    pic: pic,
+                    unit_id: unit,
                     description: desc
                 }, months),
                 success: function (res) {
                     row.data([
                         no,
-                        divGoalsText,
+                        year,
                         deptGoals,
-                        deptAct,
+                        section,
+                        secGoals,
+                        acts,
                         target,
                         duration,
                         start,
@@ -289,7 +298,7 @@
                         months['nov'] === '1' ? 'Yes' : 'No',
                         months['dec'] === '1' ? 'Yes' : 'No',
                         revenue,
-                        pic,
+                        unit,
                         desc,
                         '<button type="button" class="btn btn-sm btn-danger btn-delete">' +
                             '<i class="bi bi-trash"></i> Delete</button>'
@@ -308,13 +317,13 @@
         });
 
         // Cancel new row
-        $('#kpi_department_table tbody').on('click', '.btn-cancel-new', function () {
+        $('#kpi_section_table tbody').on('click', '.btn-cancel-new', function () {
             const $tr = $(this).closest('tr');
             table.row($tr).remove().draw(false);
         });
 
-        // --- INLINE EDIT (double-click) ---
-        $('#kpi_department_table tbody').on('dblclick', 'td.editable', function () {
+        // INLINE EDIT (double-click)
+        $('#kpi_section_table tbody').on('dblclick', 'td.editable', function () {
             const cell = table.cell(this);
             const $td  = $(this);
             const $tr  = $td.closest('tr');
@@ -339,7 +348,7 @@
                 $input = $('<input type="date" class="form-control form-control-sm">').val(originalText);
             } else if (field === 'duration_days') {
                 $input = $('<input type="number" class="form-control form-control-sm">').val(originalText);
-            } else if (['division_goals','department_goals','department_activities','description'].includes(field)) {
+            } else if (['department_goals','section_goals','activities','description'].includes(field)) {
                 $input = $('<textarea class="form-control form-control-sm" rows="2"></textarea>').val(originalText);
             } else {
                 $input = $('<input type="text" class="form-control form-control-sm">').val(originalText);
@@ -355,8 +364,15 @@
                     return;
                 }
 
+                const url = buildInlineUrl(id);
+                if (!url) {
+                    cell.data(originalDisplay).draw(false);
+                    Swal.fire({ icon: 'warning', title: 'Belum bisa disimpan', text: 'Baris belum tersimpan di database.' });
+                    return;
+                }
+
                 $.ajax({
-                    url: inlineUrl.replace('__ID__', id),
+                    url: url,
                     method: 'PATCH',
                     dataType: 'json',
                     data: {
@@ -395,8 +411,8 @@
             });
         });
 
-        // --- DELETE row ---
-        $('#kpi_department_table tbody').on('click', '.btn-delete', function () {
+        // DELETE row
+        $('#kpi_section_table tbody').on('click', '.btn-delete', function () {
             const $tr = $(this).closest('tr');
             const row = table.row($tr);
             const id  = $tr.data('id');
@@ -416,8 +432,14 @@
             }).then((result) => {
                 if (!result.isConfirmed) return;
 
+                const url = buildDeleteUrl(id);
+                if (!url) {
+                    Swal.fire({ icon: 'error', title: 'URL delete tidak valid.' });
+                    return;
+                }
+
                 $.ajax({
-                    url: deleteUrl.replace('__ID__', id),
+                    url: url,
                     method: 'DELETE',
                     dataType: 'json',
                     data: { _token: csrfToken },

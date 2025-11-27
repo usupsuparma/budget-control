@@ -35,7 +35,7 @@
                     <div class="card card-h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">KPI Division</h6>
-                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary">
+                            <button id="btnAddRow" role="button" type="button" class="btn btn-primary  btn-sm">
                                 <i class="bi bi-plus-circle"></i> Add New KPI Division
                             </button>
                         </div>

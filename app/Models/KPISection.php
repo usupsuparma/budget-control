@@ -6,26 +6,26 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class KpiDepartment extends Model
+class KPISection extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'kpi_department';
+    protected $table = 'kpi_section';
 
     protected $fillable = [
-        'kpi_division_id',
-        'department_id',
+        'kpi_department_id',
+        'section_id',
         'year',
-        'department_goals',
-        'department_activities',
-        'target_department',
+        'section_goals',
+        'activities',
+        'target_section',
         'duration_days',
         'schedule_start',
         'schedule_end',
         'jan','feb','mar','apr','may','jun',
         'jul','aug','sep','oct','nov','dec',
         'revenue_cost',
-        'pic',
+        'unit_id',
         'description',
     ];
 
@@ -48,18 +48,13 @@ class KpiDepartment extends Model
         'dec' => 'boolean',
     ];
 
-    public function kpiDivision()
+    public function kpiDepartment()
     {
-        return $this->belongsTo(KpiDivision::class, 'kpi_division_id');
+        return $this->belongsTo(KpiDepartment::class, 'kpi_department_id');
     }
 
-    public function department()
+    public function section()
     {
-        return $this->belongsTo(Department::class, 'department_id');
-    }
-
-    public function kpiSections()
-    {
-        return $this->hasMany(KpiSection::class, 'kpi_department_id');
+        return $this->belongsTo(Section::class, 'section_id');
     }
 }

@@ -280,7 +280,7 @@
                     </div>
                     <div class="col-md-3 text-end">
                         <a href="{{ route('workplan.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i> Back to Work Plan
+                            <i class="bi bi-arrow-left me-1"></i> Back to Work Plan
                         </a>
                     </div>
                 </div>
@@ -302,7 +302,7 @@
                             <!-- Child Categories with Expand/Collapse -->
                             <div id="childCategoriesContainer">
                                 <div class="text-center py-4 text-muted">
-                                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                    <i class="bi bi-info-circle fa-2x mb-2"></i>
                                     <p>Please select a parent category to view sub-categories</p>
                                 </div>
                             </div>

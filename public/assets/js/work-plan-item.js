@@ -284,7 +284,7 @@ function renderItemsTable(items, categoryId) {
                         <th>Dec</th>
                     </tr>
                 </thead>
-                <tbody id="itemsTableBody">
+                <tbody id="itemsTableBody-${categoryId}">
     `;
 
     if (items.length === 0) {
@@ -374,7 +374,13 @@ function renderItemRow(item) {
  * Add new item row
  */
 function addNewItemRow() {
-    const tbody = $('#itemsTableBody');
+    // Get the current active category from the currently visible section
+    const tbody = $(`#itemsTableBody-${currentChildCategory}`);
+    
+    if (!tbody.length) {
+        showError('Please select a category first');
+        return;
+    }
     
     // Remove "no data" message if exists
     tbody.find('.no-data').closest('tr').remove();

@@ -69,6 +69,11 @@ function initializeEventListeners() {
         const row = $(this).closest('tr');
         calculateRowTotal(row);
     });
+    
+    // Toggle expand/collapse for child categories
+    $(document).on('click', '.expand-btn-item', function() {
+        toggleChildCategory($(this));
+    });
 }
 
 /**
@@ -152,31 +157,45 @@ function selectParentCategory(categoryId) {
 }
 
 /**
- * Render child category tabs (Level 2)
+ * Render child category tabs (Level 2) with expand/collapse
  */
 function renderChildCategories(children) {
-    const container = $('#childCategoryTabs');
+    const container = $('#childCategoriesContainer');
     container.empty();
 
     if (children.length === 0) {
-        container.html('<li class="text-muted">No sub-categories available</li>');
+        container.html('<div class="text-center py-4 text-muted"><i class="fas fa-info-circle fa-2x mb-2"></i><p>No sub-categories available</p></div>');
         return;
     }
 
     children.forEach((child, index) => {
-        const isActive = index === 0 ? 'active' : '';
         const html = `
-            <li class="nav-item">
-                <a class="nav-link child-category-tab ${isActive}" 
-                   data-category-id="${child.id}" 
-                   href="#" 
-                   role="tab">
-                    ${child.name.toUpperCase()}
-                </a>
-            </li>
+            <div class="child-category-section mb-3" data-category-id="${child.id}">
+                <div class="child-category-header">
+                    <div>
+                        <strong>${child.name.toUpperCase()}</strong>
+                    </div>
+                    <button class="expand-btn-item collapsed" data-target="child-${child.id}">
+                        <i class="fas fa-chevron-right"></i> Expand
+                    </button>
+                </div>
+                <div id="child-${child.id}" class="collapse-section-item p-3" style="background: white; border-radius: 6px;">
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading items...
+                    </div>
+                </div>
+            </div>
         `;
         container.append(html);
     });
+    
+    // Auto-expand first child category
+    if (children.length > 0) {
+        const firstBtn = container.find('.expand-btn-item').first();
+        setTimeout(() => {
+            firstBtn.click();
+        }, 100);
+    }
 }
 
 /**
@@ -184,10 +203,6 @@ function renderChildCategories(children) {
  */
 function selectChildCategory(categoryId) {
     currentChildCategory = categoryId;
-    
-    // Update active state
-    $('.child-category-tab').removeClass('active');
-    $(`.child-category-tab[data-category-id="${categoryId}"]`).addClass('active');
     
     // Load items
     loadItems(categoryId);
@@ -197,7 +212,15 @@ function selectChildCategory(categoryId) {
  * Load items for selected category
  */
 function loadItems(categoryId) {
-    showLoading();
+    const targetContainer = $(`#child-${categoryId}`);
+    
+    if (!targetContainer.length) {
+        showError('Container not found');
+        return;
+    }
+    
+    // Show loading in specific container
+    targetContainer.html('<div class="text-center py-3 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading items...</div>');
     
     $.ajax({
         url: `/workplan/${WORKPLAN_ID}/item/list`,
@@ -206,12 +229,11 @@ function loadItems(categoryId) {
         success: function(response) {
             if (response.success) {
                 budgetCodesData = response.budgetCodes;
-                renderItemsTable(response.data);
+                renderItemsTable(response.data, categoryId);
             }
-            hideLoading();
         },
         error: function(xhr) {
-            hideLoading();
+            targetContainer.html('<div class="text-center py-3 text-danger"><i class="fas fa-exclamation-circle"></i> Failed to load items</div>');
             showError('Failed to load items');
         }
     });
@@ -220,20 +242,20 @@ function loadItems(categoryId) {
 /**
  * Render items table
  */
-function renderItemsTable(items) {
-    const container = $('#itemsContent');
+function renderItemsTable(items, categoryId) {
+    const container = $(`#child-${categoryId}`);
     
     let html = `
         <div class="mb-3">
-            <button type="button" class="btn btn-primary btn-sm btn-add-item">
-                <i class="fas fa-plus me-1"></i> Add Item
+            <button type="button" class="btn btn-primary btn-sm btn-add-item" style="padding: 8px 16px; font-size: 13px;">
+                <i class="fas fa-plus-circle me-2"></i> Add Item
             </button>
         </div>
         <div class="table-responsive">
             <table class="table table-bordered items-table">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 40px;">Action</th>
+                        <th rowspan="2" style="width: 100px; min-width: 100px;">Action</th>
                         <th rowspan="2" style="width: 200px;">Description</th>
                         <th rowspan="2" style="width: 80px;">Stock Code</th>
                         <th rowspan="2" style="width: 80px;">Budget Code</th>
@@ -285,6 +307,9 @@ function renderItemsTable(items) {
     `;
 
     container.html(html);
+    
+    // Initialize tooltips for dynamically added elements
+    initializeTooltips();
 }
 
 /**
@@ -306,11 +331,11 @@ function renderItemRow(item) {
         html += `<span class="badge bg-success status-badge">Approved</span>`;
     } else {
         html += `
-            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit">
+            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit Item" data-bs-toggle="tooltip">
                 <i class="fas fa-edit"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete">
-                <i class="fas fa-trash"></i>
+            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete Item" data-bs-toggle="tooltip">
+                <i class="fas fa-trash-alt"></i>
             </button>
         `;
     }
@@ -357,11 +382,11 @@ function addNewItemRow() {
     let html = `
         <tr class="new-row" data-edit-mode="true">
             <td class="text-center action-column">
-                <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save">
+                <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save Item" data-bs-toggle="tooltip">
                     <i class="fas fa-save"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel">
-                    <i class="fas fa-times"></i>
+                <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel" data-bs-toggle="tooltip">
+                    <i class="fas fa-times-circle"></i>
                 </button>
             </td>
             <td><input type="text" class="form-control form-control-sm description-input" placeholder="Description"></td>
@@ -387,6 +412,9 @@ function addNewItemRow() {
     html += `</tr>`;
     
     tbody.prepend(html);
+    
+    // Initialize tooltips for new row
+    initializeTooltips();
 }
 
 /**
@@ -398,13 +426,16 @@ function enableEditMode(row) {
     
     const actionColumn = row.find('.action-column');
     actionColumn.html(`
-        <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save">
+        <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save Changes" data-bs-toggle="tooltip">
             <i class="fas fa-save"></i>
         </button>
-        <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel">
-            <i class="fas fa-times"></i>
+        <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel Edit" data-bs-toggle="tooltip">
+            <i class=\"fas fa-times-circle\"></i>
         </button>
     `);
+    
+    // Initialize tooltips for new buttons
+    initializeTooltips();
 }
 
 /**
@@ -417,13 +448,16 @@ function disableEditMode(row) {
     const itemId = row.data('item-id');
     const actionColumn = row.find('.action-column');
     actionColumn.html(`
-        <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit">
+        <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit Item" data-bs-toggle="tooltip">
             <i class="fas fa-edit"></i>
         </button>
-        <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete">
-            <i class="fas fa-trash"></i>
+        <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete Item" data-bs-toggle="tooltip">
+            <i class=\"fas fa-trash-alt\"></i>
         </button>
     `);
+    
+    // Initialize tooltips for new buttons
+    initializeTooltips();
 }
 
 /**
@@ -484,8 +518,10 @@ function saveItem(row) {
             hideLoading();
             if (response.success) {
                 showSuccess(response.message);
-                // Reload items
-                loadItems(currentChildCategory);
+                // Reload items in current category
+                if (currentChildCategory) {
+                    selectChildCategory(currentChildCategory);
+                }
             }
         },
         error: function(xhr) {
@@ -524,7 +560,10 @@ function deleteItem(row) {
                     hideLoading();
                     if (response.success) {
                         showSuccess(response.message);
-                        loadItems(currentChildCategory);
+                        // Reload items in current category
+                        if (currentChildCategory) {
+                            selectChildCategory(currentChildCategory);
+                        }
                     }
                 },
                 error: function(xhr) {
@@ -548,6 +587,32 @@ function calculateRowTotal(row) {
 }
 
 /**
+ * Toggle expand/collapse for child category
+ */
+function toggleChildCategory(button) {
+    const targetId = button.data('target');
+    const target = $(`#${targetId}`);
+    const categoryId = button.closest('.child-category-section').data('category-id');
+    
+    if (target.hasClass('show')) {
+        // Collapse
+        target.removeClass('show');
+        button.addClass('collapsed');
+        button.html('<i class="fas fa-chevron-right"></i> Expand');
+    } else {
+        // Expand
+        target.addClass('show');
+        button.removeClass('collapsed');
+        button.html('<i class="fas fa-chevron-down"></i> Collapse');
+        
+        // Load items if not already loaded
+        if (target.find('.text-muted').length > 0) {
+            selectChildCategory(categoryId);
+        }
+    }
+}
+
+/**
  * Get icon for category
  */
 function getCategoryIcon(code) {
@@ -561,6 +626,26 @@ function getCategoryIcon(code) {
         '7': 'fas fa-calendar-alt'
     };
     return icons[code] || 'fas fa-folder';
+}
+
+/**
+ * Initialize Bootstrap tooltips
+ */
+function initializeTooltips() {
+    // Remove old tooltips first
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        // Dispose existing tooltip if any
+        const existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+        if (existingTooltip) {
+            existingTooltip.dispose();
+        }
+        // Initialize new tooltip
+        new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover',
+            placement: 'top'
+        });
+    });
 }
 
 /**

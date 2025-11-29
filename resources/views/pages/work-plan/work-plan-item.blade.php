@@ -85,9 +85,70 @@
     }
     
     .btn-action-item {
-        padding: 4px 8px;
-        font-size: 11px;
+        padding: 6px 10px;
+        font-size: 12px;
         margin: 2px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        min-height: 32px;
+    }
+    
+    .btn-action-item i {
+        font-size: 14px;
+    }
+    
+    .btn-action-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .btn-action-item.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .btn-action-item.btn-primary:hover {
+        background-color: #0b5ed7;
+    }
+    
+    .btn-action-item.btn-success {
+        background-color: #198754;
+        color: white;
+    }
+    
+    .btn-action-item.btn-success:hover {
+        background-color: #157347;
+    }
+    
+    .btn-action-item.btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-action-item.btn-danger:hover {
+        background-color: #bb2d3b;
+    }
+    
+    .btn-action-item.btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-action-item.btn-secondary:hover {
+        background-color: #5c636a;
+    }
+    
+    .action-column {
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;
+        min-width: 100px;
     }
     
     .status-badge {
@@ -131,6 +192,63 @@
         text-align: center;
         padding: 40px;
         color: #6c757d;
+    }
+    
+    .child-category-header {
+        background: #e9ecef;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .expand-btn-item {
+        cursor: pointer;
+        padding: 5px 12px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 11px;
+        transition: all 0.3s;
+    }
+    
+    .expand-btn-item:hover {
+        background: #218838;
+    }
+    
+    .expand-btn-item i {
+        transition: transform 0.3s;
+    }
+    
+    .expand-btn-item.collapsed i {
+        transform: rotate(0deg);
+    }
+    
+    .expand-btn-item:not(.collapsed) i {
+        transform: rotate(90deg);
+    }
+    
+    .collapse-section-item {
+        display: none;
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    .collapse-section-item.show {
+        display: block;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 @endsection
@@ -181,18 +299,11 @@
 
                         <!-- RIGHT CONTENT -->
                         <div class="col-md-10">
-                            <!-- Child Category Tabs -->
-                            <div class="mb-3">
-                                <ul class="nav nav-pills child-tabs" id="childCategoryTabs" role="tablist">
-                                    <!-- Dynamic child categories will be loaded here -->
-                                </ul>
-                            </div>
-
-                            <!-- Items Content -->
-                            <div class="tab-content" id="itemsContent">
+                            <!-- Child Categories with Expand/Collapse -->
+                            <div id="childCategoriesContainer">
                                 <div class="text-center py-4 text-muted">
                                     <i class="fas fa-info-circle fa-2x mb-2"></i>
-                                    <p>Please select a category to view budget items</p>
+                                    <p>Please select a parent category to view sub-categories</p>
                                 </div>
                             </div>
                         </div>

@@ -249,7 +249,7 @@ function renderItemsTable(items, categoryId) {
     
     let html = `
         <div class="mb-3">
-            <button type="button" class="btn btn-primary btn-sm btn-add-item" style="padding: 8px 16px; font-size: 13px;">
+            <button type="button" class="btn btn-primary btn-sm btn-add-item" data-category-id="${categoryId}" style="padding: 8px 16px; font-size: 13px;">
                 <i class="bi bi-plus-circle me-2"></i> Add Item
             </button>
         </div>
@@ -374,13 +374,23 @@ function renderItemRow(item) {
  * Add new item row
  */
 function addNewItemRow() {
-    // Get the current active category from the currently visible section
-    const tbody = $(`#itemsTableBody-${currentChildCategory}`);
+    // Get the category ID from the button that was clicked
+    const categoryId = $(event.target).closest('.btn-add-item').data('category-id');
     
-    if (!tbody.length) {
+    if (!categoryId) {
         showError('Please select a category first');
         return;
     }
+    
+    const tbody = $(`#itemsTableBody-${categoryId}`);
+    
+    if (!tbody.length) {
+        showError('Category table not found');
+        return;
+    }
+    
+    // Set current child category for save operation
+    currentChildCategory = categoryId;
     
     // Remove "no data" message if exists
     tbody.find('.no-data').closest('tr').remove();

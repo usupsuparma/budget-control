@@ -21,6 +21,7 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
+use App\Http\Controllers\KPIWorkPlanController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -336,6 +337,39 @@ Route::middleware('auth')->group(function () {
                 ->name('realisasi.destroy');
         });
 
+
+        
+
+    /* ========================
+        WORK PLAN (Program Kerja)
+    ======================== */
+    Route::prefix('workplan')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [KPIWorkPlanController::class, 'index'])
+                ->name('workplan.index');
+
+            // API endpoints for dynamic data
+            Route::get('/get-kpi-data', [KPIWorkPlanController::class, 'getKpiData'])
+                ->name('workplan.getKpiData');
+
+            Route::post('/store', [KPIWorkPlanController::class, 'store'])
+                ->name('workplan.store');
+
+            Route::put('/{id}', [KPIWorkPlanController::class, 'update'])
+                ->name('workplan.update');
+
+            Route::delete('/{id}', [KPIWorkPlanController::class, 'destroy'])
+                ->name('workplan.destroy');
+
+            Route::post('/{id}/approve', [KPIWorkPlanController::class, 'approve'])
+                ->name('workplan.approve');
+
+            Route::patch('/{id}/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
+                ->name('workplan.updateRealization');
+
+        });
 
     /* ========================
         MASTER

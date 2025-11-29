@@ -62,4 +62,10 @@ class KpiDepartment extends Model
     {
         return $this->hasMany(KpiSection::class, 'kpi_department_id');
     }
+
+    public function workplans()
+    {
+        return $this->hasMany(KPIWorkPlan::class, 'kpi_id')
+            ->where('kpi_type', 'department');
+    }
 }

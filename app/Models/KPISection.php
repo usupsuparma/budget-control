@@ -57,4 +57,10 @@ class KPISection extends Model
     {
         return $this->belongsTo(Section::class, 'section_id');
     }
+
+    public function workplans()
+    {
+        return $this->hasMany(KPIWorkPlan::class, 'kpi_id')
+            ->where('kpi_type', 'section');
+    }
 }

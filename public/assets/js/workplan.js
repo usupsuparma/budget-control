@@ -316,29 +316,29 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
 
     if (isApproved) {
         html += `
-                <button class="btn btn-success btn-action btn-sm" disabled>
-                    <i class="bi bi-check-circle"></i> Approved
+                <button class="btn btn-success btn-action btn-sm" disabled title="Sudah Disetujui">
+                    <i class="bi bi-check-circle"></i>
                 </button>
         `;
     } else if (isNew) {
         html += `
-                <button class="btn btn-primary btn-action btn-save-workplan">
-                    <i class="bi bi-save"></i> Save
+                <button class="btn btn-primary btn-action btn-save-workplan" title="Simpan Work Plan">
+                    <i class="bi bi-save"></i>
                 </button>
-                <button class="btn btn-danger btn-action btn-delete-workplan">
+                <button class="btn btn-danger btn-action btn-delete-workplan" title="Hapus Work Plan">
                     <i class="bi bi-trash"></i>
                 </button>
         `;
     } else {
         html += `
-                <button class="btn btn-primary btn-action btn-save-workplan">
-                    <i class="bi bi-pencil"></i> Edit
+                <button class="btn btn-primary btn-action btn-save-workplan" title="Edit Work Plan">
+                    <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-danger btn-action btn-delete-workplan">
+                <button class="btn btn-danger btn-action btn-delete-workplan" title="Hapus Work Plan">
                     <i class="bi bi-trash"></i>
                 </button>
                 ${workplan.status === 'draft' ? `
-                <button class="btn btn-success btn-action btn-approve-workplan" data-id="${workplan.id}">
+                <button class="btn btn-success btn-action btn-approve-workplan" data-id="${workplan.id}" title="Setujui Work Plan">
                     <i class="bi bi-check"></i>
                 </button>
                 ` : ''}
@@ -577,7 +577,7 @@ function updateRowActions(row, workplan) {
     } else {
         actionsHtml = `
             <button class="btn btn-primary btn-action btn-save-workplan">
-                <i class="bi bi-pencil"></i> Edit
+                <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-danger btn-action btn-delete-workplan">
                 <i class="bi bi-trash"></i>

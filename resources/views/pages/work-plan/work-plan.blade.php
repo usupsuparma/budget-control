@@ -92,9 +92,47 @@
         }
 
         .btn-action {
-            padding: 4px 8px;
+            padding: 3px 6px;
+            font-size: 10px;
+            margin: 0 2px;
+            display: inline-block;
+            min-width: auto;
+            position: relative;
+        }
+
+        /* Custom Tooltip for buttons */
+        .btn-action:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
             font-size: 11px;
-            margin: 2px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            margin-bottom: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-action:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .action-column {
+            white-space: nowrap;
         }
 
         .btn-add-workplan {
@@ -127,8 +165,9 @@
         }
 
         .action-column {
-            width: 100px;
+            width: 90px;
             text-align: center;
+            padding: 5px !important;
         }
 
         .target-satuan-cell {

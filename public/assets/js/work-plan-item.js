@@ -325,7 +325,7 @@ function renderItemRow(item) {
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     
     let html = `
-        <tr data-item-id="${item.id}" class="${rowClass}" data-edit-mode="false">
+        <tr data-item-id="${item.id}" class="${rowClass}" data-edit-mode="false" data-category-id="${item.budget_category_id}">
             <td class="text-center action-column">
     `;
     
@@ -398,7 +398,7 @@ function addNewItemRow() {
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     
     let html = `
-        <tr class="new-row" data-edit-mode="true">
+        <tr class="new-row" data-edit-mode="true" data-category-id="${categoryId}">
             <td class="text-center action-column">
                 <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save Item" data-bs-toggle="tooltip">
                     <i class="bi bi-save"></i>
@@ -485,9 +485,17 @@ function saveItem(row) {
     const itemId = row.data('item-id');
     const isNew = !itemId;
     
+    // Get category ID from row data attribute
+    const categoryId = row.data('category-id');
+    
+    if (!categoryId) {
+        showError('Category ID not found');
+        return;
+    }
+    
     // Collect data
     const data = {
-        budget_category_id: currentChildCategory,
+        budget_category_id: categoryId,
         description: row.find('.description-input').val(),
         stock_code: row.find('.stock-code-input').val(),
         budget_code: row.find('.budget-code-input').val(),

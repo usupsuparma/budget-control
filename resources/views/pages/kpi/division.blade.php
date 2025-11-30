@@ -105,11 +105,11 @@
                                                             </td>
 
                                                             <td class="editable" data-field="schedule_start">
-                                                                {{ $kpidiv->schedule_start }}
+                                                                {{ date("Y-m-d", strtotime($kpidiv->schedule_start)) }}
                                                             </td>
 
                                                             <td class="editable" data-field="schedule_end">
-                                                                {{ $kpidiv->schedule_end }}
+                                                                {{ date("Y-m-d", strtotime($kpidiv->schedule_end)) }}
                                                             </td>
 
                                                             {{-- contoh bulan, ditampilkan Yes/No tapi disimpan boolean di DB --}}

@@ -99,21 +99,21 @@
                                         <td class="editable" data-field="department_activities">{{ $kpi->department_activities }}</td>
                                         <td class="editable" data-field="target_department">{{ $kpi->target_department }}</td>
                                         <td class="editable" data-field="duration_days">{{ $kpi->duration_days }}</td>
-                                        <td class="editable" data-field="schedule_start">{{ $kpi->schedule_start }}</td>
-                                        <td class="editable" data-field="schedule_end">{{ $kpi->schedule_end }}</td>
+                                        <td class="editable" data-field="schedule_start">{{ date("Y-m-d", strtotime($kpi->schedule_start)) }}</td>
+                                        <td class="editable" data-field="schedule_end">{{ date("Y-m-d", strtotime($kpi->schedule_end)) }}</td>
 
-                                        <td class="editable" data-field="jan">{{ $kpi->jan ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="feb">{{ $kpi->feb ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="mar">{{ $kpi->mar ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="apr">{{ $kpi->apr ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="may">{{ $kpi->may ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="jun">{{ $kpi->jun ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="jul">{{ $kpi->jul ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="aug">{{ $kpi->aug ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="sep">{{ $kpi->sep ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="oct">{{ $kpi->oct ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="nov">{{ $kpi->nov ? 'Yes' : 'No' }}</td>
-                                        <td class="editable" data-field="dec">{{ $kpi->dec ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->jan ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="jan">{{ $kpi->jan ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->feb ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="feb">{{ $kpi->feb ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->mar ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="mar">{{ $kpi->mar ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->apr ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="apr">{{ $kpi->apr ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->may ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="may">{{ $kpi->may ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->jun ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="jun">{{ $kpi->jun ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->jul ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="jul">{{ $kpi->jul ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->aug ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="aug">{{ $kpi->aug ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->sep ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="sep">{{ $kpi->sep ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->oct ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="oct">{{ $kpi->oct ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->nov ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="nov">{{ $kpi->nov ? 'Yes' : 'No' }}</td>
+                                        <td style="{{ $kpi->dec ? 'background-color:limegreen' : '' }} ;" class="editable" data-field="dec">{{ $kpi->dec ? 'Yes' : 'No' }}</td>
 
                                         <td class="editable" data-field="revenue_cost">{{ $kpi->revenue_cost }}</td>
                                         <td class="editable" data-field="pic">{{ $kpi->pic }}</td>

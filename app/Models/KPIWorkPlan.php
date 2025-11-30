@@ -154,4 +154,24 @@ class KPIWorkPlan extends Model
         
         return round((count($realMonths) / count($planMonths)) * 100, 2);
     }
+
+    // Relationships
+    public function budgetItems()
+    {
+        return $this->hasMany(WorkplanBudgetItem::class, 'kpi_workplan_id');
+    }
+
+    // Calculate total budget from budget items
+    public function calculateTotalBudget()
+    {
+        return $this->budgetItems()->sum('total');
+    }
+
+    // Update budget from items
+    public function updateBudgetFromItems()
+    {
+        $this->budget = $this->calculateTotalBudget();
+        $this->save();
+        return $this->budget;
+    }
 }

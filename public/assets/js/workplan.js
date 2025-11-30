@@ -54,9 +54,16 @@ function initializeEventListeners() {
         calculateDuration(row);
     });
 
-    // Format budget input
-    $(document).on('blur', '.budget-input', function() {
-        formatBudget($(this));
+    // Open budget items page when clicking budget column
+    $(document).on('click', '.budget-cell', function() {
+        const row = $(this).closest('tr');
+        const workplanId = row.data('workplan-id');
+        
+        if (workplanId && workplanId !== 'new') {
+            // Open budget items page in new tab
+            const url = `/workplan/${workplanId}/item`;
+            window.open(url, '_blank');
+        }
     });
 
     // Auto-save realization checkbox when changed
@@ -370,11 +377,17 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
     // Extra Des column for activities
     html += `<td class="month-cell"></td>`;
 
-    // Budget
+    // Budget - clickable to open items page
+    const budgetValue = workplan.budget || 0;
+    const hasWorkplanId = workplan.id && workplan.id !== 'new';
     html += `
-            <td>
-                <input type="text" class="form-control form-control-sm budget-input" 
-                    value="${formatCurrency(workplan.budget)}" ${isApproved ? 'readonly' : ''}>
+            <td class="budget-cell ${hasWorkplanId ? 'cursor-pointer' : ''}" 
+                style="${hasWorkplanId ? 'cursor: pointer; background-color: #f0f8ff;' : ''}" 
+                title="${hasWorkplanId ? 'Click to manage budget items' : 'Save workplan first'}">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span>${formatCurrency(budgetValue)}</span>
+                    ${hasWorkplanId ? '<i class="bi bi-box-arrow-up-right ms-2 text-primary"></i>' : ''}
+                </div>
             </td>
     `;
 
@@ -427,7 +440,7 @@ function saveWorkplan(row) {
         year: currentYear,
         activity: row.find('.activity-input').val(),
         duration_days: row.find('.duration-input').val(),
-        budget: parseCurrency(row.find('.budget-input').val()),
+        budget: 0, // Budget will be calculated from budget items
         description: ''
     };
 

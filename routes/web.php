@@ -22,7 +22,9 @@ use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
+use App\Http\Controllers\WorkPlanItemController;
 use App\Livewire\Auth\Login;
+use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -342,7 +344,7 @@ Route::middleware('auth')->group(function () {
         });
 
 
-        
+
 
     /* ========================
         WORK PLAN (Program Kerja)
@@ -361,18 +363,41 @@ Route::middleware('auth')->group(function () {
             Route::post('/store', [KPIWorkPlanController::class, 'store'])
                 ->name('workplan.store');
 
-            Route::put('/{id}', [KPIWorkPlanController::class, 'update'])
-                ->name('workplan.update');
+            Route::prefix('{id}')->group(function () {
 
-            Route::delete('/{id}', [KPIWorkPlanController::class, 'destroy'])
-                ->name('workplan.destroy');
+                Route::prefix('item')->group(function () {
+                    Route::get('/', [WorkPlanItemController::class, 'index'])
+                        ->name('workplan.items');
+                    
+                    // AJAX endpoints for budget items
+                    Route::get('/categories', [WorkPlanItemController::class, 'getCategories'])
+                        ->name('workplan.items.categories');
+                    
+                    Route::get('/list', [WorkPlanItemController::class, 'getItems'])
+                        ->name('workplan.items.list');
+                    
+                    Route::post('/', [WorkPlanItemController::class, 'store'])
+                        ->name('workplan.items.store');
+                    
+                    Route::put('/{itemId}', [WorkPlanItemController::class, 'update'])
+                        ->name('workplan.items.update');
+                    
+                    Route::delete('/{itemId}', [WorkPlanItemController::class, 'destroy'])
+                        ->name('workplan.items.destroy');
+                });
 
-            Route::post('/{id}/approve', [KPIWorkPlanController::class, 'approve'])
-                ->name('workplan.approve');
+                Route::put('/', [KPIWorkPlanController::class, 'update'])
+                    ->name('workplan.update');
 
-            Route::patch('/{id}/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
-                ->name('workplan.updateRealization');
+                Route::delete('/', [KPIWorkPlanController::class, 'destroy'])
+                    ->name('workplan.destroy');
 
+                Route::post('/approve', [KPIWorkPlanController::class, 'approve'])
+                    ->name('workplan.approve');
+
+                Route::patch('/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
+                    ->name('workplan.updateRealization');
+            });
         });
 
     /* ========================

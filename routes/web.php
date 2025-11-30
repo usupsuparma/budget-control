@@ -302,6 +302,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:transaction.user.view')
             ->name('userSubmission.index');
 
+        Route::get('/user_create', [SubmissionController::class, 'user_create'])
+            // ->middleware('permission:transaction.user.view')
+            ->name('userSubmission.create');
+
         Route::get('/admin', [SubmissionController::class, 'admin'])
             ->middleware('permission:transaction.admin.view')
             ->name('adminSubmission.index');

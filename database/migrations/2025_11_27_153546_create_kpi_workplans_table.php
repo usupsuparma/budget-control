@@ -13,18 +13,18 @@ return new class extends Migration
     {
         Schema::create('kpi_workplans', function (Blueprint $table) {
             $table->id();
-            
+
             // Polymorphic relationship
             $table->enum('kpi_type', ['department', 'section']);
             $table->unsignedBigInteger('kpi_id');
-            
+
             $table->integer('year');
             $table->text('activity');
             $table->unsignedInteger('duration_days')->nullable();
-            
+
             $table->date('schedule_start')->nullable();
             $table->date('schedule_end')->nullable();
-            
+
             // Planning months
             $table->boolean('plan_jan')->default(false);
             $table->boolean('plan_feb')->default(false);
@@ -38,9 +38,9 @@ return new class extends Migration
             $table->boolean('plan_oct')->default(false);
             $table->boolean('plan_nov')->default(false);
             $table->boolean('plan_dec')->default(false);
-            
+
             $table->decimal('budget', 15, 2)->nullable();
-            
+
             // Realization months
             $table->boolean('real_jan')->default(false);
             $table->boolean('real_feb')->default(false);
@@ -54,28 +54,28 @@ return new class extends Migration
             $table->boolean('real_oct')->default(false);
             $table->boolean('real_nov')->default(false);
             $table->boolean('real_dec')->default(false);
-            
+
             $table->enum('status', ['draft', 'pending', 'approved', 'rejected'])
-                  ->default('draft');
+                ->default('draft');
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();
-            
+
             $table->text('description')->nullable();
             $table->text('notes')->nullable();
-            
+
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Indexes
             $table->index(['kpi_type', 'kpi_id']);
             $table->index('year');
             $table->index('status');
-            
+
             // Foreign key untuk approved_by
             $table->foreign('approved_by')
-                  ->references('id')
-                  ->on('employee')
-                  ->onDelete('set null');
+                ->references('id')
+                ->on('employee')
+                ->onDelete('set null');
         });
     }
 

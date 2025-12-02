@@ -22,13 +22,22 @@ use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
+use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', Login::class)->name('login');
+// routes/web.php
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+Route::get('/login', [AuthorizationController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthorizationController::class, 'login']);
+
+// Route::get('/', Login::class)->name('login');
 
 Route::middleware('auth')->group(function () {
 
@@ -283,6 +292,34 @@ Route::middleware('auth')->group(function () {
                 ->name('anggaran.destroy');
         });
 
+    Route::prefix('production')
+        ->middleware('permission:production.view')
+        ->group(function () {
+
+            Route::get('/', [ProductionController::class, 'index'])
+                ->name('production.index');
+
+            Route::get('/create', [ProductionController::class, 'create'])
+                ->middleware('permission:productiongi.create')
+                ->name('production.create');
+
+            Route::post('/', [ProductionController::class, 'store'])
+                ->middleware('permission:production.create')
+                ->name('production.store');
+
+            Route::get('/{id}/edit', [ProductionController::class, 'edit'])
+                ->middleware('permission:production.edit')
+                ->name('production.edit');
+
+            Route::put('/{id}', [ProductionController::class, 'update'])
+                ->middleware('permission:production.edit')
+                ->name('production.update');
+
+            Route::delete('/{id}', [ProductionController::class, 'destroy'])
+                ->middleware('permission:production.delete')
+                ->name('production.destroy');
+        });
+
 
     Route::prefix('resume-anggaran')
         ->middleware('permission:budget.view')
@@ -368,20 +405,20 @@ Route::middleware('auth')->group(function () {
                 Route::prefix('item')->group(function () {
                     Route::get('/', [WorkPlanItemController::class, 'index'])
                         ->name('workplan.items');
-                    
+
                     // AJAX endpoints for budget items
                     Route::get('/categories', [WorkPlanItemController::class, 'getCategories'])
                         ->name('workplan.items.categories');
-                    
+
                     Route::get('/list', [WorkPlanItemController::class, 'getItems'])
                         ->name('workplan.items.list');
-                    
+
                     Route::post('/', [WorkPlanItemController::class, 'store'])
                         ->name('workplan.items.store');
-                    
+
                     Route::put('/{itemId}', [WorkPlanItemController::class, 'update'])
                         ->name('workplan.items.update');
-                    
+
                     Route::delete('/{itemId}', [WorkPlanItemController::class, 'destroy'])
                         ->name('workplan.items.destroy');
                 });

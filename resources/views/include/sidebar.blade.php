@@ -50,6 +50,7 @@
                     {{-- @can('kpi.kpidivision.view') --}}
                     <li class="pe-slide-item">
                         <a href="{{ route('kpidivision.index') }}" class="pe-nav-link {{ Request::is('kpidivision*') ? 'active' : '' }}">
+                            <i class="bi bi-check2-square"></i>
                             Division
                         </a>
                     </li>
@@ -58,6 +59,7 @@
                     {{-- @can('kpi.department.view') --}}
                     <li class="pe-slide-item">
                         <a href="{{ route('kpidepartment.index') }}" class="pe-nav-link {{ Request::is('kpidepartment*') ? 'active' : '' }}">
+                            <i class="bi bi-check2-square"></i>
                             Departement
                         </a>
                     </li>
@@ -66,6 +68,7 @@
                     {{-- @can('kpi.section.view') --}}
                     <li class="pe-slide-item">
                         <a href="{{ route('kpisection.index') }}" class="pe-nav-link {{ Request::is('kpisection*') ? 'active' : '' }}">
+                            <i class="bi bi-check2-square"></i>
                             Section
                         </a>
                     </li>
@@ -74,7 +77,23 @@
                 </ul>
             </li>
             @endcanany
+            @can('production.view')
+            <li class="pe-slide pe-has-sub">
+                <a href="{{ route('production') }}" class="pe-nav-link {{ Request::is('production') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                    <span class="pe-nav-content">Productions Plan</span>
+                </a>
+            </li>
+            @endcan
 
+            @can('marketing.view')
+            <li class="pe-slide pe-has-sub">
+                <a href="{{ route('marketing') }}" class="pe-nav-link {{ Request::is('marketing') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                    <span class="pe-nav-content">Marketing & Sales Plan</span>
+                </a>
+            </li>
+            @endcan
 
             {{-- BUDGET CONTROL --}}
             @can('budget.view')
@@ -88,7 +107,7 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'show' : '' }}"  id="collapseInvoices">
+                <ul class="pe-slide-menu collapse {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'show' : '' }}" id="collapseInvoices">
                     <li class="pe-slide-item">
                         <a href="{{ route('workplan.index') }}" class="pe-nav-link {{ Request::is('workplan*') ? 'active' : '' }}">
                             <i class="bi bi-calendar-check"></i> Work Plan
@@ -156,6 +175,7 @@
             @canany([
             'setting.master.view',
             'setting.users.view',
+            'setting.code.view',
             'setting.coa.view',
             'approval.view',
             'setting.authorization.view',
@@ -171,7 +191,7 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
 
                     @can('setting.master.view')
                     <li class="pe-slide-item">
@@ -179,6 +199,12 @@
                             Master
                         </a>
                     </li>
+                    @endcan
+
+                    @can('setting.code.view')
+                    <a href="{{ route('code') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
+                        Users
+                    </a>
                     @endcan
 
                     @can('setting.users.view')

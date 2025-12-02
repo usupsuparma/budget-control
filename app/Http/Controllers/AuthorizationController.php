@@ -6,9 +6,29 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthorizationController extends Controller
 {
+    public function showLogin()
+    {
+        return view('authorization.login');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials, $request->remember)) {
+            $request->session()->regenerate();
+            return redirect()->intended('/dashboard');
+        }
+
+        return back()->with('error', 'Email atau password salah.');
+    }
     // ====== ROLE PAGE ======
     public function roles()
     {

@@ -60,25 +60,25 @@
                 <div class="col-md-10">
                     <div class="tab-content pt-3">
                         <div class="tab-pane fade show active" id="employee">
-                            @include('pages.employee')
+                            @include('pages.settings.employee')
                         </div>
                         <div class="tab-pane fade" id="job_position">
-                            @include('pages.JobPosition')
+                            @include('pages.settings.JobPosition')
                         </div>
                         <div class="tab-pane fade" id="job_level">
-                            @include('pages.JobLevel')
+                            @include('pages.settings.JobLevel')
                         </div>
                         <div class="tab-pane fade" id="director">
-                            @include('pages.director')
+                            @include('pages.settings.director')
                         </div>
                         <div class="tab-pane fade" id="division">
-                            @include('pages.division')
+                            @include('pages.settings.division')
                         </div>
                         <div class="tab-pane fade" id="department">
-                            @include('pages.department')
+                            @include('pages.settings.department')
                         </div>
                         <div class="tab-pane fade" id="section">
-                            @include('pages.section')
+                            @include('pages.settings.section')
                         </div>
 
 

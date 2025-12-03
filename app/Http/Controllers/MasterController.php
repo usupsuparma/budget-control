@@ -27,14 +27,14 @@ class MasterController extends Controller
         // dd($employee);
 
 
-        return view('pages.Settings', compact('title', 'employee', 'jobLevel', 'director', 'division', 'department', 'section'));
+        return view('pages.settings.Settings', compact('title', 'employee', 'jobLevel', 'director', 'division', 'department', 'section'));
     }
 
     public function index2()
     {
         $title = 'Master Data';
 
-        return view('pages.Settings', compact('title'));
+        return view('pages.settings.Settings', compact('title'));
     }
 
     public function data(Request $request)

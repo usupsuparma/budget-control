@@ -79,8 +79,8 @@
             @endcanany
             @can('production.view')
             <li class="pe-slide pe-has-sub">
-                <a href="{{ route('production') }}" class="pe-nav-link {{ Request::is('production') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                <a href="{{ route('production.index') }}" class="pe-nav-link {{ Request::is('production.index') ? 'active' : '' }}">
+                    <i class="bi bi-minecart-loaded pe-nav-icon"></i>
                     <span class="pe-nav-content">Productions Plan</span>
                 </a>
             </li>
@@ -88,8 +88,8 @@
 
             @can('marketing.view')
             <li class="pe-slide pe-has-sub">
-                <a href="{{ route('marketing') }}" class="pe-nav-link {{ Request::is('marketing') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2 pe-nav-icon"></i>
+                <a href="{{ route('marketing.index') }}" class="pe-nav-link {{ Request::is('marketing.index') ? 'active' : '' }}">
+                    <i class="bi bi-megaphone pe-nav-icon"></i>
                     <span class="pe-nav-content">Marketing & Sales Plan</span>
                 </a>
             </li>
@@ -102,7 +102,7 @@
                     class="pe-nav-link {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
-                    <i class="bi bi-receipt pe-nav-icon"></i>
+                    <i class="bi bi-currency-exchange pe-nav-icon"></i>
                     <span class="pe-nav-content">Budget Control</span>
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
@@ -176,14 +176,13 @@
             'setting.master.view',
             'setting.users.view',
             'setting.code.view',
-            'setting.coa.view',
             'approval.view',
             'setting.authorization.view',
             'setting.history.view'
             ])
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseSetting"
-                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-gear pe-nav-icon"></i>
@@ -191,31 +190,25 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('user*') || Request::is('coa*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
 
                     @can('setting.master.view')
                     <li class="pe-slide-item">
                         <a href="{{ route('master') }}" class="pe-nav-link {{ Request::is('master*') ? 'active' : '' }}">
-                            Master
+                            Employment
                         </a>
                     </li>
                     @endcan
 
                     @can('setting.code.view')
-                    <a href="{{ route('code') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
-                        Users
+                    <a href="{{ route('code.index') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
+                        Code
                     </a>
                     @endcan
 
                     @can('setting.users.view')
                     <a href="{{ route('user') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
                         Users
-                    </a>
-                    @endcan
-
-                    @can('setting.coa.view')
-                    <a href="{{ route('coa') }}" class="pe-nav-link {{ Request::is('coa*') ? 'active' : '' }}">
-                        COA
                     </a>
                     @endcan
 

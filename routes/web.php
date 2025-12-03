@@ -22,7 +22,10 @@ use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
+use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\SettingCodeController;
+use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
@@ -300,7 +303,7 @@ Route::middleware('auth')->group(function () {
                 ->name('production.index');
 
             Route::get('/create', [ProductionController::class, 'create'])
-                ->middleware('permission:productiongi.create')
+                ->middleware('permission:production.create')
                 ->name('production.create');
 
             Route::post('/', [ProductionController::class, 'store'])
@@ -318,6 +321,34 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [ProductionController::class, 'destroy'])
                 ->middleware('permission:production.delete')
                 ->name('production.destroy');
+        });
+
+    Route::prefix('marketing')
+        ->middleware('permission:marketing.view')
+        ->group(function () {
+
+            Route::get('/', [MarketingController::class, 'index'])
+                ->name('marketing.index');
+
+            Route::get('/create', [MarketingController::class, 'create'])
+                ->middleware('permission:marketing.create')
+                ->name('marketing.create');
+
+            Route::post('/', [MarketingController::class, 'store'])
+                ->middleware('permission:marketing.create')
+                ->name('marketing.store');
+
+            Route::get('/{id}/edit', [MarketingController::class, 'edit'])
+                ->middleware('permission:marketing.edit')
+                ->name('marketing.edit');
+
+            Route::put('/{id}', [MarketingController::class, 'update'])
+                ->middleware('permission:marketing.edit')
+                ->name('marketing.update');
+
+            Route::delete('/{id}', [MarketingController::class, 'destroy'])
+                ->middleware('permission:marketing.delete')
+                ->name('marketing.destroy');
         });
 
 
@@ -608,14 +639,14 @@ Route::middleware('auth')->group(function () {
         ->get('/master', [MasterController::class, 'index'])
         ->name('master');
     Route::middleware('permission:setting.users.view')
-        ->get('/user', [MasterController::class, 'user'])
-        ->name('user');
+        ->get('/user', [UsersController::class, 'index'])
+        ->name('users.index');
     Route::middleware('permission:setting.history.view')
         ->get('/history', [MasterController::class, 'history'])
         ->name('history');
-    Route::middleware('permission:setting.coa.view')
-        ->get('/coa', [MasterController::class, 'coa'])
-        ->name('coa');
+    Route::middleware('permission:setting.code.view')
+        ->get('/code', [SettingCodeController::class, 'index'])
+        ->name('code.index');
 
 
 

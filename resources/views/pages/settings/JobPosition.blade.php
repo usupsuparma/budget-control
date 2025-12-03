@@ -128,7 +128,14 @@
     </div>
 </div>
 
-@push('scripts')
+
+@push('page-scripts')
+
+<!-- DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
     let jobPositionTable;
@@ -162,7 +169,7 @@
                     name: 'action',
                     orderable: false,
                     searchable: false
-                },
+                }
             ],
             order: [
                 [0, 'desc']
@@ -172,31 +179,25 @@
     });
 </script>
 
+
+<!-- LOAD ORGANIZATION CREATE -->
 <script>
     $('select[name="job_level_id"]').on('change', function() {
 
         let levelId = $(this).val();
-
-        // Hapus input sebelumnya
-        $('#dynamicOrganization').html("");
+        $('#dynamicOrganization').html('');
 
         $.ajax({
-            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL_ID']) }}"
-                .replace('LEVEL_ID', levelId),
-
-            method: "GET",
+            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL']) }}".replace('LEVEL', levelId),
             success: function(res) {
 
                 if (res.items.length === 0) {
-                    $('#dynamicOrganization').html(
-                        `<div class="mt-2"><small class="text-danger">No related data found.</small></div>`
-                    );
+                    $('#dynamicOrganization').html(`<small class="text-danger">No organization found.</small>`);
                     return;
                 }
 
-                // Buat dropdown
                 let html = `
-                <div class="col-12 mt-3">
+                <div class="col-12 mt-2">
                     <label class="form-label">Parent Structure</label>
                     <select name="structure_id" class="form-select" required>
                         <option value="" disabled selected>-- Select --</option>
@@ -215,7 +216,8 @@
     });
 </script>
 
-<!-- CREATE (AJAX) -->
+
+<!-- CREATE AJAX -->
 <script>
     $('#btnCreateJobPosition').click(function(e) {
         e.preventDefault();
@@ -244,51 +246,52 @@
                 });
 
                 form.trigger('reset');
+                $('#dynamicOrganization').html('');
             }
         });
     });
 </script>
 
-<!-- EDIT -->
+
+<!-- EDIT BUTTON -->
 <script>
     $(document).on('click', '.jobPosition-edit-btn', function() {
-        var id = $(this).data('id');
 
-        var editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}".replace('/0/edit', '/' + id + '/edit');
+        let id = $(this).data('id');
+        let editUrl = "{{ route('jobPosition.edit', ['id' => 0]) }}".replace('/0/edit', '/' + id + '/edit');
 
         $.get(editUrl, function(res) {
 
-            // Isi field dasar
             $('#edit_jobPosition_name').val(res.job_position_name);
             $('#edit_job_level_id').val(res.job_level_id).change();
             $('#edit_status_jobPosition').val(res.status);
 
-            // LOAD STRUCTURE BERDASARKAN job_level_id
             loadEditStructure(res.job_level_id, res.structure_id);
 
-            // Set update URL
-            var updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}".replace('/0', '/' + id);
+            let updateUrl = "{{ route('jobPosition.update', ['id' => 0]) }}".replace('/0', '/' + id);
             $('#jobPositionEditForm').attr('action', updateUrl);
 
             $('#editJobPosition').modal('show');
         });
+
     });
 </script>
 
+
+<!-- LOAD STRUCTURE EDIT -->
 <script>
-    function loadEditStructure(levelId, selectedStructureId = null) {
+    function loadEditStructure(levelId, selectedId = null) {
+
         $('#dynamicEditOrganization').html("");
 
         $.ajax({
-            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL_ID']) }}"
-                .replace('LEVEL_ID', levelId),
-            method: "GET",
+            url: "{{ route('jobPosition.orgByLevel', ['level_id' => 'LEVEL']) }}"
+                .replace('LEVEL', levelId),
+
             success: function(res) {
 
                 if (!res.items || res.items.length === 0) {
-                    $('#dynamicEditOrganization').html(
-                        `<div class="mt-2"><small class="text-danger">No related data found.</small></div>`
-                    );
+                    $('#dynamicEditOrganization').html(`<small class="text-danger">No data found.</small>`);
                     return;
                 }
 
@@ -306,32 +309,33 @@
 
                 $('#dynamicEditOrganization').html(html);
 
-                // SET SELECTED VALUE
-                if (selectedStructureId) {
-                    $('#edit_structure_id').val(selectedStructureId);
+                if (selectedId) {
+                    $('#edit_structure_id').val(selectedId);
                 }
             }
         });
+
     }
 </script>
+
 <script>
     $('#edit_job_level_id').on('change', function() {
-        let levelId = $(this).val();
-        loadEditStructure(levelId, null); // ketika ganti level, kosongkan pilihan
+        loadEditStructure($(this).val(), null);
     });
 </script>
-<!-- UPDATE -->
+
+
+<!-- UPDATE AJAX -->
 <script>
     $('#jobPositionEditForm').submit(function(e) {
         e.preventDefault();
 
-        let form = $(this);
-        let url = form.attr('action');
+        let url = $(this).attr('action');
 
         $.ajax({
             url: url,
             method: "POST",
-            data: form.serialize(),
+            data: $(this).serialize(),
             success: function() {
 
                 $('#editJobPosition').modal('hide');
@@ -349,26 +353,28 @@
                 });
             }
         });
+
     });
 </script>
+
 
 <!-- DELETE -->
 <script>
     $(document).on('click', '.jobPosition-delete-btn', function() {
 
-        var id = $(this).data('id');
+        let id = $(this).data('id');
 
         Swal.fire({
             title: "Delete Job Position?",
-            text: "This action cannot be undone.",
+            text: "This action is permanent.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Delete",
+            confirmButtonText: "Delete"
         }).then((result) => {
+
             if (result.isConfirmed) {
 
-                var deleteUrl = "{{ route('jobPosition.delete', ['id' => 0]) }}"
-                    .replace('/0', '/' + id);
+                let deleteUrl = "{{ route('jobPosition.delete', ['id' => 0]) }}".replace('/0', '/' + id);
 
                 $.ajax({
                     url: deleteUrl,
@@ -384,14 +390,17 @@
                         Swal.fire({
                             icon: "success",
                             title: "Deleted",
-                            text: "Job Position deleted successfully",
+                            text: "Job Position removed",
                             timer: 1500,
                             showConfirmButton: false
                         });
+
                     }
                 });
             }
+
         });
+
     });
 </script>
 

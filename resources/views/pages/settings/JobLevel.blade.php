@@ -120,8 +120,9 @@
 
 
 
-@push('scripts')
-<!-- DataTables -->
+@push('page-scripts')
+
+<!-- jQuery & DataTables -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -129,6 +130,10 @@
 
 <script>
     $(document).ready(function() {
+
+        // =======================
+        // INIT DATATABLES
+        // =======================
         $('#jobLevelTable').DataTable({
             processing: true,
             serverSide: true,
@@ -137,7 +142,6 @@
                     data: 'id',
                     name: 'id'
                 },
-
                 {
                     data: 'job_level_name',
                     name: 'job_level_name'
@@ -153,45 +157,77 @@
                     name: 'action',
                     orderable: false,
                     searchable: false
-                }
+                },
             ],
             order: [
                 [0, 'asc']
             ]
         });
+
     });
 </script>
 
-@if(session('success'))
+
+{{-- CREATE (AJAX) --}}
 <script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: "{{ session('success') }}",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
+    $('#jobLevelCreateForm').submit(function(e) {
+        e.preventDefault();
+
+        let url = $(this).attr('action');
+
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: $(this).serialize(),
+            success: function(res) {
+
+                $('#addJobLevel').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#jobLevelTable').DataTable().ajax.reload(null, false);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: "Job Level added successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                $('#jobLevelCreateForm').trigger('reset');
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: "Failed to add data"
+                });
+                console.log(xhr.responseText);
+            }
+        });
     });
 </script>
-@endif
 
+
+{{-- DELETE --}}
 <script>
     $(document).on('click', '.jobLevel-delete-btn', function() {
-        var id = $(this).data('id');
+
+        let id = $(this).data('id');
 
         Swal.fire({
-            title: "Are you sure?",
-            text: "Data will be deleted permanently!",
+            title: "Delete Job Level?",
+            text: "This action cannot be undone.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Yes, delete!",
-            cancelButtonText: "Cancel",
+            confirmButtonText: "Delete",
+            cancelButtonText: "Cancel"
         }).then((result) => {
+
             if (result.isConfirmed) {
 
-                let deleteUrl = "{{ route('jobLevel.delete', ['id' => ':id']) }}";
-                deleteUrl = deleteUrl.replace(':id', id);
+                let deleteUrl = "{{ route('jobLevel.delete', ['id' => ':id']) }}".replace(':id', id);
 
                 $.ajax({
                     url: deleteUrl,
@@ -201,12 +237,10 @@
                         _token: "{{ csrf_token() }}"
                     },
                     success: function() {
-                        $('#jobLevelTable').DataTable().ajax.reload();
-
+                        $('#jobLevelTable').DataTable().ajax.reload(null, false);
                         Swal.fire({
                             icon: "success",
-                            title: "Deleted!",
-                            text: "Data has been removed",
+                            title: "Deleted",
                             timer: 1500,
                             showConfirmButton: false
                         });
@@ -217,37 +251,66 @@
                 });
 
             }
+
         });
+
     });
 </script>
+
+
+{{-- EDIT (SHOW MODAL + FILL DATA) --}}
 <script>
-    $(document).ready(function() {
+    $(document).on('click', '.jobLevel-edit-btn', function() {
 
-        $(document).on('click', '.jobLevel-edit-btn', function() {
-            var id = $(this).data('id');
+        let id = $(this).data('id');
 
-            // Buat URL edit dengan dummy ID
-            var editUrl = "{{ route('jobLevel.edit', ['id' => 0]) }}";
-            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+        $.get("{{ url('/jobLevel') }}/" + id + "/edit", function(data) {
 
-            $.get(editUrl, function(response) {
+            $('#edit_jobLevel_name').val(data.job_level_name);
+            $('#edit_status_jobLevel').val(data.status);
 
-                // response = data dari controller
-                $('#edit_jobLevel_name').val(response.job_level_name);
-                $('#edit_status_jobLevel').val(response.status);
+            $('#jobLevelEditForm').attr('action', "{{ url('/jobLevel/update') }}/" + id);
 
-                // Atur URL update
-                var updateUrl = "{{ route('jobLevel.update', ['id' => 0]) }}";
-                updateUrl = updateUrl.replace('/0', '/' + id);
-
-                $('#jobLevelEditForm').attr('action', updateUrl);
-
-                $('#editJobLevel').modal('show');
-            });
+            $('#editJobLevel').modal('show');
         });
+
     });
 </script>
 
 
+{{-- UPDATE (AJAX) --}}
+<script>
+    $('#jobLevelEditForm').submit(function(e) {
+        e.preventDefault();
+
+        let url = $(this).attr('action');
+
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: $(this).serialize(),
+            success: function(res) {
+
+                $('#editJobLevel').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#jobLevelTable').DataTable().ajax.reload(null, false);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Job Level updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
+            }
+        });
+
+    });
+</script>
 
 @endpush

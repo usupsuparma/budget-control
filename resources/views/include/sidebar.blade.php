@@ -206,7 +206,7 @@
                     @endcan
 
                     @can('setting.users.view')
-                    <a href="{{ route('user.index') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
+                    <a href="{{ route('users.index') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
                         Users
                     </a>
                     @endcan

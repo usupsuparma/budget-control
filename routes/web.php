@@ -640,7 +640,7 @@ Route::middleware('auth')->group(function () {
         ->name('master');
     Route::middleware('permission:setting.users.view')
         ->get('/user', [UsersController::class, 'index'])
-        ->name('user.index');
+        ->name('users.index');
     Route::middleware('permission:setting.history.view')
         ->get('/history', [MasterController::class, 'history'])
         ->name('history');

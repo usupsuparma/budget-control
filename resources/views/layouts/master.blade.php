@@ -8,9 +8,6 @@
 <meta content="Admin & Dashboards Template" name="description" />
 <meta content="Pixeleyez" name="author" />
 
-<!-- layout setup -->
-<script type="module" src="{{ asset('assets/js/layout-setup.js') }}"></script>
-
 <!-- App favicon -->
 <link rel="shortcut icon" href="{{ asset('assets/images/k_favicon_32x.png') }}">
 

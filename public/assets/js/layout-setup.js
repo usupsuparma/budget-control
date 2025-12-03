@@ -86,33 +86,28 @@ function updateLayoutDir(value) {
 function updateSimpleBar(value) {
     setTimeout(() => {
         const sidebarSimpleBarMenu = document.getElementById('sidebar-simplebar');
-        if ((value === "vertical" || value === "horizontal" || value === "semibox") && document.documentElement.getAttribute("data-sidebar") !== "icon") {
-            if (sidebarSimpleBarMenu) {
-                const allMenus = sidebarSimpleBarMenu.querySelector('ul.pe-main-menu');
-                if (allMenus) {
-                    sidebarSimpleBarMenu.innerHTML = allMenus.parentElement.innerHTML;
-                }
-                // Add 'simplebar' class to initialize it
-                sidebarSimpleBarMenu.setAttribute('data-simplebar', '');
+        if (!sidebarSimpleBarMenu) return;
 
-                // Initialize SimpleBar for custom scrolling
-                if (window.SimpleBar) {
-                    new SimpleBar(sidebarSimpleBarMenu);  // Initialize a new SimpleBar instance
-                }
+        if ((value === "vertical" || value === "horizontal" || value === "semibox") && document.documentElement.getAttribute("data-sidebar") !== "icon") {
+            // Check if SimpleBar is already initialized
+            const existingInstance = window.SimpleBar ? SimpleBar.instances.get(sidebarSimpleBarMenu) : null;
+            
+            if (!existingInstance && window.SimpleBar) {
+                // Only initialize if not already initialized
+                sidebarSimpleBarMenu.setAttribute('data-simplebar', '');
+                new SimpleBar(sidebarSimpleBarMenu);
             }
         } else {
+            // Only unmount if there's an existing instance
             if (window.SimpleBar) {
                 const simpleBarInstance = SimpleBar.instances.get(sidebarSimpleBarMenu);
                 if (simpleBarInstance) {
-                    simpleBarInstance.unMount();  // Unmount and remove the instance
-                    const allMenus = sidebarSimpleBarMenu.querySelector('ul.pe-main-menu');
-                    if (allMenus) {
-                        sidebarSimpleBarMenu.innerHTML = allMenus.parentElement.innerHTML;
-                    }
+                    simpleBarInstance.unMount();
+                    sidebarSimpleBarMenu.removeAttribute('data-simplebar');
                 }
             }
         }
-    }, 1000);
+    }, 100);
 }
 // Function to handle radio button selection
 function handleRadioChange(event) {
@@ -156,78 +151,91 @@ function handleRadioChange(event) {
     }
 }
 
-// Attach event listeners to all radio buttons in the customizer
-document.querySelectorAll('.layout-customizer input[type="radio"]').forEach((radio) => {
-    radio.addEventListener("change", handleRadioChange);
-});
+// Wait for DOM to be fully loaded before attaching event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listeners to all radio buttons in the customizer
+    document.querySelectorAll('.layout-customizer input[type="radio"]').forEach((radio) => {
+        radio.addEventListener("change", handleRadioChange);
+    });
 
-// dark light mode toggle
-const toggleMode = document.getElementById("toggleMode");
-const lightModeButton = document.getElementById("lightModeBtn");
-const darkModeButton = document.getElementById("darkModeBtn");
-if (toggleMode) {
-    toggleMode.addEventListener("click", () => {
-        const currentTheme = htmlElement.getAttribute("data-bs-theme");
-        const newTheme = currentTheme === "light" ? "dark" : "light";
-        setAndSaveAttribute("data-bs-theme", newTheme);
-        setTheme(newTheme);
-        if (newTheme === "dark") {
-            lightModeButton.classList.remove("active");
-            darkModeButton.classList.add("active");
+    // dark light mode toggle
+    const toggleMode = document.getElementById("toggleMode");
+    const lightModeButton = document.getElementById("lightModeBtn");
+    const darkModeButton = document.getElementById("darkModeBtn");
+    if (toggleMode) {
+        toggleMode.addEventListener("click", () => {
+            const currentTheme = htmlElement.getAttribute("data-bs-theme");
+            const newTheme = currentTheme === "light" ? "dark" : "light";
+            setAndSaveAttribute("data-bs-theme", newTheme);
+            setTheme(newTheme);
+            if (newTheme === "dark") {
+                lightModeButton.classList.remove("active");
+                darkModeButton.classList.add("active");
+            } else {
+                darkModeButton.classList.remove("active");
+                lightModeButton.classList.add("active");
+            }
+        });
+    }
+
+    // vertical toggle button
+    const toggleButton = document.getElementById("toggleSidebar");
+    const sideBarBackdrop = document.getElementById("sidebar-backdrop");
+    sideBarBackdrop?.addEventListener("click", () => {
+        if (htmlElement.getAttribute("data-layout") === "horizontal") {
+            const horizontalAside = document.getElementById("horizontal-aside");
+            horizontalAside.classList.toggle("show");
         } else {
-            darkModeButton.classList.remove("active");
-            lightModeButton.classList.add("active");
+            const sidebar = document.getElementById("sidebar");
+            sidebar.classList.remove("show");
         }
     });
-}
 
-// vertical toggle button
-const toggleButton = document.getElementById("toggleSidebar");
-const sideBarBackdrop = document.getElementById("sidebar-backdrop");
-sideBarBackdrop?.addEventListener("click", () => {
-    if (htmlElement.getAttribute("data-layout") === "horizontal") {
-        const horizontalAside = document.getElementById("horizontal-aside");
-        horizontalAside.classList.toggle("show");
-    } else {
-        const sidebar = document.getElementById("sidebar");
-        sidebar.classList.remove("show");
+    function removeShowClassFromSidebar() {
+        const sidebarSimpleBarMenu = document.getElementById('sidebar-simplebar');
+        sidebarSimpleBarMenu?.querySelectorAll('.pe-slide-menu.collapse.show').forEach((element) => {
+            element.classList.remove('show');
+        });
     }
-});
 
-function removeShowClassFromSidebar() {
-    const sidebarSimpleBarMenu = document.getElementById('sidebar-simplebar');
-    sidebarSimpleBarMenu?.querySelectorAll('.pe-slide-menu.collapse.show').forEach((element) => {
-        element.classList.remove('show');
-    });
-}
-
-toggleButton?.addEventListener("click", () => {
-    const currentToggled = htmlElement.getAttribute("data-sidebar");
-    if (window.innerWidth < 992) {
-        // Toggle the data-vertical-layout value
-        const sidebar = document.getElementById("sidebar");
-        sidebar.classList.add("show");
-        removeHorizontalAttributes()
-    } else {
-        // Toggle the data-vertical-layout value
-        if (currentToggled === "icon") {
-            htmlElement.setAttribute("data-sidebar", "default");
+    toggleButton?.addEventListener("click", () => {
+        const currentToggled = htmlElement.getAttribute("data-sidebar");
+        if (window.innerWidth < 992) {
+            // Toggle the data-vertical-layout value
+            const sidebar = document.getElementById("sidebar");
+            sidebar.classList.add("show");
+            removeHorizontalAttributes()
         } else {
-            htmlElement.setAttribute("data-sidebar", "icon");
-            removeShowClassFromSidebar();
+            // Toggle the data-vertical-layout value
+            if (currentToggled === "icon") {
+                htmlElement.setAttribute("data-sidebar", "default");
+            } else {
+                htmlElement.setAttribute("data-sidebar", "icon");
+                removeShowClassFromSidebar();
+            }
         }
-    }
-    updateSimpleBar(htmlElement.getAttribute("data-layout"));
-});
+        updateSimpleBar(htmlElement.getAttribute("data-layout"));
+    });
 
-// horizontal toggle button
-const horizontalToggle = document.getElementById("toggleHorizontal");
-horizontalToggle?.addEventListener("click", () => {
-    if (window.innerWidth < 1200) {
-        // Toggle the data-vertical-layout value
-        const horizontalAside = document.getElementById("horizontal-aside");
-        horizontalAside.classList.toggle("show");
-    }
+    // horizontal toggle button
+    const horizontalToggle = document.getElementById("toggleHorizontal");
+    horizontalToggle?.addEventListener("click", () => {
+        if (window.innerWidth < 1200) {
+            // Toggle the data-vertical-layout value
+            const horizontalAside = document.getElementById("horizontal-aside");
+            horizontalAside.classList.toggle("show");
+        }
+    });
+
+    // rest layout to default
+    const resetBtn = document.getElementById("resetBtn");
+    resetBtn?.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.reload();
+    });
+
+    // Run on page load
+    handleResponsiveSidebar();
 });
 
 // Function to handle sidebar menu active links
@@ -300,17 +308,6 @@ horizontalToggle?.addEventListener("click", () => {
 //         }
 //     }
 // })
-
-// rest layout to default
-const resetBtn = document.getElementById("resetBtn"); // Get the resetBtn
-
-resetBtn?.addEventListener("click", () => {
-    localStorage.clear(); // Clear localStorage
-    window.location.reload(); // Reload the page
-});
-
-// Run on page load
-handleResponsiveSidebar();
 
 function handleResponsiveSidebar() {
     if (window.innerWidth < 992) {

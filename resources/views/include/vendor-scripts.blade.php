@@ -4,6 +4,7 @@
 <script src="{{ asset('assets/libs/swiper/swiper-bundle.min.js') }}"></script>
 <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
+<script src="{{ asset('assets/js/layout-setup.js') }}"></script>
 <script src="{{ asset('assets/js/scroll-top.init.js') }}"></script>
 <script src="{{ asset('assets/libs/cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('assets/libs/cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js') }}"></script>

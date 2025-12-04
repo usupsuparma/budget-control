@@ -129,8 +129,8 @@ class WorkplanBudgetItem extends Model
         foreach ($monthNames as $key => $name) {
             $months[$key] = [
                 'name' => $name,
-                'active' => $this->{"activity_$key"} === 1,
-                'value' => $this->{"activity_$key"},
+                'active' => $this->{"activity_$key"} > 0,
+                'quantity' => $this->{"activity_$key"},
             ];
         }
 
@@ -142,11 +142,21 @@ class WorkplanBudgetItem extends Model
         $count = 0;
         foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
                   'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month) {
-            if ($this->{"activity_$month"} === 1) {
+            if ($this->{"activity_$month"} > 0) {
                 $count++;
             }
         }
         return $count;
+    }
+
+    public function getTotalActivityQuantity(): int
+    {
+        $total = 0;
+        foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                  'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month) {
+            $total += $this->{"activity_$month"};
+        }
+        return $total;
     }
 
     public function isApproved(): bool

@@ -23,51 +23,33 @@ function initializeEventListeners() {
         selectParentCategory(categoryId);
     });
 
-    // Child category tab click
-    $(document).on('click', '.child-category-tab', function(e) {
-        e.preventDefault();
-        const categoryId = $(this).data('category-id');
-        selectChildCategory(categoryId);
-    });
-
-    // Add new item
+    // Add new item - open modal
     $(document).on('click', '.btn-add-item', function() {
-        addNewItemRow();
+        const categoryId = $(this).data('category-id');
+        openAddModal(categoryId);
     });
 
-    // Save item
-    $(document).on('click', '.btn-save-item', function() {
-        const row = $(this).closest('tr');
-        saveItem(row);
-    });
-
-    // Edit item
+    // Edit item - open modal
     $(document).on('click', '.btn-edit-item', function() {
-        const row = $(this).closest('tr');
-        enableEditMode(row);
+        const itemId = $(this).data('item-id');
+        openEditModal(itemId);
     });
 
     // Delete item
     $(document).on('click', '.btn-delete-item', function() {
-        const row = $(this).closest('tr');
-        deleteItem(row);
+        const itemId = $(this).data('item-id');
+        deleteItemById(itemId);
     });
 
-    // Cancel edit
-    $(document).on('click', '.btn-cancel-item', function() {
-        const row = $(this).closest('tr');
-        const itemId = row.data('item-id');
-        if (itemId) {
-            disableEditMode(row);
-        } else {
-            row.remove();
-        }
+    // Modal form submit
+    $('#itemForm').on('submit', function(e) {
+        e.preventDefault();
+        saveItemFromModal();
     });
-
-    // Auto-calculate total when cons_rate or beg_balance changes
-    $(document).on('input', '.cons-rate-input, .beg-balance-input', function() {
-        const row = $(this).closest('tr');
-        calculateRowTotal(row);
+    
+    // Auto-calculate total when cons_rate or beg_balance changes in modal
+    $('#begBalance, #consRate').on('input', function() {
+        calculateModalTotal();
     });
     
     // Toggle expand/collapse for child categories
@@ -267,7 +249,7 @@ function renderItemsTable(items, categoryId) {
                         <th rowspan="2" style="width: 80px;">Cons Rate</th>
                         <th rowspan="2" style="width: 60px;">Unit</th>
                         <th rowspan="2" style="width: 100px;">Total</th>
-                        <th colspan="12" class="month-header">Activities</th>
+                        <th colspan="12" class="month-header">Activity Quantities</th>
                     </tr>
                     <tr class="month-header">
                         <th>Jan</th>
@@ -319,13 +301,12 @@ function renderItemsTable(items, categoryId) {
  */
 function renderItemRow(item) {
     const isApproved = item.status === 'approved';
-    const disabled = isApproved ? 'disabled' : '';
     const rowClass = isApproved ? 'table-success' : '';
     
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     
     let html = `
-        <tr data-item-id="${item.id}" class="${rowClass}" data-edit-mode="false" data-category-id="${item.budget_category_id}">
+        <tr data-item-id="${item.id}" class="${rowClass}" data-category-id="${item.budget_category_id}">
             <td class="text-center action-column">
     `;
     
@@ -333,10 +314,10 @@ function renderItemRow(item) {
         html += `<span class="badge bg-success status-badge">Approved</span>`;
     } else {
         html += `
-            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit Item" data-bs-toggle="tooltip">
+            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" data-item-id="${item.id}" title="Edit Item" data-bs-toggle="tooltip">
                 <i class="bi bi-pencil"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete Item" data-bs-toggle="tooltip">
+            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" data-item-id="${item.id}" title="Delete Item" data-bs-toggle="tooltip">
                 <i class="bi bi-trash"></i>
             </button>
         `;
@@ -344,25 +325,21 @@ function renderItemRow(item) {
     
     html += `
             </td>
-            <td><input type="text" class="form-control form-control-sm description-input" value="${item.description}" ${disabled}></td>
-            <td><input type="text" class="form-control form-control-sm stock-code-input" value="${item.stock_code || ''}" ${disabled}></td>
-            <td>
-                <select class="form-select form-select-sm budget-code-input" ${disabled}>
-                    <option value="">Select...</option>
-                    ${budgetCodesData.map(bc => `<option value="${bc.code}" ${item.budget_code === bc.code ? 'selected' : ''}>${bc.code} - ${bc.name}</option>`).join('')}
-                </select>
-            </td>
-            <td><input type="text" class="form-control form-control-sm product-line-input" value="${item.product_line || ''}" ${disabled}></td>
-            <td><input type="text" class="form-control form-control-sm cost-center-input" value="${item.cost_center || ''}" ${disabled}></td>
-            <td><input type="text" class="form-control form-control-sm beg-balance-input" value="${item.beg_balance || ''}" ${disabled}></td>
-            <td><input type="text" class="form-control form-control-sm cons-rate-input" value="${item.cons_rate || ''}" ${disabled}></td>
-            <td><input type="text" class="form-control form-control-sm unit-input" value="${item.unit || ''}" ${disabled}></td>
-            <td><input type="number" class="form-control form-control-sm total-input" value="${item.total}" ${disabled} readonly></td>
+            <td>${item.description}</td>
+            <td>${item.stock_code || '-'}</td>
+            <td>${item.budget_code || '-'}</td>
+            <td>${item.product_line || '-'}</td>
+            <td>${item.cost_center || '-'}</td>
+            <td>${item.beg_balance || '-'}</td>
+            <td>${item.cons_rate || '-'}</td>
+            <td>${item.unit || '-'}</td>
+            <td class="text-end">${parseFloat(item.total).toLocaleString('id-ID')}</td>
     `;
     
     months.forEach(month => {
-        const checked = item[`activity_${month}`] == 1 ? 'checked' : '';
-        html += `<td class="text-center"><input type="checkbox" class="activity-checkbox activity-${month}" ${checked} ${disabled}></td>`;
+        const qty = item[`activity_${month}`] || 0;
+        const qtyClass = qty > 0 ? 'fw-bold text-primary' : 'text-muted';
+        html += `<td class="text-center ${qtyClass}">${qty}</td>`;
     });
     
     html += `</tr>`;
@@ -371,152 +348,149 @@ function renderItemRow(item) {
 }
 
 /**
- * Add new item row
+ * Open modal for adding new item
  */
-function addNewItemRow() {
-    // Get the category ID from the button that was clicked
-    const categoryId = $(event.target).closest('.btn-add-item').data('category-id');
-    
-    if (!categoryId) {
-        showError('Please select a category first');
-        return;
-    }
-    
-    const tbody = $(`#itemsTableBody-${categoryId}`);
-    
-    if (!tbody.length) {
-        showError('Category table not found');
-        return;
-    }
-    
-    // Set current child category for save operation
+function openAddModal(categoryId) {
     currentChildCategory = categoryId;
     
-    // Remove "no data" message if exists
-    tbody.find('.no-data').closest('tr').remove();
+    // Reset form
+    $('#itemForm')[0].reset();
+    $('#itemId').val('');
+    $('#categoryId').val(categoryId);
     
-    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    // Set modal title
+    $('#itemModalLabel').text('Add Budget Item');
     
-    let html = `
-        <tr class="new-row" data-edit-mode="true" data-category-id="${categoryId}">
-            <td class="text-center action-column">
-                <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save Item" data-bs-toggle="tooltip">
-                    <i class="bi bi-save"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel" data-bs-toggle="tooltip">
-                    <i class="bi bi-x-circle"></i>
-                </button>
-            </td>
-            <td><input type="text" class="form-control form-control-sm description-input" placeholder="Description"></td>
-            <td><input type="text" class="form-control form-control-sm stock-code-input" placeholder="Stock Code"></td>
-            <td>
-                <select class="form-select form-select-sm budget-code-input">
-                    <option value="">Select...</option>
-                    ${budgetCodesData.map(bc => `<option value="${bc.code}">${bc.code} - ${bc.name}</option>`).join('')}
-                </select>
-            </td>
-            <td><input type="text" class="form-control form-control-sm product-line-input" placeholder="Product Line"></td>
-            <td><input type="text" class="form-control form-control-sm cost-center-input" placeholder="Cost Center"></td>
-            <td><input type="text" class="form-control form-control-sm beg-balance-input" placeholder="Beg Balance"></td>
-            <td><input type="text" class="form-control form-control-sm cons-rate-input" placeholder="Cons Rate"></td>
-            <td><input type="text" class="form-control form-control-sm unit-input" placeholder="Unit"></td>
-            <td><input type="number" class="form-control form-control-sm total-input" value="0" readonly></td>
-    `;
+    // Populate budget codes
+    populateBudgetCodes();
     
-    months.forEach(month => {
-        html += `<td class="text-center"><input type="checkbox" class="activity-checkbox activity-${month}"></td>`;
-    });
+    // Reset all activity quantities to 0
+    for (let i = 1; i <= 12; i++) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $(`#activity${months[i-1]}`).val(0);
+    }
     
-    html += `</tr>`;
-    
-    tbody.prepend(html);
-    
-    // Initialize tooltips for new row
-    initializeTooltips();
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+    modal.show();
 }
 
 /**
- * Enable edit mode for existing row
+ * Open modal for editing existing item
  */
-function enableEditMode(row) {
-    row.attr('data-edit-mode', 'true');
-    row.find('input, select').prop('disabled', false);
+function openEditModal(itemId) {
+    // Find item data from table row
+    const row = $(`tr[data-item-id="${itemId}"]`);
     
-    const actionColumn = row.find('.action-column');
-    actionColumn.html(`
-        <button type="button" class="btn btn-sm btn-success btn-action-item btn-save-item" title="Save Changes" data-bs-toggle="tooltip">
-            <i class="bi bi-save"></i>
-        </button>
-        <button type="button" class="btn btn-sm btn-secondary btn-action-item btn-cancel-item" title="Cancel Edit" data-bs-toggle="tooltip">
-            <i class="bi bi-x-circle"></i>
-        </button>
-    `);
-    
-    // Initialize tooltips for new buttons
-    initializeTooltips();
-}
-
-/**
- * Disable edit mode
- */
-function disableEditMode(row) {
-    row.attr('data-edit-mode', 'false');
-    row.find('input, select').prop('disabled', true);
-    
-    const itemId = row.data('item-id');
-    const actionColumn = row.find('.action-column');
-    actionColumn.html(`
-        <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" title="Edit Item" data-bs-toggle="tooltip">
-            <i class="bi bi-pencil"></i>
-        </button>
-        <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" title="Delete Item" data-bs-toggle="tooltip">
-            <i class="bi bi-trash"></i>
-        </button>
-    `);
-    
-    // Initialize tooltips for new buttons
-    initializeTooltips();
-}
-
-/**
- * Save item (create or update)
- */
-function saveItem(row) {
-    const itemId = row.data('item-id');
-    const isNew = !itemId;
-    
-    // Get category ID from row data attribute
-    const categoryId = row.data('category-id');
-    
-    if (!categoryId) {
-        showError('Category ID not found');
+    if (!row.length) {
+        showError('Item not found');
         return;
     }
     
-    // Collect data
+    // Get item data via AJAX to ensure we have the latest data
+    showLoading();
+    
+    $.ajax({
+        url: `/workplan/${WORKPLAN_ID}/item/list`,
+        method: 'GET',
+        data: { category_id: row.data('category-id') },
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                const item = response.data.find(i => i.id == itemId);
+                
+                if (!item) {
+                    showError('Item not found');
+                    return;
+                }
+                
+                // Populate form
+                $('#itemId').val(item.id);
+                $('#categoryId').val(item.budget_category_id);
+                $('#description').val(item.description);
+                $('#stockCode').val(item.stock_code || '');
+                $('#productLine').val(item.product_line || '');
+                $('#costCenter').val(item.cost_center || '');
+                $('#begBalance').val(item.beg_balance || '');
+                $('#consRate').val(item.cons_rate || '');
+                $('#unit').val(item.unit || '');
+                $('#total').val(item.total);
+                $('#notes').val(item.notes || '');
+                
+                // Populate budget codes and set selected
+                populateBudgetCodes(item.budget_code);
+                
+                // Set activity quantities
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                months.forEach((month, index) => {
+                    const key = month.toLowerCase();
+                    $(`#activity${month}`).val(item[`activity_${key}`] || 0);
+                });
+                
+                currentChildCategory = item.budget_category_id;
+                
+                // Set modal title
+                $('#itemModalLabel').text('Edit Budget Item');
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+                modal.show();
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showError('Failed to load item data');
+        }
+    });
+}
+
+/**
+ * Populate budget codes dropdown
+ */
+function populateBudgetCodes(selectedCode = '') {
+    const select = $('#budgetCode');
+    select.empty();
+    select.append('<option value="">Select Budget Code...</option>');
+    
+    budgetCodesData.forEach(bc => {
+        const selected = bc.code === selectedCode ? 'selected' : '';
+        select.append(`<option value="${bc.code}" ${selected}>${bc.code} - ${bc.name}</option>`);
+    });
+}
+
+/**
+ * Save item from modal
+ */
+function saveItemFromModal() {
+    const itemId = $('#itemId').val();
+    const isNew = !itemId;
+    
+    // Collect data from form
     const data = {
-        budget_category_id: categoryId,
-        description: row.find('.description-input').val(),
-        stock_code: row.find('.stock-code-input').val(),
-        budget_code: row.find('.budget-code-input').val(),
-        product_line: row.find('.product-line-input').val(),
-        cost_center: row.find('.cost-center-input').val(),
-        beg_balance: row.find('.beg-balance-input').val(),
-        cons_rate: row.find('.cons-rate-input').val(),
-        unit: row.find('.unit-input').val(),
-        total: row.find('.total-input').val(),
-        activity_jan: row.find('.activity-jan').is(':checked') ? 1 : 0,
-        activity_feb: row.find('.activity-feb').is(':checked') ? 1 : 0,
-        activity_mar: row.find('.activity-mar').is(':checked') ? 1 : 0,
-        activity_apr: row.find('.activity-apr').is(':checked') ? 1 : 0,
-        activity_may: row.find('.activity-may').is(':checked') ? 1 : 0,
-        activity_jun: row.find('.activity-jun').is(':checked') ? 1 : 0,
-        activity_jul: row.find('.activity-jul').is(':checked') ? 1 : 0,
-        activity_aug: row.find('.activity-aug').is(':checked') ? 1 : 0,
-        activity_sep: row.find('.activity-sep').is(':checked') ? 1 : 0,
-        activity_oct: row.find('.activity-oct').is(':checked') ? 1 : 0,
-        activity_nov: row.find('.activity-nov').is(':checked') ? 1 : 0,
-        activity_dec: row.find('.activity-dec').is(':checked') ? 1 : 0,
+        budget_category_id: $('#categoryId').val(),
+        description: $('#description').val(),
+        stock_code: $('#stockCode').val(),
+        budget_code: $('#budgetCode').val(),
+        product_line: $('#productLine').val(),
+        cost_center: $('#costCenter').val(),
+        beg_balance: $('#begBalance').val(),
+        cons_rate: $('#consRate').val(),
+        unit: $('#unit').val(),
+        total: $('#total').val(),
+        notes: $('#notes').val(),
+        activity_jan: parseInt($('#activityJan').val()) || 0,
+        activity_feb: parseInt($('#activityFeb').val()) || 0,
+        activity_mar: parseInt($('#activityMar').val()) || 0,
+        activity_apr: parseInt($('#activityApr').val()) || 0,
+        activity_may: parseInt($('#activityMay').val()) || 0,
+        activity_jun: parseInt($('#activityJun').val()) || 0,
+        activity_jul: parseInt($('#activityJul').val()) || 0,
+        activity_aug: parseInt($('#activityAug').val()) || 0,
+        activity_sep: parseInt($('#activitySep').val()) || 0,
+        activity_oct: parseInt($('#activityOct').val()) || 0,
+        activity_nov: parseInt($('#activityNov').val()) || 0,
+        activity_dec: parseInt($('#activityDec').val()) || 0,
     };
     
     // Validate
@@ -544,9 +518,14 @@ function saveItem(row) {
             hideLoading();
             if (response.success) {
                 showSuccess(response.message);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
+                modal.hide();
+                
                 // Reload items in current category
                 if (currentChildCategory) {
-                    selectChildCategory(currentChildCategory);
+                    loadItems(currentChildCategory);
                 }
             }
         },
@@ -559,11 +538,9 @@ function saveItem(row) {
 }
 
 /**
- * Delete item
+ * Delete item by ID
  */
-function deleteItem(row) {
-    const itemId = row.data('item-id');
-    
+function deleteItemById(itemId) {
     Swal.fire({
         title: 'Are you sure?',
         text: "This budget item will be deleted!",
@@ -588,7 +565,7 @@ function deleteItem(row) {
                         showSuccess(response.message);
                         // Reload items in current category
                         if (currentChildCategory) {
-                            selectChildCategory(currentChildCategory);
+                            loadItems(currentChildCategory);
                         }
                     }
                 },
@@ -603,13 +580,13 @@ function deleteItem(row) {
 }
 
 /**
- * Calculate row total based on beg_balance and cons_rate
+ * Calculate total in modal based on beg_balance and cons_rate
  */
-function calculateRowTotal(row) {
-    const begBalance = parseFloat(row.find('.beg-balance-input').val()) || 0;
-    const consRate = parseFloat(row.find('.cons-rate-input').val()) || 0;
+function calculateModalTotal() {
+    const begBalance = parseFloat($('#begBalance').val()) || 0;
+    const consRate = parseFloat($('#consRate').val()) || 0;
     const total = begBalance * consRate;
-    row.find('.total-input').val(total.toFixed(2));
+    $('#total').val(total.toFixed(2));
 }
 
 /**

@@ -30,12 +30,15 @@ function initializeEventListeners() {
     $(document).on('click', '.btn-add-workplan', function() {
         const kpiType = $(this).data('kpi-type');
         const kpiId = $(this).data('kpi-id');
-        addWorkplanRow(kpiType, kpiId, $(this).closest('.workplan-section'));
+        openWorkplanModal('add', kpiType, kpiId);
     });
 
-    $(document).on('click', '.btn-save-workplan', function() {
+    $(document).on('click', '.btn-edit-workplan', function() {
         const row = $(this).closest('tr');
-        saveWorkplan(row);
+        const workplanId = row.data('workplan-id');
+        const kpiType = row.data('kpi-type');
+        const kpiId = row.data('kpi-id');
+        openWorkplanModal('edit', kpiType, kpiId, workplanId, row);
     });
 
     $(document).on('click', '.btn-delete-workplan', function() {
@@ -66,16 +69,95 @@ function initializeEventListeners() {
         }
     });
 
-    // Auto-save realization checkbox when changed
-    $(document).on('change', '.real-month', function() {
-        const row = $(this).closest('tr');
-        const workplanId = row.data('workplan-id');
-        
-        // Only auto-save for existing workplans (not new ones)
-        if (workplanId && workplanId !== 'new') {
-            updateRealization(row);
-        }
+    // Save workplan from modal
+    $('#btnSaveWorkplan').on('click', function() {
+        saveWorkplanFromModal();
     });
+
+    // Auto-calculate duration in modal
+    $('#schedule_start, #schedule_end').on('change', function() {
+        calculateModalDuration();
+    });
+}
+
+function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) {
+    const modal = $('#workplanModal');
+    const modalTitle = mode === 'add' ? 'Add Work Plan' : 'Edit Work Plan';
+    
+    $('#workplanModalLabel').text(modalTitle);
+    $('#workplanForm')[0].reset();
+    
+    // Set hidden fields
+    $('#kpi_type').val(kpiType);
+    $('#kpi_id').val(kpiId);
+    
+    if (mode === 'edit' && row) {
+        // Populate form with existing data
+        $('#workplan_id').val(workplanId);
+        $('#activity').val(row.find('.activity-input').val());
+        $('#duration_days').val(row.find('.duration-input').val());
+        $('#description').val(row.find('.description-input').val() || '');
+        
+        // Set dates if available
+        const startDate = row.find('.schedule-start').val();
+        const endDate = row.find('.schedule-end').val();
+        if (startDate) $('#schedule_start').val(startDate);
+        if (endDate) $('#schedule_end').val(endDate);
+        
+        // Set planning months
+        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        months.forEach(month => {
+            const isChecked = row.find(`.plan-month[data-month="${month}"]`).prop('checked');
+            $(`#plan_${month}`).prop('checked', isChecked);
+            
+            const isRealChecked = row.find(`.real-month[data-month="${month}"]`).prop('checked');
+            $(`#real_${month}`).prop('checked', isRealChecked);
+        });
+    } else {
+        $('#workplan_id').val('');
+    }
+    
+    modal.modal('show');
+}
+
+function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) {
+    const modal = $('#workplanModal');
+    const modalTitle = mode === 'add' ? 'Add Work Plan' : 'Edit Work Plan';
+    
+    $('#workplanModalLabel').text(modalTitle);
+    $('#workplanForm')[0].reset();
+    
+    // Set hidden fields
+    $('#kpi_type').val(kpiType);
+    $('#kpi_id').val(kpiId);
+    
+    if (mode === 'edit' && row) {
+        // Populate form with existing data
+        $('#workplan_id').val(workplanId);
+        $('#activity').val(row.find('.activity-input').val());
+        $('#duration_days').val(row.find('.duration-input').val());
+        $('#description').val(row.find('.description-input').val() || '');
+        
+        // Set dates if available
+        const startDate = row.find('.schedule-start').val();
+        const endDate = row.find('.schedule-end').val();
+        if (startDate) $('#schedule_start').val(startDate);
+        if (endDate) $('#schedule_end').val(endDate);
+        
+        // Set planning months
+        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        months.forEach(month => {
+            const isChecked = row.find(`.plan-month[data-month="${month}"]`).prop('checked');
+            $(`#plan_${month}`).prop('checked', isChecked);
+            
+            const isRealChecked = row.find(`.real-month[data-month="${month}"]`).prop('checked');
+            $(`#real_${month}`).prop('checked', isRealChecked);
+        });
+    } else {
+        $('#workplan_id').val('');
+    }
+    
+    modal.modal('show');
 }
 
 function loadKpiData() {
@@ -85,8 +167,8 @@ function loadKpiData() {
     if (!divisionId || !year) {
         Swal.fire({
             icon: 'warning',
-            title: 'Perhatian',
-            text: 'Silakan pilih Divisi dan Tahun terlebih dahulu'
+            title: 'Filter Required',
+            text: 'Silakan pilih Divisi dan Tahun terlebih dahulu!',
         });
         return;
     }
@@ -338,7 +420,7 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
         `;
     } else {
         html += `
-                <button class="btn btn-primary btn-action btn-save-workplan" title="Edit Work Plan">
+                <button class="btn btn-primary btn-action btn-edit-workplan" title="Edit Work Plan">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-danger btn-action btn-delete-workplan" title="Hapus Work Plan">
@@ -355,12 +437,15 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
     html += `
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm activity-input" 
-                    value="${workplan.activity || ''}" ${isApproved ? 'readonly' : ''}>
+                <div class="activity-text">${workplan.activity || ''}</div>
+                <input type="hidden" class="activity-input" value="${workplan.activity || ''}">
+                <input type="hidden" class="description-input" value="${workplan.description || ''}">
+                <input type="hidden" class="schedule-start" value="${workplan.schedule_start || ''}">
+                <input type="hidden" class="schedule-end" value="${workplan.schedule_end || ''}">
             </td>
             <td>
-                <input type="number" class="form-control form-control-sm duration-input" 
-                    value="${workplan.duration_days || ''}" ${isApproved ? 'readonly' : ''}>
+                <div class="text-center">${workplan.duration_days || '-'}</div>
+                <input type="hidden" class="duration-input" value="${workplan.duration_days || ''}">
             </td>
     `;
 
@@ -369,7 +454,7 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
         const checked = workplan[`plan_${month}`] ? 'checked' : '';
         html += `
             <td class="month-cell">
-                <input type="checkbox" class="plan-month" data-month="${month}" ${checked} ${isApproved ? 'disabled' : ''}>
+                <input type="checkbox" class="plan-month" data-month="${month}" ${checked} disabled>
             </td>
         `;
     });
@@ -396,7 +481,7 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
         const checked = workplan[`real_${month}`] ? 'checked' : '';
         html += `
             <td class="realization-cell">
-                <input type="checkbox" class="real-month" data-month="${month}" ${checked}>
+                <input type="checkbox" class="real-month" data-month="${month}" ${checked} disabled>
             </td>
         `;
     });
@@ -426,6 +511,82 @@ function addWorkplanRow(kpiType, kpiId, container) {
 
     const rowHtml = renderWorkplanRow(newWorkplan, kpiType, kpiId, table.find('tr').length);
     table.append(rowHtml);
+}
+
+function saveWorkplanFromModal() {
+    const workplanId = $('#workplan_id').val();
+    const kpiType = $('#kpi_type').val();
+    const kpiId = $('#kpi_id').val();
+    const isNew = !workplanId;
+
+    const activity = $('#activity').val().trim();
+    if (!activity) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Validation Error',
+            text: 'Activity name is required!',
+        });
+        return;
+    }
+
+    const data = {
+        kpi_type: kpiType,
+        kpi_id: kpiId,
+        year: currentYear,
+        activity: activity,
+        duration_days: $('#duration_days').val(),
+        schedule_start: $('#schedule_start').val(),
+        schedule_end: $('#schedule_end').val(),
+        budget: 0,
+        description: $('#description').val()
+    };
+
+    // Collect planning months
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    months.forEach(month => {
+        data[`plan_${month}`] = $(`#plan_${month}`).prop('checked') ? 1 : 0;
+        data[`real_${month}`] = $(`#real_${month}`).prop('checked') ? 1 : 0;
+    });
+
+    showLoading();
+
+    const url = isNew ? '/workplan/store' : `/workplan/${workplanId}`;
+    const method = isNew ? 'POST' : 'PUT';
+
+    $.ajax({
+        url: url,
+        method: method,
+        data: data,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                $('#workplanModal').modal('hide');
+                
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: isNew ? 'Work plan created successfully!' : 'Work plan updated successfully!',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                
+                // Reload KPI data to refresh the table
+                loadKpiData();
+            } else {
+                showError(response.message || 'Failed to save work plan');
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            const message = xhr.responseJSON?.message || 'An error occurred while saving';
+            showError(message);
+        }
+    });
 }
 
 function saveWorkplan(row) {
@@ -760,6 +921,18 @@ function toggleSection(button) {
     } else {
         icon.removeClass('bi-dash-circle').addClass('bi-plus-circle');
         button.html('<i class="bi bi-plus-circle"></i> Expand');
+    }
+}
+
+function calculateModalDuration() {
+    const startDate = $('#schedule_start').val();
+    const endDate = $('#schedule_end').val();
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        $('#duration_days').val(duration > 0 ? duration : '');
     }
 }
 

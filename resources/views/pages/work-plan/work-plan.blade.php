@@ -385,16 +385,19 @@
 
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">Duration (Days)</label>
-                                <input type="number" class="form-control" id="duration_days" name="duration_days" min="1">
+                                <label class="form-label">Duration (Working Days) <small class="text-muted">Mon-Fri</small></label>
+                                <input type="number" class="form-control" id="duration_days" name="duration_days" min="1" placeholder="Enter working days">
+                                <small class="form-text text-muted">Working days only (Monday to Friday)</small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Start Date</label>
                                 <input type="date" class="form-control" id="schedule_start" name="schedule_start">
+                                <small class="form-text text-muted">Will auto-calculate end date</small>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">End Date</label>
+                                <label class="form-label">End Date <small class="text-muted">(Auto-calculated)</small></label>
                                 <input type="date" class="form-control" id="schedule_end" name="schedule_end">
+                                <small class="form-text text-muted">Calculated based on working days</small>
                             </div>
                         </div>
 

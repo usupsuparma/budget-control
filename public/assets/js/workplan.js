@@ -74,9 +74,14 @@ function initializeEventListeners() {
         saveWorkplanFromModal();
     });
 
-    // Auto-calculate duration in modal
+    // Auto-calculate duration in modal when dates change
     $('#schedule_start, #schedule_end').on('change', function() {
         calculateModalDuration();
+    });
+
+    // Auto-calculate end date when duration or start date changes
+    $('#duration_days, #schedule_start').on('change', function() {
+        calculateEndDateFromDuration();
     });
 }
 
@@ -931,9 +936,128 @@ function calculateModalDuration() {
     if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-        $('#duration_days').val(duration > 0 ? duration : '');
+        
+        if (start > end) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Invalid Date Range',
+                text: 'End date must be after start date!',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            $('#schedule_end').val('');
+            $('#duration_days').val('');
+            return;
+        }
+        
+        // Calculate working days (Monday to Friday only)
+        const workingDays = calculateWorkingDays(start, end);
+        $('#duration_days').val(workingDays);
+        
+        // Auto-select planning months based on date range
+        autoSelectPlanningMonths(start, end);
     }
+}
+
+function calculateWorkingDays(startDate, endDate) {
+    let count = 0;
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay();
+        // 0 = Sunday, 6 = Saturday, so 1-5 are Monday to Friday
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            count++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return count;
+}
+
+function autoSelectPlanningMonths(startDate, endDate) {
+    // Reset all planning checkboxes first
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    months.forEach(month => {
+        $(`#plan_${month}`).prop('checked', false);
+    });
+    
+    // Get months covered by the date range
+    const monthsInRange = getMonthsInRange(startDate, endDate);
+    
+    // Check the corresponding checkboxes
+    monthsInRange.forEach(monthIndex => {
+        $(`#plan_${months[monthIndex]}`).prop('checked', true);
+    });
+}
+
+function getMonthsInRange(startDate, endDate) {
+    const monthsSet = new Set();
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+        monthsSet.add(currentDate.getMonth()); // 0-11 (Jan-Dec)
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return Array.from(monthsSet).sort((a, b) => a - b);
+}
+
+function calculateEndDateFromDuration() {
+    const durationDays = parseInt($('#duration_days').val());
+    const startDateStr = $('#schedule_start').val();
+    
+    // Only calculate if both duration and start date are provided
+    if (!durationDays || !startDateStr || durationDays <= 0) {
+        return;
+    }
+    
+    const startDate = new Date(startDateStr);
+    let workingDaysCount = 0;
+    const currentDate = new Date(startDate);
+    
+    // Calculate end date by adding working days
+    while (workingDaysCount < durationDays) {
+        const dayOfWeek = currentDate.getDay();
+        
+        // Count only Monday to Friday (1-5)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            workingDaysCount++;
+        }
+        
+        // If we haven't reached the target, move to next day
+        if (workingDaysCount < durationDays) {
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    }
+    
+    // Format date as YYYY-MM-DD for input[type="date"]
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const endDateStr = `${year}-${month}-${day}`;
+    
+    // Set the end date
+    $('#schedule_end').val(endDateStr);
+    
+    // Auto-select planning months based on date range
+    autoSelectPlanningMonths(startDate, currentDate);
+    
+    // Show success feedback
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: false,
+    });
+    
+    Toast.fire({
+        icon: 'success',
+        title: 'End date & planning schedule calculated!'
+    });
 }
 
 function calculateDuration(row) {

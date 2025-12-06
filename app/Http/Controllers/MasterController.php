@@ -7,8 +7,10 @@ use App\Models\Director;
 use App\Models\Division;
 use App\Models\Employee;
 use App\Models\JobLevel;
+use App\Models\JobPosition;
 use App\Models\Section;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 
 class MasterController extends Controller
@@ -18,6 +20,8 @@ class MasterController extends Controller
         $title = 'Master Data';
 
         $employee = Employee::where('status', 'Active')->get();
+        $roles = Role::get();
+        $jobPositions = JobPosition::where('status', 'Active')->get();
         $jobLevel = JobLevel::where('status', 'Active')->get();
         $director = Director::where('status', 'Active')->orderBy('name', 'asc')->get();
         $division = Division::where('status', 'Active')->with('director')->orderBy('name', 'asc')->get();
@@ -27,7 +31,7 @@ class MasterController extends Controller
         // dd($employee);
 
 
-        return view('pages.settings.Settings', compact('title', 'employee', 'jobLevel', 'director', 'division', 'department', 'section'));
+        return view('pages.settings.Settings', compact('title', 'employee', 'roles', 'jobPositions', 'jobLevel', 'director', 'division', 'department', 'section'));
     }
 
     public function index2()

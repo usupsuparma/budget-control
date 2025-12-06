@@ -476,17 +476,24 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:employee.view')
         ->group(function () {
 
-            Route::get('/datatables', [EmployeeController::class, 'getData'])
+            Route::get('/data', [EmployeeController::class, 'getData'])
                 ->name('employee.data');
 
-            Route::get('/create', [EmployeeController::class, 'create'])
-                ->middleware('permission:employee.create')
-                ->name('employee.create');
+            Route::post('/{id}/reset-password', [EmployeeController::class, 'resetPassword'])
+                ->middleware('permission:employee.edit');
 
             Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
-                ->middleware('permission:employee.edit')
-                ->name('employee.edit');
+                ->name('employee.edit')
+                ->middleware('permission:employee.edit');
+
+            Route::post('/create', [EmployeeController::class, 'store'])
+                ->name('employee.store')
+                ->middleware('permission:employee.create');
+
+            Route::post('/delete/{id}', [EmployeeController::class, 'destroy'])
+                ->middleware('permission:employee.delete');
         });
+
 
 
 

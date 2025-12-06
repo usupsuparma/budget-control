@@ -19,4 +19,14 @@ class Employee extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function role()
+    {
+        return $this->belongsTo(Roles::class, 'role_id', 'id');
+    }
+
+    public function jobPosition()
+    {
+        return $this->belongsTo(JobPosition::class, 'job_position_id', 'id');
+    }
 }

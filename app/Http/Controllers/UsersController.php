@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
     public function index()
     {
         $title = "Users Data";
-
-        return view('pages.settings.users', compact('title'));
+        $roles = Role::all();
+        return view('pages.settings.users', compact('title', 'roles'));
     }
 }

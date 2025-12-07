@@ -45,20 +45,23 @@ class JobLevelController extends Controller
             'jobLevel_name' => 'required|string|max:255',
         ]);
 
-        // Pastikan model JobLevel memiliki fillable untuk job_level_name dan status
         JobLevel::create([
             'job_level_name' => $validated['jobLevel_name'],
-            'status' => 'Active', // default aktif
+            'status' => 'Active',
         ]);
 
-        return redirect()->back()->with('success', 'Job Level berhasil dibuat.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Job Level created'
+        ]);
     }
+
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'jobLevel_name' => 'required|string|max:255',
             'status' => 'required|in:Active,Inactive',
-
         ]);
 
         $jobLevel = JobLevel::findOrFail($id);
@@ -66,8 +69,12 @@ class JobLevelController extends Controller
         $jobLevel->status = $validated['status'];
         $jobLevel->save();
 
-        return redirect()->back()->with('success', 'Job Level berhasil diperbarui.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Job Level updated'
+        ]);
     }
+
 
     public function edit($id)
     {

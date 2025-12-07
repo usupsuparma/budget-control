@@ -177,7 +177,6 @@
             'setting.users.view',
             'setting.code.view',
             'approval.view',
-            'setting.authorization.view',
             'setting.history.view'
             ])
             <li class="pe-slide pe-has-sub">
@@ -218,11 +217,7 @@
                     </a>
                     @endcan
 
-                    @can('setting.authorization.view')
-                    <a href="{{ route('auth.roles') }}" class="pe-nav-link {{ Request::is('auth.roles*') ? 'active' : '' }}">
-                        Authorization
-                    </a>
-                    @endcan
+
 
                     @can('setting.history.view')
                     <a href="{{ route('history') }}" class="pe-nav-link {{ Request::is('history*') ? 'active' : '' }}">

@@ -32,11 +32,11 @@
                 <!-- RIGHT CONTENT -->
                 <div class="col-md-10">
                     <div class="tab-content pt-3">
-                        <div class="tab-pane fade show active" id="budgetCode">
+                        <div class="tab-pane fade show active" id="user">
                             @include('pages.settings.userMenu')
                         </div>
-                        <div class="tab-pane fade" id="stockCode">
-                            @include('pages.settings.stockCode')
+                        <div class="tab-pane fade" id="authorization">
+                            @include('authorization.index')
                         </div>
                     </div>
                 </div>

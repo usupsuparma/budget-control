@@ -1,11 +1,3 @@
-@extends('layouts.master')
-
-@section('title', 'Authorization Management')
-@section('title-sub', 'Settings')
-@section('pagetitle', 'Authorization Management')
-
-@section('content')
-
 <div class="row">
     <div class="col-12">
 
@@ -100,5 +92,3 @@
 
 @include('authorization.modals')
 @include('authorization.scripts')
-
-@endsection

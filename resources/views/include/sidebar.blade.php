@@ -77,29 +77,42 @@
                 </ul>
             </li>
             @endcanany
-            @can('production.view')
-            <li class="pe-slide pe-has-sub">
-                <a href="{{ route('production.index') }}" class="pe-nav-link {{ Request::is('production.index') ? 'active' : '' }}">
-                    <i class="bi bi-minecart-loaded pe-nav-icon"></i>
-                    <span class="pe-nav-content">Productions Plan</span>
-                </a>
-            </li>
-            @endcan
 
-            @can('marketing.view')
+            @canany(['production.view','marketing.view'])
             <li class="pe-slide pe-has-sub">
-                <a href="{{ route('marketing.index') }}" class="pe-nav-link {{ Request::is('marketing.index') ? 'active' : '' }}">
-                    <i class="bi bi-megaphone pe-nav-icon"></i>
-                    <span class="pe-nav-content">Marketing & Sales Plan</span>
+                <a href="#collapseSalesPlan"
+                    class="pe-nav-link {{ Request::is('production*') || Request::is('marketing*') ? 'active' : '' }}"
+                    data-bs-toggle="collapse">
+
+                    <i class="bi bi-calculator pe-nav-icon"></i>
+                    <span class="pe-nav-content">Sales Plan</span>
+                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
+                <ul class="pe-slide-menu collapse {{ Request::is('production*') || Request::is('marketing*') ? 'show' : '' }}" id="collapseSalesPlan">
+
+                    <li class="pe-slide pe-has-sub">
+                        <a href="{{ route('production.index') }}" class="pe-nav-link {{ Request::is('production*') ? 'active' : '' }}">
+                            <i class="bi bi-minecart-loaded pe-nav-icon"></i>
+                            <span class="pe-nav-content">Productions Plan</span>
+                        </a>
+                    </li>
+
+                    <li class="pe-slide pe-has-sub">
+                        <a href="{{ route('marketing.index') }}" class="pe-nav-link {{ Request::is('marketing*') ? 'active' : '' }}">
+                            <i class="bi bi-megaphone pe-nav-icon"></i>
+                            <span class="pe-nav-content">Marketing Plan</span>
+                        </a>
+                    </li>
+
+                </ul>
             </li>
-            @endcan
+            @endcanany
 
             {{-- BUDGET CONTROL --}}
             @can('budget.view')
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseInvoices"
-                    class="pe-nav-link {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('pengajuan.anggaran*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-currency-exchange pe-nav-icon"></i>
@@ -107,7 +120,7 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('anggaran*') || Request::is('resume*') || Request::is('workplan*') || Request::is('realisasi*') ? 'show' : '' }}" id="collapseInvoices">
+                <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') ||  Request::is('pengajuan.anggaran*') ? 'show' : '' }}" id="collapseInvoices">
                     <li class="pe-slide-item">
                         <a href="{{ route('workplan.index') }}" class="pe-nav-link {{ Request::is('workplan*') ? 'active' : '' }}">
                             <i class="bi bi-calendar-check"></i> Work Plan
@@ -116,19 +129,13 @@
 
                     <li class="pe-slide-item">
                         <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
-                            <i class="bi bi-wallet2"></i> Budgets
+                            <i class="bi bi-wallet2"></i> Budget
                         </a>
                     </li>
 
                     <li class="pe-slide-item">
-                        <a href="{{ route('resume-anggaran.index') }}" class="pe-nav-link {{ Request::is('resume*') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-text"></i> Resume Budgets
-                        </a>
-                    </li>
-
-                    <li class="pe-slide-item">
-                        <a href="{{ route('realisasi.index') }}" class="pe-nav-link {{ Request::is('realisasi*') ? 'active' : '' }}">
-                            <i class="bi bi-graph-up"></i> Realization
+                        <a href="{{ route('pengajuan.anggaran.index') }}" class="pe-nav-link {{ Request::is('pengajuan.anggaran*') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-text"></i> Budget Submission
                         </a>
                     </li>
                 </ul>

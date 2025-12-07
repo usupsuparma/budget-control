@@ -23,6 +23,7 @@ use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\PengajuanAnggaranController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\SettingCodeController;
 use App\Http\Controllers\UsersController;
@@ -293,6 +294,34 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [AnggaranController::class, 'destroy'])
                 ->middleware('permission:budget.delete')
                 ->name('anggaran.destroy');
+        });
+
+    Route::prefix('pengajuan.anggaran')
+        ->middleware('permission:pengajuan.anggaran.view')
+        ->group(function () {
+
+            Route::get('/', [PengajuanAnggaranController::class, 'index'])
+                ->name('pengajuan.anggaran.index');
+
+            Route::get('/create', [PengajuanAnggaranController::class, 'create'])
+                ->middleware('permission:pengajuan.anggaran.create')
+                ->name('pengajuan.anggaran.create');
+
+            Route::post('/', [PengajuanAnggaranController::class, 'store'])
+                ->middleware('permission:pengajuan.anggaran.create')
+                ->name('pengajuan.anggaran.store');
+
+            Route::get('/{id}/edit', [PengajuanAnggaranController::class, 'edit'])
+                ->middleware('permission:pengajuan.anggaran.edit')
+                ->name('pengajuan.anggaran.edit');
+
+            Route::put('/{id}', [PengajuanAnggaranController::class, 'update'])
+                ->middleware('permission:budget.edit')
+                ->name('anggaran.update');
+
+            Route::delete('/{id}', [PengajuanAnggaranController::class, 'destroy'])
+                ->middleware('permission:pengajuan.anggaran.delete')
+                ->name('pengajuan.anggaran.destroy');
         });
 
     Route::prefix('production')

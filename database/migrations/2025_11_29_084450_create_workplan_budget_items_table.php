@@ -27,19 +27,19 @@ return new class extends Migration
             $table->string('unit', 50)->nullable();
             $table->decimal('total', 15, 2)->default(0);
             
-            // Monthly Activities Indicator (0 atau 1)
-            $table->unsignedTinyInteger('activity_jan')->default(0);
-            $table->unsignedTinyInteger('activity_feb')->default(0);
-            $table->unsignedTinyInteger('activity_mar')->default(0);
-            $table->unsignedTinyInteger('activity_apr')->default(0);
-            $table->unsignedTinyInteger('activity_may')->default(0);
-            $table->unsignedTinyInteger('activity_jun')->default(0);
-            $table->unsignedTinyInteger('activity_jul')->default(0);
-            $table->unsignedTinyInteger('activity_aug')->default(0);
-            $table->unsignedTinyInteger('activity_sep')->default(0);
-            $table->unsignedTinyInteger('activity_oct')->default(0);
-            $table->unsignedTinyInteger('activity_nov')->default(0);
-            $table->unsignedTinyInteger('activity_dec')->default(0);
+            // Monthly Activities Quantity (0 - 1000)
+            $table->unsignedSmallInteger('activity_jan')->default(0);
+            $table->unsignedSmallInteger('activity_feb')->default(0);
+            $table->unsignedSmallInteger('activity_mar')->default(0);
+            $table->unsignedSmallInteger('activity_apr')->default(0);
+            $table->unsignedSmallInteger('activity_may')->default(0);
+            $table->unsignedSmallInteger('activity_jun')->default(0);
+            $table->unsignedSmallInteger('activity_jul')->default(0);
+            $table->unsignedSmallInteger('activity_aug')->default(0);
+            $table->unsignedSmallInteger('activity_sep')->default(0);
+            $table->unsignedSmallInteger('activity_oct')->default(0);
+            $table->unsignedSmallInteger('activity_nov')->default(0);
+            $table->unsignedSmallInteger('activity_dec')->default(0);
             
             // Status & Approval
             $table->enum('status', ['draft', 'pending', 'approved', 'rejected'])

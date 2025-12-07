@@ -229,6 +229,75 @@
         .swal2-toast {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
         }
+
+        /* Modal styling */
+        #workplanModal .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        #workplanModal .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        #workplanModal .form-check {
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        #workplanModal .form-check:hover {
+            background: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #workplanModal .form-check-input {
+            width: 20px;
+            height: 20px;
+            margin-top: 0;
+            cursor: pointer;
+            border: 2px solid #6c757d;
+        }
+
+        #workplanModal .form-check-input:checked {
+            background-color: #ff6900;
+            border-color: #ff6900;
+        }
+
+        #workplanModal .form-check-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 8px;
+            user-select: none;
+        }
+
+        #workplanModal .month-section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        #workplanModal .month-container {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            padding: 15px;
+        }
+
+        #workplanModal .realization-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-edit-workplan {
+            cursor: pointer;
+        }
     </style>
 @endsection
 
@@ -288,6 +357,281 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Work Plan Modal --}}
+    <div class="modal fade" id="workplanModal" tabindex="-1" aria-labelledby="workplanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="workplanModalLabel">Add Work Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="workplanForm">
+                        <input type="hidden" id="workplan_id" name="workplan_id">
+                        <input type="hidden" id="kpi_type" name="kpi_type">
+                        <input type="hidden" id="kpi_id" name="kpi_id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Activity Name <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="activity" name="activity" rows="2" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Duration (Working Days) <small class="text-muted">Mon-Fri</small></label>
+                                <input type="number" class="form-control" id="duration_days" name="duration_days" min="1" placeholder="Enter working days">
+                                <small class="form-text text-muted">Working days only (Monday to Friday)</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="schedule_start" name="schedule_start">
+                                <small class="form-text text-muted">Will auto-calculate end date</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">End Date <small class="text-muted">(Auto-calculated)</small></label>
+                                <input type="date" class="form-control" id="schedule_end" name="schedule_end">
+                                <small class="form-text text-muted">Calculated based on working days</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="month-section-header">
+                                    <i class="bi bi-calendar-check"></i> Planning Schedule (Select Months)
+                                </div>
+                                <div class="month-container">
+                                    <div class="row g-2">
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_jan" name="plan_jan">
+                                                <label class="form-check-label" for="plan_jan">
+                                                    <i class="bi bi-calendar3"></i> January
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_feb" name="plan_feb">
+                                                <label class="form-check-label" for="plan_feb">
+                                                    <i class="bi bi-calendar3"></i> February
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_mar" name="plan_mar">
+                                                <label class="form-check-label" for="plan_mar">
+                                                    <i class="bi bi-calendar3"></i> March
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_apr" name="plan_apr">
+                                                <label class="form-check-label" for="plan_apr">
+                                                    <i class="bi bi-calendar3"></i> April
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_may" name="plan_may">
+                                                <label class="form-check-label" for="plan_may">
+                                                    <i class="bi bi-calendar3"></i> May
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_jun" name="plan_jun">
+                                                <label class="form-check-label" for="plan_jun">
+                                                    <i class="bi bi-calendar3"></i> June
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_jul" name="plan_jul">
+                                                <label class="form-check-label" for="plan_jul">
+                                                    <i class="bi bi-calendar3"></i> July
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_aug" name="plan_aug">
+                                                <label class="form-check-label" for="plan_aug">
+                                                    <i class="bi bi-calendar3"></i> August
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_sep" name="plan_sep">
+                                                <label class="form-check-label" for="plan_sep">
+                                                    <i class="bi bi-calendar3"></i> September
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_oct" name="plan_oct">
+                                                <label class="form-check-label" for="plan_oct">
+                                                    <i class="bi bi-calendar3"></i> October
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_nov" name="plan_nov">
+                                                <label class="form-check-label" for="plan_nov">
+                                                    <i class="bi bi-calendar3"></i> November
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="plan_dec" name="plan_dec">
+                                                <label class="form-check-label" for="plan_dec">
+                                                    <i class="bi bi-calendar3"></i> December
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="month-section-header realization-header">
+                                    <i class="bi bi-check2-square"></i> Realization (Select Months)
+                                </div>
+                                <div class="month-container">
+                                    <div class="row g-2">
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_jan" name="real_jan">
+                                                <label class="form-check-label" for="real_jan">
+                                                    <i class="bi bi-check-circle"></i> January
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_feb" name="real_feb">
+                                                <label class="form-check-label" for="real_feb">
+                                                    <i class="bi bi-check-circle"></i> February
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_mar" name="real_mar">
+                                                <label class="form-check-label" for="real_mar">
+                                                    <i class="bi bi-check-circle"></i> March
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_apr" name="real_apr">
+                                                <label class="form-check-label" for="real_apr">
+                                                    <i class="bi bi-check-circle"></i> April
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_may" name="real_may">
+                                                <label class="form-check-label" for="real_may">
+                                                    <i class="bi bi-check-circle"></i> May
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_jun" name="real_jun">
+                                                <label class="form-check-label" for="real_jun">
+                                                    <i class="bi bi-check-circle"></i> June
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_jul" name="real_jul">
+                                                <label class="form-check-label" for="real_jul">
+                                                    <i class="bi bi-check-circle"></i> July
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_aug" name="real_aug">
+                                                <label class="form-check-label" for="real_aug">
+                                                    <i class="bi bi-check-circle"></i> August
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_sep" name="real_sep">
+                                                <label class="form-check-label" for="real_sep">
+                                                    <i class="bi bi-check-circle"></i> September
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_oct" name="real_oct">
+                                                <label class="form-check-label" for="real_oct">
+                                                    <i class="bi bi-check-circle"></i> October
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_nov" name="real_nov">
+                                                <label class="form-check-label" for="real_nov">
+                                                    <i class="bi bi-check-circle"></i> November
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-sm-4 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="real_dec" name="real_dec">
+                                                <label class="form-check-label" for="real_dec">
+                                                    <i class="bi bi-check-circle"></i> December
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnSaveWorkplan">
+                        <i class="bi bi-save"></i> Save Work Plan
+                    </button>
                 </div>
             </div>
         </div>

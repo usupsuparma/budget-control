@@ -250,6 +250,36 @@
             transform: translateY(0);
         }
     }
+    
+    /* Modal Styles */
+    .modal-xl {
+        max-width: 1200px;
+    }
+    
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #itemForm .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    #itemForm .form-control,
+    #itemForm .form-select {
+        font-size: 13px;
+    }
+    
+    #itemForm .form-control-sm {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .modal-header.bg-primary {
+        background-color: #0d6efd !important;
+    }
 </style>
 @endsection
 
@@ -321,6 +351,143 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <p class="mt-2">Loading...</p>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Item -->
+<div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="itemModalLabel">Add Budget Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="itemForm">
+                <div class="modal-body">
+                    <input type="hidden" id="itemId" name="item_id">
+                    <input type="hidden" id="categoryId" name="budget_category_id">
+                    
+                    <div class="row">
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="stockCode" class="form-label">Stock Code</label>
+                                <input type="text" class="form-control" id="stockCode" name="stock_code" maxlength="50">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="budgetCode" class="form-label">Budget Code</label>
+                                <select class="form-select" id="budgetCode" name="budget_code">
+                                    <option value="">Select Budget Code...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="productLine" class="form-label">Product Line</label>
+                                <input type="text" class="form-control" id="productLine" name="product_line" maxlength="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="costCenter" class="form-label">Cost Center</label>
+                                <input type="text" class="form-control" id="costCenter" name="cost_center" maxlength="50">
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="begBalance" class="form-label">Beginning Balance</label>
+                                <input type="text" class="form-control" id="begBalance" name="beg_balance" maxlength="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="consRate" class="form-label">Consumption Rate</label>
+                                <input type="text" class="form-control" id="consRate" name="cons_rate" maxlength="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="unit" class="form-label">Unit</label>
+                                <input type="text" class="form-control" id="unit" name="unit" maxlength="50">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="total" class="form-label">Total</label>
+                                <input type="number" class="form-control" id="total" name="total" step="0.01" readonly>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Activity Quantities -->
+                    <div class="mt-4">
+                        <h6 class="mb-3 fw-bold">Monthly Activity Quantities (0 - 1000)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-2">
+                                <label for="activityJan" class="form-label">January</label>
+                                <input type="number" class="form-control form-control-sm" id="activityJan" name="activity_jan" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityFeb" class="form-label">February</label>
+                                <input type="number" class="form-control form-control-sm" id="activityFeb" name="activity_feb" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityMar" class="form-label">March</label>
+                                <input type="number" class="form-control form-control-sm" id="activityMar" name="activity_mar" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityApr" class="form-label">April</label>
+                                <input type="number" class="form-control form-control-sm" id="activityApr" name="activity_apr" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityMay" class="form-label">May</label>
+                                <input type="number" class="form-control form-control-sm" id="activityMay" name="activity_may" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityJun" class="form-label">June</label>
+                                <input type="number" class="form-control form-control-sm" id="activityJun" name="activity_jun" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityJul" class="form-label">July</label>
+                                <input type="number" class="form-control form-control-sm" id="activityJul" name="activity_jul" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityAug" class="form-label">August</label>
+                                <input type="number" class="form-control form-control-sm" id="activityAug" name="activity_aug" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activitySep" class="form-label">September</label>
+                                <input type="number" class="form-control form-control-sm" id="activitySep" name="activity_sep" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityOct" class="form-label">October</label>
+                                <input type="number" class="form-control form-control-sm" id="activityOct" name="activity_oct" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityNov" class="form-label">November</label>
+                                <input type="number" class="form-control form-control-sm" id="activityNov" name="activity_nov" min="0" max="1000" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="activityDec" class="form-label">December</label>
+                                <input type="number" class="form-control form-control-sm" id="activityDec" name="activity_dec" min="0" max="1000" value="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveModal">Save Item</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

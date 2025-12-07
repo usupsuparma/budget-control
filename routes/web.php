@@ -157,6 +157,10 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])
                 ->middleware('permission:companypolicy.delete')
                 ->name('company-policy.destroy');
+
+            Route::get('/{id}/pdf', [CompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:companypolicy.delete')
+                ->name('company-policy.pdf');
         });
 
     /* ========================

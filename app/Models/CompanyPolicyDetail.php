@@ -12,7 +12,9 @@ class CompanyPolicyDetail extends Model
         'company_policy_id',
         'strategic_goal',
         'description',
-        'target'
+        'target',
+        'strategic_goal_id',
+        'description_id'
     ];
 
     public function dokumen()

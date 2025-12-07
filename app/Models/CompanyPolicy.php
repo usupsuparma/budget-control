@@ -12,6 +12,7 @@ class CompanyPolicy extends Model
         'tahun',
         'nama_dokumen',
         'file_path',
+        'header', 'contents_en', 'contents_id', 'prologue_en', 'prologue_id', 'closing_en', 'closing_id', 'signature'
     ];
 
     public function details()

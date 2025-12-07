@@ -36,7 +36,7 @@
                             </select> --}}
                         </div>
                         <div class="col-md-4 col-xl-6 col-xxl-8 text-end">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                 data-bs-target="#extraLargeModel">
                                 <i class="bi bi-plus-circle-dotted me-2"></i>Add Company Policy
                             </button>

@@ -166,7 +166,7 @@
 <script>
     $(document).ready(function() {
         // Initialize DataTable
-        $('#budgetCategoryTable').DataTable({
+        var table = $('#budgetCategoryTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('budgetCategory.data') }}",
@@ -178,7 +178,14 @@
                 { data: 'sort_order', name: 'sort_order' },
                 { data: 'status', name: 'status' },
                 { data: 'action', name: 'action', orderable: false, searchable: false }
-            ]
+            ],
+            drawCallback: function() {
+                // Initialize Bootstrap tooltips after table draw
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
         });
 
         // Load parent categories

@@ -35,14 +35,13 @@ class BudgetCategoryController extends Controller
                 })
                 ->addColumn('action', function ($row) {
                     return '
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-warning budgetCategory-edit-btn" data-id="' . $row->id . '" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-danger budgetCategory-delete-btn" data-id="' . $row->id . '" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>';
+                        <button class="btn btn-light-primary icon-btn-sm budgetCategory-edit-btn" data-id="' . $row->id . '" data-bs-toggle="tooltip" title="Edit">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-light-danger icon-btn-sm budgetCategory-delete-btn" data-id="' . $row->id . '" data-bs-toggle="tooltip" title="Delete">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    ';
                 })
                 ->rawColumns(['status', 'action'])
                 ->make(true);

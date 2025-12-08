@@ -109,54 +109,11 @@ function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) 
         if (startDate) $('#schedule_start').val(startDate);
         if (endDate) $('#schedule_end').val(endDate);
         
-        // Set planning months
+        // Set planning months only (realization is hidden)
         const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
         months.forEach(month => {
             const isChecked = row.find(`.plan-month[data-month="${month}"]`).prop('checked');
             $(`#plan_${month}`).prop('checked', isChecked);
-            
-            const isRealChecked = row.find(`.real-month[data-month="${month}"]`).prop('checked');
-            $(`#real_${month}`).prop('checked', isRealChecked);
-        });
-    } else {
-        $('#workplan_id').val('');
-    }
-    
-    modal.modal('show');
-}
-
-function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) {
-    const modal = $('#workplanModal');
-    const modalTitle = mode === 'add' ? 'Add Work Plan' : 'Edit Work Plan';
-    
-    $('#workplanModalLabel').text(modalTitle);
-    $('#workplanForm')[0].reset();
-    
-    // Set hidden fields
-    $('#kpi_type').val(kpiType);
-    $('#kpi_id').val(kpiId);
-    
-    if (mode === 'edit' && row) {
-        // Populate form with existing data
-        $('#workplan_id').val(workplanId);
-        $('#activity').val(row.find('.activity-input').val());
-        $('#duration_days').val(row.find('.duration-input').val());
-        $('#description').val(row.find('.description-input').val() || '');
-        
-        // Set dates if available
-        const startDate = row.find('.schedule-start').val();
-        const endDate = row.find('.schedule-end').val();
-        if (startDate) $('#schedule_start').val(startDate);
-        if (endDate) $('#schedule_end').val(endDate);
-        
-        // Set planning months
-        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-        months.forEach(month => {
-            const isChecked = row.find(`.plan-month[data-month="${month}"]`).prop('checked');
-            $(`#plan_${month}`).prop('checked', isChecked);
-            
-            const isRealChecked = row.find(`.real-month[data-month="${month}"]`).prop('checked');
-            $(`#real_${month}`).prop('checked', isRealChecked);
         });
     } else {
         $('#workplan_id').val('');
@@ -337,7 +294,6 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
                             <th rowspan="2" style="width: 80px;">Duration<br>(Days)</th>
                             <th colspan="13" style="background: #0d6efd;">Activities</th>
                             <th rowspan="2" style="width: 120px;">Budget</th>
-                            <th colspan="13" style="background: #dc3545;">Realization</th>
                         </tr>
                         <tr>
                             <th class="month-cell">Jan</th>
@@ -353,20 +309,6 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
                             <th class="month-cell">Nov</th>
                             <th class="month-cell">Des</th>
                             <th class="month-cell">Des</th>
-                            
-                            <th class="realization-cell">Jan</th>
-                            <th class="realization-cell">Feb</th>
-                            <th class="realization-cell">Mar</th>
-                            <th class="realization-cell">Apr</th>
-                            <th class="realization-cell">Mei</th>
-                            <th class="realization-cell">Jun</th>
-                            <th class="realization-cell">Jul</th>
-                            <th class="realization-cell">Agu</th>
-                            <th class="realization-cell">Sep</th>
-                            <th class="realization-cell">Okt</th>
-                            <th class="realization-cell">Nov</th>
-                            <th class="realization-cell">Des</th>
-                            <th class="realization-cell">Des</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -470,29 +412,34 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
     // Budget - clickable to open items page
     const budgetValue = workplan.budget || 0;
     const hasWorkplanId = workplan.id && workplan.id !== 'new';
+    const hasBudget = budgetValue > 0;
+    
     html += `
             <td class="budget-cell ${hasWorkplanId ? 'cursor-pointer' : ''}" 
-                style="${hasWorkplanId ? 'cursor: pointer; background-color: #f0f8ff;' : ''}" 
+                style="${hasWorkplanId ? 'cursor: pointer;' : ''} ${hasBudget ? 'background-color: #d1f2eb; border: 2px solid #28a745;' : 'background-color: #fff3cd; border: 2px solid #ff6900;'}" 
                 title="${hasWorkplanId ? 'Click to manage budget items' : 'Save workplan first'}">
-                <div class="d-flex align-items-center justify-content-between">
-                    <span>${formatCurrency(budgetValue)}</span>
+                <div class="d-flex align-items-center justify-content-center" style="padding: 8px 4px;">
+                    ${hasBudget ? 
+                        `<span style="font-weight: 600; color: #155724;">${formatCurrency(budgetValue)}</span>` : 
+                        `<span style="font-weight: 600; color: #ff6900;">No Budget</span>`
+                    }
                     ${hasWorkplanId ? '<i class="bi bi-box-arrow-up-right ms-2 text-primary"></i>' : ''}
                 </div>
             </td>
     `;
 
-    // Realization months
-    months.forEach(month => {
-        const checked = workplan[`real_${month}`] ? 'checked' : '';
-        html += `
-            <td class="realization-cell">
-                <input type="checkbox" class="real-month" data-month="${month}" ${checked} disabled>
-            </td>
-        `;
-    });
+    // Realization months - HIDDEN
+    // months.forEach(month => {
+    //     const checked = workplan[`real_${month}`] ? 'checked' : '';
+    //     html += `
+    //         <td class="realization-cell">
+    //             <input type="checkbox" class="real-month" data-month="${month}" ${checked} disabled>
+    //         </td>
+    //     `;
+    // });
 
-    // Extra Des column for realization
-    html += `<td class="realization-cell"></td>`;
+    // Extra Des column for realization - HIDDEN
+    // html += `<td class="realization-cell"></td>`;
 
     html += `
         </tr>
@@ -550,7 +497,8 @@ function saveWorkplanFromModal() {
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     months.forEach(month => {
         data[`plan_${month}`] = $(`#plan_${month}`).prop('checked') ? 1 : 0;
-        data[`real_${month}`] = $(`#real_${month}`).prop('checked') ? 1 : 0;
+        // Realization hidden - set all to 0
+        data[`real_${month}`] = 0;
     });
 
     showLoading();
@@ -616,10 +564,10 @@ function saveWorkplan(row) {
         data[`plan_${month}`] = $(this).is(':checked') ? 1 : 0;
     });
 
-    // Collect realization months
-    row.find('.real-month').each(function() {
-        const month = $(this).data('month');
-        data[`real_${month}`] = $(this).is(':checked') ? 1 : 0;
+    // Realization months - HIDDEN, set all to 0
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    months.forEach(month => {
+        data[`real_${month}`] = 0;
     });
 
     console.log('Saving workplan data:', data);

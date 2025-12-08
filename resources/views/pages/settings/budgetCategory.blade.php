@@ -4,19 +4,21 @@
             <div class="card">
                 <div class="card-header d-flex">
                     <div class="col-md-12 text-end">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetCode">
-                            <i class="bi bi-plus-lg me-1"></i>Add Budget Code
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetCategory">
+                            <i class="bi bi-plus-lg me-1"></i>Add Budget Category
                         </button>
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <table id="budgetCodeTable" class="table table-bordered table-striped w-100">
+                    <table id="budgetCategoryTable" class="table table-bordered table-striped w-100">
                         <thead class="table-light">
                             <tr>
                                 <th>Code</th>
                                 <th>Name</th>
-                                <th>Category</th>
+                                <th>Parent</th>
+                                <th>Level</th>
+                                <th>Sort Order</th>
                                 <th>Status</th>
                                 <th class="text-center" width="120px">Action</th>
                             </tr>
@@ -29,16 +31,16 @@
     </div>
 </div>
 
-<!-- Add Budget Code Modal -->
-<div class="modal fade" id="addBudgetCode" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+<!-- Add Budget Category Modal -->
+<div class="modal fade" id="addBudgetCategory" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add Budget Code</h5>
+                <h5 class="modal-title">Add Budget Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="budgetCodeCreateForm" action="{{ route('budgetCode.store') }}" method="POST">
+            <form id="budgetCategoryCreateForm" action="{{ route('budgetCategory.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="row">
@@ -51,14 +53,22 @@
                             <input type="text" name="name" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category" class="form-select">
-                                <option value="">Select Category</option>
-                                <option value="Material">Material</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="Services">Services</option>
-                                <option value="Investment">Investment</option>
+                            <label class="form-label">Level <span class="text-danger">*</span></label>
+                            <select name="level" class="form-select" required>
+                                <option value="">Select Level</option>
+                                <option value="1">1 - Parent</option>
+                                <option value="2">2 - Child</option>
                             </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Parent Category</label>
+                            <select name="parent_id" class="form-select">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sort_order" class="form-control" value="0">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Status</label>
@@ -76,23 +86,23 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" id="btnCreateBudgetCode">Save</button>
+                    <button type="submit" class="btn btn-primary" id="btnCreateBudgetCategory">Save</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Edit Budget Code Modal -->
-<div class="modal fade" id="editBudgetCode" tabindex="-1">
+<!-- Edit Budget Category Modal -->
+<div class="modal fade" id="editBudgetCategory" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Budget Code</h5>
+                <h5 class="modal-title">Edit Budget Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="budgetCodeEditForm" method="POST">
+            <form id="budgetCategoryEditForm" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="edit_id">
@@ -108,14 +118,21 @@
                             <input type="text" name="name" id="edit_name" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category" id="edit_category" class="form-select">
-                                <option value="">Select Category</option>
-                                <option value="Material">Material</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="Services">Services</option>
-                                <option value="Investment">Investment</option>
+                            <label class="form-label">Level <span class="text-danger">*</span></label>
+                            <select name="level" id="edit_level" class="form-select" required>
+                                <option value="1">1 - Parent</option>
+                                <option value="2">2 - Child</option>
                             </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Parent Category</label>
+                            <select name="parent_id" id="edit_parent_id" class="form-select">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sort_order" id="edit_sort_order" class="form-control">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Status</label>
@@ -149,14 +166,16 @@
 <script>
     $(document).ready(function() {
         // Initialize DataTable
-        var table = $('#budgetCodeTable').DataTable({
+        var table = $('#budgetCategoryTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('budgetCode.data') }}",
+            ajax: "{{ route('budgetCategory.data') }}",
             columns: [
                 { data: 'code', name: 'code' },
                 { data: 'name', name: 'name' },
-                { data: 'category', name: 'category' },
+                { data: 'parent_name', name: 'parent_name' },
+                { data: 'level', name: 'level' },
+                { data: 'sort_order', name: 'sort_order' },
                 { data: 'status', name: 'status' },
                 { data: 'action', name: 'action', orderable: false, searchable: false }
             ],
@@ -168,10 +187,23 @@
                 });
             }
         });
+
+        // Load parent categories
+        loadParentCategories();
     });
 
+    function loadParentCategories() {
+        $.get("{{ route('budgetCategory.parents') }}", function(data) {
+            let options = '<option value="">None</option>';
+            data.forEach(function(cat) {
+                options += `<option value="${cat.id}">${cat.code} - ${cat.name}</option>`;
+            });
+            $('select[name="parent_id"]').html(options);
+        });
+    }
+
     // CREATE
-    $('#budgetCodeCreateForm').submit(function(e) {
+    $('#budgetCategoryCreateForm').submit(function(e) {
         e.preventDefault();
         let form = $(this);
         let url = form.attr('action');
@@ -181,9 +213,9 @@
             method: 'POST',
             data: form.serialize(),
             success: function(response) {
-                $('#addBudgetCode').modal('hide');
+                $('#addBudgetCategory').modal('hide');
                 form[0].reset();
-                $('#budgetCodeTable').DataTable().ajax.reload();
+                $('#budgetCategoryTable').DataTable().ajax.reload();
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
@@ -208,24 +240,26 @@
     });
 
     // EDIT
-    $(document).on('click', '.budgetCode-edit-btn', function() {
+    $(document).on('click', '.budgetCategory-edit-btn', function() {
         let id = $(this).data('id');
         
-        $.get("{{ url('/budgetCode') }}/" + id + "/edit", function(data) {
+        $.get("{{ url('/budgetCategory') }}/" + id + "/edit", function(data) {
             $('#edit_id').val(data.id);
             $('#edit_code').val(data.code);
             $('#edit_name').val(data.name);
-            $('#edit_category').val(data.category);
+            $('#edit_level').val(data.level);
+            $('#edit_parent_id').val(data.parent_id);
+            $('#edit_sort_order').val(data.sort_order);
             $('#edit_is_active').val(data.is_active ? '1' : '0');
             $('#edit_description').val(data.description);
             
-            $('#budgetCodeEditForm').attr('action', "{{ url('/budgetCode') }}/" + id);
-            $('#editBudgetCode').modal('show');
+            $('#budgetCategoryEditForm').attr('action', "{{ url('/budgetCategory') }}/" + id);
+            $('#editBudgetCategory').modal('show');
         });
     });
 
     // UPDATE
-    $('#budgetCodeEditForm').submit(function(e) {
+    $('#budgetCategoryEditForm').submit(function(e) {
         e.preventDefault();
         let form = $(this);
         let url = form.attr('action');
@@ -235,8 +269,8 @@
             method: 'POST',
             data: form.serialize(),
             success: function(response) {
-                $('#editBudgetCode').modal('hide');
-                $('#budgetCodeTable').DataTable().ajax.reload();
+                $('#editBudgetCategory').modal('hide');
+                $('#budgetCategoryTable').DataTable().ajax.reload();
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
@@ -261,7 +295,7 @@
     });
 
     // DELETE
-    $(document).on('click', '.budgetCode-delete-btn', function() {
+    $(document).on('click', '.budgetCategory-delete-btn', function() {
         let id = $(this).data('id');
 
         Swal.fire({
@@ -276,13 +310,13 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "{{ url('/budgetCode') }}/" + id,
+                    url: "{{ url('/budgetCategory') }}/" + id,
                     method: 'DELETE',
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
-                        $('#budgetCodeTable').DataTable().ajax.reload();
+                        $('#budgetCategoryTable').DataTable().ajax.reload();
                         Swal.fire({
                             icon: 'success',
                             title: 'Deleted!',

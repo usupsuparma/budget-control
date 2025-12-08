@@ -28,6 +28,8 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\SettingCodeController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkPlanItemController;
+use App\Http\Controllers\BudgetCategoryController;
+use App\Http\Controllers\BudgetCodeController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -687,6 +689,48 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.code.view')
         ->get('/code', [SettingCodeController::class, 'index'])
         ->name('code.index');
+
+    /* ========================
+        BUDGET CATEGORY
+    ======================== */
+    Route::prefix('budgetCategory')
+        ->middleware('permission:setting.master.view')
+        ->group(function () {
+            Route::get('/', [BudgetCategoryController::class, 'index'])
+                ->name('budgetCategory.index');
+            Route::get('/data', [BudgetCategoryController::class, 'data'])
+                ->name('budgetCategory.data');
+            Route::post('/', [BudgetCategoryController::class, 'store'])
+                ->name('budgetCategory.store');
+            Route::get('/{id}/edit', [BudgetCategoryController::class, 'edit'])
+                ->name('budgetCategory.edit');
+            Route::put('/{id}', [BudgetCategoryController::class, 'update'])
+                ->name('budgetCategory.update');
+            Route::delete('/{id}', [BudgetCategoryController::class, 'destroy'])
+                ->name('budgetCategory.destroy');
+            Route::get('/parents', [BudgetCategoryController::class, 'getParentCategories'])
+                ->name('budgetCategory.parents');
+        });
+
+    /* ========================
+        BUDGET CODE
+    ======================== */
+    Route::prefix('budgetCode')
+        ->middleware('permission:setting.master.view')
+        ->group(function () {
+            Route::get('/', [BudgetCodeController::class, 'index'])
+                ->name('budgetCode.index');
+            Route::get('/data', [BudgetCodeController::class, 'data'])
+                ->name('budgetCode.data');
+            Route::post('/', [BudgetCodeController::class, 'store'])
+                ->name('budgetCode.store');
+            Route::get('/{id}/edit', [BudgetCodeController::class, 'edit'])
+                ->name('budgetCode.edit');
+            Route::put('/{id}', [BudgetCodeController::class, 'update'])
+                ->name('budgetCode.update');
+            Route::delete('/{id}', [BudgetCodeController::class, 'destroy'])
+                ->name('budgetCode.destroy');
+        });
 
 
 

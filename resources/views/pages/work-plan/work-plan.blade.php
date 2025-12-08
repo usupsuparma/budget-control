@@ -298,6 +298,18 @@
         .btn-edit-workplan {
             cursor: pointer;
         }
+
+        /* Budget Cell Styling */
+        .budget-cell {
+            text-align: center;
+            vertical-align: middle;
+            transition: all 0.3s ease;
+        }
+
+        .budget-cell:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
     </style>
 @endsection
 
@@ -516,7 +528,7 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
+                        <div class="row mb-3" style="display: none;">
                             <div class="col-md-12">
                                 <div class="month-section-header realization-header">
                                     <i class="bi bi-check2-square"></i> Realization (Select Months)

@@ -94,6 +94,7 @@ class WorkPlanItemController extends Controller
         try {
             $validated = $request->validate([
                 'budget_category_id' => 'required|exists:budget_categories,id',
+                'category' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
                 'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',
@@ -103,6 +104,8 @@ class WorkPlanItemController extends Controller
                 'cons_rate' => 'nullable|string|max:100',
                 'unit' => 'nullable|string|max:50',
                 'total' => 'nullable|numeric',
+                'price_estimation' => 'nullable|numeric',
+                'price_estimation_description' => 'nullable|string|max:255',
                 'activity_jan' => 'nullable|integer|min:0|max:1000',
                 'activity_feb' => 'nullable|integer|min:0|max:1000',
                 'activity_mar' => 'nullable|integer|min:0|max:1000',
@@ -168,6 +171,7 @@ class WorkPlanItemController extends Controller
             }
 
             $validated = $request->validate([
+                'category' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
                 'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',
@@ -177,6 +181,8 @@ class WorkPlanItemController extends Controller
                 'cons_rate' => 'nullable|string|max:100',
                 'unit' => 'nullable|string|max:50',
                 'total' => 'nullable|numeric',
+                'price_estimation' => 'nullable|numeric',
+                'price_estimation_description' => 'nullable|string|max:255',
                 'activity_jan' => 'nullable|integer|min:0|max:1000',
                 'activity_feb' => 'nullable|integer|min:0|max:1000',
                 'activity_mar' => 'nullable|integer|min:0|max:1000',

@@ -120,13 +120,18 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('pengajuan.anggaran*') ? 'show' : '' }}" id="collapseInvoices">
+                <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') ? 'show' : '' }}" id="collapseInvoices">
                     <li class="pe-slide-item">
                         <a href="{{ route('workplan.index') }}" class="pe-nav-link {{ Request::is('workplan*') ? 'active' : '' }}">
                             <i class="bi bi-calendar-check"></i> Work Plan
                         </a>
                     </li>
 
+                    <li class="pe-slide-item">
+                        <a href="{{ route('budget-user.index') }}" class="pe-nav-link {{ Request::is('budget-user*') ? 'active' : '' }}">
+                            <i class="bi bi-person-check"></i> Budget User
+                        </a>
+                    </li>
 
                     <li class="pe-slide-item">
                         <a href="{{ route('budget-admin.index') }}" class="pe-nav-link {{ Request::is('budget-admin*') ? 'active' : '' }}">

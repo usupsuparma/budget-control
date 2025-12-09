@@ -6,6 +6,7 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuthorizationController;
+use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
@@ -447,6 +448,20 @@ Route::middleware('auth')->group(function () {
         });
 
 
+    
+
+    /* ========================
+        BUDGET ADMIN
+    ======================== */
+    Route::prefix('budget-admin')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+            Route::get('/', [BudgetAdminController::class, 'index'])
+                ->name('budget.admin');
+            
+            Route::get('/data', [BudgetAdminController::class, 'getBudgetData'])
+                ->name('budget.admin.data');
+        });
 
 
     /* ========================
@@ -501,6 +516,18 @@ Route::middleware('auth')->group(function () {
                 Route::patch('/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
                     ->name('workplan.updateRealization');
             });
+        });
+
+
+    /*==========================
+        BUDGET ADMIN
+    ==========================*/
+    Route::prefix('budget-admin')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [BudgetAdminController::class, 'index'])
+                ->name('budget-admin.index');
         });
 
     /* ========================

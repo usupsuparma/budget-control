@@ -73,14 +73,12 @@ class KPIWorkPlan extends Model
     // Explicit relationships
     public function kpiDepartment()
     {
-        return $this->belongsTo(KPIDepartment::class, 'kpi_id')
-            ->where('kpi_type', 'department');
+        return $this->belongsTo(KPIDepartment::class, 'kpi_id');
     }
 
     public function kpiSection()
     {
-        return $this->belongsTo(KPISection::class, 'kpi_id')
-            ->where('kpi_type', 'section');
+        return $this->belongsTo(KPISection::class, 'kpi_id');
     }
 
     public function approver()

@@ -329,11 +329,11 @@
 
                         <!-- RIGHT CONTENT -->
                         <div class="col-md-10">
-                            <!-- Child Categories with Expand/Collapse -->
-                            <div id="childCategoriesContainer">
+                            <!-- Items Container -->
+                            <div id="itemsContainer">
                                 <div class="text-center py-4 text-muted">
                                     <i class="bi bi-info-circle fa-2x mb-2"></i>
-                                    <p>Please select a parent category to view sub-categories</p>
+                                    <p>Please select a category to view items</p>
                                 </div>
                             </div>
                         </div>
@@ -370,6 +370,36 @@
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="categoryType" class="form-label">Category Type <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryRoutine" value="Routine" checked>
+                                        <label class="form-check-label" for="categoryRoutine">
+                                            Routine
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryCarryOver" value="Carry Over">
+                                        <label class="form-check-label" for="categoryCarryOver">
+                                            Carry Over
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryTurnAround" value="Turn Around">
+                                        <label class="form-check-label" for="categoryTurnAround">
+                                            Turn Around
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryMultiYear" value="Multi Year">
+                                        <label class="form-check-label" for="categoryMultiYear">
+                                            Multi Year
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
                                 <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
@@ -421,8 +451,18 @@
                             </div>
                             
                             <div class="mb-3">
+                                <label for="priceEstimation" class="form-label">Price Estimation</label>
+                                <input type="number" class="form-control" id="priceEstimation" name="price_estimation" step="0.01">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="priceEstimationDescription" class="form-label">Price Estimation Description</label>
+                                <textarea class="form-control" id="priceEstimationDescription" name="price_estimation_description" rows="2"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
                                 <label for="notes" class="form-label">Notes</label>
-                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                                <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
                             </div>
                         </div>
                     </div>
@@ -433,51 +473,60 @@
                         <div class="row g-3">
                             <div class="col-md-2">
                                 <label for="activityJan" class="form-label">January</label>
-                                <input type="number" class="form-control form-control-sm" id="activityJan" name="activity_jan" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityJan" name="activity_jan" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityFeb" class="form-label">February</label>
-                                <input type="number" class="form-control form-control-sm" id="activityFeb" name="activity_feb" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityFeb" name="activity_feb" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityMar" class="form-label">March</label>
-                                <input type="number" class="form-control form-control-sm" id="activityMar" name="activity_mar" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityMar" name="activity_mar" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityApr" class="form-label">April</label>
-                                <input type="number" class="form-control form-control-sm" id="activityApr" name="activity_apr" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityApr" name="activity_apr" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityMay" class="form-label">May</label>
-                                <input type="number" class="form-control form-control-sm" id="activityMay" name="activity_may" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityMay" name="activity_may" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityJun" class="form-label">June</label>
-                                <input type="number" class="form-control form-control-sm" id="activityJun" name="activity_jun" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityJun" name="activity_jun" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityJul" class="form-label">July</label>
-                                <input type="number" class="form-control form-control-sm" id="activityJul" name="activity_jul" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityJul" name="activity_jul" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityAug" class="form-label">August</label>
-                                <input type="number" class="form-control form-control-sm" id="activityAug" name="activity_aug" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityAug" name="activity_aug" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activitySep" class="form-label">September</label>
-                                <input type="number" class="form-control form-control-sm" id="activitySep" name="activity_sep" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activitySep" name="activity_sep" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityOct" class="form-label">October</label>
-                                <input type="number" class="form-control form-control-sm" id="activityOct" name="activity_oct" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityOct" name="activity_oct" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityNov" class="form-label">November</label>
-                                <input type="number" class="form-control form-control-sm" id="activityNov" name="activity_nov" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityNov" name="activity_nov" min="0" max="1000" value="0">
                             </div>
                             <div class="col-md-2">
                                 <label for="activityDec" class="form-label">December</label>
-                                <input type="number" class="form-control form-control-sm" id="activityDec" name="activity_dec" min="0" max="1000" value="0">
+                                <input type="number" class="form-control form-control-sm month-input" id="activityDec" name="activity_dec" min="0" max="1000" value="0">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-info d-flex align-items-center">
+                                    <i class="bi bi-calculator me-2"></i>
+                                    <strong>Total Activity:</strong>
+                                    <span class="ms-2" id="totalActivity">0</span>
+                                </div>
                             </div>
                         </div>
                     </div>

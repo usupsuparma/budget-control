@@ -1,10 +1,9 @@
 /**
  * Work Plan Budget Items Management
- * Dynamic category tabs and AJAX CRUD operations
+ * Simplified version - Parent categories only
  */
 
-let currentParentCategory = null;
-let currentChildCategory = null;
+let currentCategory = null;
 let budgetCodesData = [];
 
 $(document).ready(function() {
@@ -20,7 +19,7 @@ function initializeEventListeners() {
     $(document).on('click', '.parent-category-tab', function(e) {
         e.preventDefault();
         const categoryId = $(this).data('category-id');
-        selectParentCategory(categoryId);
+        selectCategory(categoryId);
     });
 
     // Add new item - open modal
@@ -52,14 +51,14 @@ function initializeEventListeners() {
         calculateModalTotal();
     });
     
-    // Toggle expand/collapse for child categories
-    $(document).on('click', '.expand-btn-item', function() {
-        toggleChildCategory($(this));
+    // Calculate total activity when month inputs change
+    $(document).on('input', '.month-input', function() {
+        calculateTotalActivity();
     });
 }
 
 /**
- * Load categories from server
+ * Load categories from server (parent only)
  */
 function loadCategories() {
     showLoading();
@@ -72,7 +71,7 @@ function loadCategories() {
                 renderParentCategories(response.data);
                 // Auto-select first parent category
                 if (response.data.length > 0) {
-                    selectParentCategory(response.data[0].id);
+                    selectCategory(response.data[0].id);
                 }
             }
             hideLoading();
@@ -85,7 +84,7 @@ function loadCategories() {
 }
 
 /**
- * Render parent category tabs (Level 1)
+ * Render parent category tabs
  */
 function renderParentCategories(categories) {
     const container = $('#parentCategoryTabs');
@@ -110,85 +109,16 @@ function renderParentCategories(categories) {
 }
 
 /**
- * Select parent category and load children
+ * Select category and load items
  */
-function selectParentCategory(categoryId) {
-    currentParentCategory = categoryId;
+function selectCategory(categoryId) {
+    currentCategory = categoryId;
     
     // Update active state
     $('.parent-category-tab').removeClass('active');
     $(`.parent-category-tab[data-category-id="${categoryId}"]`).addClass('active');
     
-    // Find category data
-    $.ajax({
-        url: `/workplan/${WORKPLAN_ID}/item/categories`,
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                const category = response.data.find(c => c.id == categoryId);
-                if (category && category.children) {
-                    renderChildCategories(category.children);
-                    // Auto-select first child
-                    if (category.children.length > 0) {
-                        selectChildCategory(category.children[0].id);
-                    }
-                }
-            }
-        }
-    });
-}
-
-/**
- * Render child category tabs (Level 2) with expand/collapse
- */
-function renderChildCategories(children) {
-    const container = $('#childCategoriesContainer');
-    container.empty();
-
-    if (children.length === 0) {
-        container.html('<div class="text-center py-4 text-muted"><i class="bi bi-info-circle fa-2x mb-2"></i><p>No sub-categories available</p></div>');
-        return;
-    }
-
-    children.forEach((child, index) => {
-        const html = `
-            <div class="child-category-section mb-3" data-category-id="${child.id}">
-                <div class="child-category-header">
-                    <div>
-                        <strong>${child.name.toUpperCase()}</strong>
-                    </div>
-                    <button class="expand-btn-item collapsed" data-target="child-${child.id}">
-                        <i class="bi bi-chevron-right"></i> Expand
-                    </button>
-                </div>
-                <div id="child-${child.id}" class="collapse-section-item p-3" style="background: white; border-radius: 6px;">
-                    <div class="text-center py-3 text-muted">
-                        <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div> Loading items...
-                    </div>
-                </div>
-            </div>
-        `;
-        container.append(html);
-    });
-    
-    // Auto-expand first child category
-    if (children.length > 0) {
-        const firstBtn = container.find('.expand-btn-item').first();
-        setTimeout(() => {
-            firstBtn.click();
-        }, 100);
-    }
-}
-
-/**
- * Select child category and load items
- */
-function selectChildCategory(categoryId) {
-    currentChildCategory = categoryId;
-    
-    // Load items
+    // Load items for this category
     loadItems(categoryId);
 }
 
@@ -196,15 +126,10 @@ function selectChildCategory(categoryId) {
  * Load items for selected category
  */
 function loadItems(categoryId) {
-    const targetContainer = $(`#child-${categoryId}`);
+    const targetContainer = $('#itemsContainer');
     
-    if (!targetContainer.length) {
-        showError('Container not found');
-        return;
-    }
-    
-    // Show loading in specific container
-    targetContainer.html('<div class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Loading items...</div>');
+    // Show loading
+    targetContainer.html('<div class="text-center py-5 text-muted"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-3">Loading items...</p></div>');
     
     $.ajax({
         url: `/workplan/${WORKPLAN_ID}/item/list`,
@@ -217,7 +142,7 @@ function loadItems(categoryId) {
             }
         },
         error: function(xhr) {
-            targetContainer.html('<div class="text-center py-3 text-danger"><i class="bi bi-exclamation-circle"></i> Failed to load items</div>');
+            targetContainer.html('<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-circle fa-3x mb-3"></i><p>Failed to load items</p></div>');
             showError('Failed to load items');
         }
     });
@@ -227,60 +152,64 @@ function loadItems(categoryId) {
  * Render items table
  */
 function renderItemsTable(items, categoryId) {
-    const container = $(`#child-${categoryId}`);
+    const container = $('#itemsContainer');
     
     let html = `
         <div class="mb-3">
-            <button type="button" class="btn btn-primary btn-sm btn-add-item" data-category-id="${categoryId}" style="padding: 8px 16px; font-size: 13px;">
-                <i class="bi bi-plus-circle me-2"></i> Add Item
+            <button type="button" class="btn btn-primary btn-add-item" data-category-id="${categoryId}">
+                <i class="bi bi-plus-circle me-2"></i> Add New Item
             </button>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered items-table">
+            <table class="table table-bordered table-hover items-table">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 100px; min-width: 100px;">Action</th>
+                        <th rowspan="2" style="width: 50px;">No</th>
+                        <th rowspan="2" style="width: 100px;">Action</th>
+                        <th rowspan="2" style="width: 100px;">Category Type</th>
                         <th rowspan="2" style="width: 200px;">Description</th>
                         <th rowspan="2" style="width: 80px;">Stock Code</th>
-                        <th rowspan="2" style="width: 80px;">Budget Code</th>
+                        <th rowspan="2" style="width: 100px;">Budget Code</th>
                         <th rowspan="2" style="width: 100px;">Product Line</th>
                         <th rowspan="2" style="width: 80px;">Cost Center</th>
-                        <th rowspan="2" style="width: 80px;">Beg Balance</th>
-                        <th rowspan="2" style="width: 80px;">Cons Rate</th>
-                        <th rowspan="2" style="width: 60px;">Unit</th>
-                        <th rowspan="2" style="width: 100px;">Total</th>
-                        <th colspan="12" class="month-header">Activity Quantities</th>
+                        <th rowspan="2" style="width: 80px;">Unit</th>
+                        <th rowspan="2" style="width: 120px;">Beg Balance</th>
+                        <th rowspan="2" style="width: 120px;">Cons Rate</th>
+                        <th rowspan="2" style="width: 120px;">Total</th>
+                        <th rowspan="2" style="width: 120px;">Price Est.</th>
+                        <th rowspan="2" style="width: 150px;">Price Est. Desc.</th>
+                        <th colspan="12" class="month-header text-center">Activity Quantities</th>
                     </tr>
                     <tr class="month-header">
-                        <th>Jan</th>
-                        <th>Feb</th>
-                        <th>Mar</th>
-                        <th>Apr</th>
-                        <th>May</th>
-                        <th>Jun</th>
-                        <th>Jul</th>
-                        <th>Aug</th>
-                        <th>Sep</th>
-                        <th>Oct</th>
-                        <th>Nov</th>
-                        <th>Dec</th>
+                        <th class="text-center">Jan</th>
+                        <th class="text-center">Feb</th>
+                        <th class="text-center">Mar</th>
+                        <th class="text-center">Apr</th>
+                        <th class="text-center">May</th>
+                        <th class="text-center">Jun</th>
+                        <th class="text-center">Jul</th>
+                        <th class="text-center">Aug</th>
+                        <th class="text-center">Sep</th>
+                        <th class="text-center">Oct</th>
+                        <th class="text-center">Nov</th>
+                        <th class="text-center">Dec</th>
                     </tr>
                 </thead>
-                <tbody id="itemsTableBody-${categoryId}">
+                <tbody>
     `;
 
     if (items.length === 0) {
         html += `
             <tr>
-                <td colspan="22" class="no-data">
-                    <i class="bi bi-inbox fa-2x mb-2 d-block"></i>
-                    No items found. Click "Add Item" to create new budget item.
+                <td colspan="27" class="no-data">
+                    <i class="bi bi-inbox fa-3x mb-3 d-block"></i>
+                    <p class="mb-0">No items found. Click "Add New Item" to create budget item.</p>
                 </td>
             </tr>
         `;
     } else {
-        items.forEach(item => {
-            html += renderItemRow(item);
+        items.forEach((item, index) => {
+            html += renderItemRow(item, index + 1);
         });
     }
 
@@ -291,22 +220,30 @@ function renderItemsTable(items, categoryId) {
     `;
 
     container.html(html);
-    
-    // Initialize tooltips for dynamically added elements
     initializeTooltips();
 }
 
 /**
  * Render single item row
  */
-function renderItemRow(item) {
+function renderItemRow(item, rowNumber) {
     const isApproved = item.status === 'approved';
     const rowClass = isApproved ? 'table-success' : '';
     
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     
+    // Category badge colors
+    const categoryColors = {
+        'Routine': 'primary',
+        'Carry Over': 'warning',
+        'Turn Around': 'info',
+        'Multi Year': 'success'
+    };
+    const categoryBadgeColor = categoryColors[item.category_type] || 'secondary';
+    
     let html = `
         <tr data-item-id="${item.id}" class="${rowClass}" data-category-id="${item.budget_category_id}">
+            <td class="text-center">${rowNumber}</td>
             <td class="text-center action-column">
     `;
     
@@ -314,10 +251,10 @@ function renderItemRow(item) {
         html += `<span class="badge bg-success status-badge">Approved</span>`;
     } else {
         html += `
-            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" data-item-id="${item.id}" title="Edit Item" data-bs-toggle="tooltip">
+            <button type="button" class="btn btn-sm btn-primary btn-action-item btn-edit-item" data-item-id="${item.id}" title="Edit" data-bs-toggle="tooltip">
                 <i class="bi bi-pencil"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" data-item-id="${item.id}" title="Delete Item" data-bs-toggle="tooltip">
+            <button type="button" class="btn btn-sm btn-danger btn-action-item btn-delete-item" data-item-id="${item.id}" title="Delete" data-bs-toggle="tooltip">
                 <i class="bi bi-trash"></i>
             </button>
         `;
@@ -325,15 +262,18 @@ function renderItemRow(item) {
     
     html += `
             </td>
-            <td>${item.description}</td>
+            <td><span class="badge bg-${categoryBadgeColor}">${item.category_type || 'Routine'}</span></td>
+            <td>${item.description || '-'}</td>
             <td>${item.stock_code || '-'}</td>
             <td>${item.budget_code || '-'}</td>
             <td>${item.product_line || '-'}</td>
             <td>${item.cost_center || '-'}</td>
+            <td>${item.unit || '-'}</td>
             <td>${item.beg_balance || '-'}</td>
             <td>${item.cons_rate || '-'}</td>
-            <td>${item.unit || '-'}</td>
-            <td class="text-end">${parseFloat(item.total).toLocaleString('id-ID')}</td>
+            <td class="text-end fw-bold">${item.total ? parseFloat(item.total).toLocaleString('id-ID') : '0'}</td>
+            <td class="text-end">${item.price_estimation ? parseFloat(item.price_estimation).toLocaleString('id-ID') : '-'}</td>
+            <td style="font-size: 10px;">${item.price_estimation_description || '-'}</td>
     `;
     
     months.forEach(month => {
@@ -351,12 +291,15 @@ function renderItemRow(item) {
  * Open modal for adding new item
  */
 function openAddModal(categoryId) {
-    currentChildCategory = categoryId;
+    currentCategory = categoryId;
     
     // Reset form
     $('#itemForm')[0].reset();
     $('#itemId').val('');
     $('#categoryId').val(categoryId);
+    
+    // Set default category radio to Routine
+    $('#categoryRoutine').prop('checked', true);
     
     // Set modal title
     $('#itemModalLabel').text('Add Budget Item');
@@ -365,10 +308,13 @@ function openAddModal(categoryId) {
     populateBudgetCodes();
     
     // Reset all activity quantities to 0
-    for (let i = 1; i <= 12; i++) {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        $(`#activity${months[i-1]}`).val(0);
-    }
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    months.forEach(month => {
+        $(`#activity${month}`).val(0);
+    });
+    
+    // Reset total activity
+    $('#totalActivity').text('0');
     
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('itemModal'));
@@ -379,7 +325,6 @@ function openAddModal(categoryId) {
  * Open modal for editing existing item
  */
 function openEditModal(itemId) {
-    // Find item data from table row
     const row = $(`tr[data-item-id="${itemId}"]`);
     
     if (!row.length) {
@@ -387,7 +332,6 @@ function openEditModal(itemId) {
         return;
     }
     
-    // Get item data via AJAX to ensure we have the latest data
     showLoading();
     
     $.ajax({
@@ -408,6 +352,12 @@ function openEditModal(itemId) {
                 // Populate form
                 $('#itemId').val(item.id);
                 $('#categoryId').val(item.budget_category_id);
+                
+                // Set category radio button
+                const categoryValue = item.category_type || 'Routine';
+                $('input[name="category_type"]').prop('checked', false);
+                $(`input[name="category_type"][value="${categoryValue}"]`).prop('checked', true);
+                
                 $('#description').val(item.description);
                 $('#stockCode').val(item.stock_code || '');
                 $('#productLine').val(item.product_line || '');
@@ -416,6 +366,8 @@ function openEditModal(itemId) {
                 $('#consRate').val(item.cons_rate || '');
                 $('#unit').val(item.unit || '');
                 $('#total').val(item.total);
+                $('#priceEstimation').val(item.price_estimation || '');
+                $('#priceEstimationDescription').val(item.price_estimation_description || '');
                 $('#notes').val(item.notes || '');
                 
                 // Populate budget codes and set selected
@@ -423,12 +375,15 @@ function openEditModal(itemId) {
                 
                 // Set activity quantities
                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                months.forEach((month, index) => {
+                months.forEach(month => {
                     const key = month.toLowerCase();
                     $(`#activity${month}`).val(item[`activity_${key}`] || 0);
                 });
                 
-                currentChildCategory = item.budget_category_id;
+                // Calculate and display total activity
+                calculateTotalActivity();
+                
+                currentCategory = item.budget_category_id;
                 
                 // Set modal title
                 $('#itemModalLabel').text('Edit Budget Item');
@@ -466,9 +421,13 @@ function saveItemFromModal() {
     const itemId = $('#itemId').val();
     const isNew = !itemId;
     
+    // Get selected category radio button
+    const selectedCategory = $('input[name="category_type"]:checked').val();
+    
     // Collect data from form
     const data = {
         budget_category_id: $('#categoryId').val(),
+        category_type: selectedCategory,
         description: $('#description').val(),
         stock_code: $('#stockCode').val(),
         budget_code: $('#budgetCode').val(),
@@ -478,6 +437,8 @@ function saveItemFromModal() {
         cons_rate: $('#consRate').val(),
         unit: $('#unit').val(),
         total: $('#total').val(),
+        price_estimation: $('#priceEstimation').val(),
+        price_estimation_description: $('#priceEstimationDescription').val(),
         notes: $('#notes').val(),
         activity_jan: parseInt($('#activityJan').val()) || 0,
         activity_feb: parseInt($('#activityFeb').val()) || 0,
@@ -524,8 +485,8 @@ function saveItemFromModal() {
                 modal.hide();
                 
                 // Reload items in current category
-                if (currentChildCategory) {
-                    loadItems(currentChildCategory);
+                if (currentCategory) {
+                    loadItems(currentCategory);
                 }
             }
         },
@@ -548,7 +509,8 @@ function deleteItemById(itemId) {
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!'
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
             showLoading();
@@ -564,8 +526,8 @@ function deleteItemById(itemId) {
                     if (response.success) {
                         showSuccess(response.message);
                         // Reload items in current category
-                        if (currentChildCategory) {
-                            loadItems(currentChildCategory);
+                        if (currentCategory) {
+                            loadItems(currentCategory);
                         }
                     }
                 },
@@ -590,29 +552,18 @@ function calculateModalTotal() {
 }
 
 /**
- * Toggle expand/collapse for child category
+ * Calculate total activity from all months
  */
-function toggleChildCategory(button) {
-    const targetId = button.data('target');
-    const target = $(`#${targetId}`);
-    const categoryId = button.closest('.child-category-section').data('category-id');
+function calculateTotalActivity() {
+    let total = 0;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    if (target.hasClass('show')) {
-        // Collapse
-        target.removeClass('show');
-        button.addClass('collapsed');
-        button.html('<i class="bi bi-chevron-right"></i> Expand');
-    } else {
-        // Expand
-        target.addClass('show');
-        button.removeClass('collapsed');
-        button.html('<i class="bi bi-chevron-down"></i> Collapse');
-        
-        // Load items if not already loaded
-        if (target.find('.text-muted').length > 0) {
-            selectChildCategory(categoryId);
-        }
-    }
+    months.forEach(month => {
+        const value = parseInt($(`#activity${month}`).val()) || 0;
+        total += value;
+    });
+    
+    $('#totalActivity').text(total.toLocaleString('id-ID'));
 }
 
 /**
@@ -635,15 +586,12 @@ function getCategoryIcon(code) {
  * Initialize Bootstrap tooltips
  */
 function initializeTooltips() {
-    // Remove old tooltips first
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        // Dispose existing tooltip if any
         const existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
         if (existingTooltip) {
             existingTooltip.dispose();
         }
-        // Initialize new tooltip
         new bootstrap.Tooltip(tooltipTriggerEl, {
             trigger: 'hover',
             placement: 'top'

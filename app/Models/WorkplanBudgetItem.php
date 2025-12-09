@@ -40,6 +40,9 @@ class WorkplanBudgetItem extends Model
         'approval_notes',
         'notes',
         'sort_order',
+        'category_type', // Enum ['Routine', 'Carry Over', 'Turn Around', 'Multi Year']
+        'price_estimation',
+        'price_estimation_description',
     ];
 
     protected $casts = [

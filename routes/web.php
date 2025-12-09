@@ -6,6 +6,7 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuthorizationController;
+use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
 use App\Http\Controllers\CompanyPolicyController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
 use App\Http\Controllers\SettingProductionController;
+use App\Http\Controllers\BudgetUserController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -454,6 +456,41 @@ Route::middleware('auth')->group(function () {
 
 
     /* ========================
+        BUDGET ADMIN
+    ======================== */
+    Route::prefix('budget-admin')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+            Route::get('/', [BudgetAdminController::class, 'index'])
+                ->name('budget.admin');
+
+            Route::get('/data', [BudgetAdminController::class, 'getBudgetData'])
+                ->name('budget.admin.data');
+        });
+
+    // BUDGET USER
+    Route::prefix('budget-user')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+            Route::get('/', [BudgetUserController::class, 'index'])
+                ->name('budget-user.index');
+            Route::get('/divisions', [BudgetUserController::class, 'getDivisions'])
+                ->name('budget-user.divisions');
+            Route::get('/workplans', [BudgetUserController::class, 'getWorkplans'])
+                ->name('budget-user.workplans');
+            Route::get('/{workplanId}/categories', [BudgetUserController::class, 'getCategories'])
+                ->name('budget-user.categories');
+            Route::get('/{workplanId}/items', [BudgetUserController::class, 'getItems'])
+                ->name('budget-user.items');
+            Route::post('/{workplanId}/items', [BudgetUserController::class, 'store'])
+                ->name('budget-user.store');
+            Route::put('/{workplanId}/items/{itemId}', [BudgetUserController::class, 'update'])
+                ->name('budget-user.update');
+            Route::delete('/{workplanId}/items/{itemId}', [BudgetUserController::class, 'destroy'])
+                ->name('budget-user.destroy');
+        });
+
+    /* ========================
         WORK PLAN (Program Kerja)
     ======================== */
     Route::prefix('workplan')
@@ -505,6 +542,18 @@ Route::middleware('auth')->group(function () {
                 Route::patch('/update-realization', [KPIWorkPlanController::class, 'updateRealization'])
                     ->name('workplan.updateRealization');
             });
+        });
+
+
+    /*==========================
+        BUDGET ADMIN
+    ==========================*/
+    Route::prefix('budget-admin')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [BudgetAdminController::class, 'index'])
+                ->name('budget-admin.index');
         });
 
     /* ========================

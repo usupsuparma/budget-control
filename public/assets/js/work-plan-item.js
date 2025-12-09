@@ -173,8 +173,11 @@ function renderItemsTable(items, categoryId) {
                         <th rowspan="2" style="width: 100px;">Product Line</th>
                         <th rowspan="2" style="width: 80px;">Cost Center</th>
                         <th rowspan="2" style="width: 80px;">Unit</th>
-                        <th rowspan="2" style="width: 120px;">Price Est.</th>
+                        <th rowspan="2" style="width: 120px;">Beg Balance</th>
+                        <th rowspan="2" style="width: 120px;">Cons Rate</th>
                         <th rowspan="2" style="width: 120px;">Total</th>
+                        <th rowspan="2" style="width: 120px;">Price Est.</th>
+                        <th rowspan="2" style="width: 150px;">Price Est. Desc.</th>
                         <th colspan="12" class="month-header text-center">Activity Quantities</th>
                     </tr>
                     <tr class="month-header">
@@ -198,7 +201,7 @@ function renderItemsTable(items, categoryId) {
     if (items.length === 0) {
         html += `
             <tr>
-                <td colspan="25" class="no-data">
+                <td colspan="27" class="no-data">
                     <i class="bi bi-inbox fa-3x mb-3 d-block"></i>
                     <p class="mb-0">No items found. Click "Add New Item" to create budget item.</p>
                 </td>
@@ -266,8 +269,11 @@ function renderItemRow(item, rowNumber) {
             <td>${item.product_line || '-'}</td>
             <td>${item.cost_center || '-'}</td>
             <td>${item.unit || '-'}</td>
-            <td class="text-end">${item.price_estimation ? parseFloat(item.price_estimation).toLocaleString('id-ID') : '-'}</td>
+            <td>${item.beg_balance || '-'}</td>
+            <td>${item.cons_rate || '-'}</td>
             <td class="text-end fw-bold">${item.total ? parseFloat(item.total).toLocaleString('id-ID') : '0'}</td>
+            <td class="text-end">${item.price_estimation ? parseFloat(item.price_estimation).toLocaleString('id-ID') : '-'}</td>
+            <td style="font-size: 10px;">${item.price_estimation_description || '-'}</td>
     `;
     
     months.forEach(month => {

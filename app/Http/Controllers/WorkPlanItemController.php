@@ -94,7 +94,7 @@ class WorkPlanItemController extends Controller
         try {
             $validated = $request->validate([
                 'budget_category_id' => 'required|exists:budget_categories,id',
-                'category' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
                 'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',

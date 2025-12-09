@@ -127,15 +127,17 @@
                         </a>
                     </li>
 
-                    <li class="pe-slide-item">
-                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
-                            <i class="bi bi-wallet2"></i> Budget
-                        </a>
-                    </li>
 
                     <li class="pe-slide-item">
                         <a href="{{ route('budget-admin.index') }}" class="pe-nav-link {{ Request::is('budget-admin*') ? 'active' : '' }}">
                             <i class="bi bi-bar-chart-line"></i> Budget Admin
+                        </a>
+                    </li>
+
+                    
+                    <li class="pe-slide-item">
+                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
+                            <i class="bi bi-wallet2"></i> Budget Resume
                         </a>
                     </li>
 

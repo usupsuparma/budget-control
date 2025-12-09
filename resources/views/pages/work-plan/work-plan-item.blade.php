@@ -371,28 +371,28 @@
                         <!-- Left Column -->
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="categoryType" class="form-label">Category <span class="text-danger">*</span></label>
+                                <label for="categoryType" class="form-label">Category Type <span class="text-danger">*</span></label>
                                 <div class="d-flex gap-3 flex-wrap">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="categoryRoutine" value="Routine" checked>
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryRoutine" value="Routine" checked>
                                         <label class="form-check-label" for="categoryRoutine">
                                             Routine
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="categoryCarryOver" value="Carry Over">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryCarryOver" value="Carry Over">
                                         <label class="form-check-label" for="categoryCarryOver">
                                             Carry Over
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="categoryTurnAround" value="Turn Around">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryTurnAround" value="Turn Around">
                                         <label class="form-check-label" for="categoryTurnAround">
                                             Turn Around
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="categoryMultiYear" value="Multi Year">
+                                        <input class="form-check-input" type="radio" name="category_type" id="categoryMultiYear" value="Multi Year">
                                         <label class="form-check-label" for="categoryMultiYear">
                                             Multi Year
                                         </label>

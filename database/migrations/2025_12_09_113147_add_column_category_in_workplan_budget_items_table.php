@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('workplan_budget_items', function (Blueprint $table) {
-            $table->enum('category', ['Routine', 'Carry Over', 'Turn Around', 'Multi Year'])->default('Routine')->after('notes')->nullable();
+            $table->enum('category_type', ['Routine', 'Carry Over', 'Turn Around', 'Multi Year'])->default('Routine')->after('notes')->nullable();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('workplan_budget_items', function (Blueprint $table) {
-            $table->dropColumn('category');
+            $table->dropColumn('category_type');
         });
     }
 };

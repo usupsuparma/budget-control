@@ -166,7 +166,7 @@ function renderItemsTable(items, categoryId) {
                     <tr>
                         <th rowspan="2" style="width: 50px;">No</th>
                         <th rowspan="2" style="width: 100px;">Action</th>
-                        <th rowspan="2" style="width: 100px;">Category</th>
+                        <th rowspan="2" style="width: 100px;">Category Type</th>
                         <th rowspan="2" style="width: 200px;">Description</th>
                         <th rowspan="2" style="width: 80px;">Stock Code</th>
                         <th rowspan="2" style="width: 100px;">Budget Code</th>
@@ -236,7 +236,7 @@ function renderItemRow(item, rowNumber) {
         'Turn Around': 'info',
         'Multi Year': 'success'
     };
-    const categoryBadgeColor = categoryColors[item.category] || 'secondary';
+    const categoryBadgeColor = categoryColors[item.category_type] || 'secondary';
     
     let html = `
         <tr data-item-id="${item.id}" class="${rowClass}" data-category-id="${item.budget_category_id}">
@@ -259,15 +259,15 @@ function renderItemRow(item, rowNumber) {
     
     html += `
             </td>
-            <td><span class="badge bg-${categoryBadgeColor}">${item.category || 'Routine'}</span></td>
-            <td>${item.description}</td>
+            <td><span class="badge bg-${categoryBadgeColor}">${item.category_type || 'Routine'}</span></td>
+            <td>${item.description || '-'}</td>
             <td>${item.stock_code || '-'}</td>
             <td>${item.budget_code || '-'}</td>
             <td>${item.product_line || '-'}</td>
             <td>${item.cost_center || '-'}</td>
             <td>${item.unit || '-'}</td>
             <td class="text-end">${item.price_estimation ? parseFloat(item.price_estimation).toLocaleString('id-ID') : '-'}</td>
-            <td class="text-end fw-bold">${parseFloat(item.total).toLocaleString('id-ID')}</td>
+            <td class="text-end fw-bold">${item.total ? parseFloat(item.total).toLocaleString('id-ID') : '0'}</td>
     `;
     
     months.forEach(month => {
@@ -348,9 +348,9 @@ function openEditModal(itemId) {
                 $('#categoryId').val(item.budget_category_id);
                 
                 // Set category radio button
-                const categoryValue = item.category || 'Routine';
-                $('input[name="category"]').prop('checked', false);
-                $(`input[name="category"][value="${categoryValue}"]`).prop('checked', true);
+                const categoryValue = item.category_type || 'Routine';
+                $('input[name="category_type"]').prop('checked', false);
+                $(`input[name="category_type"][value="${categoryValue}"]`).prop('checked', true);
                 
                 $('#description').val(item.description);
                 $('#stockCode').val(item.stock_code || '');
@@ -416,12 +416,12 @@ function saveItemFromModal() {
     const isNew = !itemId;
     
     // Get selected category radio button
-    const selectedCategory = $('input[name="category"]:checked').val();
+    const selectedCategory = $('input[name="category_type"]:checked').val();
     
     // Collect data from form
     const data = {
         budget_category_id: $('#categoryId').val(),
-        category: selectedCategory,
+        category_type: selectedCategory,
         description: $('#description').val(),
         stock_code: $('#stockCode').val(),
         budget_code: $('#budgetCode').val(),

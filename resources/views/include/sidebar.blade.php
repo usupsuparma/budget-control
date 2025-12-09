@@ -183,12 +183,13 @@
             'setting.master.view',
             'setting.users.view',
             'setting.code.view',
+            'setting.production.view',
             'approval.view',
             'setting.history.view'
             ])
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseSetting"
-                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('setting.production*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-gear pe-nav-icon"></i>
@@ -196,7 +197,7 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('setting.production*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
 
                     @can('setting.master.view')
                     <li class="pe-slide-item">
@@ -209,6 +210,12 @@
                     @can('setting.code.view')
                     <a href="{{ route('code.index') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
                         Code
+                    </a>
+                    @endcan
+
+                    @can('setting.production.view')
+                    <a href="{{ route('setting.production.index') }}" class="pe-nav-link {{ Request::is('setting.production*') ? 'active' : '' }}">
+                        Production
                     </a>
                     @endcan
 

@@ -12,7 +12,7 @@
                 return;
             }
 
-            $.post("{{ route('auth.permissions.store') }}", {
+            $.post("{{ route('authorization.permissions.store') }}", {
                 _token: "{{ csrf_token() }}",
                 module: module
             }, function() {

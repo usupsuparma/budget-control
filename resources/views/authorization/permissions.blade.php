@@ -1,15 +1,8 @@
-@extends('layouts.master')
-
-@section('title', 'Permission Management')
-@section('pagetitle', 'Permissions')
-
-@section('content')
-
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Permission Management</h5>
 
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddPermission">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddPermission">
             <i class="bi bi-plus-circle me-2"></i> Add Permission
         </button>
     </div>
@@ -56,7 +49,7 @@
 
 @include('authorization.modals.permissions')
 
-@endsection
+
 
 @push('scripts')
 @include('authorization.scripts.permissions')

@@ -30,6 +30,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
+use App\Http\Controllers\SettingProductionController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -373,6 +374,9 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:marketing.create')
                 ->name('marketing.store');
 
+            Route::get('/data', [MarketingController::class, 'getData'])
+                ->name('marketing.data');
+
             Route::get('/{id}/edit', [MarketingController::class, 'edit'])
                 ->middleware('permission:marketing.edit')
                 ->name('marketing.edit');
@@ -689,6 +693,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.code.view')
         ->get('/code', [SettingCodeController::class, 'index'])
         ->name('code.index');
+    Route::middleware('permission:setting.production.view')
+        ->get('/setting.production', [SettingProductionController::class, 'index'])
+        ->name('setting.production.index');
 
     /* ========================
         BUDGET CATEGORY
@@ -747,9 +754,10 @@ Route::middleware('auth')->group(function () {
             Route::delete('/roles/delete/{id}', [AuthorizationController::class, 'roleDelete'])->name('auth.roles.delete');
 
             Route::get('/permissions', [AuthorizationController::class, 'permissions'])->name('auth.permissions');
-            Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('auth.permissions.store');
+            Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('authorization.permissions.store');
             Route::post('/permissions/update/{id}', [AuthorizationController::class, 'permissionUpdate'])->name('auth.permissions.update');
             Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
+
 
             Route::get('/roles/{id}/permissions', [AuthorizationController::class, 'rolePermissions'])->name('auth.roles.permissions');
             Route::post('/roles/{id}/permissions/update', [AuthorizationController::class, 'rolePermissionsUpdate'])->name('auth.roles.permissions.update');

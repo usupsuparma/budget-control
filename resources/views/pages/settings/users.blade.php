@@ -7,24 +7,22 @@
 @section('content')
 
 <div class="col-12 col-lg-12">
-    <!-- ✅ CARD PEMBUNGKUS UTAMA -->
     <div class="card card-h-100 shadow-sm border">
-
 
         <div class="card-body">
             <div class="row">
-                <!-- LEFT SIDEBAR (Tab) -->
+
+                <!-- LEFT TAB -->
                 <div class="col-md-2 border-end">
                     <ul class="nav nav-pills flex-column" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#user" role="tab">
-                                <i class="fas fa-user me-2"></i> Users
-                            </a>
+                            <a class="nav-link active" data-bs-toggle="tab" href="#user">Users</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#authorization" role="tab">
-                                <i class="fas fa-user-tie me-2"></i> Authorization
-                            </a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#authorization">Roles</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#permission">Permissions</a>
                         </li>
                     </ul>
                 </div>
@@ -32,17 +30,36 @@
                 <!-- RIGHT CONTENT -->
                 <div class="col-md-10">
                     <div class="tab-content pt-3">
+
                         <div class="tab-pane fade show active" id="user">
                             @include('pages.settings.userMenu')
                         </div>
+
                         <div class="tab-pane fade" id="authorization">
-                            @include('authorization.index')
+                            @include('authorization.index') <!-- ROLE PAGE -->
                         </div>
+
+                        <div class="tab-pane fade" id="permission">
+                            @include('authorization.permissions') <!-- PERMISSION PAGE -->
+                        </div>
+
                     </div>
                 </div>
+
             </div>
         </div>
+
     </div>
 </div>
 
 @endsection
+
+
+{{-- ========== FIX: MODAL DITARUH DI LUAR TAB-PANE ========== --}}
+@include('authorization.modals.permissions')
+@include('authorization.modals')
+@include('authorization.modals.assign')
+
+@push('scripts')
+@include('authorization.scripts.permissions')
+@endpush

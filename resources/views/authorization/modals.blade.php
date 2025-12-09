@@ -126,3 +126,34 @@
         </div>
     </div>
 </div>
+
+<!-- ============================================================
+     MODAL 4 — ADD PERMISSION
+=============================================================== -->
+<div class="modal fade" id="modalAddPermission" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Add New Permission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="formAddPermission">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Permission Name</label>
+                        <input type="text" id="permission_name" class="form-control" placeholder="ex: asset.view" required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success" id="btnSavePermission">Save</button>
+            </div>
+
+        </div>
+    </div>
+</div>

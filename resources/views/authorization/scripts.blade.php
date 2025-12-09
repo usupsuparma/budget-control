@@ -205,5 +205,93 @@
             });
         });
 
+        // ADD NEW PERMISSION
+        $('#btnSavePermission').click(function() {
+
+            let name = $('#permission_name').val();
+
+            $.ajax({
+                url: "{{ route('authorization.permissions.store') }}",
+                type: "POST",
+                data: {
+                    name: name,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(res) {
+                    if (res.success) {
+                        $('#permission_name').val('');
+                        $('#modalAddPermission').modal('hide');
+                        toastr.success("Permission added successfully");
+                        location.reload();
+                    }
+                }
+            });
+
+        });
+
+        // OPEN MANAGE PERMISSIONS MODAL
+        $('.managePermission').click(function() {
+
+            let roleId = $(this).data('id');
+
+            $.ajax({
+                url: "/authorization/role-permissions/" + roleId,
+                type: "GET",
+                success: function(res) {
+
+                    $('#perm_role_id').val(res.role.id);
+                    $('#perm_role_name').text(res.role.name);
+
+                    let html = "";
+
+                    res.permissions.forEach(p => {
+                        let checked = res.selected.includes(p.name) ? "checked" : "";
+                        html += `
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input permissionCheck" type="checkbox"
+                                value="${p.name}" ${checked}>
+                            <label class="form-check-label">${p.name}</label>
+                        </div>
+                    </div>
+                `;
+                    });
+
+                    $('#permissionList').html(html);
+                    $('#modalPermissions').modal('show');
+                }
+            });
+
+        });
+
+        // SAVE UPDATED PERMISSIONS
+        $('#btnSavePermissions').click(function() {
+
+            let roleId = $('#perm_role_id').val();
+            let selectedPermissions = [];
+
+            $('.permissionCheck:checked').each(function() {
+                selectedPermissions.push($(this).val());
+            });
+
+            $.ajax({
+                url: "/authorization/role-permissions/" + roleId,
+                type: "POST",
+                data: {
+                    permissions: selectedPermissions,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(res) {
+                    if (res.success) {
+                        toastr.success("Permissions updated successfully");
+                        $('#modalPermissions').modal('hide');
+                        location.reload();
+                    }
+                }
+            });
+
+        });
+
+
     });
 </script>

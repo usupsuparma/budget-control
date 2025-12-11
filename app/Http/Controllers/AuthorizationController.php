@@ -7,6 +7,7 @@ use Spatie\Permission\Models\Permission;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AuthorizationController extends Controller
 {
@@ -66,8 +67,14 @@ class AuthorizationController extends Controller
 
     public function permissionStore(Request $request)
     {
-        Permission::create(['name' => $request->name]);
-        return response()->json(['success' => true]);
+        try {
+            Log::info($request->all(), ['AuthorizationController', 'permissionStore']);
+            Permission::create(['name' => $request->module]);
+            return response()->json(['success' => true]);
+        } catch (\Throwable $th) {
+            Log::error('Error creating permission: ' . $th->getMessage(), ['AuthorizationController', 'permissionStore']);
+            return response()->json(['success' => false, 'message' => 'Failed to create permission.'], 500);
+        }
     }
 
     public function permissionDelete($id)

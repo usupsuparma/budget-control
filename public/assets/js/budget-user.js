@@ -15,9 +15,14 @@ $(document).ready(function() {
     
     // Auto-load if URL parameters exist
     if (typeof paramDivisionId !== 'undefined' && paramDivisionId && 
-        typeof paramYear !== 'undefined' && paramYear && 
-        typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
-        autoLoadFromWorkplan(paramDivisionId, paramYear, paramWorkplanId);
+        typeof paramYear !== 'undefined' && paramYear) {
+        // If workplan_id exists, use it for pre-selection
+        if (typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
+            autoLoadFromWorkplan(paramDivisionId, paramYear, paramWorkplanId);
+        } else {
+            // Load without workplan_id (from budget-admin)
+            autoLoadFromWorkplan(paramDivisionId, paramYear, null);
+        }
     }
 });
 

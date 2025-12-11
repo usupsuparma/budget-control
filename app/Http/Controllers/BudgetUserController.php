@@ -173,8 +173,11 @@ class BudgetUserController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
-            // Get available budget codes
-            $budgetCodes = BudgetCode::active()->orderBy('code')->get();
+            // Get available budget codes - select only stock_code and inchargeCode
+            $budgetCodes = BudgetCode::active()
+                ->select('id', 'stock_code', 'name', 'inchargeCode')
+                ->orderBy('stock_code')
+                ->get();
 
             return response()->json([
                 'success' => true,

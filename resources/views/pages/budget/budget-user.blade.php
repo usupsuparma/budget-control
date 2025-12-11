@@ -203,6 +203,17 @@
             border-color: #198754;
             background-color: #d1e7dd;
         }
+
+        .btn-save-item {
+            background-color: #ff6b35;
+            color: white;
+            border: none;
+        }
+
+        .btn-save-item:hover {
+            background-color: #ff5722;
+            color: white;
+        }
     </style>
 @endsection
 
@@ -348,191 +359,193 @@
                     
                     <div class="row">
                         <div class="col-md-6">
+                            {{-- Left Column --}}
                             <div class="mb-3">
-                                <label class="form-label">Category Type <span class="text-danger">*</span></label>
+                                <label for="categoryType" class="form-label fw-bold">Type <span class="text-danger">*</span></label>
                                 <select class="form-select" id="categoryType" name="category_type" required>
-                                    <option value="">Select Type</option>
+                                    <option value="">Investment</option>
                                     <option value="Routine">Routine</option>
                                     <option value="Carry Over">Carry Over</option>
                                     <option value="Turn Around">Turn Around</option>
                                     <option value="Multi Year">Multi Year</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="col-md-6">
+
                             <div class="mb-3">
-                                <label class="form-label">Budget Code</label>
+                                <label for="programId" class="form-label fw-bold">Program ID</label>
+                                <select class="form-select" id="programId" name="program_id">
+                                    <option value="">Work Plan A</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Category</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="category_option" id="categoryRoutine" value="Routine" checked>
+                                        <label class="form-check-label" for="categoryRoutine">Routine</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="category_option" id="categoryCarryOver" value="Carry Over">
+                                        <label class="form-check-label" for="categoryCarryOver">Carry Over</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="category_option" id="categoryTurnAround" value="Turn Around">
+                                        <label class="form-check-label" for="categoryTurnAround">Turn Around</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="category_option" id="categoryMultiYear" value="Multi Year">
+                                        <label class="form-check-label" for="categoryMultiYear">Multi Year</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="description" name="description" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="stockCode" class="form-label fw-bold">Stock Code</label>
+                                <select class="form-select" id="stockCode" name="stock_code">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="budgetCode" class="form-label fw-bold">Budget Code</label>
                                 <select class="form-select" id="budgetCode" name="budget_code">
-                                    <option value="">Select Budget Code</option>
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="productLine" class="form-label fw-bold">Product Line</label>
+                                <select class="form-select" id="productLine" name="product_line">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="costCenter" class="form-label fw-bold">Cost Center</label>
+                                <select class="form-select" id="costCenter" name="cost_center">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="begBalance" class="form-label fw-bold">Beg Balance</label>
+                                <select class="form-select" id="begBalance" name="beg_balance">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="supplier" class="form-label fw-bold">Supplier</label>
+                                <select class="form-select" id="supplier" name="supplier">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="consRate" class="form-label fw-bold">Const Rate</label>
+                                <input type="text" class="form-control" id="consRate" name="cons_rate">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="unit" class="form-label fw-bold">Unit</label>
+                                <select class="form-select" id="unit" name="unit">
+                                    <option value="">Select</option>
                                 </select>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label class="form-label">Description <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Stock Code</label>
-                                <input type="text" class="form-control" id="stockCode" name="stock_code">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Product Line</label>
-                                <input type="text" class="form-control" id="productLine" name="product_line">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Cost Center</label>
-                                <input type="text" class="form-control" id="costCenter" name="cost_center">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Unit</label>
-                                <input type="text" class="form-control" id="unit" name="unit">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Beginning Balance</label>
-                                <input type="text" class="form-control" id="begBalance" name="beg_balance">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Consumption Rate</label>
-                                <input type="text" class="form-control" id="consRate" name="cons_rate">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Total</label>
-                                <input type="number" class="form-control" id="total" name="total" step="0.01">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6">
+                            {{-- Right Column - Monthly Activities --}}
                             <div class="mb-3">
-                                <label class="form-label">Price Estimation</label>
+                                <label class="form-label fw-bold">January</label>
+                                <input type="number" class="form-control" name="activity_jan" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">February</label>
+                                <input type="number" class="form-control" name="activity_feb" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">March</label>
+                                <input type="number" class="form-control" name="activity_mar" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">April</label>
+                                <input type="number" class="form-control" name="activity_apr" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">May</label>
+                                <input type="number" class="form-control" name="activity_may" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">June</label>
+                                <input type="number" class="form-control" name="activity_jun" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">July</label>
+                                <input type="number" class="form-control" name="activity_jul" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">August</label>
+                                <input type="number" class="form-control" name="activity_aug" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">September</label>
+                                <input type="number" class="form-control" name="activity_sep" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">October</label>
+                                <input type="number" class="form-control" name="activity_oct" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">November</label>
+                                <input type="number" class="form-control" name="activity_nov" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">December</label>
+                                <input type="number" class="form-control" name="activity_dec" min="0" max="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="total" class="form-label fw-bold">Total</label>
+                                <input type="text" class="form-control bg-light" id="total" name="total" readonly>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="priceEstimation" class="form-label fw-bold">Price Estimation</label>
                                 <input type="number" class="form-control" id="priceEstimation" name="price_estimation" step="0.01">
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Price Estimation Description</label>
-                                <input type="text" class="form-control" id="priceEstimationDescription" name="price_estimation_description">
-                            </div>
-                        </div>
-                    </div>
 
-                    <h6 class="mb-3 mt-4">Monthly Activities</h6>
-                    <div class="row">
-                        <div class="col-md-2">
                             <div class="mb-3">
-                                <label class="form-label">January</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_jan" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">February</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_feb" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">March</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_mar" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">April</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_apr" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">May</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_may" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">June</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_jun" min="0" max="1000">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">July</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_jul" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">August</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_aug" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">September</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_sep" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">October</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_oct" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">November</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_nov" min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">December</label>
-                                <input type="number" class="form-control form-control-sm" name="activity_dec" min="0" max="1000">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label class="form-label">Notes</label>
-                                <textarea class="form-control" name="notes" rows="2"></textarea>
+                                <label for="priceEstimationDescription" class="form-label fw-bold">Price Estimation Description</label>
+                                <textarea class="form-control" id="priceEstimationDescription" name="price_estimation_description" rows="3"></textarea>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveItemBtn">
-                    <i class="bi bi-save me-2"></i>Save Item
+                <button type="button" class="btn btn-save-item" id="saveItemBtn">
+                    Simpan
+                </button>
+                <button type="button" class="btn btn-secondary" id="resetItemBtn">
+                    Reset
                 </button>
             </div>
         </div>

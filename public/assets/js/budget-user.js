@@ -9,6 +9,7 @@ let budgetCodesData = [];
 
 $(document).ready(function() {
     initializeEventListeners();
+    checkFilterValues(); // Check on page load
 });
 
 /**
@@ -42,10 +43,29 @@ function initializeEventListeners() {
         saveItem();
     });
 
+    // Reset item button
+    $('#resetItemBtn').on('click', function() {
+        resetItemForm();
+    });
+
     // Modal hidden event
     $('#itemModal').on('hidden.bs.modal', function() {
         resetItemForm();
     });
+}
+
+/**
+ * Check if both filters have values and enable/disable button
+ */
+function checkFilterValues() {
+    const divisionId = $('#divisionFilter').val();
+    const year = $('#yearFilter').val();
+    
+    if (divisionId && year) {
+        $('#selectWorkplanBtn').prop('disabled', false);
+    } else {
+        $('#selectWorkplanBtn').prop('disabled', true);
+    }
 }
 
 /**
@@ -385,6 +405,7 @@ function openAddItemModal(categoryId) {
     $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
     $('#budgetCategoryId').val(categoryId);
     loadBudgetCodes();
+    initializeCostCenterDropdown();
     $('#itemModal').modal('show');
 }
 
@@ -403,11 +424,15 @@ function editItem(itemId) {
         success: function(response) {
             hideLoading();
             if (response.success) {
+                // Store budget codes data for use in populateItemForm
+                budgetCodesData = response.budgetCodes || [];
+                
                 const item = response.data.find(i => i.id === itemId);
                 if (item) {
-                    populateItemForm(item);
                     $('#itemModalLabel').html('<i class="bi bi-pencil me-2"></i>Edit Budget Item');
                     loadBudgetCodes();
+                    initializeCostCenterDropdown();
+                    populateItemForm(item);
                     $('#itemModal').modal('show');
                 }
             }
@@ -428,9 +453,21 @@ function populateItemForm(item) {
     $('#categoryType').val(item.category_type);
     $('#description').val(item.description);
     $('#stockCode').val(item.stock_code);
-    $('#budgetCode').val(item.budget_code);
+    
+    // Set Budget Code using Choices
+    const budgetCodeSelect = document.getElementById('budgetCode');
+    if (budgetCodeSelect.choicesInstance && item.budget_code) {
+        budgetCodeSelect.choicesInstance.setChoiceByValue(item.budget_code);
+    }
+    
     $('#productLine').val(item.product_line);
-    $('#costCenter').val(item.cost_center);
+    
+    // Set Cost Center using Choices
+    const costCenterSelect = document.getElementById('costCenter');
+    if (costCenterSelect.choicesInstance && item.cost_center) {
+        costCenterSelect.choicesInstance.setChoiceByValue(item.cost_center);
+    }
+    
     $('#begBalance').val(item.beg_balance);
     $('#consRate').val(item.cons_rate);
     $('#unit').val(item.unit);
@@ -454,17 +491,91 @@ function resetItemForm() {
     $('#itemForm')[0].reset();
     $('#itemId').val('');
     $('#budgetCategoryId').val('');
+    
+    // Destroy Choices instances if they exist
+    const budgetCodeSelect = document.getElementById('budgetCode');
+    if (budgetCodeSelect && budgetCodeSelect.choicesInstance) {
+        budgetCodeSelect.choicesInstance.destroy();
+        budgetCodeSelect.choicesInstance = null;
+    }
+    
+    const costCenterSelect = document.getElementById('costCenter');
+    if (costCenterSelect && costCenterSelect.choicesInstance) {
+        costCenterSelect.choicesInstance.destroy();
+        costCenterSelect.choicesInstance = null;
+    }
+}
+
+/**
+ * Initialize Cost Center dropdown with Choices.js
+ */
+function initializeCostCenterDropdown() {
+    const select = document.getElementById('costCenter');
+    
+    // Destroy existing Choices instance if it exists
+    if (select.choicesInstance) {
+        select.choicesInstance.destroy();
+    }
+    
+    // Initialize Choices.js for searchable dropdown
+    const choices = new Choices(select, {
+        searchEnabled: true,
+        searchChoices: true,
+        searchPlaceholderValue: 'Search cost center...',
+        itemSelectText: 'Click to select',
+        noResultsText: 'No cost centers found',
+        shouldSort: false,
+        removeItemButton: false,
+    });
+    
+    select.choicesInstance = choices;
 }
 
 /**
  * Load budget codes
  */
 function loadBudgetCodes() {
-    const select = $('#budgetCode');
-    select.empty().append('<option value="">Select Budget Code</option>');
+    const select = document.getElementById('budgetCode');
     
+    // Destroy existing Choices instance if it exists
+    if (select.choicesInstance) {
+        select.choicesInstance.destroy();
+    }
+    
+    // Clear and populate options
+    select.innerHTML = '<option value="">Select Budget Code</option>';
     budgetCodesData.forEach(code => {
-        select.append(`<option value="${code.code}">${code.code} - ${code.name}</option>`);
+        const option = document.createElement('option');
+        option.value = code.stock_code;
+        option.textContent = `${code.stock_code} - ${code.name}`;
+        option.setAttribute('data-incharge', code.inchargeCode || '');
+        select.appendChild(option);
+    });
+    
+    // Initialize Choices.js for searchable dropdown
+    const choices = new Choices(select, {
+        searchEnabled: true,
+        searchChoices: true,
+        searchPlaceholderValue: 'Search budget code...',
+        itemSelectText: 'Click to select',
+        noResultsText: 'No budget codes found',
+        shouldSort: false,
+        removeItemButton: false,
+    });
+    
+    select.choicesInstance = choices;
+    
+    // Bind change event to populate cost_center
+    $(select).off('change').on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const inchargeCode = selectedOption.data('incharge');
+        $('#costCenter').val(inchargeCode || '');
+        
+        // Update Cost Center Choices if it exists
+        const costCenterSelect = document.getElementById('costCenter');
+        if (costCenterSelect.choicesInstance) {
+            costCenterSelect.choicesInstance.setChoiceByValue(inchargeCode || '');
+        }
     });
 }
 

@@ -11,7 +11,7 @@ class CustomerController extends Controller
 
     public function data()
     {
-        $query = Customer::select(['id', 'callSign', 'address', 'notes', 'status']);
+        $query = Customer::select(['id', 'customer', 'callSign', 'address', 'notes', 'status']);
 
         return DataTables::of($query)
             ->addColumn('status_badge', function ($row) {
@@ -62,7 +62,7 @@ class CustomerController extends Controller
             'customer' => 'required|string|max:255',
             'callSign' => 'nullable|string',
             'notes' => 'nullable|string',
-            'status' => 'required|string',
+            'status' => 'required|in:0,1',
         ]);
 
         $customer->update($request->all());

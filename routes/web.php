@@ -300,21 +300,12 @@ Route::middleware('auth')->group(function () {
 
 
     Route::prefix('customer')->group(function () {
-
-        Route::get('/data', [CustomerController::class, 'data'])
-            ->name('customer.data');
-
-        Route::post('/', [CustomerController::class, 'store'])
-            ->name('customer.store');
-
-        Route::get('/{id}/edit', [CustomerController::class, 'edit'])
-            ->name('customer.edit');
-
-        Route::put('/{id}', [CustomerController::class, 'update'])
-            ->name('customer.update');
-
-        Route::delete('/{id}', [CustomerController::class, 'destroy'])
-            ->name('customer.destroy');
+        Route::get('/', [CustomerController::class, 'index'])->name('customer.index');
+        Route::get('/data', [CustomerController::class, 'data'])->name('customer.data');
+        Route::post('/', [CustomerController::class, 'store'])->name('customer.store');
+        Route::get('/{id}/edit', [CustomerController::class, 'edit'])->name('customer.edit');
+        Route::put('/{id}', [CustomerController::class, 'update'])->name('customer.update');
+        Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('customer.destroy');
     });
 
 

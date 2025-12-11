@@ -73,7 +73,7 @@
 </div>
 
 {{-- ================= EDIT ================= --}}
-<div class="modal fade" id="editCustomerModal">
+<div class="modal fade" id="editCustomer">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
@@ -82,9 +82,9 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editCustomerForm">
+            <form id="editCustomerForm" method="POST">
                 @csrf
-                @method('PUT')
+
 
                 <input type="hidden" id="edit_id">
 
@@ -97,8 +97,8 @@
                         </div>
 
                         <div class="col-12">
-                            <label>Address</label>
-                            <input type="text" id="edit_address" name="address" class="form-control">
+                            <label>Call Sign</label>
+                            <input type="text" id="edit_callSign" name="callSign" class="form-control">
                         </div>
 
                         <div class="col-12">
@@ -109,8 +109,8 @@
                         <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
                             </select>
                         </div>
 
@@ -119,7 +119,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary">Update</button>
+                    <button class="btn btn-primary" form="editCustomerForm">Update</button>
                 </div>
 
             </form>
@@ -142,7 +142,7 @@
                 data: 'customer'
             },
             {
-                data: 'address'
+                data: 'callSign'
             },
             {
                 data: 'status_badge',
@@ -206,40 +206,55 @@
     });
 
     // SHOW EDIT
+
     $(document).on('click', '.customer-edit-btn', function() {
-        let id = $(this).data('id');
+        var id = $(this).data('id');
 
         $.get("{{ url('/customer') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
             $('#edit_customer').val(data.customer);
-            $('#edit_address').val(data.address);
+            $('#edit_callSign').val(data.callSign).change();
             $('#edit_notes').val(data.notes);
             $('#edit_status').val(data.status);
-
             $('#editCustomerForm').attr('action', "{{ url('/customer') }}/" + id);
-
-            $('#editCustomerModal').modal('show');
+            $('#editCustomer').modal('show');
         });
     });
 
-    // UPDATE
+
     $('#editCustomerForm').submit(function(e) {
         e.preventDefault();
 
-        let id = $('#edit_id').val();
+        let form = $(this);
+        let url = form.attr('action');
 
         $.ajax({
-            url: "{{ url('/customer') }}/" + id,
-            method: "POST",
-            data: $(this).serialize(),
-            success: res => {
-                $('#editCustomerModal').modal('hide');
-                customerTable.ajax.reload();
+            url: url,
+            method: "PUT",
+            data: form.serialize(),
+            success: function(res) {
+                $('#editCustomer').modal('hide');
 
-                Swal.fire("Updated!", res.message, "success");
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#customerTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Customer updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });
+
+
 
     // DELETE
     $(document).on('click', '.customer-delete-btn', function() {
@@ -271,4 +286,5 @@
         });
     });
 </script>
+
 @endpush

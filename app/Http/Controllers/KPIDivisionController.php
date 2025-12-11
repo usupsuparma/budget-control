@@ -15,12 +15,63 @@ class KPIDivisionController extends Controller
     public function index()
     {
         $title = 'KPI Division';
-        $companyPolicies = CompanyPolicyDetail::with('dokumen')->orderBy('id', 'desc')->get();
-        $divisions = Division::orderBy('name')->get();
-        $kpidivisions = KPIDivision::orderBy('id', 'desc')->get();
+        $companyPolicies = CompanyPolicyDetail::with('dokumen')
+            ->orderBy('id', 'desc')
+            ->get();
 
-        return view('pages.kpi.division_rev1', compact('title', 'companyPolicies', 'divisions', 'kpidivisions'));
+        $divisions = Division::orderBy('name')->get();
+
+        return view('pages.kpi.division_rev1', compact('title', 'companyPolicies', 'divisions'));
     }
+
+    public function dataTable()
+    {
+        // Kalau butuh relasi, sekalian load
+        $kpis = KPIDivision::with(['companyPolicy', 'division'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $no = 1;
+        $rows = [];
+
+        foreach ($kpis as $kpi) {
+            $rows[] = [
+                'id'              => $kpi->id,
+                'no'              => $no++,
+                'year'            => $kpi->year,
+                'company_policy'  => optional($kpi->companyPolicy)->strategic_goal ?? '-',
+                'division'        => optional($kpi->division)->name ?? 'Division #'.$kpi->division_id,
+                'division_goals'  => $kpi->division_goals,
+                'target_division' => $kpi->target_division,
+                'duration_days'   => $kpi->duration_days,
+                'schedule_start'  => $kpi->schedule_start, // sudah format Y-m-d kalau di-cast date
+                'schedule_end'    => $kpi->schedule_end,
+
+                // bulan (kalau masih mau pakai dari DB)
+                'jan' => (bool) $kpi->jan,
+                'feb' => (bool) $kpi->feb,
+                'mar' => (bool) $kpi->mar,
+                'apr' => (bool) $kpi->apr,
+                'may' => (bool) $kpi->may,
+                'jun' => (bool) $kpi->jun,
+                'jul' => (bool) $kpi->jul,
+                'aug' => (bool) $kpi->aug,
+                'sep' => (bool) $kpi->sep,
+                'oct' => (bool) $kpi->oct,
+                'nov' => (bool) $kpi->nov,
+                'dec' => (bool) $kpi->dec,
+
+                'revenue_cost' => $kpi->revenue_cost,
+                'pic'          => $kpi->pic,
+                'description'  => $kpi->description,
+            ];
+        }
+
+        return response()->json([
+            'data' => $rows, // format standar DataTables
+        ]);
+    }
+
 
     /**
      * Show the form for creating a new resource.

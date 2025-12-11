@@ -181,7 +181,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
 
             Route::get('/', [KPIDivisionController::class, 'index'])
+                // ->middleware('permission:kpi.kpidivision.index')
                 ->name('kpidivision.index');
+
+            Route::get('/datatable', [KPIDivisionController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidivision.datatable')
+                ->name('kpidivision.datatable');
 
             Route::get('/create', [KPIDivisionController::class, 'create'])
                 // ->middleware('permission:kpi.kpidivision.create')

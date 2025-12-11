@@ -111,140 +111,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @php $i = 1; @endphp
-                                                @foreach ($kpidivisions as $kpidiv)
-                                                    <tr data-id="{{ $kpidiv->id }}">
-                                                        <td>
-                                                            <button type="button" class="btn btn-sm btn-warning btn-edit">
-                                                                <i class="bi bi-pencil"></i>
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-danger btn-delete">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </td>
-
-                                                        <td>{{ $i++ }}</td> {{-- No (tidak editable) --}}
-
-                                                        <td class="editable" data-field="year">
-                                                            {{ $kpidiv->year }}
-                                                        </td>
-
-                                                        <td>
-                                                            {{ $kpidiv->companyPolicy->strategic_goal }}
-                                                        </td>
-
-                                                        <td>
-                                                            {{ optional($kpidiv->division)->name ?? 'Division #' . $kpidiv->division_id }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="division_goals">
-                                                            {{ $kpidiv->division_goals }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="target_division">
-                                                            {{ $kpidiv->target_division }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="duration_days">
-                                                            {{ $kpidiv->duration_days }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="schedule_start">
-                                                            {{ date('Y-m-d', strtotime($kpidiv->schedule_start)) }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="schedule_end">
-                                                            {{ date('Y-m-d', strtotime($kpidiv->schedule_end)) }}
-                                                        </td>
-
-                                                        {{-- contoh bulan, ditampilkan Yes/No tapi disimpan boolean di DB --}}
-                                                        <td style="{{ $kpidiv->jan ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="jan">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value=""
-                                                                    {{ $kpidiv->jan ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->feb ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="feb">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->feb ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->mar ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="mar">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->mar ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->apr ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="apr">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->apr ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->may ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="may">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->may ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->jun ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="jun">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->jun ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->jul ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="jul">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->jul ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->aug ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="aug">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->aug ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->sep ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="sep">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->sep ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->okt ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="oct">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->oct ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->nov ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="nov">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->nov ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-                                                        <td style="{{ $kpidiv->dec ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                            class="editable text-center" data-field="dec">
-                                                            {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->dec ? 'checked' : '' }} disabled> --}}
-                                                        </td>
-
-                                                        <td class="editable" data-field="revenue_cost">
-                                                            {{ $kpidiv->revenue_cost }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="pic">
-                                                            {{ $kpidiv->pic }}
-                                                        </td>
-
-                                                        <td class="editable" data-field="description">
-                                                            {{ $kpidiv->description }}
-                                                        </td>
-
-                                                    </tr>
-                                                @endforeach
+                                                
                                             </tbody>
 
                                         </table>
@@ -801,16 +668,122 @@
                 scrollX: true,
                 scrollCollapse: true,
                 autoWidth: true,
-                columnDefs: [{
+                processing: true,
+                ajax: {
+                    url: "{{ route('kpidivision.datatable') }}",
+                    type: "GET"
+                },
+                columns: [
+                    // ACTION
+                    {
+                        data: 'id',
                         orderable: false,
                         searchable: false,
-                        targets: -1
+                        render: function (data, type, row, meta) {
+                            return `
+                                <button type="button" class="btn btn-sm btn-warning btn-edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            `;
+                        }
+                    },
+                    // No (index baris)
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + 1;
+                        }
+                    },
+                    { data: 'year',            className: 'editable text-center' },
+                    { data: 'company_policy' },
+                    { data: 'division' },
+                    { data: 'division_goals',  className: 'editable' },
+                    { data: 'target_division', className: 'editable' },
+                    { data: 'duration_days',   className: 'editable text-center' },
+                    { data: 'schedule_start',  className: 'editable text-center', },
+                    { data: 'schedule_end',    className: 'editable text-center', },
+
+                    // Bulan – kita isi teks, warna bisa tetap pakai fungsi colorMonths()
+                    {
+                        data: 'jan',
+                        className: 'editable text-center',
+                        render: function (data, type, row, meta) {
+                            return `<span data-field="jan">Jan</span>`;
+                        }
                     },
                     {
-                        targets: [0, 1, 2, 7, 8, 9, 22, 23], // kolom yang ingin ditengah
+                        data: 'feb',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="feb">Feb</span>`; }
+                    },
+                    {
+                        data: 'mar',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="mar">Mar</span>`; }
+                    },
+                    {
+                        data: 'apr',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="apr">Apr</span>`; }
+                    },
+                    {
+                        data: 'may',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="may">May</span>`; }
+                    },
+                    {
+                        data: 'jun',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="jun">Jun</span>`; }
+                    },
+                    {
+                        data: 'jul',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="jul">Jul</span>`; }
+                    },
+                    {
+                        data: 'aug',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="aug">Aug</span>`; }
+                    },
+                    {
+                        data: 'sep',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="sep">Sep</span>`; }
+                    },
+                    {
+                        data: 'oct',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="oct">Oct</span>`; }
+                    },
+                    {
+                        data: 'nov',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="nov">Nov</span>`; }
+                    },
+                    {
+                        data: 'dec',
+                        className: 'editable text-center',
+                        render: function () { return `<span data-field="dec">Dec</span>`; }
+                    },
+
+                    { data: 'revenue_cost', className: 'editable text-center' },
+                    { data: 'pic',          className: 'editable text-center' },
+                    { data: 'description',  className: 'editable' }
+                ],
+                columnDefs: [
+                    {
+                        targets: [0, 1, 2, 7, 8, 9, 22, 23],
                         className: 'text-center'
                     }
                 ],
+                createdRow: function (row, data, dataIndex) {
+                    // supaya event edit/delete masih bisa pakai data-id
+                    $(row).attr('data-id', data.id);
+                },
                 language: {
                     paginate: {
                         first: "&laquo;&laquo;",
@@ -819,16 +792,18 @@
                         last: "&raquo;&raquo;"
                     }
                 },
-                headerCallback: function(thead, data, start, end, display) {
-                    $(thead).find('th').eq(0).addClass('text-center');
-                    $(thead).find('th').eq(1).addClass('text-center');
-                    $(thead).find('th').eq(6).addClass('text-center');
-                    $(thead).find('th').eq(7).addClass('text-center');
-                    $(thead).find('th').eq(8).addClass('text-center');
-                    $(thead).find('th').eq(21).addClass('text-center');
-                    $(thead).find('th').eq(22).addClass('text-center');
-                },
+                drawCallback: function () {
+                    // kalau kamu punya fungsi colorMonths() untuk kasih warna hijau/abu
+                    if (typeof colorMonths === 'function') {
+                        colorMonths();
+                    }
+                }
             });
+
+            function refreshTable() {
+                table.ajax.reload(null, false); // false = tetap di page sekarang
+            }
+
 
             function deleteButtonHtml() {
                 return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i></button>';
@@ -882,6 +857,7 @@
                                         timer: 1500,
                                         showConfirmButton: false
                                     });
+                                    refreshTable();
                                 } else {
                                     Swal.fire({
                                         icon: 'error',

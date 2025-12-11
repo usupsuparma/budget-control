@@ -195,7 +195,11 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpidivision.edit')
                 ->name('kpidivision.edit');
 
-            Route::put('/{id}', [KPIDivisionController::class, 'update'])
+            Route::get('/{id}/show', [KPIDivisionController::class, 'show'])
+                // ->middleware('permission:kpi.kpidivision.edit')
+                ->name('kpidivision.show');
+
+            Route::put('/{id}/update', [KPIDivisionController::class, 'update'])
                 // ->middleware('permission:kpi.kpidivision.edit')
                 ->name('kpidivision.update');
 

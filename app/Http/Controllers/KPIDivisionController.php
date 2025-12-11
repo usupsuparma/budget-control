@@ -113,10 +113,16 @@ class KPIDivisionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $kpi = KPIDivision::with(['companyPolicy', 'division'])->findOrFail($id);
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $kpi,
+        ], 200);
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -129,10 +135,85 @@ class KPIDivisionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $kpi = KPIDivision::findOrFail($id);
+
+        // validasi sama seperti store
+        $validated = $request->validate([
+            'year' => ['required', 'integer'],
+            'company_policy_detail_id' => ['required', 'exists:company_policy_detail,id'],
+            'division_id' => ['required', 'exists:division,id'],
+
+            'division_goals' => ['required', 'string'],
+            'target_division' => ['nullable', 'string'],
+            'duration_days' => ['nullable', 'integer'],
+            'schedule_start' => ['nullable', 'date'],
+            'schedule_end' => ['nullable', 'date'],
+
+            'jan' => ['nullable'],
+            'feb' => ['nullable'],
+            'mar' => ['nullable'],
+            'apr' => ['nullable'],
+            'may' => ['nullable'],
+            'jun' => ['nullable'],
+            'jul' => ['nullable'],
+            'aug' => ['nullable'],
+            'sep' => ['nullable'],
+            'oct' => ['nullable'],
+            'nov' => ['nullable'],
+            'dec' => ['nullable'],
+
+            'revenue_cost' => ['nullable', 'string'],
+            'pic' => ['nullable', 'string'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $toBool = function ($val) {
+            if (is_null($val)) {
+                return false;
+            }
+            $val = strtolower((string) $val);
+
+            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
+        };
+
+        $kpi->update([
+            'company_policy_detail_id' => $validated['company_policy_detail_id'],
+            'division_id' => $validated['division_id'],
+            'year' => $validated['year'],
+
+            'division_goals' => $validated['division_goals'],
+            'target_division' => $validated['target_division'] ?? null,
+            'duration_days' => $validated['duration_days'] ?? null,
+            'schedule_start' => $validated['schedule_start'] ?? null,
+            'schedule_end' => $validated['schedule_end'] ?? null,
+
+            'jan' => $toBool($request->jan),
+            'feb' => $toBool($request->feb),
+            'mar' => $toBool($request->mar),
+            'apr' => $toBool($request->apr),
+            'may' => $toBool($request->may),
+            'jun' => $toBool($request->jun),
+            'jul' => $toBool($request->jul),
+            'aug' => $toBool($request->aug),
+            'sep' => $toBool($request->sep),
+            'oct' => $toBool($request->oct),
+            'nov' => $toBool($request->nov),
+            'dec' => $toBool($request->dec),
+
+            'revenue_cost' => $validated['revenue_cost'] ?? null,
+            'pic' => $validated['pic'] ?? null,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'id'      => $kpi->id,
+            'message' => 'KPI Division row updated successfully.',
+        ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.

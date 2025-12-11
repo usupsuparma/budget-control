@@ -181,7 +181,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
 
             Route::get('/', [KPIDivisionController::class, 'index'])
+                // ->middleware('permission:kpi.kpidivision.index')
                 ->name('kpidivision.index');
+
+            Route::get('/datatable', [KPIDivisionController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidivision.datatable')
+                ->name('kpidivision.datatable');
 
             Route::get('/create', [KPIDivisionController::class, 'create'])
                 // ->middleware('permission:kpi.kpidivision.create')
@@ -195,7 +200,11 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpidivision.edit')
                 ->name('kpidivision.edit');
 
-            Route::put('/{id}', [KPIDivisionController::class, 'update'])
+            Route::get('/{id}/show', [KPIDivisionController::class, 'show'])
+                // ->middleware('permission:kpi.kpidivision.edit')
+                ->name('kpidivision.show');
+
+            Route::put('/{id}/update', [KPIDivisionController::class, 'update'])
                 // ->middleware('permission:kpi.kpidivision.edit')
                 ->name('kpidivision.update');
 
@@ -218,6 +227,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [KPIDepartmentController::class, 'index'])
                 ->name('kpidepartment.index');
 
+            Route::get('/datatable', [KPIDepartmentController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidepartment.datatable')
+                ->name('kpidepartment.datatable');
+
             Route::get('/create', [KPIDepartmentController::class, 'create'])
                 // ->middleware('permission:kpi.kpidepartment.create')
                 ->name('kpidepartment.create');
@@ -229,12 +242,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.edit');
+            
+            Route::get('/{id}/show', [KPIDepartmentController::class, 'show'])
+                // ->middleware('permission:kpi.kpidepartment.edit')
+                ->name('kpidepartment.show');
 
-            Route::put('/{id}', [KPIDepartmentController::class, 'update'])
+            Route::put('/{id}/update', [KPIDepartmentController::class, 'update'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.update');
 
-            Route::delete('/{kpiDepartment}', [KPIDepartmentController::class, 'destroy'])
+            Route::delete('/{kpiDepartment}/destroy', [KPIDepartmentController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpidepartment.delete')
                 ->name('kpidepartment.destroy');
 
@@ -563,6 +580,32 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BudgetUserController::class, 'index'])
                 ->name('budget-user.index');
+            
+            // New endpoints for all items
+            Route::get('/items/all', [BudgetUserController::class, 'getAllItems'])
+                ->name('budget-user.items.all');
+            Route::post('/items', [BudgetUserController::class, 'storeItem'])
+                ->name('budget-user.items.store');
+            Route::put('/items/{itemId}', [BudgetUserController::class, 'updateItem'])
+                ->name('budget-user.items.update');
+            Route::delete('/items/{itemId}', [BudgetUserController::class, 'destroyItem'])
+                ->name('budget-user.items.destroy');
+            
+            // Dropdown data endpoints
+            Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
+                ->name('budget-user.budget-categories');
+            Route::get('/cost-centers', [BudgetUserController::class, 'getCostCenters'])
+                ->name('budget-user.cost-centers');
+            Route::get('/suppliers', [BudgetUserController::class, 'getSuppliers'])
+                ->name('budget-user.suppliers');
+            Route::get('/units', [BudgetUserController::class, 'getUnits'])
+                ->name('budget-user.units');
+            
+            // Workplans dropdown for department and section
+            Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])
+                ->name('budget-user.workplans.dropdown');
+            
+            // Old endpoints (kept for compatibility)
             Route::get('/divisions', [BudgetUserController::class, 'getDivisions'])
                 ->name('budget-user.divisions');
             Route::get('/workplans', [BudgetUserController::class, 'getWorkplans'])

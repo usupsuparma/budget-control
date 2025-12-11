@@ -1,14 +1,29 @@
 /**
  * Budget User JavaScript
- * Manages budget user interface with workplan selection and budget items
+ * Manages budget user interface with all budget items in one table
  */
 
-let selectedWorkplanId = null;
-let currentCategory = null;
+let selectedDivisionId = null;
+let selectedYear = null;
 let budgetCodesData = [];
+let allWorkplans = [];
+let programIdChoices = null;
 
 $(document).ready(function() {
     initializeEventListeners();
+    checkFilterValues(); // Check on page load
+    
+    // Auto-load if URL parameters exist
+    if (typeof paramDivisionId !== 'undefined' && paramDivisionId && 
+        typeof paramYear !== 'undefined' && paramYear) {
+        // If workplan_id exists, use it for pre-selection
+        if (typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
+            autoLoadFromWorkplan(paramDivisionId, paramYear, paramWorkplanId);
+        } else {
+            // Load without workplan_id (from budget-admin)
+            autoLoadFromWorkplan(paramDivisionId, paramYear, null);
+        }
+    }
 });
 
 /**
@@ -17,24 +32,17 @@ $(document).ready(function() {
 function initializeEventListeners() {
     // Filter change handlers
     $('#divisionFilter, #yearFilter').on('change', function() {
-        const division = $('#divisionFilter').val();
-        const year = $('#yearFilter').val();
-        $('#selectWorkplanBtn').prop('disabled', !division || !year);
+        checkFilterValues();
     });
 
-    // Select workplan button
-    $('#selectWorkplanBtn').on('click', function() {
-        loadWorkplans();
+    // Load budget button
+    $('#loadBudgetBtn').on('click', function() {
+        loadAllBudgetItems();
     });
 
-    // Change workplan button
-    $('#changeWorkplanBtn').on('click', function() {
-        loadWorkplans();
-    });
-
-    // Confirm workplan selection
-    $('#confirmWorkplanBtn').on('click', function() {
-        confirmWorkplanSelection();
+    // Add data button
+    $('#addDataBtn').on('click', function() {
+        openAddItemModal();
     });
 
     // Save item button
@@ -42,20 +50,61 @@ function initializeEventListeners() {
         saveItem();
     });
 
+    // Reset item button
+    $('#resetItemBtn').on('click', function() {
+        resetItemForm();
+    });
+
     // Modal hidden event
     $('#itemModal').on('hidden.bs.modal', function() {
         resetItemForm();
     });
+    
+    // Auto-calculate total when monthly activities change
+    $(document).on('input', '.monthly-activity', function() {
+        calculateTotal();
+    });
 }
 
 /**
- * Load workplans based on division and year
+ * Calculate total from monthly activities
  */
-function loadWorkplans() {
+function calculateTotal() {
+    let total = 0;
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    
+    months.forEach(month => {
+        const value = parseInt($(`input[name="activity_${month}"]`).val()) || 0;
+        total += value;
+    });
+    
+    $('#total').val(total);
+}
+
+/**
+ * Check if both filters have values and enable/disable button
+ */
+function checkFilterValues() {
     const divisionId = $('#divisionFilter').val();
     const year = $('#yearFilter').val();
+    
+    if (divisionId && year) {
+        $('#loadBudgetBtn').prop('disabled', false);
+    } else {
+        $('#loadBudgetBtn').prop('disabled', true);
+        $('#dataInfoSection').hide();
+        $('#budgetItemsSection').hide();
+    }
+}
 
-    if (!divisionId || !year) {
+/**
+ * Load all budget items based on division and year
+ */
+function loadAllBudgetItems() {
+    selectedDivisionId = $('#divisionFilter').val();
+    selectedYear = $('#yearFilter').val();
+
+    if (!selectedDivisionId || !selectedYear) {
         showToast('Please select Division and Year', 'error');
         return;
     }
@@ -63,280 +112,93 @@ function loadWorkplans() {
     showLoading();
 
     $.ajax({
-        url: '/budget-user/workplans',
+        url: '/budget-user/items/all',
         method: 'GET',
         data: {
-            division_id: divisionId,
-            year: year
+            division_id: selectedDivisionId,
+            year: selectedYear
         },
         success: function(response) {
             hideLoading();
             if (response.success) {
-                renderWorkplans(response.data);
-                $('#workplanModal').modal('show');
-            } else {
-                showToast(response.message || 'Failed to load workplans', 'error');
-            }
-        },
-        error: function(xhr) {
-            hideLoading();
-            showToast('Error loading workplans', 'error');
-            console.error('Error:', xhr.responseText);
-        }
-    });
-}
-
-/**
- * Render workplans in modal
- */
-function renderWorkplans(workplans) {
-    const container = $('#workplanList');
-    container.empty();
-
-    if (workplans.length === 0) {
-        $('#noWorkplanData').show();
-        container.hide();
-        return;
-    }
-
-    $('#noWorkplanData').hide();
-    container.show();
-
-    workplans.forEach(workplan => {
-        const department = workplan.kpi_department?.department?.name || '-';
-        const section = workplan.kpi_section?.section?.name || '-';
-        const budget = workplan.budget ? formatCurrency(workplan.budget) : '-';
-        
-        const card = `
-            <div class="col-md-6">
-                <div class="card workplan-card" data-workplan-id="${workplan.id}">
-                    <div class="card-body">
-                        <h6 class="card-title">${workplan.activity}</h6>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                <i class="bi bi-building me-1"></i>${department}<br>
-                                <i class="bi bi-diagram-3 me-1"></i>${section}<br>
-                                <i class="bi bi-currency-dollar me-1"></i>Budget: ${budget}
-                            </small>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.append(card);
-    });
-
-    // Handle workplan card click
-    $('.workplan-card').on('click', function() {
-        $('.workplan-card').removeClass('selected');
-        $(this).addClass('selected');
-        selectedWorkplanId = $(this).data('workplan-id');
-        $('#confirmWorkplanBtn').prop('disabled', false);
-    });
-}
-
-/**
- * Confirm workplan selection
- */
-function confirmWorkplanSelection() {
-    if (!selectedWorkplanId) {
-        showToast('Please select a work plan', 'warning');
-        return;
-    }
-
-    const selectedCard = $(`.workplan-card[data-workplan-id="${selectedWorkplanId}"]`);
-    const activity = selectedCard.find('.card-title').text();
-    const details = selectedCard.find('.card-text small').html().replace(/<br>/g, ' | ');
-
-    // Update UI
-    $('#selectedWorkplanActivity').text(activity);
-    $('#selectedWorkplanDetails').html(details);
-    
-    $('#workplanPlaceholder').hide();
-    $('#workplanInfoSection').show();
-    $('#budgetItemsSection').show();
-
-    // Close modal
-    $('#workplanModal').modal('hide');
-
-    // Load categories
-    loadCategories();
-
-    showToast('Work plan selected successfully', 'success');
-}
-
-/**
- * Load categories for selected workplan
- */
-function loadCategories() {
-    if (!selectedWorkplanId) return;
-
-    showLoading();
-
-    $.ajax({
-        url: `/budget-user/${selectedWorkplanId}/categories`,
-        method: 'GET',
-        success: function(response) {
-            hideLoading();
-            if (response.success) {
-                renderParentCategories(response.data);
-            } else {
-                showToast(response.message || 'Failed to load categories', 'error');
-            }
-        },
-        error: function(xhr) {
-            hideLoading();
-            showToast('Error loading categories', 'error');
-            console.error('Error:', xhr.responseText);
-        }
-    });
-}
-
-/**
- * Render parent categories
- */
-function renderParentCategories(categories) {
-    const container = $('#parentCategoryTabs');
-    container.empty();
-
-    categories.forEach((category, index) => {
-        const active = index === 0 ? 'active' : '';
-        container.append(`
-            <button class="nav-link ${active}" 
-                    data-category-id="${category.id}" 
-                    onclick="selectCategory(${category.id})">
-                ${category.name}
-            </button>
-        `);
-    });
-
-    // Load first category by default
-    if (categories.length > 0) {
-        selectCategory(categories[0].id);
-    }
-}
-
-/**
- * Select category and load items
- */
-function selectCategory(categoryId) {
-    currentCategory = categoryId;
-    $('.category-tabs .nav-link').removeClass('active');
-    $(`.category-tabs .nav-link[data-category-id="${categoryId}"]`).addClass('active');
-    loadItems(categoryId);
-}
-
-/**
- * Load items for category
- */
-function loadItems(categoryId) {
-    if (!selectedWorkplanId) return;
-
-    showLoading();
-
-    $.ajax({
-        url: `/budget-user/${selectedWorkplanId}/items`,
-        method: 'GET',
-        data: {
-            category_id: categoryId
-        },
-        success: function(response) {
-            hideLoading();
-            if (response.success) {
+                allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
-                renderItemsTable(response.data, categoryId);
+                
+                // Update info section
+                const divisionName = $('#divisionFilter option:selected').text();
+                $('#selectedDivisionName').text(divisionName);
+                $('#selectedYear').text(selectedYear);
+                $('#totalWorkplans').text(response.totalWorkplans || 0);
+                $('#totalItems').text(response.data.length);
+                
+                // Show sections
+                $('#dataInfoSection').show();
+                $('#budgetItemsSection').show();
+                
+                // Render items
+                renderAllItems(response.data);
+                
+                showToast('Budget data loaded successfully', 'success');
             } else {
-                showToast(response.message || 'Failed to load items', 'error');
+                showToast(response.message || 'Failed to load budget data', 'error');
             }
         },
         error: function(xhr) {
             hideLoading();
-            showToast('Error loading items', 'error');
+            showToast('Error loading budget data', 'error');
             console.error('Error:', xhr.responseText);
         }
     });
 }
 
 /**
- * Render items table
+ * Render all items in table
  */
-function renderItemsTable(items, categoryId) {
-    const container = $('#categoryContent');
-    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-    
-    let html = `
-        <div class="mb-3">
-            <button type="button" class="btn btn-primary btn-sm" onclick="openAddItemModal(${categoryId})">
-                <i class="bi bi-plus-circle me-2"></i>Add Item
-            </button>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-bordered items-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2">No</th>
-                        <th rowspan="2">Actions</th>
-                        <th rowspan="2">Type</th>
-                        <th rowspan="2">Description</th>
-                        <th rowspan="2">Stock Code</th>
-                        <th rowspan="2">Budget Code</th>
-                        <th rowspan="2">Product Line</th>
-                        <th rowspan="2">Cost Center</th>
-                        <th rowspan="2">Beg. Balance</th>
-                        <th rowspan="2">Cons. Rate</th>
-                        <th rowspan="2">Unit</th>
-                        <th rowspan="2">Total</th>
-                        <th colspan="12" class="month-header">Monthly Activities</th>
-                        <th rowspan="2">Price Est.</th>
-                        <th rowspan="2">Price Est. Desc.</th>
-                    </tr>
-                    <tr>
-                        ${months.map(m => `<th class="month-header">${m.toUpperCase()}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+function renderAllItems(items) {
+    const tbody = $('#budgetItemsTableBody');
+    tbody.empty();
 
     if (items.length === 0) {
-        html += `
+        tbody.append(`
             <tr>
-                <td colspan="27" class="no-data">
-                    <i class="bi bi-inbox fs-3 text-muted"></i>
-                    <p class="mt-2">No budget items yet. Click "Add Item" to create one.</p>
+                <td colspan="27" class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="mt-3 text-muted">No budget items found. Click "Add Data" to create one.</p>
                 </td>
             </tr>
-        `;
-    } else {
-        items.forEach((item, index) => {
-            html += renderItemRow(item, index + 1);
-        });
+        `);
+        return;
     }
 
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    container.html(html);
+    items.forEach((item, index) => {
+        tbody.append(renderItemRowForTable(item));
+    });
 }
 
 /**
- * Render single item row
+ * Render single item row for main table
  */
-function renderItemRow(item, rowNumber) {
+function renderItemRowForTable(item) {
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     const isApproved = item.status === 'approved';
-    const rowClass = isApproved ? 'table-success' : '';
+    const categoryColors = {
+        'Routine': 'bg-secondary',
+        'Turn Around': 'bg-info',
+        'Carry Over': 'bg-warning',
+        'Multi Year': 'bg-primary'
+    };
+    const categoryColor = categoryColors[item.category_type] || 'bg-secondary';
     
-    let html = `
-        <tr data-item-id="${item.id}" class="${rowClass}">
-            <td class="text-center">${rowNumber}</td>
-            <td class="text-center action-column">
-    `;
-
+    let html = `<tr data-item-id="${item.id}">`;
+    
+    // Action column
+    html += `<td class="text-center action-column">`;
     if (isApproved) {
-        html += `<span class="badge bg-success status-badge">Approved</span>`;
+        html += `
+            <button type="button" class="btn btn-sm btn-success btn-action-item" title="Approved">
+                <i class="bi bi-check-circle"></i>
+            </button>
+        `;
     } else {
         html += `
             <button type="button" class="btn btn-sm btn-primary btn-action-item" onclick="editItem(${item.id})" title="Edit">
@@ -345,47 +207,208 @@ function renderItemRow(item, rowNumber) {
             <button type="button" class="btn btn-sm btn-danger btn-action-item" onclick="deleteItem(${item.id})" title="Delete">
                 <i class="bi bi-trash"></i>
             </button>
+            <button type="button" class="btn btn-sm btn-warning btn-action-item" title="Approve">
+                <i class="bi bi-check"></i>
+            </button>
         `;
     }
-
+    html += `</td>`;
+    
+    // Category
+    html += `<td><span class="badge ${categoryColor}">${item.category_type || '-'}</span></td>`;
+    
+    // Other fields
     html += `
-            </td>
-            <td style="font-size: 10px;">${item.category_type || '-'}</td>
-            <td style="font-size: 10px;">${item.description || '-'}</td>
-            <td style="font-size: 10px;">${item.stock_code || '-'}</td>
-            <td style="font-size: 10px;">${item.budget_code || '-'}</td>
-            <td style="font-size: 10px;">${item.product_line || '-'}</td>
-            <td style="font-size: 10px;">${item.cost_center || '-'}</td>
-            <td style="font-size: 10px;">${item.beg_balance || '-'}</td>
-            <td style="font-size: 10px;">${item.cons_rate || '-'}</td>
-            <td style="font-size: 10px;">${item.unit || '-'}</td>
-            <td class="text-end" style="font-size: 10px;">${item.total || '-'}</td>
+        <td style="font-size: 10px;">${item.description || '-'}</td>
+        <td style="font-size: 10px;">${item.workplan?.activity || '-'}</td>
+        <td style="font-size: 10px;">${item.stock_code || '-'}</td>
+        <td style="font-size: 10px;">${item.budget_code || '-'}</td>
+        <td style="font-size: 10px;">${item.product_line || '-'}</td>
+        <td style="font-size: 10px;">${item.cost_center || '-'}</td>
+        <td style="font-size: 10px;">${item.beg_balance || '-'}</td>
+        <td style="font-size: 10px;">${item.supplier_name || '-'}</td>
+        <td style="font-size: 10px;">${item.cons_rate || '-'}</td>
+        <td style="font-size: 10px;">${item.unit_name || '-'}</td>
     `;
-
+    
+    // Monthly quantities
     months.forEach(month => {
         const qty = item[`activity_${month}`] || 0;
         const qtyClass = qty > 0 ? 'bg-light' : '';
-        html += `<td class="text-center ${qtyClass}">${qty}</td>`;
+        html += `<td class="text-center ${qtyClass}" style="font-size: 10px;">${qty}</td>`;
     });
-
+    
+    // Calculate total
+    const total = months.reduce((sum, month) => sum + (item[`activity_${month}`] || 0), 0);
+    html += `<td class="text-end" style="font-size: 10px;">${total}</strong></td>`;
+    
+    // Price estimation
     html += `
-            <td class="text-end" style="font-size: 10px;">${item.price_estimation ? formatCurrency(item.price_estimation) : '-'}</td>
-            <td style="font-size: 10px;">${item.price_estimation_description || '-'}</td>
-        </tr>
+        <td class="text-end" style="font-size: 10px;">${item.price_estimation ? formatCurrency(item.price_estimation) : '-'}</td>
+        <td style="font-size: 10px;">${item.price_estimation_description || '-'}</td>
     `;
-
+    
+    html += `</tr>`;
+    
     return html;
+}
+
+/**
+ * Auto-load from workplan parameters
+ */
+function autoLoadFromWorkplan(divisionId, year, workplanId) {
+    // Set filter values
+    $('#divisionFilter').val(divisionId);
+    $('#yearFilter').val(year);
+    
+    selectedDivisionId = divisionId;
+    selectedYear = year;
+    
+    // Enable load button
+    $('#loadBudgetBtn').prop('disabled', false);
+    
+    // Load budget items
+    showLoading();
+    
+    $.ajax({
+        url: '/budget-user/items/all',
+        method: 'GET',
+        data: {
+            division_id: divisionId,
+            year: year
+        },
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                // Update info section
+                const divisionName = $('#divisionFilter option:selected').text();
+                $('#selectedDivisionName').text(divisionName);
+                $('#selectedYear').text(year);
+                $('#totalWorkplans').text(response.totalWorkplans || 0);
+                $('#totalItems').text(response.data.length);
+                
+                // Show sections
+                $('#dataInfoSection').show();
+                $('#budgetItemsSection').show();
+                
+                // Store budget codes
+                budgetCodesData = response.budgetCodes || [];
+                
+                // Render items
+                renderAllItems(response.data || []);
+                
+                showToast('Budget data loaded successfully', 'success');
+            } else {
+                showToast(response.message || 'Failed to load items', 'error');
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showToast('Error loading budget items', 'error');
+        }
+    });
+}
+
+/**
+ * Open add item modal with pre-selected workplan
+ */
+function openAddItemModalWithWorkplan(workplanId) {
+    resetItemForm();
+    $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
+    $('#budgetCategoryId').val('');
+    $('#itemId').val('');
+    
+    // Load all dropdown data
+    loadBudgetCategories();
+    loadBudgetCodes();
+    loadCostCenters();
+    loadSuppliers();
+    loadUnits();
+    
+    // Load workplans and set the selected one
+    loadWorkplansForDropdownWithSelection(workplanId);
+    
+    $('#itemModal').modal('show');
 }
 
 /**
  * Open add item modal
  */
-function openAddItemModal(categoryId) {
+function openAddItemModal() {
     resetItemForm();
     $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
-    $('#budgetCategoryId').val(categoryId);
+    $('#budgetCategoryId').val('');
+    $('#itemId').val('');
+    
+    // Load all dropdown data
+    loadBudgetCategories();
     loadBudgetCodes();
+    loadCostCenters();
+    loadSuppliers();
+    loadUnits();
+    
+    // Check if there's a workplan_id from URL parameter
+    if (typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
+        // Load workplans with pre-selection
+        loadWorkplansForDropdownWithSelection(paramWorkplanId);
+    } else {
+        // Load workplans without pre-selection
+        loadWorkplansForDropdown();
+    }
+    
     $('#itemModal').modal('show');
+}
+
+/**
+ * Edit item from workplan (with pre-loaded data)
+ */
+function editItemFromWorkplan(itemId, workplanId) {
+    showLoading();
+
+    // Find item from loaded data
+    $.ajax({
+        url: '/budget-user/items/all',
+        method: 'GET',
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear
+        },
+        success: function(response) {
+            hideLoading();
+            if (response.success) {
+                budgetCodesData = response.budgetCodes || [];
+                
+                const item = response.data.find(i => i.id === itemId);
+                if (item) {
+                    $('#itemModalLabel').html('<i class="bi bi-pencil me-2"></i>Edit Budget Item');
+                    
+                    // Load all dropdown data
+                    loadBudgetCategories();
+                    loadBudgetCodes();
+                    loadCostCenters();
+                    loadSuppliers();
+                    loadUnits();
+                    
+                    // Load workplans with the current workplan selected
+                    loadWorkplansForDropdownWithSelection(workplanId);
+                    
+                    // Wait a bit for data to load before populating
+                    setTimeout(() => {
+                        populateItemForm(item);
+                    }, 800);
+                    
+                    $('#itemModal').modal('show');
+                } else {
+                    showToast('Item not found', 'error');
+                }
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showToast('Error loading item data', 'error');
+        }
+    });
 }
 
 /**
@@ -394,20 +417,36 @@ function openAddItemModal(categoryId) {
 function editItem(itemId) {
     showLoading();
 
+    // Find item from loaded data
     $.ajax({
-        url: `/budget-user/${selectedWorkplanId}/items`,
+        url: '/budget-user/items/all',
         method: 'GET',
         data: {
-            category_id: currentCategory
+            division_id: selectedDivisionId,
+            year: selectedYear
         },
         success: function(response) {
             hideLoading();
             if (response.success) {
+                budgetCodesData = response.budgetCodes || [];
+                
                 const item = response.data.find(i => i.id === itemId);
                 if (item) {
-                    populateItemForm(item);
                     $('#itemModalLabel').html('<i class="bi bi-pencil me-2"></i>Edit Budget Item');
+                    
+                    // Load all dropdown data
+                    loadBudgetCategories();
                     loadBudgetCodes();
+                    loadCostCenters();
+                    loadSuppliers();
+                    loadUnits();
+                    loadWorkplansForDropdown();
+                    
+                    // Wait a bit for data to load before populating
+                    setTimeout(() => {
+                        populateItemForm(item);
+                    }, 800);
+                    
                     $('#itemModal').modal('show');
                 }
             }
@@ -424,16 +463,33 @@ function editItem(itemId) {
  */
 function populateItemForm(item) {
     $('#itemId').val(item.id);
-    $('#budgetCategoryId').val(item.budget_category_id);
-    $('#categoryType').val(item.category_type);
+    $('#categoryType').val(item.budget_category_id);
     $('#description').val(item.description);
     $('#stockCode').val(item.stock_code);
-    $('#budgetCode').val(item.budget_code);
+    
+    // Set Program ID using Choices
+    if (programIdChoices && item.kpi_workplan_id) {
+        programIdChoices.setChoiceByValue(item.kpi_workplan_id.toString());
+    }
+    
+    // Set Budget Code using Choices
+    const budgetCodeSelect = document.getElementById('budgetCode');
+    if (budgetCodeSelect.choicesInstance && item.budget_code) {
+        budgetCodeSelect.choicesInstance.setChoiceByValue(item.budget_code);
+    }
+    
     $('#productLine').val(item.product_line);
-    $('#costCenter').val(item.cost_center);
+    
+    // Set Cost Center using Choices
+    const costCenterSelect = document.getElementById('costCenter');
+    if (costCenterSelect.choicesInstance && item.cost_center) {
+        costCenterSelect.choicesInstance.setChoiceByValue(item.cost_center);
+    }
+    
     $('#begBalance').val(item.beg_balance);
+    $('#supplier').val(item.supplier_id);
     $('#consRate').val(item.cons_rate);
-    $('#unit').val(item.unit);
+    $('#unit').val(item.unit_id);
     $('#total').val(item.total);
     $('#priceEstimation').val(item.price_estimation);
     $('#priceEstimationDescription').val(item.price_estimation_description);
@@ -443,8 +499,6 @@ function populateItemForm(item) {
     months.forEach(month => {
         $(`input[name="activity_${month}"]`).val(item[`activity_${month}`] || 0);
     });
-
-    $('textarea[name="notes"]').val(item.notes);
 }
 
 /**
@@ -454,17 +508,336 @@ function resetItemForm() {
     $('#itemForm')[0].reset();
     $('#itemId').val('');
     $('#budgetCategoryId').val('');
+    
+    // Reset monthly activity inputs to 0
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    months.forEach(month => {
+        $(`input[name="activity_${month}"]`).val(0);
+    });
+    
+    // Reset total
+    $('#total').val(0);
+    
+    // Destroy Choices instances if they exist
+    const budgetCodeSelect = document.getElementById('budgetCode');
+    if (budgetCodeSelect && budgetCodeSelect.choicesInstance) {
+        budgetCodeSelect.choicesInstance.destroy();
+        budgetCodeSelect.choicesInstance = null;
+    }
+    
+    const costCenterSelect = document.getElementById('costCenter');
+    if (costCenterSelect && costCenterSelect.choicesInstance) {
+        costCenterSelect.choicesInstance.destroy();
+        costCenterSelect.choicesInstance = null;
+    }
+    
+    if (programIdChoices) {
+        programIdChoices.destroy();
+        programIdChoices = null;
+    }
+}
+
+/**
+ * Load budget categories (parent only)
+ */
+function loadBudgetCategories() {
+    $.ajax({
+        url: '/budget-user/budget-categories',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = $('#categoryType');
+                select.empty();
+                select.append('<option value="">Select Budget Category...</option>');
+                
+                response.data.forEach(category => {
+                    select.append(`<option value="${category.id}">${category.name}</option>`);
+                });
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading budget categories:', xhr.responseJSON);
+            showToast('Failed to load budget categories', 'error');
+        }
+    });
+}
+
+/**
+ * Load cost centers from budget codes
+ */
+function loadCostCenters() {
+    $.ajax({
+        url: '/budget-user/cost-centers',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = document.getElementById('costCenter');
+                select.innerHTML = '<option value="">Select Cost Center</option>';
+                
+                response.data.forEach(center => {
+                    const option = document.createElement('option');
+                    option.value = center;
+                    option.textContent = center;
+                    select.appendChild(option);
+                });
+                
+                // Initialize Choices.js
+                if (select.choicesInstance) {
+                    select.choicesInstance.destroy();
+                }
+                
+                const choices = new Choices(select, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search cost center...',
+                    itemSelectText: 'Click to select',
+                    shouldSort: false,
+                });
+                
+                select.choicesInstance = choices;
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading cost centers:', xhr.responseJSON);
+        }
+    });
+}
+
+/**
+ * Load suppliers
+ */
+function loadSuppliers() {
+    $.ajax({
+        url: '/budget-user/suppliers',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = $('#supplier');
+                select.empty();
+                select.append('<option value="" data-id="">Select Supplier</option>');
+                
+                response.data.forEach(supplier => {
+                    select.append(`<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`);
+                });
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading suppliers:', xhr.responseJSON);
+        }
+    });
+}
+
+/**
+ * Load units
+ */
+function loadUnits() {
+    $.ajax({
+        url: '/budget-user/units',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = $('#unit');
+                select.empty();
+                select.append('<option value="" data-name="">Select Unit</option>');
+                
+                response.data.forEach(unit => {
+                    select.append(`<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`);
+                });
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading units:', xhr.responseJSON);
+        }
+    });
+}
+
+/**
+ * Load workplans for dropdown with pre-selection
+ */
+function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
+    if (!selectedDivisionId || !selectedYear) {
+        showToast('Please select division and year first', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: '/budget-user/workplans/dropdown',
+        method: 'GET',
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear
+        },
+        success: function(response) {
+            if (response.success) {
+                const select = document.getElementById('programId');
+                
+                // Destroy existing Choices instance if it exists
+                if (programIdChoices) {
+                    programIdChoices.destroy();
+                }
+                
+                // Initialize Choices.js for searchable dropdown
+                programIdChoices = new Choices(select, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search work plan...',
+                    itemSelectText: 'Click to select',
+                    shouldSort: false,
+                    removeItemButton: false,
+                    placeholder: true,
+                    placeholderValue: 'Select work plan'
+                });
+                
+                // Clear existing choices
+                programIdChoices.clearChoices();
+                
+                // Add default option
+                programIdChoices.setChoices([
+                    { value: '', label: 'Select Work Plan...', selected: true, disabled: false }
+                ], 'value', 'label', true);
+                
+                if (response.data && response.data.length > 0) {
+                    // Add workplan options with consistent formatting
+                    const choices = response.data.map(workplan => {
+                        const typeLabel = workplan.kpi_type === 'department' ? 'Department' : 'Section';
+                        const typeBadge = workplan.kpi_type === 'department' ? '🏢' : '📋';
+                        return {
+                            value: workplan.id.toString(),
+                            label: `${typeBadge} [${typeLabel}] ${workplan.activity}`,
+                            customProperties: {
+                                kpi_type: workplan.kpi_type
+                            }
+                        };
+                    });
+                    
+                    programIdChoices.setChoices(choices, 'value', 'label', false);
+                    
+                    // Set selected workplan
+                    if (selectedWorkplanId) {
+                        programIdChoices.setChoiceByValue(selectedWorkplanId.toString());
+                    }
+                } else {
+                    showToast('No workplans found for this division and year', 'info');
+                }
+            } else {
+                showToast(response.message || 'Failed to load workplans', 'error');
+            }
+        },
+        error: function(xhr) {
+            showToast('Error loading workplans', 'error');
+        }
+    });
+}
+
+/**
+ * Load workplans for dropdown (department and section only)
+ */
+function loadWorkplansForDropdown() {
+    if (!selectedDivisionId || !selectedYear) {
+        return;
+    }
+
+    $.ajax({
+        url: '/budget-user/workplans/dropdown',
+        method: 'GET',
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear
+        },
+        success: function(response) {
+            if (response.success) {
+                const select = document.getElementById('programId');
+                
+                // Destroy existing Choices instance if it exists
+                if (programIdChoices) {
+                    programIdChoices.destroy();
+                }
+                
+                // Initialize Choices.js for searchable dropdown
+                programIdChoices = new Choices(select, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search work plan...',
+                    itemSelectText: 'Click to select',
+                    shouldSort: false,
+                    removeItemButton: false,
+                    placeholder: true,
+                    placeholderValue: 'Select work plan'
+                });
+                
+                // Clear existing choices
+                programIdChoices.clearChoices();
+                
+                // Add default option
+                programIdChoices.setChoices([
+                    { value: '', label: 'Select Work Plan...', selected: true, disabled: false }
+                ], 'value', 'label', true);
+                
+                // Add workplan options
+                const choices = response.data.map(workplan => {
+                    const typeLabel = workplan.kpi_type === 'department' ? 'Department' : 'Section';
+                    const typeBadge = workplan.kpi_type === 'department' ? '🏢' : '📋';
+                    return {
+                        value: workplan.id.toString(),
+                        label: `${typeBadge} [${typeLabel}] ${workplan.activity}`,
+                        customProperties: {
+                            kpi_type: workplan.kpi_type
+                        }
+                    };
+                });
+                
+                programIdChoices.setChoices(choices, 'value', 'label', false);
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading workplans:', xhr.responseJSON);
+            showToast('Failed to load work plans', 'error');
+        }
+    });
 }
 
 /**
  * Load budget codes
  */
 function loadBudgetCodes() {
-    const select = $('#budgetCode');
-    select.empty().append('<option value="">Select Budget Code</option>');
+    const select = document.getElementById('budgetCode');
     
+    // Destroy existing Choices instance if it exists
+    if (select.choicesInstance) {
+        select.choicesInstance.destroy();
+    }
+    
+    // Clear and populate options
+    select.innerHTML = '<option value="">Select Budget Code</option>';
     budgetCodesData.forEach(code => {
-        select.append(`<option value="${code.code}">${code.code} - ${code.name}</option>`);
+        const option = document.createElement('option');
+        option.value = code.stock_code;
+        option.textContent = `${code.stock_code} - ${code.name}`;
+        option.setAttribute('data-incharge', code.inchargeCode || '');
+        select.appendChild(option);
+    });
+    
+    // Initialize Choices.js for searchable dropdown
+    const choices = new Choices(select, {
+        searchEnabled: true,
+        searchChoices: true,
+        searchPlaceholderValue: 'Search budget code...',
+        itemSelectText: 'Click to select',
+        noResultsText: 'No budget codes found',
+        shouldSort: false,
+        removeItemButton: false,
+    });
+    
+    select.choicesInstance = choices;
+    
+    // Bind change event to populate cost_center
+    $(select).off('change').on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const inchargeCode = selectedOption.data('incharge');
+        $('#costCenter').val(inchargeCode || '');
+        
+        // Update Cost Center Choices if it exists
+        const costCenterSelect = document.getElementById('costCenter');
+        if (costCenterSelect.choicesInstance) {
+            costCenterSelect.choicesInstance.setChoiceByValue(inchargeCode || '');
+        }
     });
 }
 
@@ -473,60 +846,94 @@ function loadBudgetCodes() {
  */
 function saveItem() {
     const itemId = $('#itemId').val();
-    const formData = $('#itemForm').serializeArray();
-    const data = {};
+    const isEdit = itemId !== '';
     
-    formData.forEach(field => {
-        data[field.name] = field.value;
-    });
-
-    // Validation
-    if (!data.budget_category_id) {
-        showToast('Budget category is required', 'warning');
+    // Validate required fields
+    const programId = $('#programId').val();
+    const budgetCategoryId = $('#categoryType').val();
+    const description = $('#description').val();
+    
+    if (!programId) {
+        showToast('Please select a work plan', 'error');
+        return;
+    }
+    
+    if (!budgetCategoryId) {
+        showToast('Please select a budget category', 'error');
+        return;
+    }
+    
+    if (!description) {
+        showToast('Please enter a description', 'error');
         return;
     }
 
-    if (!data.category_type) {
-        showToast('Category type is required', 'warning');
-        return;
-    }
-
-    if (!data.description) {
-        showToast('Description is required', 'warning');
-        return;
-    }
+    // Get supplier data
+    const supplierId = $('#supplier').val();
+    const supplierName = supplierId ? $('#supplier option:selected').data('name') : null;
+    
+    // Get unit data
+    const unitId = $('#unit').val();
+    const unitName = unitId ? $('#unit option:selected').data('name') : null;
+    
+    const formData = {
+        kpi_workplan_id: programId,
+        budget_category_id: budgetCategoryId,
+        description: description,
+        stock_code: $('#stockCode').val(),
+        budget_code: $('#budgetCode').val(),
+        product_line: $('#productLine').val(),
+        cost_center: $('#costCenter').val(),
+        beg_balance: $('#begBalance').val(),
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        cons_rate: $('#consRate').val(),
+        unit_id: unitId,
+        unit_name: unitName,
+        total: $('#total').val(),
+        price_estimation: $('#priceEstimation').val(),
+        price_estimation_description: $('#priceEstimationDescription').val(),
+        activity_jan: $('input[name="activity_jan"]').val() || 0,
+        activity_feb: $('input[name="activity_feb"]').val() || 0,
+        activity_mar: $('input[name="activity_mar"]').val() || 0,
+        activity_apr: $('input[name="activity_apr"]').val() || 0,
+        activity_may: $('input[name="activity_may"]').val() || 0,
+        activity_jun: $('input[name="activity_jun"]').val() || 0,
+        activity_jul: $('input[name="activity_jul"]').val() || 0,
+        activity_aug: $('input[name="activity_aug"]').val() || 0,
+        activity_sep: $('input[name="activity_sep"]').val() || 0,
+        activity_oct: $('input[name="activity_oct"]').val() || 0,
+        activity_nov: $('input[name="activity_nov"]').val() || 0,
+        activity_dec: $('input[name="activity_dec"]').val() || 0,
+        notes: $('textarea[name="notes"]').val(),
+        year: selectedYear,
+        division_id: selectedDivisionId
+    };
 
     showLoading();
 
-    const url = itemId 
-        ? `/budget-user/${selectedWorkplanId}/items/${itemId}`
-        : `/budget-user/${selectedWorkplanId}/items`;
-    
-    const method = itemId ? 'PUT' : 'POST';
+    const url = isEdit ? `/budget-user/items/${itemId}` : '/budget-user/items';
+    const method = isEdit ? 'PUT' : 'POST';
 
     $.ajax({
         url: url,
         method: method,
+        data: formData,
         headers: {
             'X-CSRF-TOKEN': CSRF_TOKEN
         },
-        data: data,
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showToast(response.message || 'Item saved successfully', 'success');
+                showToast(response.message, 'success');
                 $('#itemModal').modal('hide');
-                loadItems(currentCategory);
-            } else {
-                showToast(response.message || 'Failed to save item', 'error');
+                loadAllBudgetItems();
             }
         },
         error: function(xhr) {
             hideLoading();
-            const response = xhr.responseJSON;
-            const message = response?.message || 'Error saving item';
+            const message = xhr.responseJSON?.message || 'Failed to save item';
             showToast(message, 'error');
-            console.error('Error:', xhr.responseText);
         }
     });
 }
@@ -549,7 +956,7 @@ function deleteItem(itemId) {
             showLoading();
 
             $.ajax({
-                url: `/budget-user/${selectedWorkplanId}/items/${itemId}`,
+                url: `/budget-user/items/${itemId}`,
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': CSRF_TOKEN
@@ -558,7 +965,7 @@ function deleteItem(itemId) {
                     hideLoading();
                     if (response.success) {
                         showToast(response.message || 'Item deleted successfully', 'success');
-                        loadItems(currentCategory);
+                        loadAllBudgetItems(); // Reload all data
                     } else {
                         showToast(response.message || 'Failed to delete item', 'error');
                     }

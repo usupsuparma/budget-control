@@ -9,6 +9,7 @@ let currentYear = null;
 
 $(document).ready(function() {
     initializeEventListeners();
+    checkUrlParametersAndAutoLoad();
 });
 
 function initializeEventListeners() {
@@ -63,9 +64,9 @@ function initializeEventListeners() {
         const workplanId = row.data('workplan-id');
         
         if (workplanId && workplanId !== 'new') {
-            // Open budget items page in new tab
-            const url = `/workplan/${workplanId}/item`;
-            window.open(url, '_blank');
+            // Navigate to budget-user page with parameters
+            const url = `/budget-user?division_id=${currentDivisionId}&year=${currentYear}&workplan_id=${workplanId}`;
+            window.location.href = url;
         }
     });
 
@@ -83,6 +84,26 @@ function initializeEventListeners() {
     $('#duration_days, #schedule_start').on('change', function() {
         calculateEndDateFromDuration();
     });
+}
+
+/**
+ * Check URL parameters and auto-load data if present
+ */
+function checkUrlParametersAndAutoLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const divisionId = urlParams.get('division_id');
+    const year = urlParams.get('year');
+    
+    if (divisionId && year) {
+        // Set the select values
+        $('#filter_division').val(divisionId);
+        $('#filter_year').val(year);
+        
+        // Trigger load after a short delay to ensure DOM is ready
+        setTimeout(function() {
+            loadKpiData();
+        }, 300);
+    }
 }
 
 function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) {

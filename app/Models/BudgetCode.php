@@ -2,40 +2,32 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BudgetCode extends Model
 {
-    use HasFactory, SoftDeletes;
+    protected $table = 'budget_code';
+    protected $guarded = [];
 
     protected $fillable = [
-        'code',
+        'stock_code',
         'name',
-        'description',
-        'category',
-        'is_active',
+        'active_flag',
+        'user_no',
+        'memo',
+        'delivdate',
+        'inchargeCode',
+        'remarks_id',
+        'remarks',
+        'goods_code',
+        'status',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    // Relationships
-    public function budgetItems()
-    {
-        return $this->hasMany(WorkplanBudgetItem::class, 'budget_code', 'code');
-    }
-
-    // Scopes
+    /**
+     * Scope: Get active budget codes
+     */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeByCategory($query, $category)
-    {
-        return $query->where('category', $category);
+        return $query->where('active_flag', 1);
     }
 }

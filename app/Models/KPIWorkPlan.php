@@ -12,7 +12,7 @@ class KPIWorkPlan extends Model
     protected $table = 'kpi_workplans';
 
     protected $fillable = [
-        'kpi_type',
+        'kpi_type', //enum('department', 'section')
         'kpi_id',
         'year',
         'activity',

@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Segmen extends Model
 {
-    //
+    protected $table = 'segmen';
+    protected $guarded = [];
 }

@@ -11,7 +11,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Supplier</th>
-                    <th>Address</th>
+                    <th>Call Sign</th>
                     <th>Status</th>
                     <th width="120px">Action</th>
                 </tr>

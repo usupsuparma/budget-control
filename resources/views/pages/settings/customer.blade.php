@@ -1,190 +1,172 @@
-<div id="layout-wrapper">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex">
-                    <div class="col-md-12 text-end">
+<div class="card">
+    <div class="card-header d-flex justify-content-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Customer
+        </button>
+    </div>
 
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartment">
-                            <i class="bi bi-plus-lg me-1"></i>Add Department
-                        </button>
+    <div class="card-body">
+        <table id="customerTable" class="table table-bordered table-striped w-100">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Call Sign</th>
+                    <th>Status</th>
+                    <th width="120px">Action</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+{{-- ================= ADD ================= --}}
+<div class="modal fade" id="addCustomerModal">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Add Customer</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createCustomerForm" method="POST" action="{{ route('customer.store') }}">
+
+                @csrf
+
+                <div class="modal-body">
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label>Customer Name</label>
+                            <input type="text" name="customer" class="form-control" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label>Call Sign</label>
+                            <input type="text" name="callSign" class="form-control">
+                        </div>
+
+                        <div class="col-12">
+                            <label>Notes</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label>Status</label>
+                            <select name="status" class="form-select">
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
 
                     </div>
                 </div>
 
-                <div class="card-body">
-                    <table id="departmentTable" class="table table-bordered table-striped w-100">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Department</th>
-                                <th>Division (Parent)</th>
-                                <th>Status</th>
-                                <th width="15%">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button class="btn btn-primary" id="saveCustomer">Save</button>
                 </div>
-            </div>
+
+            </form>
         </div>
     </div>
 </div>
-<!-- Create Modal -->
-<!-- Create Employee Modal -->
-<div class="modal fade" id="addDepartment" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDepartmentLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md" role="document">
-        <div class="modal-content">
 
-            <!-- Header -->
-            <div class="modal-header">
-                <h5 class="modal-title">Add Department</h5>
-                <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="ri-close-large-line fw-semibold"></i>
-                </button>
-            </div>
-
-            <!-- Body -->
-            <div class="modal-body">
-                <form id="departmentCreateForm" method="POST" action="{{ route('department.store') }}">
-                    @csrf
-
-                    <div class="row g-3">
-
-                        <!-- Organization Name -->
-                        <div class="col-12">
-                            <label class="form-label">Department Name</label>
-                            <input type="text" name="department_name" class="form-control" placeholder="Enter Department Name" required>
-                        </div>
-
-
-
-                    </div>
-
-                </form>
-            </div>
-
-            <!-- Footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" id="btnCreateDepartment">Save Data</button>
-            </div>
-
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="editDepartment" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-md">
+{{-- ================= EDIT ================= --}}
+<div class="modal fade" id="editCustomerModal">
+    <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Edit Department</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5>Edit Customer</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body">
-                <form id="departmentEditForm" method="POST">
-                    @csrf
+            <form id="editCustomerForm">
+                @csrf
+                @method('PUT')
+
+                <input type="hidden" id="edit_id">
+
+                <div class="modal-body">
                     <div class="row g-3">
 
                         <div class="col-12">
-                            <label class="form-label">Department Name</label>
-                            <input type="text" name="department_name" id="edit_department_name" class="form-control" required>
+                            <label>Customer Name</label>
+                            <input type="text" id="edit_customer" name="customer" class="form-control" required>
                         </div>
 
                         <div class="col-12">
-                            <label> Status </label>
-                            <select name="status" id="edit_status_department" class="form-control">
+                            <label>Address</label>
+                            <input type="text" id="edit_address" name="address" class="form-control">
+                        </div>
+
+                        <div class="col-12">
+                            <label>Notes</label>
+                            <textarea id="edit_notes" name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label>Status</label>
+                            <select id="edit_status" name="status" class="form-select">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
 
                     </div>
-                </form>
-            </div>
+                </div>
 
-            <div class="modal-footer">
-                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" form="departmentEditForm">Update</button>
-            </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button class="btn btn-primary">Update</button>
+                </div>
 
+            </form>
         </div>
     </div>
 </div>
 
 
-<!-- Submit Section -->
-
-
-
 @push('scripts')
-<!-- DataTables -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
-    $(document).ready(function() {
-        $('#departmentTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: "{{ route('department.data') }}",
-            columns: [{
-                    data: 'id',
-                    name: 'id'
-                },
-
-                {
-                    data: 'name',
-                    name: 'name'
-                },
-                {
-                    data: 'division',
-                    name: 'division'
-                },
-                {
-                    data: 'status_badge',
-                    name: 'status',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false
-                }
-            ],
-            order: [
-                [0, 'desc']
-            ]
-        });
+    // INIT DATATABLE
+    let customerTable = $('#customerTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: "{{ route('customer.data') }}",
+        columns: [{
+                data: 'id'
+            },
+            {
+                data: 'customer'
+            },
+            {
+                data: 'address'
+            },
+            {
+                data: 'status_badge',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'action',
+                orderable: false,
+                searchable: false
+            }
+        ],
+        order: [
+            [0, 'desc']
+        ]
     });
-</script>
 
-@if(session('success'))
-<script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: "{{ session('success') }}",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-    });
-</script>
-@endif
+    // CREATE
 
-<script>
     // CREATE (AJAX)
-    $('#btnCreateDepartment').click(function(e) {
+    $('#saveCustomer').click(function(e) {
         e.preventDefault();
 
-        let form = $('#departmentCreateForm');
+        let form = $('#createCustomerForm');
         let url = form.attr('action');
 
         $.ajax({
@@ -194,12 +176,12 @@
             success: function(res) {
 
                 // Tutup modal
-                $('#addDepartment').modal('hide');
+                $('#addCustomerModal').modal('hide');
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
                 // Reload DataTable tanpa reload halaman
-                $('#departmentTable').DataTable().ajax.reload(null, false);
+                $('#customerTable').DataTable().ajax.reload(null, false);
 
                 Swal.fire({
                     icon: "success",
@@ -222,114 +204,71 @@
             }
         });
     });
-</script>
 
-<script>
-    $(document).ready(function() {
+    // SHOW EDIT
+    $(document).on('click', '.customer-edit-btn', function() {
+        let id = $(this).data('id');
 
-        $(document).on('click', '.department-edit-btn', function() {
-            var id = $(this).data('id');
+        $.get("{{ url('/customer') }}/" + id + "/edit", function(data) {
+            $('#edit_id').val(data.id);
+            $('#edit_customer').val(data.customer);
+            $('#edit_address').val(data.address);
+            $('#edit_notes').val(data.notes);
+            $('#edit_status').val(data.status);
 
-            // Buat URL edit dengan dummy ID
-            var editUrl = "{{ route('department.edit', ['id' => 0]) }}";
-            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
+            $('#editCustomerForm').attr('action', "{{ url('/customer') }}/" + id);
 
-            $.get(editUrl, function(response) {
-
-                // response = data dari controller
-                $('#edit_department_name').val(response.name);
-                $('#edit_division_department_name').val(response.division_id).change();
-                $('#edit_status_department').val(response.status);
-
-                // Atur URL update
-                var updateUrl = "{{ route('department.update', ['id' => 0]) }}";
-                updateUrl = updateUrl.replace('/0', '/' + id);
-
-                $('#departmentEditForm').attr('action', updateUrl);
-
-                $('#editDepartment').modal('show');
-            });
+            $('#editCustomerModal').modal('show');
         });
     });
 
-    $('#departmentEditForm').submit(function(e) {
+    // UPDATE
+    $('#editCustomerForm').submit(function(e) {
         e.preventDefault();
 
-        let form = $(this);
-        let url = form.attr('action');
+        let id = $('#edit_id').val();
 
         $.ajax({
-            url: url,
+            url: "{{ url('/customer') }}/" + id,
             method: "POST",
-            data: form.serialize(),
-            success: function(res) {
-                $('#editDepartment').modal('hide');
+            data: $(this).serialize(),
+            success: res => {
+                $('#editCustomerModal').modal('hide');
+                customerTable.ajax.reload();
 
-                // Fix overlay nyangkut
-                $('body').removeClass('modal-open');
-                $('.modal-backdrop').remove();
-
-                $('#departmentTable').DataTable().ajax.reload();
-
-                Swal.fire({
-                    icon: "success",
-                    title: "Updated!",
-                    text: "Department updated successfully",
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            },
-            error: function(xhr) {
-                console.log(xhr.responseText);
+                Swal.fire("Updated!", res.message, "success");
             }
         });
     });
-</script>
 
-<script>
-    $(document).on('click', '.department-delete-btn', function() {
-        var id = $(this).data('id');
+    // DELETE
+    $(document).on('click', '.customer-delete-btn', function() {
+        let id = $(this).data('id');
 
         Swal.fire({
-            title: "Delete Department?",
+            title: "Delete Customer?",
             text: "This action cannot be undone.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Delete",
-            cancelButtonText: "Cancel"
-        }).then((result) => {
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Delete"
+        }).then(result => {
             if (result.isConfirmed) {
 
-                let deleteUrl = "/department/delete/" + id;
-
                 $.ajax({
-                    url: deleteUrl,
-                    type: "POST",
+                    url: "/customer/" + id,
+                    type: "DELETE",
                     data: {
-                        _method: "DELETE",
                         _token: "{{ csrf_token() }}"
                     },
-                    success: function() {
-
-                        $('#departmentTable').DataTable().ajax.reload(null, false);
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Deleted",
-                            text: "Department deleted successfully",
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    },
-                    error: function(xhr) {
-                        console.log(xhr.responseText);
+                    success: res => {
+                        customerTable.ajax.reload();
+                        Swal.fire("Deleted!", res.message, "success");
                     }
                 });
+
             }
         });
     });
 </script>
-
-
-
 @endpush

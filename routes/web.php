@@ -5,6 +5,7 @@ use App\Http\Controllers\SasaranStrategisController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
@@ -33,7 +34,10 @@ use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
 use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SegmenController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UnitController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -277,8 +281,6 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('supplier')->group(function () {
 
-
-
         Route::get('/data', [SupplierController::class, 'data'])
             ->name('supplier.data');
 
@@ -295,6 +297,80 @@ Route::middleware('auth')->group(function () {
             ->name('supplier.destroy');
     });
 
+
+
+    Route::prefix('customer')->group(function () {
+
+        Route::get('/data', [CustomerController::class, 'data'])
+            ->name('customer.data');
+
+        Route::post('/', [CustomerController::class, 'store'])
+            ->name('customer.store');
+
+        Route::get('/{id}/edit', [CustomerController::class, 'edit'])
+            ->name('customer.edit');
+
+        Route::put('/{id}', [CustomerController::class, 'update'])
+            ->name('customer.update');
+
+        Route::delete('/{id}', [CustomerController::class, 'destroy'])
+            ->name('customer.destroy');
+    });
+
+
+    Route::prefix('unit')->group(function () {
+
+        Route::get('/data', [UnitController::class, 'data'])
+            ->name('unit.data');
+
+        Route::post('/', [UnitController::class, 'store'])
+            ->name('unit.store');
+
+        Route::get('/{id}/edit', [UnitController::class, 'edit'])
+            ->name('unit.edit');
+
+        Route::put('/{id}', [UnitController::class, 'update'])
+            ->name('unit.update');
+
+        Route::delete('/{id}', [UnitController::class, 'destroy'])
+            ->name('unit.destroy');
+    });
+
+    Route::prefix('segmen')->group(function () {
+
+        Route::get('/data', [SegmenController::class, 'data'])
+            ->name('segmen.data');
+
+        Route::post('/', [SegmenController::class, 'store'])
+            ->name('segmen.store');
+
+        Route::get('/{id}/edit', [SegmenController::class, 'edit'])
+            ->name('segmen.edit');
+
+        Route::put('/{id}', [SegmenController::class, 'update'])
+            ->name('segmen.update');
+
+        Route::delete('/{id}', [SegmenController::class, 'destroy'])
+            ->name('segmen.destroy');
+    });
+
+    Route::prefix('area')->group(function () {
+
+        Route::get('/data', [AreaController::class, 'data'])
+            ->name('area.data');
+
+        Route::post('/', [AreaController::class, 'store'])
+            ->name('area.store');
+
+        Route::get('/{id}/edit', [AreaController::class, 'edit'])
+            ->name('area.edit');
+
+        Route::put('/{id}', [AreaController::class, 'update'])
+            ->name('area.update');
+
+        Route::delete('/{id}', [AreaController::class, 'destroy'])
+            ->name('area.destroy');
+    });
 
     /* ========================
         ANGGARAN

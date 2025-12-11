@@ -15,11 +15,11 @@ class KPIDivisionController extends Controller
     public function index()
     {
         $title = 'KPI Division';
-        $companyPolicies = CompanyPolicyDetail::orderBy('id', 'desc')->get();
+        $companyPolicies = CompanyPolicyDetail::with('dokumen')->orderBy('id', 'desc')->get();
         $divisions = Division::orderBy('name')->get();
         $kpidivisions = KPIDivision::orderBy('id', 'desc')->get();
 
-        return view('pages.kpi.division', compact('title', 'companyPolicies', 'divisions', 'kpidivisions'));
+        return view('pages.kpi.division_rev1', compact('title', 'companyPolicies', 'divisions', 'kpidivisions'));
     }
 
     /**

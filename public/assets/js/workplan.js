@@ -9,6 +9,7 @@ let currentYear = null;
 
 $(document).ready(function() {
     initializeEventListeners();
+    checkUrlParametersAndAutoLoad();
 });
 
 function initializeEventListeners() {
@@ -83,6 +84,26 @@ function initializeEventListeners() {
     $('#duration_days, #schedule_start').on('change', function() {
         calculateEndDateFromDuration();
     });
+}
+
+/**
+ * Check URL parameters and auto-load data if present
+ */
+function checkUrlParametersAndAutoLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const divisionId = urlParams.get('division_id');
+    const year = urlParams.get('year');
+    
+    if (divisionId && year) {
+        // Set the select values
+        $('#filter_division').val(divisionId);
+        $('#filter_year').val(year);
+        
+        // Trigger load after a short delay to ensure DOM is ready
+        setTimeout(function() {
+            loadKpiData();
+        }, 300);
+    }
 }
 
 function openWorkplanModal(mode, kpiType, kpiId, workplanId = null, row = null) {

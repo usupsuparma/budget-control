@@ -297,7 +297,7 @@
                                     <th rowspan="2">Cons Rate</th>
                                     <th rowspan="2">Unit</th>
                                     <th colspan="12" class="month-header text-center">Qty</th>
-                                    <th rowspan="2">Total Des</th>
+                                    <th rowspan="2">Total</th>
                                     <th rowspan="2">Price Estimation</th>
                                     <th rowspan="2">Price Estimation Description</th>
                                 </tr>

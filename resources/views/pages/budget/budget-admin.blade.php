@@ -196,13 +196,13 @@
                     if (response.success) {
                         renderBudgetTable(response.data);
                         
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: 'Budget data loaded successfully',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
+                        // Swal.fire({
+                        //     icon: 'success',
+                        //     title: 'Success!',
+                        //     text: 'Budget data loaded successfully',
+                        //     timer: 1500,
+                        //     showConfirmButton: false
+                        // });
                     }
                 },
                 error: function(xhr) {

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('workplan_budget_items', function (Blueprint $table) {
+            $table->dropColumn('unit');
             $table->unsignedInteger('unit_id')->nullable()->after('cons_rate');
             $table->string('unit_name')->nullable()->after('unit_id');
         });
@@ -23,6 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('workplan_budget_items', function (Blueprint $table) {
+            $table->string('unit')->nullable()->after('cons_rate');
             $table->dropColumn('unit_id');
             $table->dropColumn('unit_name');
         });

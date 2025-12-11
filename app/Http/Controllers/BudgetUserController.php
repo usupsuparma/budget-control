@@ -63,7 +63,397 @@ class BudgetUserController extends Controller
     }
 
     /**
-     * Get workplans for current user filtered by division and year
+     * Get all budget items by division and year
+     */
+    public function getAllItems(Request $request)
+    {
+        try {
+            $divisionId = $request->input('division_id');
+            $year = $request->input('year');
+
+            if (!$divisionId || !$year) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Division and Year are required'
+                ], 400);
+            }
+
+            // Get all workplans for this division and year
+            $workplans = KPIWorkPlan::with([
+                    'kpiDepartment' => function($query) {
+                        $query->with(['department', 'kpiDivision']);
+                    },
+                    'kpiSection' => function($query) {
+                        $query->with('section');
+                    }
+                ])
+                ->where('year', $year)
+                ->whereHas('kpiDepartment.kpiDivision', function($query) use ($divisionId) {
+                    $query->where('division_id', $divisionId);
+                })
+                ->get();
+
+            // Get all budget items from these workplans
+            $workplanIds = $workplans->pluck('id')->toArray();
+            
+            $items = WorkplanBudgetItem::with(['category', 'budgetCodeRelation', 'approver', 'workplan'])
+                ->whereIn('kpi_workplan_id', $workplanIds)
+                ->orderBy('kpi_workplan_id')
+                ->orderBy('sort_order')
+                ->get();
+
+            // Get available budget codes
+            $budgetCodes = BudgetCode::active()
+                ->select('id', 'stock_code', 'name', 'inchargeCode')
+                ->orderBy('stock_code')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $items,
+                'workplans' => $workplans,
+                'totalWorkplans' => $workplans->count(),
+                'budgetCodes' => $budgetCodes
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading all items: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load items: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get budget categories (parent only)
+     */
+    public function getBudgetCategories(Request $request)
+    {
+        try {
+            $categories = BudgetCategory::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(['id', 'name', 'code']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $categories
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading budget categories: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load budget categories'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get cost centers from budget codes
+     */
+    public function getCostCenters(Request $request)
+    {
+        try {
+            $costCenters = BudgetCode::whereNotNull('inchargeCode')
+                ->where('inchargeCode', '!=', '')
+                ->distinct()
+                ->pluck('inchargeCode')
+                ->sort()
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $costCenters
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading cost centers: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load cost centers'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get suppliers
+     */
+    public function getSuppliers(Request $request)
+    {
+        try {
+            $suppliers = \App\Models\Supplier::whereNotNull('supplier')
+                ->where('supplier', '!=', '')
+                ->select('id', 'supplier')
+                ->orderBy('supplier')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $suppliers
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading suppliers: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load suppliers'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get units
+     */
+    public function getUnits(Request $request)
+    {
+        try {
+            $units = \App\Models\Unit::whereNotNull('unit')
+                ->where('unit', '!=', '')
+                ->select('id', 'unit')
+                ->orderBy('unit')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $units
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading units: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load units'
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new budget item (without workplan ID initially)
+     */
+    public function storeItem(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'kpi_workplan_id' => 'required|exists:kpi_workplans,id',
+                'budget_category_id' => 'required|exists:budget_categories,id',
+                'description' => 'required|string',
+                'stock_code' => 'nullable|string|max:50',
+                'budget_code' => 'nullable|string|max:50',
+                'product_line' => 'nullable|string|max:100',
+                'cost_center' => 'nullable|string|max:50',
+                'beg_balance' => 'nullable|string|max:100',
+                'supplier_id' => 'nullable|integer',
+                'supplier_name' => 'nullable|string|max:255',
+                'cons_rate' => 'nullable|string|max:100',
+                'unit_id' => 'nullable|integer',
+                'unit_name' => 'nullable|string|max:50',
+                'total' => 'nullable|numeric',
+                'price_estimation' => 'nullable|numeric',
+                'price_estimation_description' => 'nullable|string|max:255',
+                'activity_jan' => 'nullable|integer|min:0',
+                'activity_feb' => 'nullable|integer|min:0',
+                'activity_mar' => 'nullable|integer|min:0',
+                'activity_apr' => 'nullable|integer|min:0',
+                'activity_may' => 'nullable|integer|min:0',
+                'activity_jun' => 'nullable|integer|min:0',
+                'activity_jul' => 'nullable|integer|min:0',
+                'activity_aug' => 'nullable|integer|min:0',
+                'activity_sep' => 'nullable|integer|min:0',
+                'activity_oct' => 'nullable|integer|min:0',
+                'activity_nov' => 'nullable|integer|min:0',
+                'activity_dec' => 'nullable|integer|min:0',
+            ]);
+
+            $validated['status'] = 'draft';
+            
+            // Set sort order
+            $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $validated['kpi_workplan_id'])
+                ->max('sort_order');
+            $validated['sort_order'] = ($maxOrder ?? 0) + 1;
+
+            $item = WorkplanBudgetItem::create($validated);
+            $item->load(['category', 'budgetCodeRelation', 'workplan']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Budget item created successfully',
+                'data' => $item
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error creating item: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update budget item
+     */
+    public function updateItem(Request $request, $itemId)
+    {
+        try {
+            $item = WorkplanBudgetItem::findOrFail($itemId);
+
+            // Check if item can be edited
+            if (!$item->canBeEdited()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This item cannot be edited in its current status'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'kpi_workplan_id' => 'nullable|exists:kpi_workplans,id',
+                'budget_category_id' => 'nullable|exists:budget_categories,id',
+                'description' => 'required|string',
+                'stock_code' => 'nullable|string|max:50',
+                'budget_code' => 'nullable|string|max:50',
+                'product_line' => 'nullable|string|max:100',
+                'cost_center' => 'nullable|string|max:50',
+                'beg_balance' => 'nullable|string|max:100',
+                'supplier_id' => 'nullable|integer',
+                'supplier_name' => 'nullable|string|max:255',
+                'cons_rate' => 'nullable|string|max:100',
+                'unit_id' => 'nullable|integer',
+                'unit_name' => 'nullable|string|max:50',
+                'total' => 'nullable|numeric',
+                'price_estimation' => 'nullable|numeric',
+                'price_estimation_description' => 'nullable|string|max:255',
+                'activity_jan' => 'nullable|integer|min:0',
+                'activity_feb' => 'nullable|integer|min:0',
+                'activity_mar' => 'nullable|integer|min:0',
+                'activity_apr' => 'nullable|integer|min:0',
+                'activity_may' => 'nullable|integer|min:0',
+                'activity_jun' => 'nullable|integer|min:0',
+                'activity_jul' => 'nullable|integer|min:0',
+                'activity_aug' => 'nullable|integer|min:0',
+                'activity_sep' => 'nullable|integer|min:0',
+                'activity_oct' => 'nullable|integer|min:0',
+                'activity_nov' => 'nullable|integer|min:0',
+                'activity_dec' => 'nullable|integer|min:0',
+            ]);
+
+            $item->update($validated);
+            $item->load(['category', 'budgetCodeRelation', 'workplan']);
+
+            // Update parent workplan budget
+            $workplan = $item->workplan;
+            if ($workplan) {
+                $workplan->updateBudgetTotal();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item updated successfully',
+                'data' => $item
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating item: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete budget item
+     */
+    public function destroyItem(Request $request, $itemId)
+    {
+        try {
+            $item = WorkplanBudgetItem::findOrFail($itemId);
+
+            // Check if item can be edited (deleted)
+            if (!$item->canBeEdited()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This item cannot be deleted in its current status'
+                ], 403);
+            }
+
+            $workplan = $item->workplan;
+            $item->delete();
+
+            // Update parent workplan budget
+            if ($workplan) {
+                $workplan->updateBudgetTotal();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Budget item deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting item: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get workplans for dropdown (AJAX) - Department and Section only
+     */
+    public function getWorkplansDropdown(Request $request)
+    {
+        try {
+            $divisionId = $request->input('division_id');
+            $year = $request->input('year');
+
+            if (!$divisionId || !$year) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Division and year are required'
+                ], 400);
+            }
+
+            // Get workplans for department and section only
+            $workplans = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
+                ->where('year', $year)
+                ->whereIn('kpi_type', ['department', 'section'])
+                ->get()
+                ->filter(function($workplan) use ($divisionId) {
+                    if ($workplan->kpi_type === 'department') {
+                        return $workplan->kpiDepartment && 
+                               $workplan->kpiDepartment->department && 
+                               $workplan->kpiDepartment->department->division_id == $divisionId;
+                    } else if ($workplan->kpi_type === 'section') {
+                        return $workplan->kpiSection && 
+                               $workplan->kpiSection->section && 
+                               $workplan->kpiSection->section->department &&
+                               $workplan->kpiSection->section->department->division_id == $divisionId;
+                    }
+                    return false;
+                })
+                ->values()
+                ->map(function($workplan) {
+                    return [
+                        'id' => $workplan->id,
+                        'activity' => $workplan->activity,
+                        'kpi_type' => $workplan->kpi_type,
+                        'kpi_name' => $workplan->kpi_type === 'department' 
+                            ? ($workplan->kpiDepartment->department->name ?? '-')
+                            : ($workplan->kpiSection->section->name ?? '-'),
+                        'year' => $workplan->year
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $workplans
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading workplans dropdown: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load workplans: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get workplans for dropdown (AJAX)
      */
     public function getWorkplans(Request $request)
     {

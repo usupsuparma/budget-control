@@ -19,6 +19,10 @@ class WorkplanBudgetItem extends Model
         'product_line',
         'cost_center',
         'beg_balance',
+        'supplier_id',
+        'supplier_name',
+        'unit_id',
+        'unit_name',
         'cons_rate',
         'unit',
         'total',
@@ -76,7 +80,7 @@ class WorkplanBudgetItem extends Model
 
     public function budgetCodeRelation()
     {
-        return $this->belongsTo(BudgetCode::class, 'budget_code', 'code');
+        return $this->belongsTo(BudgetCode::class, 'budget_code', 'stock_code');
     }
 
     public function approver()

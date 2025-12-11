@@ -581,6 +581,32 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BudgetUserController::class, 'index'])
                 ->name('budget-user.index');
+            
+            // New endpoints for all items
+            Route::get('/items/all', [BudgetUserController::class, 'getAllItems'])
+                ->name('budget-user.items.all');
+            Route::post('/items', [BudgetUserController::class, 'storeItem'])
+                ->name('budget-user.items.store');
+            Route::put('/items/{itemId}', [BudgetUserController::class, 'updateItem'])
+                ->name('budget-user.items.update');
+            Route::delete('/items/{itemId}', [BudgetUserController::class, 'destroyItem'])
+                ->name('budget-user.items.destroy');
+            
+            // Dropdown data endpoints
+            Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
+                ->name('budget-user.budget-categories');
+            Route::get('/cost-centers', [BudgetUserController::class, 'getCostCenters'])
+                ->name('budget-user.cost-centers');
+            Route::get('/suppliers', [BudgetUserController::class, 'getSuppliers'])
+                ->name('budget-user.suppliers');
+            Route::get('/units', [BudgetUserController::class, 'getUnits'])
+                ->name('budget-user.units');
+            
+            // Workplans dropdown for department and section
+            Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])
+                ->name('budget-user.workplans.dropdown');
+            
+            // Old endpoints (kept for compatibility)
             Route::get('/divisions', [BudgetUserController::class, 'getDivisions'])
                 ->name('budget-user.divisions');
             Route::get('/workplans', [BudgetUserController::class, 'getWorkplans'])

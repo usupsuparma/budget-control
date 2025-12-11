@@ -293,18 +293,7 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
                 // Render items
                 renderAllItems(response.data || []);
                 
-                // Check if item exists for this workplan
-                const existingItem = response.data.find(item => item.kpi_workplan_id == workplanId);
-                
-                setTimeout(function() {
-                    if (existingItem) {
-                        // Item exists - open EDIT modal
-                        editItemFromWorkplan(existingItem.id, workplanId);
-                    } else {
-                        // No item exists - open ADD modal
-                        openAddItemModalWithWorkplan(workplanId);
-                    }
-                }, 500);
+                showToast('Budget data loaded successfully', 'success');
             } else {
                 showToast(response.message || 'Failed to load items', 'error');
             }
@@ -353,7 +342,15 @@ function openAddItemModal() {
     loadCostCenters();
     loadSuppliers();
     loadUnits();
-    loadWorkplansForDropdown();
+    
+    // Check if there's a workplan_id from URL parameter
+    if (typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
+        // Load workplans with pre-selection
+        loadWorkplansForDropdownWithSelection(paramWorkplanId);
+    } else {
+        // Load workplans without pre-selection
+        loadWorkplansForDropdown();
+    }
     
     $('#itemModal').modal('show');
 }
@@ -666,27 +663,47 @@ function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
         },
         success: function(response) {
             if (response.success) {
-                const select = $('#programId');
-                select.empty();
-                select.append('<option value="">-- Select Program --</option>');
+                const select = document.getElementById('programId');
+                
+                // Destroy existing Choices instance if it exists
+                if (programIdChoices) {
+                    programIdChoices.destroy();
+                }
+                
+                // Initialize Choices.js for searchable dropdown
+                programIdChoices = new Choices(select, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search work plan...',
+                    itemSelectText: 'Click to select',
+                    shouldSort: false,
+                    removeItemButton: false,
+                    placeholder: true,
+                    placeholderValue: 'Select work plan'
+                });
+                
+                // Clear existing choices
+                programIdChoices.clearChoices();
+                
+                // Add default option
+                programIdChoices.setChoices([
+                    { value: '', label: 'Select Work Plan...', selected: true, disabled: false }
+                ], 'value', 'label', true);
                 
                 if (response.data && response.data.length > 0) {
-                    response.data.forEach(function(workplan) {
-                        const kpiInfo = workplan.kpi_info || 'N/A';
-                        const optionText = `${workplan.activity} (${kpiInfo})`;
-                        select.append(`<option value="${workplan.id}">${optionText}</option>`);
+                    // Add workplan options with consistent formatting
+                    const choices = response.data.map(workplan => {
+                        const typeLabel = workplan.kpi_type === 'department' ? 'Department' : 'Section';
+                        const typeBadge = workplan.kpi_type === 'department' ? '🏢' : '📋';
+                        return {
+                            value: workplan.id.toString(),
+                            label: `${typeBadge} [${typeLabel}] ${workplan.activity}`,
+                            customProperties: {
+                                kpi_type: workplan.kpi_type
+                            }
+                        };
                     });
                     
-                    // Initialize or update Choices
-                    if (programIdChoices) {
-                        programIdChoices.destroy();
-                    }
-                    programIdChoices = new Choices('#programId', {
-                        searchEnabled: true,
-                        searchPlaceholderValue: 'Search program...',
-                        itemSelectText: 'Click to select',
-                        shouldSort: false
-                    });
+                    programIdChoices.setChoices(choices, 'value', 'label', false);
                     
                     // Set selected workplan
                     if (selectedWorkplanId) {
@@ -694,11 +711,6 @@ function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
                     }
                 } else {
                     showToast('No workplans found for this division and year', 'info');
-                    
-                    if (programIdChoices) {
-                        programIdChoices.destroy();
-                        programIdChoices = null;
-                    }
                 }
             } else {
                 showToast(response.message || 'Failed to load workplans', 'error');

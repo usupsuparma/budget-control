@@ -8,6 +8,7 @@ use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Division;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class KPIWorkPlanController extends Controller
@@ -269,7 +270,7 @@ class KPIWorkPlanController extends Controller
             $workplan = KPIWorkPlan::findOrFail($id);
             $workplan->update([
                 'status' => 'approved',
-                'approved_by' => auth()->id(),
+                'approved_by' => Auth::id(),
                 'approved_at' => now()
             ]);
 

@@ -12,6 +12,13 @@ let programIdChoices = null;
 $(document).ready(function() {
     initializeEventListeners();
     checkFilterValues(); // Check on page load
+    
+    // Auto-load if URL parameters exist
+    if (typeof paramDivisionId !== 'undefined' && paramDivisionId && 
+        typeof paramYear !== 'undefined' && paramYear && 
+        typeof paramWorkplanId !== 'undefined' && paramWorkplanId) {
+        autoLoadFromWorkplan(paramDivisionId, paramYear, paramWorkplanId);
+    }
 });
 
 /**
@@ -242,6 +249,96 @@ function renderItemRowForTable(item) {
 }
 
 /**
+ * Auto-load from workplan parameters
+ */
+function autoLoadFromWorkplan(divisionId, year, workplanId) {
+    // Set filter values
+    $('#divisionFilter').val(divisionId);
+    $('#yearFilter').val(year);
+    
+    selectedDivisionId = divisionId;
+    selectedYear = year;
+    
+    // Enable load button
+    $('#loadBudgetBtn').prop('disabled', false);
+    
+    // Load budget items
+    showLoading();
+    
+    $.ajax({
+        url: '/budget-user/items/all',
+        method: 'GET',
+        data: {
+            division_id: divisionId,
+            year: year
+        },
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                // Update info section
+                const divisionName = $('#divisionFilter option:selected').text();
+                $('#selectedDivisionName').text(divisionName);
+                $('#selectedYear').text(year);
+                $('#totalWorkplans').text(response.totalWorkplans || 0);
+                $('#totalItems').text(response.data.length);
+                
+                // Show sections
+                $('#dataInfoSection').show();
+                $('#budgetItemsSection').show();
+                
+                // Store budget codes
+                budgetCodesData = response.budgetCodes || [];
+                
+                // Render items
+                renderAllItems(response.data || []);
+                
+                // Check if item exists for this workplan
+                const existingItem = response.data.find(item => item.kpi_workplan_id == workplanId);
+                
+                setTimeout(function() {
+                    if (existingItem) {
+                        // Item exists - open EDIT modal
+                        editItemFromWorkplan(existingItem.id, workplanId);
+                    } else {
+                        // No item exists - open ADD modal
+                        openAddItemModalWithWorkplan(workplanId);
+                    }
+                }, 500);
+            } else {
+                showToast(response.message || 'Failed to load items', 'error');
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showToast('Error loading budget items', 'error');
+        }
+    });
+}
+
+/**
+ * Open add item modal with pre-selected workplan
+ */
+function openAddItemModalWithWorkplan(workplanId) {
+    resetItemForm();
+    $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
+    $('#budgetCategoryId').val('');
+    $('#itemId').val('');
+    
+    // Load all dropdown data
+    loadBudgetCategories();
+    loadBudgetCodes();
+    loadCostCenters();
+    loadSuppliers();
+    loadUnits();
+    
+    // Load workplans and set the selected one
+    loadWorkplansForDropdownWithSelection(workplanId);
+    
+    $('#itemModal').modal('show');
+}
+
+/**
  * Open add item modal
  */
 function openAddItemModal() {
@@ -259,6 +356,57 @@ function openAddItemModal() {
     loadWorkplansForDropdown();
     
     $('#itemModal').modal('show');
+}
+
+/**
+ * Edit item from workplan (with pre-loaded data)
+ */
+function editItemFromWorkplan(itemId, workplanId) {
+    showLoading();
+
+    // Find item from loaded data
+    $.ajax({
+        url: '/budget-user/items/all',
+        method: 'GET',
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear
+        },
+        success: function(response) {
+            hideLoading();
+            if (response.success) {
+                budgetCodesData = response.budgetCodes || [];
+                
+                const item = response.data.find(i => i.id === itemId);
+                if (item) {
+                    $('#itemModalLabel').html('<i class="bi bi-pencil me-2"></i>Edit Budget Item');
+                    
+                    // Load all dropdown data
+                    loadBudgetCategories();
+                    loadBudgetCodes();
+                    loadCostCenters();
+                    loadSuppliers();
+                    loadUnits();
+                    
+                    // Load workplans with the current workplan selected
+                    loadWorkplansForDropdownWithSelection(workplanId);
+                    
+                    // Wait a bit for data to load before populating
+                    setTimeout(() => {
+                        populateItemForm(item);
+                    }, 800);
+                    
+                    $('#itemModal').modal('show');
+                } else {
+                    showToast('Item not found', 'error');
+                }
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showToast('Error loading item data', 'error');
+        }
+    });
 }
 
 /**
@@ -496,6 +644,68 @@ function loadUnits() {
         },
         error: function(xhr) {
             console.error('Error loading units:', xhr.responseJSON);
+        }
+    });
+}
+
+/**
+ * Load workplans for dropdown with pre-selection
+ */
+function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
+    if (!selectedDivisionId || !selectedYear) {
+        showToast('Please select division and year first', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: '/budget-user/workplans/dropdown',
+        method: 'GET',
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear
+        },
+        success: function(response) {
+            if (response.success) {
+                const select = $('#programId');
+                select.empty();
+                select.append('<option value="">-- Select Program --</option>');
+                
+                if (response.data && response.data.length > 0) {
+                    response.data.forEach(function(workplan) {
+                        const kpiInfo = workplan.kpi_info || 'N/A';
+                        const optionText = `${workplan.activity} (${kpiInfo})`;
+                        select.append(`<option value="${workplan.id}">${optionText}</option>`);
+                    });
+                    
+                    // Initialize or update Choices
+                    if (programIdChoices) {
+                        programIdChoices.destroy();
+                    }
+                    programIdChoices = new Choices('#programId', {
+                        searchEnabled: true,
+                        searchPlaceholderValue: 'Search program...',
+                        itemSelectText: 'Click to select',
+                        shouldSort: false
+                    });
+                    
+                    // Set selected workplan
+                    if (selectedWorkplanId) {
+                        programIdChoices.setChoiceByValue(selectedWorkplanId.toString());
+                    }
+                } else {
+                    showToast('No workplans found for this division and year', 'info');
+                    
+                    if (programIdChoices) {
+                        programIdChoices.destroy();
+                        programIdChoices = null;
+                    }
+                }
+            } else {
+                showToast(response.message || 'Failed to load workplans', 'error');
+            }
+        },
+        error: function(xhr) {
+            showToast('Error loading workplans', 'error');
         }
     });
 }

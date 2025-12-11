@@ -524,6 +524,12 @@
 <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 <script>
     const CSRF_TOKEN = '{{ csrf_token() }}';
+    
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramDivisionId = urlParams.get('division_id');
+    const paramYear = urlParams.get('year');
+    const paramWorkplanId = urlParams.get('workplan_id');
 </script>
 <script src="{{ asset('assets/js/budget-user.js') }}"></script>
 @endsection

@@ -83,6 +83,7 @@
                                             <table id="kpi_division_table" class="display" style="width:100%">
                                                 <thead>
                                                     <tr>
+                                                        <th>Action</th>
                                                         <th>No</th>
                                                         <th>Year</th>
                                                         <th>Company Policy</th>
@@ -107,13 +108,19 @@
                                                         <th>Revenue/Cost</th>
                                                         <th>PIC</th>
                                                         <th>Description</th>
-                                                        <th>Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @php $i = 1; @endphp
                                                     @foreach ($kpidivisions as $kpidiv)
                                                         <tr data-id="{{ $kpidiv->id }}">
+                                                            <td>
+                                                                <button type="button"
+                                                                    class="btn btn-sm btn-danger btn-delete">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>
+                                                            </td>
+
                                                             <td>{{ $i++ }}</td> {{-- No (tidak editable) --}}
 
                                                             <td class="editable" data-field="year">
@@ -234,12 +241,6 @@
                                                                 {{ $kpidiv->description }}
                                                             </td>
 
-                                                            <td>
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger btn-delete">
-                                                                    <i class="bi bi-trash"></i> Delete
-                                                                </button>
-                                                            </td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
@@ -780,7 +781,7 @@
                     targets: -1
                 },
                 {
-                    targets: [0, 1, 6, 7, 8, 21, 22], // kolom yang ingin ditengah
+                    targets: [0, 1, 2, 7, 8, 9, 22, 23], // kolom yang ingin ditengah
                     className: 'text-center'
                 }],
                 language: {
@@ -803,8 +804,78 @@
             });
 
             function deleteButtonHtml() {
-                return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i> Delete</button>';
+                return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i></button>';
             }
+
+            // Delete row di front-end (kalau mau sekalian delete di DB, bisa tambah AJAX lagi)
+            $('#kpi_division_table tbody').on('click', '.btn-delete', function() {
+                let $tr = $(this).closest('tr');
+                let row = table.row($tr);
+                let id = $tr.data('id'); // mengambil ID dari database
+
+                if (!id) {
+                    // data baru yang belum tersimpan
+                    row.remove().draw(false);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted',
+                        text: 'Baris baru dibatalkan.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Yakin hapus?',
+                    text: "Data ini tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        $.ajax({
+                            url: "{{ url('/kpidivision') }}/" + id,
+                            method: "DELETE",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                if (res.status === 'success') {
+                                    row.remove().draw(false);
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus',
+                                        text: res.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: res.message,
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: xhr.responseJSON?.message ||
+                                        'Gagal menghapus data.',
+                                });
+                            }
+                        });
+
+                    }
+                });
+            });
         });
     </script>
 

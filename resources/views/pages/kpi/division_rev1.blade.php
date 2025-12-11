@@ -55,6 +55,13 @@
             margin-left: 8px;
             user-select: none;
         }
+
+        .month-cell {
+            padding: 4px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            width: 40px;
+        }
     </style>
 @endsection
 
@@ -111,7 +118,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                
+
                                             </tbody>
 
                                         </table>
@@ -153,8 +160,7 @@
                                 <select class="form-select" id="form-select-01" name="tahun" required>
                                     <option value="">Select</option>
                                     @for ($year = 2023; $year <= date('Y') + 1; $year++)
-                                        <option value="{{ $year }}"
-                                            {{ $year == date('Y') + 1 ? 'selected' : '' }}>
+                                        <option value="{{ $year }}" {{ $year == date('Y') + 1 ? 'selected' : '' }}>
                                             {{ $year }}
                                         </option>
                                     @endfor
@@ -195,8 +201,8 @@
                             {{-- Target Division --}}
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Target Division</label>
-                                <input type="text" name="target_division" class="form-control"
-                                    placeholder="e.g. 95% KPI" required>
+                                <input type="text" name="target_division" class="form-control" placeholder="e.g. 95% KPI"
+                                    required>
                             </div>
 
                             {{-- Duration (Days) --}}
@@ -534,7 +540,7 @@
                 const currentYear = today.getFullYear();
 
                 let minDate, maxDate, defaultStart;
-                minDate = new Date(selectedYear, 01, 01);
+                minDate = new Date(selectedYear, 00, 01);
                 maxDate = new Date(selectedYear, 11, 31);
 
                 if (selectedYear === currentYear) {
@@ -679,7 +685,7 @@
                         data: 'id',
                         orderable: false,
                         searchable: false,
-                        render: function (data, type, row, meta) {
+                        render: function(data, type, row, meta) {
                             return `
                                 <button type="button" class="btn btn-sm btn-warning btn-edit">
                                     <i class="bi bi-pencil"></i>
@@ -693,94 +699,145 @@
                     // No (index baris)
                     {
                         data: null,
-                        render: function (data, type, row, meta) {
+                        render: function(data, type, row, meta) {
                             return meta.row + 1;
                         }
                     },
-                    { data: 'year',            className: 'editable text-center' },
-                    { data: 'company_policy' },
-                    { data: 'division' },
-                    { data: 'division_goals',  className: 'editable' },
-                    { data: 'target_division', className: 'editable' },
-                    { data: 'duration_days',   className: 'editable text-center' },
-                    { data: 'schedule_start',  className: 'editable text-center', },
-                    { data: 'schedule_end',    className: 'editable text-center', },
+                    {
+                        data: 'year',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'company_policy'
+                    },
+                    {
+                        data: 'division'
+                    },
+                    {
+                        data: 'division_goals',
+                        className: 'editable'
+                    },
+                    {
+                        data: 'target_division',
+                        className: 'editable'
+                    },
+                    {
+                        data: 'duration_days',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'schedule_start',
+                        className: 'editable text-center',
+                    },
+                    {
+                        data: 'schedule_end',
+                        className: 'editable text-center',
+                    },
 
                     // Bulan – kita isi teks, warna bisa tetap pakai fungsi colorMonths()
                     {
                         data: 'jan',
                         className: 'editable text-center',
-                        render: function (data, type, row, meta) {
-                            return `<span data-field="jan">Jan</span>`;
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jan");
                         }
                     },
                     {
                         data: 'feb',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="feb">Feb</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "feb");
+                        }
                     },
                     {
                         data: 'mar',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="mar">Mar</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "mar");
+                        }
                     },
                     {
                         data: 'apr',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="apr">Apr</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "apr");
+                        }
                     },
                     {
                         data: 'may',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="may">May</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "may");
+                        }
                     },
                     {
                         data: 'jun',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="jun">Jun</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jun");
+                        }
                     },
                     {
                         data: 'jul',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="jul">Jul</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jul");
+                        }
                     },
                     {
                         data: 'aug',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="aug">Aug</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "aug");
+                        }
                     },
                     {
                         data: 'sep',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="sep">Sep</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "sep");
+                        }
                     },
                     {
                         data: 'oct',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="oct">Oct</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "oct");
+                        }
                     },
                     {
                         data: 'nov',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="nov">Nov</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "nov");
+                        }
                     },
                     {
                         data: 'dec',
                         className: 'editable text-center',
-                        render: function () { return `<span data-field="dec">Dec</span>`; }
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "dec");
+                        }
                     },
 
-                    { data: 'revenue_cost', className: 'editable text-center' },
-                    { data: 'pic',          className: 'editable text-center' },
-                    { data: 'description',  className: 'editable' }
-                ],
-                columnDefs: [
                     {
-                        targets: [0, 1, 2, 7, 8, 9, 22, 23],
-                        className: 'text-center'
+                        data: 'revenue_cost',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'pic',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'description',
+                        className: 'editable'
                     }
                 ],
-                createdRow: function (row, data, dataIndex) {
+                columnDefs: [{
+                    targets: [0, 1, 2, 7, 8, 9, 22, 23],
+                    className: 'text-center'
+                }],
+                createdRow: function(row, data, dataIndex) {
                     // supaya event edit/delete masih bisa pakai data-id
                     $(row).attr('data-id', data.id);
                 },
@@ -792,18 +849,16 @@
                         last: "&raquo;&raquo;"
                     }
                 },
-                drawCallback: function () {
-                    // kalau kamu punya fungsi colorMonths() untuk kasih warna hijau/abu
-                    if (typeof colorMonths === 'function') {
-                        colorMonths();
-                    }
-                }
             });
+
+            function renderMonthCell(value, monthText, fieldName) {
+                var color = value == 1 ? "background-color: limegreen;" : "background-color: grey;";
+                return `<span class="month-cell" style="${color}" data-field="${fieldName}">${monthText}</span>`;
+            }
 
             function refreshTable() {
                 table.ajax.reload(null, false); // false = tetap di page sekarang
             }
-
 
             function deleteButtonHtml() {
                 return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i></button>';
@@ -1029,6 +1084,19 @@
                 });
             });
 
+            function formatToYMD(dateString) {
+                if (!dateString) return "";
+
+                const d = new Date(dateString);
+                if (isNaN(d.getTime())) return dateString; // kalau gagal parse, biarkan original
+
+                let y = d.getFullYear();
+                let m = String(d.getMonth() + 1).padStart(2, '0');
+                let da = String(d.getDate()).padStart(2, '0');
+
+                return `${y}-${m}-${da}`;
+            }
+
             // MODE EDIT
             $('#kpi_division_table tbody').on('click', '.btn-edit', function() {
                 const $tr = $(this).closest('tr');
@@ -1059,8 +1127,8 @@
                     form.find("input[name='target_division']").val(data.target_division);
 
                     form.find("input[name='duration_days']").val(data.duration_days);
-                    form.find("input[name='schedule_start']").val(data.schedule_start);
-                    form.find("input[name='schedule_end']").val(data.schedule_end);
+                    form.find("input[name='schedule_start']").val(formatToYMD(data.schedule_start));
+                    form.find("input[name='schedule_end']").val(formatToYMD(data.schedule_end));
 
                     // bulan (boolean 0/1 di DB)
                     form.find('#plan_jan').prop('checked', !!data.jan);
@@ -1084,9 +1152,9 @@
                     if (window.applyKpiDateFromDb) {
                         window.applyKpiDateFromDb(
                             data.year,
-                            data.schedule_start,
+                            formatToYMD(data.schedule_start),
                             data.duration_days,
-                            data.schedule_end
+                            formatToYMD(data.schedule_end)
                         );
                     }
 

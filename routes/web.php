@@ -227,6 +227,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [KPIDepartmentController::class, 'index'])
                 ->name('kpidepartment.index');
 
+            Route::get('/datatable', [KPIDepartmentController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidepartment.datatable')
+                ->name('kpidepartment.datatable');
+
             Route::get('/create', [KPIDepartmentController::class, 'create'])
                 // ->middleware('permission:kpi.kpidepartment.create')
                 ->name('kpidepartment.create');
@@ -238,12 +242,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.edit');
+            
+            Route::get('/{id}/show', [KPIDepartmentController::class, 'show'])
+                // ->middleware('permission:kpi.kpidepartment.edit')
+                ->name('kpidepartment.show');
 
-            Route::put('/{id}', [KPIDepartmentController::class, 'update'])
+            Route::put('/{id}/update', [KPIDepartmentController::class, 'update'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.update');
 
-            Route::delete('/{kpiDepartment}', [KPIDepartmentController::class, 'destroy'])
+            Route::delete('/{kpiDepartment}/destroy', [KPIDepartmentController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpidepartment.delete')
                 ->name('kpidepartment.destroy');
 

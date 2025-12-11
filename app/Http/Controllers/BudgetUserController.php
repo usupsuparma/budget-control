@@ -338,7 +338,7 @@ class BudgetUserController extends Controller
             // Update parent workplan budget
             $workplan = $item->workplan;
             if ($workplan) {
-                $workplan->updateBudgetTotal();
+                $workplan->updateBudgetFromItems();
             }
 
             return response()->json([

@@ -51,16 +51,7 @@
                                 <i class="fas fa-layer-group me-2"></i> Section
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#budget_category" role="tab">
-                                <i class="fas fa-folder-tree me-2"></i> Budget Category
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#budget_code" role="tab">
-                                <i class="fas fa-code me-2"></i> Budget Code
-                            </a>
-                        </li>
+
 
 
                     </ul>
@@ -90,14 +81,6 @@
                         <div class="tab-pane fade" id="section">
                             @include('pages.settings.section')
                         </div>
-                        <div class="tab-pane fade" id="budget_category">
-                            @include('pages.settings.budgetCategory')
-                        </div>
-                        <div class="tab-pane fade" id="budget_code">
-                            @include('pages.settings.budgetCode')
-                        </div>
-
-
                     </div>
                 </div>
             </div>
@@ -106,4 +89,3 @@
 </div>
 
 @endsection
-

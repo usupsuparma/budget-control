@@ -36,7 +36,11 @@
                                 <i class="fas fa-layer-group me-2"></i>Area
                             </a>
                         </li>
-
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#unit" role="tab">
+                                <i class="fas fa-layer-group me-2"></i>Unit
+                            </a>
+                        </li>
 
                     </ul>
                 </div>
@@ -45,16 +49,19 @@
                 <div class="col-md-9">
                     <div class="tab-content pt-3">
                         <div class="tab-pane fade show active" id="customer">
-                            @include('pages.settings.customer')
+                            {{-- @include('pages.settings.customer') --}}
                         </div>
                         <div class="tab-pane fade" id="supplier">
                             @include('pages.settings.supplier')
                         </div>
                         <div class="tab-pane fade" id="segmen">
-                            @include('pages.settings.segmen')
+                            {{-- @include('pages.settings.segmen') --}}
                         </div>
                         <div class="tab-pane fade" id="area">
-                            @include('pages.settings.area')
+                            {{-- @include('pages.settings.area') --}}
+                        </div>
+                        <div class="tab-pane fade" id="area">
+                            {{-- @include('pages.settings.unit') --}}
                         </div>
 
                     </div>

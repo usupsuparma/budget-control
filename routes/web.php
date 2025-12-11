@@ -33,6 +33,7 @@ use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
 use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
+use App\Http\Controllers\SupplierController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -272,6 +273,27 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
         });
+
+
+    Route::prefix('supplier')->group(function () {
+
+
+
+        Route::get('/data', [SupplierController::class, 'data'])
+            ->name('supplier.data');
+
+        Route::post('/', [SupplierController::class, 'store'])
+            ->name('supplier.store');
+
+        Route::get('/{id}/edit', [SupplierController::class, 'edit'])
+            ->name('supplier.edit');
+
+        Route::put('/{id}', [SupplierController::class, 'update'])
+            ->name('supplier.update');
+
+        Route::delete('/{id}', [SupplierController::class, 'destroy'])
+            ->name('supplier.destroy');
+    });
 
 
     /* ========================
@@ -771,6 +793,8 @@ Route::middleware('auth')->group(function () {
     /* ========================
         BUDGET CODE
     ======================== */
+
+
     Route::prefix('budgetCode')
         ->middleware('permission:setting.master.view')
         ->group(function () {

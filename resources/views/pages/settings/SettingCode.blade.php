@@ -14,21 +14,17 @@
         <div class="card-body">
             <div class="row">
                 <!-- LEFT SIDEBAR (Tab) -->
-                <div class="col-md-2 border-end">
+                <div class="col-md-3 border-end">
                     <ul class="nav nav-pills flex-column" role="tablist">
+
                         <li class="nav-item">
                             <a class="nav-link active" data-bs-toggle="tab" href="#budgetCode" role="tab">
                                 <i class="fas fa-user me-2"></i> Budget Code
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#stockCode" role="tab">
-                                <i class="fas fa-user-tie me-2"></i> Stock Code
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#inventoryCode" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Inventory Code
+                            <a class="nav-link" data-bs-toggle="tab" href="#productLine" role="tab">
+                                <i class="fas fa-user-tie me-2"></i> Product Line
                             </a>
                         </li>
 
@@ -38,16 +34,13 @@
                 </div>
 
                 <!-- RIGHT CONTENT -->
-                <div class="col-md-10">
+                <div class="col-md-9">
                     <div class="tab-content pt-3">
                         <div class="tab-pane fade show active" id="budgetCode">
                             @include('pages.settings.budgetCode')
                         </div>
                         <div class="tab-pane fade" id="stockCode">
-                            @include('pages.settings.stockCode')
-                        </div>
-                        <div class="tab-pane fade" id="inventoryCode">
-                            @include('pages.settings.inventoryCode')
+                            {{-- @include('pages.settings.productLine') --}}
                         </div>
 
 

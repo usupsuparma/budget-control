@@ -1,306 +1,286 @@
-<div id="layout-wrapper">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex">
-                    <div class="col-md-12 text-end">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetCode">
-                            <i class="bi bi-plus-lg me-1"></i>Add Budget Code
-                        </button>
-                    </div>
-                </div>
+<div class="card">
+    <div class="card-header d-flex justify-content-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetCodeModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Budget Code
+        </button>
+    </div>
 
-                <div class="card-body">
-                    <table id="budgetCodeTable" class="table table-bordered table-striped w-100">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Code</th>
-                                <th>Name</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                                <th class="text-center" width="120px">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <div class="card-body">
+        <table id="budgetCodeTable" class="table table-bordered table-striped w-100">
+            <thead class="table-light">
+                <tr>
+                    <th width="100px">Budget Code</th>
+                    <th>Name</th>
+                    <th>Incharge </th>
+                    <th>Remarks</th>
+                    <th>Goods Code</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+        </table>
     </div>
 </div>
 
-<!-- Add Budget Code Modal -->
-<div class="modal fade" id="addBudgetCode" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+{{-- ================= ADD ================= --}}
+<div class="modal fade" id="addBudgetCodeModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
+
             <div class="modal-header">
-                <h5 class="modal-title">Add Budget Code</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5>Add Budget Code</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="budgetCodeCreateForm" action="{{ route('budgetCode.store') }}" method="POST">
+            <form id="createBudgetForm">
                 @csrf
+
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Code <span class="text-danger">*</span></label>
-                            <input type="text" name="code" class="form-control" required>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>Stock Code</label>
+                            <input type="text" name="stock_code" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" required>
+                        <div class="col-md-6">
+                            <label>Name</label>
+                            <input type="text" name="name" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category" class="form-select">
-                                <option value="">Select Category</option>
-                                <option value="Material">Material</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="Services">Services</option>
-                                <option value="Investment">Investment</option>
-                            </select>
+
+                        <div class="col-md-6">
+                            <label>User No</label>
+                            <input type="number" name="user_no" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Status</label>
-                            <select name="is_active" class="form-select">
-                                <option value="1" selected>Active</option>
+                        <div class="col-md-6">
+                            <label>Goods Code</label>
+                            <input type="text" name="goods_code" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Delivery Date</label>
+                            <input type="date" name="delivdate" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Status</label>
+                            <select name="status" class="form-select">
+                                <option value="1">Active</option>
                                 <option value="0">Inactive</option>
                             </select>
                         </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3"></textarea>
+
+                        <div class="col-md-12">
+                            <label>Memo</label>
+                            <textarea name="memo" rows="3" class="form-control"></textarea>
                         </div>
+
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" id="btnCreateBudgetCode">Save</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button class="btn btn-primary" id="saveBudget">Save</button>
                 </div>
+
             </form>
         </div>
     </div>
 </div>
 
-<!-- Edit Budget Code Modal -->
-<div class="modal fade" id="editBudgetCode" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+{{-- ================= EDIT ================= --}}
+<div class="modal fade" id="editBudgetCodeModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
+
             <div class="modal-header">
-                <h5 class="modal-title">Edit Budget Code</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5>Edit Budget Code</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="budgetCodeEditForm" method="POST">
+            <form id="editBudgetForm">
                 @csrf
                 @method('PUT')
+
                 <input type="hidden" name="id" id="edit_id">
 
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Code <span class="text-danger">*</span></label>
-                            <input type="text" name="code" id="edit_code" class="form-control" required>
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label>Stock Code</label>
+                            <input type="text" name="stock_code" id="edit_stock_code" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" id="edit_name" class="form-control" required>
+                        <div class="col-md-6">
+                            <label>Name</label>
+                            <input type="text" name="name" id="edit_name" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category" id="edit_category" class="form-select">
-                                <option value="">Select Category</option>
-                                <option value="Material">Material</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="Services">Services</option>
-                                <option value="Investment">Investment</option>
-                            </select>
+
+                        <div class="col-md-6">
+                            <label>User No</label>
+                            <input type="number" name="user_no" id="edit_user_no" class="form-control">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Status</label>
-                            <select name="is_active" id="edit_is_active" class="form-select">
+                        <div class="col-md-6">
+                            <label>Goods Code</label>
+                            <input type="text" name="goods_code" id="edit_goods_code" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Delivery Date</label>
+                            <input type="date" name="delivdate" id="edit_delivdate" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Status</label>
+                            <select name="status" id="edit_status" class="form-select">
                                 <option value="1">Active</option>
                                 <option value="0">Inactive</option>
                             </select>
                         </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" id="edit_description" class="form-control" rows="3"></textarea>
+
+                        <div class="col-md-12">
+                            <label>Memo</label>
+                            <textarea name="memo" id="edit_memo" rows="3" class="form-control"></textarea>
                         </div>
+
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button class="btn btn-primary">Update</button>
                 </div>
+
             </form>
         </div>
     </div>
 </div>
 
 @push('scripts')
+<!-- DataTables -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
     $(document).ready(function() {
-        // Initialize DataTable
-        var table = $('#budgetCodeTable').DataTable({
+        $('#budgetCodeTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('budgetCode.data') }}",
-            columns: [
-                { data: 'code', name: 'code' },
-                { data: 'name', name: 'name' },
-                { data: 'category', name: 'category' },
-                { data: 'status', name: 'status' },
-                { data: 'action', name: 'action', orderable: false, searchable: false }
+            columns: [{
+                    data: 'stock_code',
+                    name: 'stock_code'
+                },
+                {
+                    data: 'name',
+                    name: 'name'
+                },
+                {
+                    data: 'inchargeCode',
+                    name: 'inchargeCode'
+                },
+                {
+                    data: 'remarks',
+                    name: 'remarks'
+                },
+                {
+                    data: 'goods_code',
+                    name: 'goods_code'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                }
             ],
-            drawCallback: function() {
-                // Initialize Bootstrap tooltips after table draw
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
-                });
-            }
+            order: [
+                [0, 'desc']
+            ]
         });
-    });
 
-    // CREATE
-    $('#budgetCodeCreateForm').submit(function(e) {
-        e.preventDefault();
-        let form = $(this);
-        let url = form.attr('action');
+        // CREATE
+        $('#saveBudget').click(function(e) {
+            e.preventDefault();
 
-        $.ajax({
-            url: url,
-            method: 'POST',
-            data: form.serialize(),
-            success: function(response) {
-                $('#addBudgetCode').modal('hide');
-                form[0].reset();
-                $('#budgetCodeTable').DataTable().ajax.reload();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: response.message,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            },
-            error: function(xhr) {
-                let errors = xhr.responseJSON.errors;
-                let errorMsg = '';
-                $.each(errors, function(key, value) {
-                    errorMsg += value[0] + '<br>';
-                });
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    html: errorMsg
-                });
-            }
+            $.ajax({
+                url: "{{ route('budgetCode.store') }}",
+                method: "POST",
+                data: $('#createBudgetForm').serialize(),
+                success: function(res) {
+                    $('#addBudgetCodeModal').modal('hide');
+                    $('#createBudgetForm')[0].reset();
+                    table.ajax.reload();
+                    Swal.fire("Success", res.message, "success");
+                }
+            });
         });
-    });
 
-    // EDIT
-    $(document).on('click', '.budgetCode-edit-btn', function() {
-        let id = $(this).data('id');
-        
-        $.get("{{ url('/budgetCode') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
-            $('#edit_code').val(data.code);
-            $('#edit_name').val(data.name);
-            $('#edit_category').val(data.category);
-            $('#edit_is_active').val(data.is_active ? '1' : '0');
-            $('#edit_description').val(data.description);
-            
-            $('#budgetCodeEditForm').attr('action', "{{ url('/budgetCode') }}/" + id);
-            $('#editBudgetCode').modal('show');
+        // EDIT SHOW
+        $(document).on('click', '.edit-btn', function() {
+            let id = $(this).data('id');
+
+            $.get("{{ url('budgetCode') }}/" + id + "/edit", function(data) {
+                $('#edit_id').val(data.id);
+                $('#edit_stock_code').val(data.stock_code);
+                $('#edit_name').val(data.name);
+                $('#edit_user_no').val(data.user_no);
+                $('#edit_goods_code').val(data.goods_code);
+                $('#edit_delivdate').val(data.delivdate);
+                $('#edit_status').val(data.status);
+                $('#edit_memo').val(data.memo);
+
+                $('#editBudgetCodeModal').modal('show');
+            });
         });
-    });
 
-    // UPDATE
-    $('#budgetCodeEditForm').submit(function(e) {
-        e.preventDefault();
-        let form = $(this);
-        let url = form.attr('action');
+        // UPDATE
+        $('#editBudgetForm').submit(function(e) {
+            e.preventDefault();
 
-        $.ajax({
-            url: url,
-            method: 'POST',
-            data: form.serialize(),
-            success: function(response) {
-                $('#editBudgetCode').modal('hide');
-                $('#budgetCodeTable').DataTable().ajax.reload();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: response.message,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            },
-            error: function(xhr) {
-                let errors = xhr.responseJSON.errors;
-                let errorMsg = '';
-                $.each(errors, function(key, value) {
-                    errorMsg += value[0] + '<br>';
-                });
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    html: errorMsg
-                });
-            }
+            let id = $('#edit_id').val();
+
+            $.ajax({
+                url: "{{ url('budgetCode') }}/" + id,
+                method: "POST",
+                data: $(this).serialize(),
+                success: function(res) {
+                    $('#editBudgetCodeModal').modal('hide');
+                    table.ajax.reload();
+                    Swal.fire("Updated!", res.message, "success");
+                }
+            });
         });
-    });
 
-    // DELETE
-    $(document).on('click', '.budgetCode-delete-btn', function() {
-        let id = $(this).data('id');
+        // DELETE
+        $(document).on('click', '.delete-btn', function() {
+            let id = $(this).data('id');
 
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "This action cannot be undone!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Delete',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('/budgetCode') }}/" + id,
-                    method: 'DELETE',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        $('#budgetCodeTable').DataTable().ajax.reload();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Deleted!',
-                            text: response.message,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: xhr.responseJSON.message || 'Failed to delete'
-                        });
-                    }
-                });
-            }
+            Swal.fire({
+                title: "Are you sure?",
+                text: "This action cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Delete"
+            }).then(result => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('budgetCode') }}/" + id,
+                        method: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(res) {
+                            table.ajax.reload();
+                            Swal.fire("Deleted!", res.message, "success");
+                        }
+                    });
+                }
+            });
         });
+
     });
 </script>
+
 @endpush

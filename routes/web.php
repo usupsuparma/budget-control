@@ -270,6 +270,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [KPISectionController::class, 'index'])
                 ->name('kpisection.index');
 
+            Route::get('/datatable', [KPISectionController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpisection.datatable')
+                ->name('kpisection.datatable');
+
             Route::get('/create', [KPISectionController::class, 'create'])
                 // ->middleware('permission:kpi.kpisection.create')
                 ->name('kpisection.create');
@@ -281,12 +285,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPISectionController::class, 'edit'])
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.edit');
+            
+            Route::get('/{id}/show', [KPISectionController::class, 'show'])
+                // ->middleware('permission:kpi.kpisection.edit')
+                ->name('kpisection.show');
 
-            Route::put('/{id}', [KPISectionController::class, 'update'])
+            Route::put('/{id}/update', [KPISectionController::class, 'update'])
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.update');
 
-            Route::delete('/{kpiSection}', [KPISectionController::class, 'destroy'])
+            Route::delete('/{kpiSection}/destroy', [KPISectionController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpisection.delete')
                 ->name('kpisection.destroy');
 

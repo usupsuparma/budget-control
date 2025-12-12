@@ -1,7 +1,7 @@
 @extends('layouts.master')
 
-@section('title', 'KPI Department | Budget Control')
-@section('title-sub', 'KPI Department')
+@section('title', 'KPI Section | Budget Control')
+@section('title-sub', 'KPI Section')
 @section('pagetitle', 'Add Data')
 
 @section('css')
@@ -9,13 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.css">
     <style>
-        #kpi_department_table thead th {
+        #kpi_section_table thead th {
             font-size: 11px;
             white-space: nowrap;
             text-align: center;
         }
 
-        #kpi_department_table tbody td {
+        #kpi_section_table tbody td {
             font-size: 11px;
             vertical-align: middle;
         }
@@ -65,29 +65,30 @@
 
 @section('content')
     <div id="layout-wrapper">
-        {{-- Tabel KPI Department --}}
+
+        {{-- Table KPI Section --}}
         <div class="row">
             <div class="col-xl-12">
                 <div class="card card-h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">KPI Department</h6>
-                        <button id="btnAddRow" type="button" class="btn btn-primary  btn-sm">
-                            <i class="bi bi-plus-circle"></i> Add New KPI Department
+                        <h6 class="mb-0">KPI Section</h6>
+                        <button id="btnAddRow" type="button" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Add New KPI Section
                         </button>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive" style="overflow-x:auto;">
-                            <table id="kpi_department_table" class="display" style="width:100%;">
+                            <table id="kpi_section_table" class="display" style="width:100%;">
                                 <thead>
                                     <tr>
                                         <th>Action</th>
                                         <th>No</th>
                                         <th>Year</th>
-                                        <th>KPI Division</th>
-                                        <th>Department</th>
                                         <th>KPI Department</th>
-                                        <th>Department Activities</th>
-                                        <th>Target Department</th>
+                                        <th>Section</th>
+                                        <th>KPI Section</th>
+                                        <th>Section Activities</th>
+                                        <th>Target Section</th>
                                         <th>Duration (Days)</th>
                                         <th>Schedule Start</th>
                                         <th>Schedule End</th>
@@ -104,7 +105,7 @@
                                         <th>Nov</th>
                                         <th>Dec</th>
                                         <th>Revenue/Cost</th>
-                                        <th>PIC</th>
+                                        <th>Unit ID</th>
                                         <th>Description</th>
                                     </tr>
                                 </thead>
@@ -112,7 +113,6 @@
 
                                 </tbody>
                             </table>
-
                         </div> <!-- table-responsive -->
                     </div>
                 </div>
@@ -120,23 +120,25 @@
         </div>
     </div>
 
-    <!-- Modal KPI Department -->
-    <div class="modal fade" id="kpiDepartmentModal" tabindex="-1" aria-hidden="true">
+    <!-- Modal KPI Section -->
+    <div class="modal fade" id="modalKPISection" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
+
                 <div class="modal-header">
-                    <h5 class="modal-title" id="kpiDepartmentModalLabel">Add KPI Department</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="modalKPISectionLabel">Add KPI Section</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <div class="modal-body">
-                    <form id="kpiDepartmentForm">
+                    <form id="kpiSectionForm">
                         @csrf
-                        <input type="hidden" id="kpi_department_id" name="kpi_department_id">
+                        <input type="hidden" name="kpi_section_id" id="kpi_section_id">
 
                         <div class="row g-3">
+
                             <div class="col-md-2">
-                                <label class="form-label">Year</label>
+                                <label class="form-label">Year <span class="text-danger">*</span></label>
                                 <select name="year" class="form-select">
                                     <option value="">Select Year</option>
                                     @php $years = range(date('Y') - 1, date('Y') + 5); @endphp
@@ -149,58 +151,60 @@
                             </div>
 
                             <div class="col-md-5">
-                                <label class="form-label">KPI Division</label>
-                                <select name="kpi_division_id" class="form-select">
-                                    <option value="">Select KPI Division</option>
-                                    @foreach ($kpiDivisions as $div)
-                                        <option value="{{ $div->id }}">
-                                            [{{ $div->year }}] {{ $div->division_goals }}
+                                <label class="form-label">KPI Department <span class="text-danger">*</span></label>
+                                <select name="kpi_department_id" class="form-select">
+                                    <option value="">Select KPI Department</option>
+                                    @foreach ($kpiDepartments as $kd)
+                                        <option value="{{ $kd->id }}">
+                                            [{{ $kd->year }}]
+                                            {{ \Illuminate\Support\Str::limit($kd->department_goals, 80) }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="col-md-5">
-                                <label class="form-label">Department</label>
-                                <select name="department_id" class="form-select">
-                                    <option value="">Select Department</option>
-                                    @foreach ($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                <label class="form-label">Section <span class="text-danger">*</span></label>
+                                <select name="section_id" class="form-select">
+                                    <option value="">Select Section</option>
+                                    @foreach ($sections as $sec)
+                                        <option value="{{ $sec->id }}">{{ $sec->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">KPI Department</label>
-                                <textarea name="department_goals" class="form-control" rows="1" required></textarea>
+                                <label class="form-label">KPI Section <span class="text-danger">*</span></label>
+                                <textarea name="section_goals" class="form-control" rows="1" placeholder="Input KPI Section..."></textarea>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Department Activities</label>
-                                <textarea name="department_activities" class="form-control" rows="1" required></textarea>
+                                <label class="form-label">Section Activities</label>
+                                <textarea name="activities" class="form-control" rows="1" placeholder="Input Activities..."></textarea>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Target Department</label>
-                                <input type="text" name="target_department" class="form-control" required>
+                                <label class="form-label">Target Section</label>
+                                <input type="text" name="target_section" class="form-control"
+                                    placeholder="e.g. 100% / 1x / etc">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Duration (Days)</label>
-                                <input type="number" name="duration_days" class="form-control" required>
+                                <input type="number" name="duration_days" class="form-control" min="1"
+                                    placeholder="e.g. 10">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Schedule Start</label>
-                                <input type="date" name="schedule_start" class="form-control" required>
+                                <input type="date" name="schedule_start" class="form-control">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Schedule End</label>
-                                <input type="date" name="schedule_end" class="form-control" readonly required>
+                                <input type="date" name="schedule_end" class="form-control">
                             </div>
 
-                            {{-- Checkbox bulan, mirip KPI Division --}}
                             <div class="col-md-12">
                                 <label class="form-label d-block">Planning Months</label>
                                 <div class="d-flex flex-wrap gap-2 month-container">
@@ -224,10 +228,10 @@
                                         @foreach ($months as $key => $label)
                                             <div class="col-md-2 col-sm-4 col-6">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="plan_{{ $key }}"
-                                                        name="{{ $key }}">
-                                                    <label class="form-check-label"
-                                                        for="plan_{{ $key }}"><i class="bi bi-calendar3"></i> {{ $label }}</label>
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="plan_{{ $key }}" name="{{ $key }}">
+                                                    <label class="form-check-label" for="plan_{{ $key }}"><i
+                                                            class="bi bi-calendar3"></i> {{ $label }}</label>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -237,26 +241,33 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Revenue/Cost</label>
-                                <input type="text" name="revenue_cost" class="form-control" required>
+                                <select name="revenue_cost" class="form-select">
+                                    <option value="">Select</option>
+                                    <option value="Revenue">Revenue</option>
+                                    <option value="Cost">Cost</option>
+                                </select>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">PIC</label>
-                                <input type="text" name="pic" class="form-control" required>
+                                <label class="form-label">Unit ID</label>
+                                <input type="text" name="unit_id" class="form-control" placeholder="Unit ID">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Description</label>
-                                <textarea name="description" class="form-control" rows="1"></textarea>
+                                <textarea name="description" class="form-control" rows="1" placeholder="Description..."></textarea>
                             </div>
+
                         </div>
                     </form>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="btn-save-kpi-dept">Save</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-kpi-section"
+                        data-mode="create">Save</button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -510,77 +521,91 @@
     </script>
 
     <script>
-        const datatableUrl = "{{ route('kpidepartment.datatable') }}";
-        const storeUrl = "{{ route('kpidepartment.store') }}";
-        const showUrlTpl = "{{ url('kpidepartment') }}/:id/show";
-        const updateUrlTpl = "{{ url('kpidepartment') }}/:id/update";
-        const deleteUrlTpl = "{{ url('kpidepartment') }}/:id/destroy";
+        const ajaxUrl = "{{ route('kpisection.datatable') }}";
+        const storeUrl = "{{ route('kpisection.store') }}";
+        const showUrlTemplate = "{{ url('kpisection') }}/:id/show";
+        const updateUrlTemplate = "{{ url('kpisection') }}/:id/update";
+        const deleteUrlTemplate = "{{ url('kpisection') }}/:id/destroy";
         const csrfToken = "{{ csrf_token() }}";
 
-        let mode = 'create'; // 'create' | 'edit'
+
+        function buildInlineUrl(id) {
+            if (!id) return null;
+            return inlineUrlTpl.replace('__ID__', id);
+        }
+
+        function buildDeleteUrl(id) {
+            if (!id) return null;
+            return deleteUrlTpl.replace('__ID__', id);
+        }
 
         $(document).ready(function() {
-            const table = $('#kpi_department_table').DataTable({
+            const table = $('#kpi_section_table').DataTable({
+                processing: true,
+                ajax: ajaxUrl,
                 scrollX: true,
                 scrollCollapse: true,
                 autoWidth: true,
-                processing: true,
-                ajax: {
-                    url: datatableUrl,
-                    type: 'GET',
-                },
                 columns: [
                     {
                         data: null,
+                        title: 'Action',
                         orderable: false,
                         searchable: false,
                         className: 'text-center',
-                        render: function(data, type, row) {
-                            return `
-                            <button type="button" class="btn btn-sm btn-warning btn-edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-danger btn-delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        `;
+                        render: function(row) {
+                            return `<button type="button" class="btn btn-sm btn-warning btn-edit" data-id="${row.id}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="${row.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    `;
                         }
                     },
                     {
                         data: 'no',
-                        className: 'text-center'
-                    }, // No
+                        title: 'No'
+                    },
                     {
                         data: 'year',
+                        title: 'Year',
                         className: 'text-center'
-                    }, // Year
+                    },
                     {
-                        data: 'kpi_division'
-                    }, // KPI Division (text)
+                        data: 'kpi_department',
+                        title: 'KPI Department'
+                    },
                     {
-                        data: 'department'
-                    }, // Department (text)
+                        data: 'section',
+                        title: 'Section'
+                    },
                     {
-                        data: 'department_goals'
-                    }, // KPI Department
+                        data: 'section_goals',
+                        title: 'KPI Section'
+                    },
                     {
-                        data: 'department_activities'
-                    }, // Activities
+                        data: 'activities',
+                        title: 'Section Activities'
+                    },
                     {
-                        data: 'target_department'
-                    }, // Target Dept
+                        data: 'target_section',
+                        title: 'Target Section'
+                    },
                     {
                         data: 'duration_days',
-                        className: 'text-center'
+                        title: 'Duration (Days)'
                     },
                     {
                         data: 'schedule_start',
-                        className: 'text-center'
+                        title: 'Schedule Start'
                     },
                     {
                         data: 'schedule_end',
-                        className: 'text-center'
+                        title: 'Schedule End'
                     },
+
+                    // months (contoh jan; lanjutkan sampai dec)
                     {
                         data: 'jan',
                         className: 'text-center',
@@ -665,27 +690,20 @@
                             return renderMonthCell(data, "&nbsp;", "dec");
                         }
                     },
+
                     {
-                        data: 'revenue_cost'
+                        data: 'revenue_cost',
+                        title: 'Revenue/Cost'
                     },
                     {
-                        data: 'pic'
+                        data: 'unit_id',
+                        title: 'Unit ID'
                     },
                     {
-                        data: 'description'
-                    },
-                ],
-                createdRow: function(row, data) {
-                    $(row).attr('data-id', data.id);
-                },
-                language: {
-                    paginate: {
-                        first: "&laquo;&laquo;",
-                        previous: "&laquo;",
-                        next: "&raquo;",
-                        last: "&raquo;&raquo;"
+                        data: 'description',
+                        title: 'Description'
                     }
-                },
+                ]
             });
 
             function renderMonthCell(value, monthText, fieldName) {
@@ -694,7 +712,7 @@
             }
 
             function refreshTable() {
-                table.ajax.reload(null, false);
+                table.ajax.reload(null, false); // keep paging
             }
 
             function formatToYMD(dateString) {
@@ -710,42 +728,33 @@
                 return `${y}-${m}-${da}`;
             }
 
-            // Tombol Add New KPI Department
             $('#btnAddRow').on('click', function() {
-                mode = 'create';
-                $('#kpiDepartmentModalLabel').text('Add KPI Department');
-                $('#btn-save-kpi-dept').text('Save');
-                $('#kpi_department_id').val('');
-                $('#kpiDepartmentForm')[0].reset();
-                $('#kpiDepartmentModal').modal('show');
+                $('#kpiSectionForm')[0].reset();
+                $('#kpi_section_id').val('');
+                $('#btn-save-kpi-section').data('mode', 'create').text('Save');
+                $('#modalKPISectionLabel').text('Add KPI Section');
+                $('#modalKPISection').modal('show');
             });
 
-            // Klik Edit
-            $('#kpi_department_table tbody').on('click', '.btn-edit', function() {
-                const id = $(this).closest('tr').data('id');
-                if (!id) return;
+            $(document).on('click', '.btn-edit', function() {
+                const id = $(this).data('id');
+                const url = showUrlTemplate.replace(':id', id);
 
-                mode = 'edit';
-                $('#kpiDepartmentModalLabel').text('Edit KPI Department');
-                $('#btn-save-kpi-dept').text('Update');
-                $('#kpi_department_id').val(id);
-
-                const showUrl = showUrlTpl.replace(':id', id);
-
-                $.get(showUrl, function(res) {
+                $.get(url, function(res) {
                     const d = res.data;
-                    const form = $('#kpiDepartmentForm');
+                    const form = $('#kpiSectionForm');
+                    $('#kpi_section_id').val(d.id);
 
-                    form.find('[name="year"]').val(d.year);
-                    form.find('[name="kpi_division_id"]').val(d.kpi_division_id);
-                    form.find('[name="department_id"]').val(d.department_id);
+                    $('select[name="year"]').val(d.year);
+                    $('select[name="kpi_department_id"]').val(d.kpi_department_id);
+                    $('select[name="section_id"]').val(d.section_id);
 
-                    form.find('[name="department_goals"]').val(d.department_goals);
-                    form.find('[name="department_activities"]').val(d.department_activities);
-                    form.find('[name="target_department"]').val(d.target_department);
-                    form.find('[name="duration_days"]').val(d.duration_days);
-                    form.find('[name="schedule_start"]').val(formatToYMD(d.schedule_start));
-                    form.find('[name="schedule_end"]').val(formatToYMD(d.schedule_end));
+                    $('textarea[name="section_goals"]').val(d.section_goals);
+                    $('textarea[name="activities"]').val(d.activities);
+                    $('input[name="target_section"]').val(d.target_section);
+                    $('input[name="duration_days"]').val(d.duration_days);
+                    $('input[name="schedule_start"]').val(d.schedule_start);
+                    $('input[name="schedule_end"]').val(d.schedule_end);
 
                     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep',
                         'oct', 'nov', 'dec'
@@ -754,9 +763,12 @@
                         form.find('#plan_' + m).prop('checked', !!d[m]);
                     });
 
-                    form.find('[name="revenue_cost"]').val(d.revenue_cost);
-                    form.find('[name="pic"]').val(d.pic);
-                    form.find('[name="description"]').val(d.description);
+                    $('select[name="revenue_cost"]').val(d.revenue_cost);
+                    $('input[name="unit_id"]').val(d.unit_id);
+                    $('textarea[name="description"]').val(d.description);
+
+                    $('#btn-save-kpi-section').data('mode', 'edit');
+                    $('#modalKPISectionLabel').text('Edit KPI Section');
 
                     if (window.applyKpiDateFromDb) {
                         window.applyKpiDateFromDb(
@@ -767,34 +779,36 @@
                         );
                     }
 
-                    $('#kpiDepartmentModal').modal('show');
+                    $('#modalKPISection').modal('show');
                 });
             });
 
-            // Save (Create / Update)
-            $('#btn-save-kpi-dept').on('click', function() {
-                const form = $('#kpiDepartmentForm');
-                const id = $('#kpi_department_id').val();
+            $('#btn-save-kpi-section').on('click', function() {
+                const form = $('#kpiSectionForm');
+                const mode = $(this).data('mode') || 'create';
+                const id = $('#kpi_section_id').val();
 
                 const year = form.find('[name="year"]').val();
-                const kpiDivisionId = form.find('[name="kpi_division_id"]').val();
-                const departmentId = form.find('[name="department_id"]').val();
-                const deptGoals = form.find('[name="department_goals"]').val().trim();
+                const kpiDepartmentId = form.find('[name="kpi_department_id"]').val();
+                const sectionId = form.find('[name="section_id"]').val();
 
-                if (!year || !kpiDivisionId || !departmentId) {
+                const sectionGoals = (form.find('[name="section_goals"]').val() || '').trim();
+
+                // basic validation (mirip KPI Department)
+                if (!year || !kpiDepartmentId || !sectionId) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Failed',
-                        text: 'Year, KPI Division, and Department are required.'
+                        text: 'Year, KPI Department, and Section are required.'
                     });
                     return;
                 }
 
-                if (!deptGoals) {
+                if (!sectionGoals) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Failed',
-                        text: 'KPI Department must not be empty.'
+                        text: 'KPI Section must not be empty.'
                     });
                     return;
                 }
@@ -802,17 +816,20 @@
                 const payload = {
                     _token: csrfToken,
                     year: year,
-                    kpi_division_id: kpiDivisionId,
-                    department_id: departmentId,
-                    department_goals: deptGoals,
-                    department_activities: form.find('[name="department_activities"]').val().trim(),
-                    target_department: form.find('[name="target_department"]').val().trim(),
+                    kpi_department_id: kpiDepartmentId,
+                    section_id: sectionId,
+
+                    section_goals: sectionGoals,
+                    activities: (form.find('[name="activities"]').val() || '').trim(),
+                    target_section: (form.find('[name="target_section"]').val() || '').trim(),
+
                     duration_days: form.find('[name="duration_days"]').val(),
                     schedule_start: form.find('[name="schedule_start"]').val(),
                     schedule_end: form.find('[name="schedule_end"]').val(),
-                    revenue_cost: form.find('[name="revenue_cost"]').val().trim(),
-                    pic: form.find('[name="pic"]').val().trim(),
-                    description: form.find('[name="description"]').val().trim(),
+
+                    revenue_cost: (form.find('[name="revenue_cost"]').val() || '').trim(),
+                    unit_id: (form.find('[name="unit_id"]').val() || '').trim(),
+                    description: (form.find('[name="description"]').val() || '').trim(),
                 };
 
                 const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov',
@@ -824,7 +841,7 @@
 
                 let url = storeUrl;
                 if (mode === 'edit' && id) {
-                    url = updateUrlTpl.replace(':id', id);
+                    url = updateUrlTemplate.replace(':id', id);
                     payload._method = 'PUT';
                 }
 
@@ -836,13 +853,13 @@
                     success: function(res) {
                         Swal.fire({
                             icon: 'success',
-                            title: (mode === 'edit' ? 'Updated' : 'Saved'),
+                            title: (mode === 'edit') ? 'Updated' : 'Saved',
                             text: res.message || 'Success',
                             timer: 1500,
                             showConfirmButton: false
                         });
 
-                        $('#kpiDepartmentModal').modal('hide');
+                        $('#modalKPISection').modal('hide');
                         form[0].reset();
                         refreshTable();
                     },
@@ -860,35 +877,29 @@
                 });
             });
 
-            // Delete
-            $('#kpi_department_table tbody').on('click', '.btn-delete', function() {
-                const id = $(this).closest('tr').data('id');
-                if (!id) return;
+            $(document).on('click', '.btn-delete', function() {
+                const id = $(this).data('id');
 
                 Swal.fire({
-                    title: 'Delete this KPI Department?',
+                    title: 'Delete this data?',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Delete'
-                }).then((result) => {
-                    if (!result.isConfirmed) return;
-
-                    const url = deleteUrlTpl.replace(':id', id);
+                    confirmButtonText: 'Yes, delete',
+                    cancelButtonText: 'Cancel'
+                }).then((r) => {
+                    if (!r.isConfirmed) return;
 
                     $.ajax({
-                        url: url,
-                        method: 'POST',
-                        dataType: 'json',
+                        url: deleteUrlTemplate.replace(':id', id),
+                        method: 'DELETE',
                         data: {
-                            _token: csrfToken,
-                            _method: 'DELETE'
+                            _token: csrfToken
                         },
                         success: function(res) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Deleted',
-                                text: res.message || 'Deleted successfully',
-                                timer: 1500,
+                                timer: 1200,
                                 showConfirmButton: false
                             });
                             refreshTable();
@@ -897,8 +908,7 @@
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Failed',
-                                text: xhr.responseJSON?.message ||
-                                    'Error deleting data'
+                                text: xhr.responseJSON?.message || 'Error'
                             });
                         }
                     });

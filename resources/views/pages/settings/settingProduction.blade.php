@@ -60,8 +60,8 @@
                         <div class="tab-pane fade" id="area">
                             {{-- @include('pages.settings.area') --}}
                         </div>
-                        <div class="tab-pane fade" id="area">
-                            {{-- @include('pages.settings.unit') --}}
+                        <div class="tab-pane fade" id="unit">
+                            @include('pages.settings.unit')
                         </div>
 
                     </div>

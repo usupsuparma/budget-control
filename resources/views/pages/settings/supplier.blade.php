@@ -42,8 +42,8 @@
                         </div>
 
                         <div class="col-12">
-                            <label>Address</label>
-                            <input type="text" name="address" class="form-control">
+                            <label>Call Sign</label>
+                            <input type="text" name="callSign" class="form-control">
                         </div>
 
                         <div class="col-12">
@@ -82,9 +82,9 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editSupplierForm">
+            <form id="editSupplierForm" method="POST">
                 @csrf
-                @method('PUT')
+
 
                 <input type="hidden" id="edit_id">
 
@@ -97,8 +97,8 @@
                         </div>
 
                         <div class="col-12">
-                            <label>Address</label>
-                            <input type="text" id="edit_address" name="address" class="form-control">
+                            <label>Call Sign</label>
+                            <input type="text" id="edit_callSign" name="callSign" class="form-control">
                         </div>
 
                         <div class="col-12">
@@ -109,8 +109,8 @@
                         <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
                             </select>
                         </div>
 
@@ -119,7 +119,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary">Update</button>
+                    <button class="btn btn-primary" form="editSupplierForm">Update</button>
                 </div>
 
             </form>
@@ -142,7 +142,7 @@
                 data: 'supplier'
             },
             {
-                data: 'address'
+                data: 'callSign'
             },
             {
                 data: 'status_badge',
@@ -210,12 +210,10 @@
         let id = $(this).data('id');
 
         $.get("{{ url('/supplier') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
             $('#edit_supplier').val(data.supplier);
-            $('#edit_address').val(data.address);
+            $('#edit_callSign').val(data.callSign);
             $('#edit_notes').val(data.notes);
             $('#edit_status').val(data.status);
-
             $('#editSupplierForm').attr('action', "{{ url('/supplier') }}/" + id);
 
             $('#editSupplierModal').modal('show');
@@ -226,17 +224,32 @@
     $('#editSupplierForm').submit(function(e) {
         e.preventDefault();
 
-        let id = $('#edit_id').val();
+        let form = $(this);
+        let url = form.attr('action');
 
         $.ajax({
-            url: "{{ url('/supplier') }}/" + id,
-            method: "POST",
-            data: $(this).serialize(),
-            success: res => {
+            url: url,
+            method: "PUT",
+            data: form.serialize(),
+            success: function(res) {
                 $('#editSupplierModal').modal('hide');
-                supplierTable.ajax.reload();
 
-                Swal.fire("Updated!", res.message, "success");
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#supplierTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Customer updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });

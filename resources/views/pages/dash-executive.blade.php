@@ -146,260 +146,264 @@
 
             <!-- === GRAFIK REALISASI & PENGAJUAN === -->
 
-            <div class="col-xl-6 col-xxl-8">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Division Budget Realization</h6>
-                        <button class="btn btn-outline-light text-muted btn-sm">See All<i
-                                class="bi bi-arrow-right ms-1"></i></button>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-box table-responsive">
-                            <table class="table text-nowrap align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Divisi</th>
-                                        <th scope="col">Realisasi</th>
-                                        <th scope="col">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <label>
-                                                        <h6 class="mb-1">PLANT</h6>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
+            <div class="col-xxl-12 col-md-12 mb-4">
+                <div class="row g-3">
+                    <div class="col-xl-6 col-md-6 p-1">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Division Budget Realization</h6>
+                                <button class="btn btn-outline-light text-muted btn-sm">See All<i
+                                        class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-box table-responsive">
+                                    <table class="table text-nowrap align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Divisi</th>
+                                                <th scope="col">Realisasi</th>
+                                                <th scope="col">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="form-check form-check-primary">
+                                                            <label>
+                                                                <h6 class="mb-1">PLANT</h6>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                        <td>
-                                            <span class="fs-12 fw-semibold">50%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 50%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <label>
-                                                        <h6 class="mb-1">PRODUCTION</h6>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
+                                                <td>
+                                                    <span class="fs-12 fw-semibold">50%</span>
+                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="progress-bar" style="width: 50%"></div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="form-check form-check-primary">
+                                                            <label>
+                                                                <h6 class="mb-1">PRODUCTION</h6>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                        <td>
-                                            <span class="fs-12 fw-semibold">75%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="75"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 75%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <label>
-                                                        <h6 class="mb-1">MARKETING</h6>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
+                                                <td>
+                                                    <span class="fs-12 fw-semibold">75%</span>
+                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="75"
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="progress-bar" style="width: 75%"></div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="form-check form-check-primary">
+                                                            <label>
+                                                                <h6 class="mb-1">MARKETING</h6>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                        <td>
-                                            <span class="fs-12 fw-semibold">100%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="100"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 100%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <label>
-                                                        <h6 class="mb-1">FINANCE</h6>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
+                                                <td>
+                                                    <span class="fs-12 fw-semibold">100%</span>
+                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="100"
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="progress-bar" style="width: 100%"></div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="form-check form-check-primary">
+                                                            <label>
+                                                                <h6 class="mb-1">FINANCE</h6>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                        <td>
-                                            <span class="fs-12 fw-semibold">64%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="10"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 64%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="form-check form-check-primary">
-                                                    <label>
-                                                        <h6 class="mb-1">HR, GA & PROCUREMENT</h6>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </td>
+                                                <td>
+                                                    <span class="fs-12 fw-semibold">64%</span>
+                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="10"
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="progress-bar" style="width: 64%"></div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="form-check form-check-primary">
+                                                            <label>
+                                                                <h6 class="mb-1">HR, GA & PROCUREMENT</h6>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                        <td>
-                                            <span class="fs-12 fw-semibold">25%</span>
-                                            <div class="progress progress-xs" role="progressbar" aria-valuenow="25"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                <div class="progress-bar" style="width: 25%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                                <td>
+                                                    <span class="fs-12 fw-semibold">25%</span>
+                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="25"
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="progress-bar" style="width: 25%"></div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-xl-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Today Activities</h6>
-                    </div>
-                    <div class="card-body">
-                        <section data-simplebar class="px-5 mx-n5" style="max-height: 340px;">
-                            <div class="timeline2">
-                                <ul>
-                                    <li class="card border-0 box">
-                                        <span></span>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div
-                                                    class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                    <i class="bi bi-cup-hot fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">Pengajuan Transaksi</h6>
-                                                    <p class="fs-12 text-muted mb-0">- Sarah
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="text-muted mb-1">10:00 AM</div>
-                                                <div class="avatar-group">
-                                                    <a href="javascript:voide(0)" class="avatar-item">
-                                                        <img class="img-fluid avatar-sm"
-                                                            src="{{ asset('assets/images/avatar/avatar-1.jpg') }}"
-                                                            alt="avatar image">
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </li>
-                                    <li class="card border-0 box">
-                                        <span></span>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div
-                                                    class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                    <i class="bi bi-gem fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">Pengajuan ReClass Anggaran</h6>
-                                                    <p class="fs-12 text-muted mb-0">- Anthony
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="text-muted mb-1">10:00 AM</div>
-                                                <div class="avatar-group">
-                                                    <a href="javascript:voide(0)" class="avatar-item">
-                                                        <img class="img-fluid avatar-sm"
-                                                            src="{{ asset('assets/images/avatar/avatar-2.jpg') }}"
-                                                            alt="avatar image">
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li class="card border-0 box">
-                                        <span></span>
-                                        <div class="d-flex justify-content-between align-items-start mb-5">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div
-                                                    class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                    <i class="bi bi-gem fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1 max-w-200px text-truncate"> Approval Anggaran</h6>
-                                                    <p class="fs-12 text-muted mb-0">- Andrew
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="text-muted mb-1">11:30 AM</div>
-                                                <div class="avatar-group">
-                                                    <a href="javascript:voide(0)" class="avatar-item">
-                                                        <img class="img-fluid avatar-sm"
-                                                            src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                            alt="avatar image">
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li class="card border-0 box">
-                                        <span></span>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div
-                                                    class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                    <i class="bi bi-clock-history fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">Pencairan Pengajuan </h6>
-                                                    <p class="text-muted mb-0">- Andrew</p>
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="text-muted mb-1">5:15 AM</div>
-                                                <div class="avatar-group">
-
-                                                    <a href="javascript:voide(0)" class="avatar-item">
-                                                        <img class="img-fluid avatar-sm"
-                                                            src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                            alt="avatar image">
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="p-3 border border-dashed rounded cursor-pointer">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <div class="d-flex align-items-center gap-2">
-
+                    <div class="col-xl-6 col-md-6 p-1">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Today Activities</h6>
+                            </div>
+                            <div class="card-body">
+                                <section data-simplebar class="px-5 mx-n5" style="max-height: 340px;">
+                                    <div class="timeline2">
+                                        <ul>
+                                            <li class="card border-0 box">
+                                                <span></span>
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div
+                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
+                                                            <i class="bi bi-cup-hot fs-5"></i>
+                                                        </div>
                                                         <div>
-
+                                                            <h6 class="mb-1">Pengajuan Transaksi</h6>
+                                                            <p class="fs-12 text-muted mb-0">- Sarah
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="text-muted mb-1">10:00 AM</div>
+                                                        <div class="avatar-group">
+                                                            <a href="javascript:voide(0)" class="avatar-item">
+                                                                <img class="img-fluid avatar-sm"
+                                                                    src="{{ asset('assets/images/avatar/avatar-1.jpg') }}"
+                                                                    alt="avatar image">
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
+                                            </li>
+                                            <li class="card border-0 box">
+                                                <span></span>
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div
+                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
+                                                            <i class="bi bi-gem fs-5"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1">Pengajuan ReClass Anggaran</h6>
+                                                            <p class="fs-12 text-muted mb-0">- Anthony
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="text-muted mb-1">10:00 AM</div>
+                                                        <div class="avatar-group">
+                                                            <a href="javascript:voide(0)" class="avatar-item">
+                                                                <img class="img-fluid avatar-sm"
+                                                                    src="{{ asset('assets/images/avatar/avatar-2.jpg') }}"
+                                                                    alt="avatar image">
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="card border-0 box">
+                                                <span></span>
+                                                <div class="d-flex justify-content-between align-items-start mb-5">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div
+                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
+                                                            <i class="bi bi-gem fs-5"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1 max-w-200px text-truncate"> Approval Anggaran</h6>
+                                                            <p class="fs-12 text-muted mb-0">- Andrew
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="text-muted mb-1">11:30 AM</div>
+                                                        <div class="avatar-group">
+                                                            <a href="javascript:voide(0)" class="avatar-item">
+                                                                <img class="img-fluid avatar-sm"
+                                                                    src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
+                                                                    alt="avatar image">
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="card border-0 box">
+                                                <span></span>
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div
+                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
+                                                            <i class="bi bi-clock-history fs-5"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1">Pencairan Pengajuan </h6>
+                                                            <p class="text-muted mb-0">- Andrew</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="text-muted mb-1">5:15 AM</div>
+                                                        <div class="avatar-group">
+
+                                                            <a href="javascript:voide(0)" class="avatar-item">
+                                                                <img class="img-fluid avatar-sm"
+                                                                    src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
+                                                                    alt="avatar image">
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="p-3 border border-dashed rounded cursor-pointer">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>
+                                                            <div class="d-flex align-items-center gap-2">
+
+                                                                <div>
+
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </section>
                             </div>
-                        </section>
+                        </div>
                     </div>
                 </div>
             </div>

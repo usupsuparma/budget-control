@@ -543,7 +543,6 @@
 
             // init title + load initial
             updateTitle();
-            loadBudgetTotal(yearSelect.value)
             loadPoliciesByYear(yearSelect.value || "{{ date('Y') }}");
 
             yearSelect.addEventListener('change', function() {

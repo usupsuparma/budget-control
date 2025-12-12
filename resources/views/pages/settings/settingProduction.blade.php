@@ -58,10 +58,10 @@
                             @include('pages.settings.segmen')
                         </div>
                         <div class="tab-pane fade" id="area">
-                            @include('pages.settings.area')
+                            {{-- @include('pages.settings.area') --}}
                         </div>
                         <div class="tab-pane fade" id="area">
-                            @include('pages.settings.unit')
+                            {{-- @include('pages.settings.unit') --}}
                         </div>
 
                     </div>

@@ -55,6 +55,13 @@
             margin-left: 8px;
             user-select: none;
         }
+
+        .month-cell {
+            padding: 4px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            width: 40px;
+        }
     </style>
 @endsection
 
@@ -62,200 +69,70 @@
     <div id="layout-wrapper">
         {{-- form tanpa action; hanya untuk grouping, tidak digunakan submit --}}
         {{-- <form id="kpiForm"> --}}
-            {{-- @csrf --}}
+        {{-- @csrf --}}
 
-            {{-- CARD: Detail KPI Division --}}
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card card-h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">KPI Division</h6>
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#extraLargeModel">
-                                <i class="bi bi-plus-circle"></i> Add New KPI Division
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-5">
-                                <div class="col-xl-12">
-                                    <div class="p-3">
-                                        <div class="table-responsive" style="overflow-x: auto;">
-                                            <table id="kpi_division_table" class="display" style="width:100%">
-                                                <thead>
-                                                    <tr>
-                                                        <th>No</th>
-                                                        <th>Year</th>
-                                                        <th>Company Policy</th>
-                                                        <th>Division</th>
-                                                        <th>Division Goals</th>
-                                                        <th>Target Division</th>
-                                                        <th>Duration (Days)</th>
-                                                        <th>Schedule Start</th>
-                                                        <th>Schedule End</th>
-                                                        <th>Jan</th>
-                                                        <th>Feb</th>
-                                                        <th>Mar</th>
-                                                        <th>Apr</th>
-                                                        <th>May</th>
-                                                        <th>Jun</th>
-                                                        <th>Jul</th>
-                                                        <th>Aug</th>
-                                                        <th>Sep</th>
-                                                        <th>Oct</th>
-                                                        <th>Nov</th>
-                                                        <th>Dec</th>
-                                                        <th>Revenue/Cost</th>
-                                                        <th>PIC</th>
-                                                        <th>Description</th>
-                                                        <th>Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @php $i = 1; @endphp
-                                                    @foreach ($kpidivisions as $kpidiv)
-                                                        <tr data-id="{{ $kpidiv->id }}">
-                                                            <td>{{ $i++ }}</td> {{-- No (tidak editable) --}}
+        {{-- CARD: Detail KPI Division --}}
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card card-h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">KPI Division</h6>
+                        <button type="button" class="btn btn-primary btn-sm" id="btn-add-kpi" data-bs-toggle="modal"
+                            data-bs-target="#extraLargeModel">
+                            <i class="bi bi-plus-circle"></i> Add New KPI Division
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-5">
+                            <div class="col-xl-12">
+                                <div class="p-3">
+                                    <div class="table-responsive" style="overflow-x: auto;">
+                                        <table id="kpi_division_table" class="display" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action</th>
+                                                    <th>No</th>
+                                                    <th>Year</th>
+                                                    <th>Company Policy</th>
+                                                    <th>Division</th>
+                                                    <th>Division Goals</th>
+                                                    <th>Target Division</th>
+                                                    <th>Duration (Days)</th>
+                                                    <th>Schedule Start</th>
+                                                    <th>Schedule End</th>
+                                                    <th>Jan</th>
+                                                    <th>Feb</th>
+                                                    <th>Mar</th>
+                                                    <th>Apr</th>
+                                                    <th>May</th>
+                                                    <th>Jun</th>
+                                                    <th>Jul</th>
+                                                    <th>Aug</th>
+                                                    <th>Sep</th>
+                                                    <th>Oct</th>
+                                                    <th>Nov</th>
+                                                    <th>Dec</th>
+                                                    <th>Revenue/Cost</th>
+                                                    <th>PIC</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
 
-                                                            <td class="editable" data-field="year">
-                                                                {{ $kpidiv->year }}
-                                                            </td>
+                                            </tbody>
 
-                                                            <td>
-                                                                {{ $kpidiv->companyPolicy->strategic_goal }}
-                                                            </td>
-
-                                                            <td>
-                                                                {{ optional($kpidiv->division)->name ?? 'Division #' . $kpidiv->division_id }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="division_goals">
-                                                                {{ $kpidiv->division_goals }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="target_division">
-                                                                {{ $kpidiv->target_division }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="duration_days">
-                                                                {{ $kpidiv->duration_days }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="schedule_start">
-                                                                {{ date('Y-m-d', strtotime($kpidiv->schedule_start)) }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="schedule_end">
-                                                                {{ date('Y-m-d', strtotime($kpidiv->schedule_end)) }}
-                                                            </td>
-
-                                                            {{-- contoh bulan, ditampilkan Yes/No tapi disimpan boolean di DB --}}
-                                                            <td style="{{ $kpidiv->jan ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="jan">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value=""
-                                                                    {{ $kpidiv->jan ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->feb ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="feb">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->feb ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->mar ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="mar">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->mar ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->apr ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="apr">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->apr ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->may ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="may">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->may ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->jun ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="jun">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->jun ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->jul ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="jul">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->jul ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->aug ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="aug">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->aug ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->sep ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="sep">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->sep ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->okt ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="oct">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->oct ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->nov ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="nov">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->nov ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-                                                            <td style="{{ $kpidiv->dec ? 'background-color:limegreen; border: 1px solid #eaeaea;' : 'background-color:grey; border: 1px solid #eaeaea;' }} ;"
-                                                                class="editable text-center" data-field="dec">
-                                                                {{-- <input class="form-check-input month-checkbox"
-                                                                    type="checkbox" value="" id="flexCheckLarge"
-                                                                    {{ $kpidiv->dec ? 'checked' : '' }} disabled> --}}
-                                                            </td>
-
-                                                            <td class="editable" data-field="revenue_cost">
-                                                                {{ $kpidiv->revenue_cost }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="pic">
-                                                                {{ $kpidiv->pic }}
-                                                            </td>
-
-                                                            <td class="editable" data-field="description">
-                                                                {{ $kpidiv->description }}
-                                                            </td>
-
-                                                            <td>
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger btn-delete">
-                                                                    <i class="bi bi-trash"></i> Delete
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-
-                                            </table>
-                                        </div>
-
+                                        </table>
                                     </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div><!--End col-->
-            </div><!--End row-->
+                </div>
+            </div><!--End col-->
+        </div><!--End row-->
 
-            {{-- tidak ada tombol submit semua --}}
+        {{-- tidak ada tombol submit semua --}}
         {{-- </form> --}}
     </div>
 
@@ -269,9 +146,11 @@
                     <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
                         <i class="ri-close-large-line fw-semibold"></i>
                     </button>
+
                 </div>
                 <form id="kpiForm">
                     @csrf
+                    <input type="hidden" name="kpi_id" id="kpi_id">
                     <div class="modal-body">
                         <div class="row g-3">
 
@@ -281,8 +160,7 @@
                                 <select class="form-select" id="form-select-01" name="tahun" required>
                                     <option value="">Select</option>
                                     @for ($year = 2023; $year <= date('Y') + 1; $year++)
-                                        <option value="{{ $year }}"
-                                            {{ $year == date('Y') + 1 ? 'selected' : '' }}>
+                                        <option value="{{ $year }}" {{ $year == date('Y') + 1 ? 'selected' : '' }}>
                                             {{ $year }}
                                         </option>
                                     @endfor
@@ -323,8 +201,8 @@
                             {{-- Target Division --}}
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Target Division</label>
-                                <input type="text" name="target_division" class="form-control"
-                                    placeholder="e.g. 95% KPI" required>
+                                <input type="text" name="target_division" class="form-control" placeholder="e.g. 95% KPI"
+                                    required>
                             </div>
 
                             {{-- Duration (Days) --}}
@@ -662,16 +540,12 @@
                 const currentYear = today.getFullYear();
 
                 let minDate, maxDate, defaultStart;
+                minDate = new Date(selectedYear, 00, 01);
+                maxDate = new Date(selectedYear, 11, 31);
 
                 if (selectedYear === currentYear) {
-                    // Tahun ini: start minimal hari ini, maksimal 31 Desember tahun ini
-                    minDate = today;
-                    maxDate = new Date(selectedYear, 11, 31);
                     defaultStart = today;
                 } else {
-                    // Tahun berbeda: range 1 Jan - 31 Des tahun yang dipilih
-                    minDate = new Date(selectedYear, 0, 1);
-                    maxDate = new Date(selectedYear, 11, 31);
                     defaultStart = new Date(selectedYear, 0, 1);
                 }
 
@@ -762,6 +636,32 @@
                 updateEndDate();
             });
 
+            window.applyKpiDateFromDb = function(year, start, duration, end) {
+                if (year) {
+                    yearSelect.value = year;
+                }
+
+                if (start) {
+                    startInput.value = start; // YYYY-MM-DD dari DB
+                }
+
+                if (duration) {
+                    durationInput.value = duration;
+                }
+
+                if (end) {
+                    endInput.value = end;
+                }
+
+                // Sesuaikan min/max berdasarkan tahun,
+                // tapi karena start sudah di-set dan masih dalam tahun yg sama,
+                // updateStartDateByYear TIDAK akan mereset tanggal (lihat logikanya).
+                updateStartDateByYear();
+
+                // Hitung ulang end date (kalau perlu) dan update checkbox bulan
+                updateEndDate();
+            };
+
             // Inisialisasi awal
             updateStartDateByYear();
             updateEndDate();
@@ -774,15 +674,173 @@
                 scrollX: true,
                 scrollCollapse: true,
                 autoWidth: true,
-                columnDefs: [{
-                    orderable: false,
-                    searchable: false,
-                    targets: -1
+                processing: true,
+                ajax: {
+                    url: "{{ route('kpidivision.datatable') }}",
+                    type: "GET"
                 },
-                {
-                    targets: [0, 1, 6, 7, 8, 21, 22], // kolom yang ingin ditengah
+                columns: [
+                    // ACTION
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row, meta) {
+                            return `
+                                <button type="button" class="btn btn-sm btn-warning btn-edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            `;
+                        }
+                    },
+                    // No (index baris)
+                    {
+                        data: null,
+                        render: function(data, type, row, meta) {
+                            return meta.row + 1;
+                        }
+                    },
+                    {
+                        data: 'year',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'company_policy'
+                    },
+                    {
+                        data: 'division'
+                    },
+                    {
+                        data: 'division_goals',
+                        className: 'editable'
+                    },
+                    {
+                        data: 'target_division',
+                        className: 'editable'
+                    },
+                    {
+                        data: 'duration_days',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'schedule_start',
+                        className: 'editable text-center',
+                    },
+                    {
+                        data: 'schedule_end',
+                        className: 'editable text-center',
+                    },
+
+                    // Bulan – kita isi teks, warna bisa tetap pakai fungsi colorMonths()
+                    {
+                        data: 'jan',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jan");
+                        }
+                    },
+                    {
+                        data: 'feb',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "feb");
+                        }
+                    },
+                    {
+                        data: 'mar',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "mar");
+                        }
+                    },
+                    {
+                        data: 'apr',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "apr");
+                        }
+                    },
+                    {
+                        data: 'may',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "may");
+                        }
+                    },
+                    {
+                        data: 'jun',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jun");
+                        }
+                    },
+                    {
+                        data: 'jul',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "jul");
+                        }
+                    },
+                    {
+                        data: 'aug',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "aug");
+                        }
+                    },
+                    {
+                        data: 'sep',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "sep");
+                        }
+                    },
+                    {
+                        data: 'oct',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "oct");
+                        }
+                    },
+                    {
+                        data: 'nov',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "nov");
+                        }
+                    },
+                    {
+                        data: 'dec',
+                        className: 'editable text-center',
+                        render: function(data) {
+                            return renderMonthCell(data, "&nbsp;", "dec");
+                        }
+                    },
+
+                    {
+                        data: 'revenue_cost',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'pic',
+                        className: 'editable text-center'
+                    },
+                    {
+                        data: 'description',
+                        className: 'editable'
+                    }
+                ],
+                columnDefs: [{
+                    targets: [0, 1, 2, 7, 8, 9, 22, 23],
                     className: 'text-center'
                 }],
+                createdRow: function(row, data, dataIndex) {
+                    // supaya event edit/delete masih bisa pakai data-id
+                    $(row).attr('data-id', data.id);
+                },
                 language: {
                     paginate: {
                         first: "&laquo;&laquo;",
@@ -791,20 +849,91 @@
                         last: "&raquo;&raquo;"
                     }
                 },
-                headerCallback: function (thead, data, start, end, display) {
-                    $(thead).find('th').eq(0).addClass('text-center');
-                    $(thead).find('th').eq(1).addClass('text-center');
-                    $(thead).find('th').eq(6).addClass('text-center');
-                    $(thead).find('th').eq(7).addClass('text-center');
-                    $(thead).find('th').eq(8).addClass('text-center');
-                    $(thead).find('th').eq(21).addClass('text-center');
-                    $(thead).find('th').eq(22).addClass('text-center');
-                },
             });
 
-            function deleteButtonHtml() {
-                return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i> Delete</button>';
+            function renderMonthCell(value, monthText, fieldName) {
+                var color = value == 1 ? "background-color: limegreen;" : "background-color: grey;";
+                return `<span class="month-cell" style="${color}" data-field="${fieldName}">${monthText}</span>`;
             }
+
+            function refreshTable() {
+                table.ajax.reload(null, false); // false = tetap di page sekarang
+            }
+
+            function deleteButtonHtml() {
+                return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i></button>';
+            }
+
+            // Delete row di front-end (kalau mau sekalian delete di DB, bisa tambah AJAX lagi)
+            $('#kpi_division_table tbody').on('click', '.btn-delete', function() {
+                let $tr = $(this).closest('tr');
+                let row = table.row($tr);
+                let id = $tr.data('id'); // mengambil ID dari database
+
+                if (!id) {
+                    // data baru yang belum tersimpan
+                    row.remove().draw(false);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted',
+                        text: 'Baris baru dibatalkan.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Yakin hapus?',
+                    text: "Data ini tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        $.ajax({
+                            url: "{{ url('/kpidivision') }}/" + id,
+                            method: "DELETE",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                if (res.status === 'success') {
+                                    row.remove().draw(false);
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus',
+                                        text: res.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                    refreshTable();
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: res.message,
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: xhr.responseJSON?.message ||
+                                        'Gagal menghapus data.',
+                                });
+                            }
+                        });
+
+                    }
+                });
+            });
         });
     </script>
 
@@ -812,24 +941,33 @@
         $(document).ready(function() {
             const storeUrl = "{{ route('kpidivision.store') }}";
             const csrfToken = "{{ csrf_token() }}";
+            const showUrlTemplate = "{{ url('kpidivision') }}/:id/show";
+            const updateUrlTemplate = "{{ url('kpidivision') }}/:id/update";
+
+            // MODE ADD
+            $('#btn-add-kpi').on('click', function() {
+                $('#kpiForm')[0].reset();
+                $('#kpi_id').val('');
+                $('#extraLargeModelLabel').text('Add New KPI Division');
+                $('#btn-save-kpi').text('Save').data('mode', 'create');
+            });
 
             $("#btn-save-kpi").on("click", function() {
 
-                // ambil data form
                 var form = $("#kpiForm");
+                var mode = $(this).data('mode') || 'create';
+                var id = $('#kpi_id').val();
 
+                // ambil semua value (year, policyId, dst...) — BIARKAN seperti kode kamu yang lama
                 var year = form.find("select[name='tahun']").val() || "";
                 var policyId = form.find("select[name='company_policy_id']").val() || "";
                 var divisionId = form.find("select[name='division_id']").val() || "";
-
                 var divisionGoals = (form.find("textarea[name='division_goals']").val() || "").trim();
                 var target = (form.find("input[name='target_division']").val() || "").trim();
-
                 var duration = form.find("input[name='duration_days']").val() || "";
                 var start = form.find("input[name='schedule_start']").val() || "";
                 var end = form.find("input[name='schedule_end']").val() || "";
 
-                // bulan
                 var jan = form.find("#plan_jan").is(':checked') ? 1 : 0;
                 var feb = form.find("#plan_feb").is(':checked') ? 1 : 0;
                 var mar = form.find("#plan_mar").is(':checked') ? 1 : 0;
@@ -843,12 +981,11 @@
                 var nov = form.find("#plan_nov").is(':checked') ? 1 : 0;
                 var dec = form.find("#plan_dec").is(':checked') ? 1 : 0;
 
-                // revenue / cost
                 var revenueCost = form.find(".new-revenue").val() || "";
                 var pic = form.find(".new-pic").val() || "";
                 var desc = (form.find(".new-desc").val() || "").trim();
 
-                // VALIDASI
+                // VALIDASI (biarkan seperti sebelumnya)
                 if (!year || !policyId || !divisionId) {
                     Swal.fire({
                         icon: 'error',
@@ -857,6 +994,7 @@
                     });
                     return;
                 }
+
                 if (!divisionGoals) {
                     Swal.fire({
                         icon: 'error',
@@ -866,12 +1004,20 @@
                     return;
                 }
 
-                // AJAX SEND
+                // tentukan URL & method
+                let url = storeUrl;
+                let extra = {};
+
+                if (mode === 'edit' && id) {
+                    url = updateUrlTemplate.replace(':id', id);
+                    extra._method = 'PUT'; // spoofing method untuk Laravel
+                }
+
                 $.ajax({
-                    url: storeUrl, // pastikan storeUrl sudah didefinisikan di blade
-                    method: "POST",
+                    url: url,
+                    method: "POST", // tetap POST, method asli via _method
                     dataType: "json",
-                    data: {
+                    data: Object.assign({
                         _token: csrfToken,
 
                         year: year,
@@ -900,27 +1046,27 @@
                         revenue_cost: revenueCost,
                         pic: pic,
                         description: desc,
-                    },
+                    }, extra),
 
                     success: function(response) {
-
                         Swal.fire({
                             icon: 'success',
-                            title: 'Saved',
-                            text: 'KPI Division successfuly saved.',
+                            title: (mode === 'edit') ? 'Updated' : 'Saved',
+                            text: (mode === 'edit') ?
+                                'KPI Division successfully updated.' :
+                                'KPI Division successfully saved.',
                             timer: 1500,
                             showConfirmButton: false
                         });
 
-                        // Tutup modal
                         $("#extraLargeModel").modal('hide');
-
-                        // Reset form
                         $("#kpiForm")[0].reset();
 
-                        // Refresh table atau append data baru
                         if (typeof refreshTable === "function") {
-                            refreshTable(); // bila Anda punya fungsi reload datatable
+                            refreshTable();
+                        } else {
+                            // atau kalau tidak ada refreshTable, bisa location.reload();
+                            // location.reload();
                         }
                     },
 
@@ -929,7 +1075,6 @@
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             msg = xhr.responseJSON.message;
                         }
-
                         Swal.fire({
                             icon: 'error',
                             title: 'Failed',
@@ -937,7 +1082,85 @@
                         });
                     }
                 });
+            });
 
+            function formatToYMD(dateString) {
+                if (!dateString) return "";
+
+                const d = new Date(dateString);
+                if (isNaN(d.getTime())) return dateString; // kalau gagal parse, biarkan original
+
+                let y = d.getFullYear();
+                let m = String(d.getMonth() + 1).padStart(2, '0');
+                let da = String(d.getDate()).padStart(2, '0');
+
+                return `${y}-${m}-${da}`;
+            }
+
+            // MODE EDIT
+            $('#kpi_division_table tbody').on('click', '.btn-edit', function() {
+                const $tr = $(this).closest('tr');
+                const id = $tr.data('id');
+
+                if (!id) return;
+
+                $('#kpi_id').val(id);
+                $('#extraLargeModelLabel').text('Edit KPI Division');
+                $('#btn-save-kpi').text('Update').data('mode', 'edit');
+
+                const showUrl = showUrlTemplate.replace(':id', id);
+
+                // ambil data detail dari backend
+                $.get(showUrl, function(res) {
+                    const data = res.data || res; // sesuaikan dengan format response
+
+                    const form = $('#kpiForm');
+
+                    // basic field
+                    form.find("select[name='tahun']").val(data.year);
+                    form.find("select[name='company_policy_id']")
+                        .val(data.company_policy_detail_id).trigger('change');
+                    form.find("select[name='division_id']")
+                        .val(data.division_id).trigger('change');
+
+                    form.find("textarea[name='division_goals']").val(data.division_goals);
+                    form.find("input[name='target_division']").val(data.target_division);
+
+                    form.find("input[name='duration_days']").val(data.duration_days);
+                    form.find("input[name='schedule_start']").val(formatToYMD(data.schedule_start));
+                    form.find("input[name='schedule_end']").val(formatToYMD(data.schedule_end));
+
+                    // bulan (boolean 0/1 di DB)
+                    form.find('#plan_jan').prop('checked', !!data.jan);
+                    form.find('#plan_feb').prop('checked', !!data.feb);
+                    form.find('#plan_mar').prop('checked', !!data.mar);
+                    form.find('#plan_apr').prop('checked', !!data.apr);
+                    form.find('#plan_may').prop('checked', !!data.may);
+                    form.find('#plan_jun').prop('checked', !!data.jun);
+                    form.find('#plan_jul').prop('checked', !!data.jul);
+                    form.find('#plan_aug').prop('checked', !!data.aug);
+                    form.find('#plan_sep').prop('checked', !!data.sep);
+                    form.find('#plan_oct').prop('checked', !!data.oct);
+                    form.find('#plan_nov').prop('checked', !!data.nov);
+                    form.find('#plan_dec').prop('checked', !!data.dec);
+
+                    // revenue / PIC / description
+                    form.find(".new-revenue").val(data.revenue_cost);
+                    form.find(".new-pic").val(data.pic);
+                    form.find(".new-desc").val(data.description);
+
+                    if (window.applyKpiDateFromDb) {
+                        window.applyKpiDateFromDb(
+                            data.year,
+                            formatToYMD(data.schedule_start),
+                            data.duration_days,
+                            formatToYMD(data.schedule_end)
+                        );
+                    }
+
+                    // buka modal
+                    $('#extraLargeModel').modal('show');
+                });
             });
 
         });

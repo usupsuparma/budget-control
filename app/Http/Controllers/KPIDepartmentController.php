@@ -10,73 +10,132 @@ use Illuminate\Http\Request;
 class KPIDepartmentController extends Controller
 {
     /**
-     * Tampilkan halaman KPI Department untuk 1 KPI Division & 1 Department.
+     * Halaman utama KPI Department.
+     * Hanya kirim data untuk dropdown (KPI Division & Department).
+     * Data tabel akan di-load via AJAX (dataTable()).
      */
     public function index()
-    {        
-        $kpiDivisions = KpiDivision::orderBy('id')
-            ->get();
-        
-        $department = Department::orderBy('id')
-            ->get();
-            
-        $kpiDepartments = KPIDepartment::orderBy('id')
+    {
+        $title        = 'KPI Department';
+        $kpiDivisions = KPIDivision::orderBy('year')
+            ->orderBy('division_goals')
             ->get();
 
-        return view('pages.kpi.department', [
-            'department'     => $department,
-            'kpiDepartments' => $kpiDepartments,
-            'kpiDivisions'   => $kpiDivisions,
+        $departments  = Department::orderBy('name')->get();
+
+        return view('pages.kpi.department_rev1', [
+            'title'        => $title,
+            'kpiDivisions' => $kpiDivisions,
+            'departments'  => $departments,
         ]);
     }
 
     /**
-     * Simpan 1 baris baru (Add Row -> Save).
+     * DataTables AJAX source.
      */
-    public function store(Request $request, KPIDivision $kpiDivision, Department $department)
+    public function dataTable()
     {
-        // Year otomatis ikut dari KPIDivision
-        $year = $kpiDivision->year ?? $request->input('year', date('Y'));
+        $items = KPIDepartment::with(['kpiDivision', 'department'])
+            ->orderBy('id', 'desc')
+            ->get();
 
-        $validated = $request->validate([
-            'depatment_id'      => ['required', 'integer'],
-            'department_goals'      => ['required', 'string'],
-            'division_goals'        => ['nullable', 'string'],
-            'department_activities' => ['nullable', 'string'],
-            'target_department'     => ['nullable', 'string'],
-            'duration_days'         => ['nullable', 'integer'],
-            'schedule_start'        => ['nullable', 'date'],
-            'schedule_end'          => ['nullable', 'date'],
-            'revenue_cost'          => ['nullable', 'string'],
-            'pic'                   => ['nullable', 'string'],
-            'description'           => ['nullable', 'string'],
+        $rows = [];
+        $no   = 1;
+
+        foreach ($items as $row) {
+            $rows[] = [
+                'id'                   => $row->id,
+                'no'                   => $no++,
+                'year'                 => $row->year,
+                'kpi_division'         => optional($row->kpiDivision)->division_goals ?? '-',
+                'kpi_division_id'      => $row->kpi_division_id,
+                'department'           => optional($row->department)->name ?? '-',
+                'department_id'        => $row->department_id,
+                'department_goals'     => $row->department_goals,
+                'department_activities'=> $row->department_activities,
+                'target_department'    => $row->target_department,
+                'duration_days'        => $row->duration_days,
+                'schedule_start'       => optional($row->schedule_start)->format('Y-m-d'),
+                'schedule_end'         => optional($row->schedule_end)->format('Y-m-d'),
+                'jan'                  => (bool) $row->jan,
+                'feb'                  => (bool) $row->feb,
+                'mar'                  => (bool) $row->mar,
+                'apr'                  => (bool) $row->apr,
+                'may'                  => (bool) $row->may,
+                'jun'                  => (bool) $row->jun,
+                'jul'                  => (bool) $row->jul,
+                'aug'                  => (bool) $row->aug,
+                'sep'                  => (bool) $row->sep,
+                'oct'                  => (bool) $row->oct,
+                'nov'                  => (bool) $row->nov,
+                'dec'                  => (bool) $row->dec,
+                'revenue_cost'         => $row->revenue_cost,
+                'pic'                  => $row->pic,
+                'description'          => $row->description,
+            ];
+        }
+
+        return response()->json([
+            'data' => $rows,
         ]);
+    }
 
-        $toBool = function ($val) {
-            if ($val === null) return false;
-            $v = strtolower((string) $val);
-            return in_array($v, ['1','true','yes','y','ya'], true);
-        };
+    /**
+     * Helper konversi input bulan (checkbox / select) ke boolean.
+     */
+    protected function toBool($val): bool
+    {
+        if ($val === null) {
+            return false;
+        }
+
+        $v = strtolower((string) $val);
+        return in_array($v, ['1', 'true', 'yes', 'y', 'ya'], true);
+    }
+
+    /**
+     * Store (Create) – dipanggil dari modal Add.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'year'                 => ['required', 'integer'],
+            'kpi_division_id'      => ['required', 'exists:kpi_division,id'],
+            'department_id'        => ['required', 'exists:department,id'],
+
+            'department_goals'     => ['required', 'string'],
+            'department_activities'=> ['nullable', 'string'],
+            'target_department'    => ['nullable', 'string'],
+            'duration_days'        => ['nullable', 'integer'],
+            'schedule_start'       => ['nullable', 'date'],
+            'schedule_end'         => ['nullable', 'date'],
+
+            'revenue_cost'         => ['nullable', 'string'],
+            'pic'                  => ['nullable', 'string'],
+            'description'          => ['nullable', 'string'],
+
+            // bulan akan diproses manual dari request
+        ]);
 
         $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
         $data = [
-            'kpi_division_id'      => $validated['division_goals'] ?? null,
-            'department_id'        => $validated['depatment_id'] ?? null,
-            'year'                 => $year,
-            'department_goals'     => $validated['department_goals'],
-            'department_activities'=> $validated['department_activities'] ?? null,
-            'target_department'    => $validated['target_department'] ?? null,
-            'duration_days'        => $validated['duration_days'] ?? null,
-            'schedule_start'       => $validated['schedule_start'] ?? null,
-            'schedule_end'         => $validated['schedule_end'] ?? null,
-            'revenue_cost'         => $validated['revenue_cost'] ?? null,
-            'pic'                  => $validated['pic'] ?? null,
-            'description'          => $validated['description'] ?? null,
+            'year'                  => $validated['year'],
+            'kpi_division_id'       => $validated['kpi_division_id'],
+            'department_id'         => $validated['department_id'],
+            'department_goals'      => $validated['department_goals'],
+            'department_activities' => $validated['department_activities'] ?? null,
+            'target_department'     => $validated['target_department'] ?? null,
+            'duration_days'         => $validated['duration_days'] ?? null,
+            'schedule_start'        => $validated['schedule_start'] ?? null,
+            'schedule_end'          => $validated['schedule_end'] ?? null,
+            'revenue_cost'          => $validated['revenue_cost'] ?? null,
+            'pic'                   => $validated['pic'] ?? null,
+            'description'           => $validated['description'] ?? null,
         ];
 
         foreach ($months as $m) {
-            $data[$m] = $toBool($request->input($m));
+            $data[$m] = $this->toBool($request->input($m));
         }
 
         $kpiDept = KPIDepartment::create($data);
@@ -84,96 +143,84 @@ class KPIDepartmentController extends Controller
         return response()->json([
             'status'  => 'success',
             'id'      => $kpiDept->id,
-            'message' => 'KPI Department created.',
+            'message' => 'KPI Department row created successfully.',
         ], 201);
     }
 
     /**
-     * Inline update satu kolom (double-click cell).
+     * Show – untuk isi modal Edit lewat AJAX.
      */
-    public function inlineUpdate(Request $request, KPIDivision $kpiDivision, Department $department, KPIDepartment $kpiDepartment)
+    public function show($id)
     {
-        if ($kpiDepartment->kpi_division_id !== $kpiDivision->id ||
-            $kpiDepartment->department_id   !== $department->id) {
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak sesuai dengan parent.',
-            ], 403);
-        }
-
-        $field = $request->input('field');
-        $value = $request->input('value');
-
-        $allowed = [
-            'division_goals',
-            'department_goals',
-            'department_activities',
-            'target_department',
-            'duration_days',
-            'schedule_start',
-            'schedule_end',
-            'jan','feb','mar','apr','may','jun',
-            'jul','aug','sep','oct','nov','dec',
-            'revenue_cost',
-            'pic',
-            'description',
-        ];
-
-        if (! in_array($field, $allowed, true)) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Field tidak boleh diubah inline.',
-            ], 422);
-        }
-
-        if ($field === 'duration_days') {
-            $kpiDepartment->duration_days = $value !== null ? (int) $value : null;
-        } elseif (in_array($field, ['schedule_start','schedule_end'], true)) {
-            $request->validate(['value' => ['nullable','date']]);
-            $kpiDepartment->{$field} = $value ?: null;
-        } elseif (in_array($field, ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'], true)) {
-            $toBool = function ($v) {
-                if ($v === null) return false;
-                $v = strtolower((string) $v);
-                return in_array($v, ['1','true','yes','y','ya'], true);
-            };
-            $kpiDepartment->{$field} = $toBool($value);
-        } else {
-            $kpiDepartment->{$field} = $value;
-        }
-
-        $kpiDepartment->save();
-
-        $display = $value;
-        if (in_array($field, ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'], true)) {
-            $display = $kpiDepartment->{$field} ? 'Yes' : 'No';
-        }
+        $kpiDept = KPIDepartment::with(['kpiDivision', 'department'])->findOrFail($id);
 
         return response()->json([
-            'status'        => 'success',
-            'message'       => 'Data berhasil diperbarui.',
-            'field'         => $field,
-            'value'         => $kpiDepartment->{$field},
-            'display_value' => $display,
+            'status' => 'success',
+            'data'   => $kpiDept,
         ]);
     }
 
     /**
-     * Hapus baris KPI Department.
+     * Update – dipanggil dari modal Edit.
      */
-    public function destroy(KPIDivision $kpiDivision, Department $department, KPIDepartment $kpiDepartment)
+    public function update(Request $request, $id)
     {
-        if ($kpiDepartment->kpi_division_id !== $kpiDivision->id ||
-            $kpiDepartment->department_id   !== $department->id) {
+        $kpiDept = KPIDepartment::findOrFail($id);
 
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak sesuai dengan parent.',
-            ], 403);
+        $validated = $request->validate([
+            'year'                 => ['required', 'integer'],
+            'kpi_division_id'      => ['required', 'exists:kpi_division,id'],
+            'department_id'        => ['required', 'exists:department,id'],
+
+            'department_goals'     => ['required', 'string'],
+            'department_activities'=> ['nullable', 'string'],
+            'target_department'    => ['nullable', 'string'],
+            'duration_days'        => ['nullable', 'integer'],
+            'schedule_start'       => ['nullable', 'date'],
+            'schedule_end'         => ['nullable', 'date'],
+
+            'revenue_cost'         => ['nullable', 'string'],
+            'pic'                  => ['nullable', 'string'],
+            'description'          => ['nullable', 'string'],
+        ]);
+
+        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+        $data = [
+            'year'                  => $validated['year'],
+            'kpi_division_id'       => $validated['kpi_division_id'],
+            'department_id'         => $validated['department_id'],
+            'department_goals'      => $validated['department_goals'],
+            'department_activities' => $validated['department_activities'] ?? null,
+            'target_department'     => $validated['target_department'] ?? null,
+            'duration_days'         => $validated['duration_days'] ?? null,
+            'schedule_start'        => $validated['schedule_start'] ?? null,
+            'schedule_end'          => $validated['schedule_end'] ?? null,
+            'revenue_cost'          => $validated['revenue_cost'] ?? null,
+            'pic'                   => $validated['pic'] ?? null,
+            'description'           => $validated['description'] ?? null,
+        ];
+
+        foreach ($months as $m) {
+            $data[$m] = $this->toBool($request->input($m));
         }
 
-        $kpiDepartment->delete();
+        $kpiDept->update($data);
+
+        return response()->json([
+            'status'  => 'success',
+            'id'      => $kpiDept->id,
+            'message' => 'KPI Department row updated successfully.',
+        ]);
+    }
+
+    /**
+     * Delete – hapus 1 baris KPI Department.
+     */
+    public function destroy($id)
+    {
+        $kpiDept = KPIDepartment::findOrFail($id);
+        $kpiDept->delete();
 
         return response()->json([
             'status'  => 'success',

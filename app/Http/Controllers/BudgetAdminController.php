@@ -73,7 +73,7 @@ class BudgetAdminController extends Controller
                         'company_policy_url' => $hasKpi ? route('company-policy.index') : null,
                         'kpi_url' => $hasKpi ? route('kpidivision.index', ['division_id' => $division->id, 'year' => $year]) : null,
                         'workplan_url' => $hasKpi ? route('workplan.index', ['division_id' => $division->id, 'year' => $year]) : null,
-                        'plan_budget_url' => null,
+                        'plan_budget_url' => $hasKpi ? route('budget-user.index', ['division_id' => $division->id, 'year' => $year]) : null,
                         'budget_url' => route('anggaran.index', ['division_id' => $division->id, 'year' => $year]),
                         'has_kpi' => $hasKpi,
                         'level' => 1
@@ -102,8 +102,8 @@ class BudgetAdminController extends Controller
                             'department_id' => $department->id,
                             'company_policy_url' => $hasDeptKpi ? route('company-policy.index') : null,
                             'kpi_url' => $hasDeptKpi ? route('kpidepartment.index', ['department_id' => $department->id, 'year' => $year]) : null,
-                            'workplan_url' => $hasDeptKpi ? route('workplan.index', ['department_id' => $department->id, 'year' => $year]) : null,
-                            'plan_budget_url' => null,
+                            'workplan_url' => $hasDeptKpi ? route('workplan.index', ['division_id' => $division->id, 'year' => $year]) : null,
+                            'plan_budget_url' => $hasDeptKpi ? route('budget-user.index', ['division_id' => $division->id, 'year' => $year]) : null,
                             'budget_url' => route('anggaran.index', ['department_id' => $department->id, 'year' => $year]),
                             'has_kpi' => $hasDeptKpi,
                             'level' => 2
@@ -132,8 +132,8 @@ class BudgetAdminController extends Controller
                                 'section_id' => $section->id,
                                 'company_policy_url' => $hasSectionKpi ? route('company-policy.index') : null,
                                 'kpi_url' => $hasSectionKpi ? route('kpisection.index', ['section_id' => $section->id, 'year' => $year]) : null,
-                                'workplan_url' => $hasSectionKpi ? route('workplan.index', ['section_id' => $section->id, 'year' => $year]) : null,
-                                'plan_budget_url' => null,
+                                'workplan_url' => $hasSectionKpi ? route('workplan.index', ['division_id' => $division->id, 'year' => $year]) : null,
+                                'plan_budget_url' => $hasSectionKpi ? route('budget-user.index', ['division_id' => $division->id, 'year' => $year]) : null,
                                 'budget_url' => route('anggaran.index', ['section_id' => $section->id, 'year' => $year]),
                                 'has_kpi' => $hasSectionKpi,
                                 'level' => 3

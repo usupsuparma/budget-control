@@ -73,15 +73,16 @@
                                 <div class="d-flex justify-content-between align-items-start mb-10">
                                     <div>
                                         <p class="text-muted mb-2">Budget Total</p>
-                                        <h3 class="fw-medium mb-0">Rp 125,8 M</h3>
+                                        <h3 class="fw-medium mb-0" id="budgetTotalValue">Rp -</h3>
                                     </div>
                                     <div
                                         class="h-50px w-50px position-relative d-flex justify-content-center align-items-center bg-info text-white fs-4 rounded-pill">
                                         <i class="bi bi-cash-stack"></i>
                                     </div>
                                 </div>
-                                <p class="text-success mb-0 fs-13"><i class="bi bi-arrow-up-short"></i> +3.5% dari tahun
-                                    lalu</p>
+                                <p class="text-success mb-0 fs-13" id="budgetTotalNote">
+                                    <i class="bi bi-arrow-up-short"></i> -
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -219,8 +220,8 @@
 
                                                 <td>
                                                     <span class="fs-12 fw-semibold">100%</span>
-                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="100"
-                                                        aria-valuemin="0" aria-valuemax="100">
+                                                    <div class="progress progress-xs" role="progressbar"
+                                                        aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
                                                         <div class="progress-bar" style="width: 100%"></div>
                                                     </div>
                                                 </td>
@@ -239,8 +240,8 @@
 
                                                 <td>
                                                     <span class="fs-12 fw-semibold">64%</span>
-                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="10"
-                                                        aria-valuemin="0" aria-valuemax="100">
+                                                    <div class="progress progress-xs" role="progressbar"
+                                                        aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
                                                         <div class="progress-bar" style="width: 64%"></div>
                                                     </div>
                                                 </td>
@@ -259,8 +260,8 @@
 
                                                 <td>
                                                     <span class="fs-12 fw-semibold">25%</span>
-                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="25"
-                                                        aria-valuemin="0" aria-valuemax="100">
+                                                    <div class="progress progress-xs" role="progressbar"
+                                                        aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
                                                         <div class="progress-bar" style="width: 25%"></div>
                                                     </div>
                                                 </td>
@@ -343,7 +344,8 @@
                                                             <i class="bi bi-gem fs-5"></i>
                                                         </div>
                                                         <div>
-                                                            <h6 class="mb-1 max-w-200px text-truncate"> Approval Anggaran</h6>
+                                                            <h6 class="mb-1 max-w-200px text-truncate"> Approval Anggaran
+                                                            </h6>
                                                             <p class="fs-12 text-muted mb-0">- Andrew
                                                             </p>
                                                         </div>
@@ -541,11 +543,84 @@
 
             // init title + load initial
             updateTitle();
+            loadBudgetTotal(yearSelect.value)
             loadPoliciesByYear(yearSelect.value || "{{ date('Y') }}");
 
             yearSelect.addEventListener('change', function() {
                 updateTitle();
                 loadPoliciesByYear(this.value);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const yearSelect = document.getElementById('form-select-01');
+            const budgetEl = document.getElementById('budgetTotalValue');
+
+            const ajaxUrl = "{{ route('budget.summary.year') }}";
+
+            function formatRupiahCompact(number) {
+                const n = Number(number || 0);
+
+                // contoh hasil: Rp 125,8 M / Rp 2,3 T / Rp 950,2 Jt
+                const abs = Math.abs(n);
+                let value = n;
+                let suffix = '';
+
+                if (abs >= 1_000_000_000_000) {
+                    value = n / 1_000_000_000_000;
+                    suffix = ' T';
+                } else if (abs >= 1_000_000_000) {
+                    value = n / 1_000_000_000;
+                    suffix = ' M';
+                } else if (abs >= 1_000_000) {
+                    value = n / 1_000_000;
+                    suffix = ' Jt';
+                } else if (abs >= 1_000) {
+                    value = n / 1_000;
+                    suffix = ' Rb';
+                }
+
+                // pakai format Indonesia (koma desimal)
+                return 'Rp ' + value.toLocaleString('id-ID', {
+                    maximumFractionDigits: 1
+                }) + suffix;
+            }
+
+            async function loadBudgetTotal(year) {
+                if (!year) {
+                    budgetEl.textContent = 'Rp -';
+                    return;
+                }
+
+                budgetEl.textContent = 'Loading...';
+
+                try {
+                    const res = await fetch(`${ajaxUrl}?year=${encodeURIComponent(year)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const json = await res.json();
+
+                    if (!res.ok || json.status !== 'success') {
+                        budgetEl.textContent = 'Rp -';
+                        return;
+                    }
+
+                    budgetEl.textContent = formatRupiahCompact(json.total_sum);
+                } catch (err) {
+                    budgetEl.textContent = 'Rp -';
+                }
+            }
+
+            // initial load
+            loadBudgetTotal(yearSelect.value);
+
+            // on change year
+            yearSelect.addEventListener('change', function() {
+                loadBudgetTotal(this.value);
             });
         });
     </script>

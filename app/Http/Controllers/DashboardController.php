@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CompanyPolicy;
-use App\Models\CompanyPolicyDetail;
+use App\Models\WorkplanBudgetItem;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -40,6 +40,24 @@ class DashboardController extends Controller
             'status' => 'success',
             'year'   => $year,
             'html'   => $html,
+        ]);
+    }
+
+    public function budgetSummaryByYear(Request $request)
+    {
+        $year = (int) $request->query('year');
+
+        $row = WorkplanBudgetItem::query()
+            ->selectRaw('kpi_workplans.year as year, SUM(workplan_budget_items.total) as total_sum')
+            ->join('kpi_workplans', 'kpi_workplans.id', '=', 'workplan_budget_items.kpi_workplan_id')
+            ->where('kpi_workplans.year', $year)
+            ->whereNull('workplan_budget_items.deleted_at')
+            ->first();
+
+        return response()->json([
+            'status' => 'success',
+            'year' => $year,
+            'total_sum' => (float) ($row->total_sum ?? 0),
         ]);
     }
 

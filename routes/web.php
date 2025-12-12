@@ -78,6 +78,8 @@ Route::middleware('auth')->group(function () {
     });
     Route::get('/dash-executive/policies', [DashboardController::class, 'executivePoliciesByYear'])
         ->name('dash.executive.policies');
+    Route::get('/budget/summary', [DashboardController::class, 'budgetSummaryByYear'])
+        ->name('budget.summary.year');
 
 
     /* ========================

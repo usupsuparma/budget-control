@@ -33,6 +33,7 @@ use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
 use App\Http\Controllers\BudgetResumeController;
+use App\Http\Controllers\BudgetSubmissionController;
 use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
 use App\Http\Controllers\CustomerController;
@@ -306,6 +307,32 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
         });
+
+    /* ========================
+        BUDGET SUBMISSION
+    ======================== */
+    Route::prefix('budget-submission')->group(function () {
+        Route::get('/', [BudgetSubmissionController::class, 'index'])
+            ->name('budget.submission.index');
+
+        Route::post('/', [BudgetSubmissionController::class, 'store'])
+            ->name('budget.submission.store');
+
+        Route::get('/{id}/edit', [BudgetSubmissionController::class, 'edit'])
+            ->name('budget.submission.edit');
+
+        Route::put('/{id}', [BudgetSubmissionController::class, 'update'])
+            ->name('budget.submission.update');
+
+        Route::delete('/{id}', [BudgetSubmissionController::class, 'destroy'])
+            ->name('budget.submission.destroy');
+
+        Route::post('/{id}/approve', [BudgetSubmissionController::class, 'approve'])
+            ->name('budget.submission.approve');
+
+        Route::post('/{id}/reject', [BudgetSubmissionController::class, 'reject'])
+            ->name('budget.submission.reject');
+    });
 
 
     Route::prefix('supplier')->group(function () {
@@ -708,6 +735,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [BudgetResumeController::class, 'index'])
                 ->name('budget-resume.index');
         });
+
+    
 
     /* ========================
         MASTER

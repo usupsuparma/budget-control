@@ -32,6 +32,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
+use App\Http\Controllers\BudgetResumeController;
 use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
 use App\Http\Controllers\CustomerController;
@@ -697,6 +698,15 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/', [BudgetAdminController::class, 'index'])
                 ->name('budget-admin.index');
+        });
+
+    // Budget Resume
+    Route::prefix('budget-resume')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [BudgetResumeController::class, 'index'])
+                ->name('budget-resume.index');
         });
 
     /* ========================

@@ -141,7 +141,7 @@
 
                     
                     <li class="pe-slide-item">
-                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
+                        <a href="{{ route('budget-resume.index') }}" class="pe-nav-link {{ Request::is('budget-resume*') ? 'active' : '' }}">
                             <i class="bi bi-wallet2"></i> Budget Resume
                         </a>
                     </li>

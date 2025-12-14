@@ -104,7 +104,17 @@ class BudgetSubmissionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $budgetSubmission
+                'data' => [
+                    'id' => $budgetSubmission->id,
+                    'division_id' => $budgetSubmission->division_id,
+                    'submission_date' => $budgetSubmission->submission_date->format('Y-m-d'),
+                    'type' => $budgetSubmission->type,
+                    'work_plan_id' => $budgetSubmission->work_plan_id,
+                    'budget_account_id' => $budgetSubmission->budget_account_id,
+                    'estimation_amount' => $budgetSubmission->estimation_amount,
+                    'description' => $budgetSubmission->description,
+                    'status' => $budgetSubmission->status,
+                ]
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -136,7 +146,7 @@ class BudgetSubmissionController extends Controller
                 'submission_date' => 'required|date',
                 'type' => 'required|in:add,relocation',
                 'work_plan_id' => 'required|exists:kpi_workplans,id',
-                'budget_account_id' => 'required|exists:budget_codes,id',
+                'budget_account_id' => 'required',
                 'estimation_amount' => 'required|numeric|min:0',
                 'description' => 'nullable|string',
             ]);

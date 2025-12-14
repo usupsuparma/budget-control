@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Area;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -162,6 +163,6 @@ class AreaSeeder extends Seeder
             $row['updated_at'] = $now;
         }
 
-        DB::table('areas')->insert($data);
+        Area::insert($data);
     }
 }

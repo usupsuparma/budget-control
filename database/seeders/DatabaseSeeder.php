@@ -21,5 +21,6 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call(BudgetCategorySeeder::class);
         $this->call(AreaSeeder::class);
+        $this->call(CustomerSeeder::class);
     }
 }

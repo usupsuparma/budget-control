@@ -242,7 +242,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.edit');
-            
+
             Route::get('/{id}/show', [KPIDepartmentController::class, 'show'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.show');
@@ -285,7 +285,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPISectionController::class, 'edit'])
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.edit');
-            
+
             Route::get('/{id}/show', [KPISectionController::class, 'show'])
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.show');
@@ -588,7 +588,7 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BudgetUserController::class, 'index'])
                 ->name('budget-user.index');
-            
+
             // New endpoints for all items
             Route::get('/items/all', [BudgetUserController::class, 'getAllItems'])
                 ->name('budget-user.items.all');
@@ -598,7 +598,7 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.items.update');
             Route::delete('/items/{itemId}', [BudgetUserController::class, 'destroyItem'])
                 ->name('budget-user.items.destroy');
-            
+
             // Dropdown data endpoints
             Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
                 ->name('budget-user.budget-categories');
@@ -608,11 +608,11 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.suppliers');
             Route::get('/units', [BudgetUserController::class, 'getUnits'])
                 ->name('budget-user.units');
-            
+
             // Workplans dropdown for department and section
             Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])
                 ->name('budget-user.workplans.dropdown');
-            
+
             // Old endpoints (kept for compatibility)
             Route::get('/divisions', [BudgetUserController::class, 'getDivisions'])
                 ->name('budget-user.divisions');
@@ -703,23 +703,22 @@ Route::middleware('auth')->group(function () {
     Route::prefix('employee')
         ->middleware('permission:employee.view')
         ->group(function () {
-
             Route::get('/data', [EmployeeController::class, 'getData'])
                 ->name('employee.data');
-
             Route::post('/{id}/reset-password', [EmployeeController::class, 'resetPassword'])
                 ->middleware('permission:employee.edit');
-
             Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
                 ->name('employee.edit')
                 ->middleware('permission:employee.edit');
-
             Route::post('/create', [EmployeeController::class, 'store'])
                 ->name('employee.store')
                 ->middleware('permission:employee.create');
-
             Route::post('/delete/{id}', [EmployeeController::class, 'destroy'])
                 ->middleware('permission:employee.delete');
+            Route::get('/{id}', [EmployeeController::class, 'show'])
+                ->name('employee.show');
+            Route::post('/update/{id}', [EmployeeController::class, 'update'])
+                ->name('employee.update');
         });
 
 
@@ -955,5 +954,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/assign-role/{id}', [AuthorizationController::class, 'assignRoleView'])->name('auth.assign.view');
             Route::post('/assign-role', [AuthorizationController::class, 'assignRole'])->name('auth.assign.role');
+
+            Route::post('/role/remove-user', [AuthorizationController::class, 'removeUserRole'])
+                ->name('role.removeUser');
         });
 });

@@ -186,7 +186,7 @@
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Section added successfully",
+                    text: "Customer added successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });

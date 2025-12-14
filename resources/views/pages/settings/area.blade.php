@@ -38,19 +38,12 @@
 
                         <div class="col-12">
                             <label>Area Name</label>
-                            <input type="text" name="supplier" class="form-control" required>
+                            <input type="text" name="country_city" class="form-control" required>
                         </div>
-
                         <div class="col-12">
                             <label>Code</label>
                             <input type="text" name="code" class="form-control">
                         </div>
-
-                        <div class="col-12">
-                            <label>Notes</label>
-                            <textarea name="notes" class="form-control" rows="3"></textarea>
-                        </div>
-
                         <div class="col-12">
                             <label>Status</label>
                             <select name="status" class="form-select">
@@ -82,9 +75,8 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editAreaForm">
+            <form id="editAreaForm" method="POST">
                 @csrf
-                @method('PUT')
 
                 <input type="hidden" id="edit_id">
 
@@ -93,7 +85,7 @@
 
                         <div class="col-12">
                             <label>Area Name</label>
-                            <input type="text" id="edit_area" name="area" class="form-control" required>
+                            <input type="text" id="edit_area" name="country_city" class="form-control" required>
                         </div>
 
                         <div class="col-12">
@@ -102,15 +94,10 @@
                         </div>
 
                         <div class="col-12">
-                            <label>Notes</label>
-                            <textarea id="edit_notes" name="notes" class="form-control" rows="3"></textarea>
-                        </div>
-
-                        <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
                             </select>
                         </div>
 
@@ -119,7 +106,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary">Update</button>
+                    <button class="btn btn-primary" form="editAreaForm">>Update</button>
                 </div>
 
             </form>
@@ -139,7 +126,7 @@
                 data: 'id'
             },
             {
-                data: 'area'
+                data: 'country_city'
             },
             {
                 data: 'code'
@@ -186,7 +173,7 @@
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Section added successfully",
+                    text: "Area added successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -210,10 +197,8 @@
         let id = $(this).data('id');
 
         $.get("{{ url('/area') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
-            $('#edit_area').val(data.supplier);
-            $('#edit_code').val(data.address);
-            $('#edit_notes').val(data.notes);
+            $('#edit_area').val(data.country_city);
+            $('#edit_code').val(data.code);
             $('#edit_status').val(data.status);
 
             $('#editAreaForm').attr('action', "{{ url('/area') }}/" + id);
@@ -226,17 +211,32 @@
     $('#editAreaForm').submit(function(e) {
         e.preventDefault();
 
-        let id = $('#edit_id').val();
+        let form = $(this);
+        let url = form.attr('action');
 
         $.ajax({
-            url: "{{ url('/area') }}/" + id,
-            method: "POST",
-            data: $(this).serialize(),
-            success: res => {
+            url: url,
+            method: "PUT",
+            data: form.serialize(),
+            success: function(res) {
                 $('#editAreaModal').modal('hide');
-                areaTable.ajax.reload();
 
-                Swal.fire("Updated!", res.message, "success");
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#areaTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Area updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });

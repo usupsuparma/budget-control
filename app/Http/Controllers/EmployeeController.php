@@ -114,9 +114,9 @@ class EmployeeController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'employee_id' => 'required|string|max:50|unique:employees,employee_id,' . $id,
-            'email' => 'required|email|unique:employees,email,' . $id,
-            'job_position_id' => 'required|exists:job_positions,id',
+            'employee_id' => 'required|string|max:50|unique:employee,employee_id,' . $id,
+            'email' => 'required|email|unique:employee,email,' . $id,
+            'job_position_id' => 'required|exists:job_position,id',
             'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:Active,Inactive',
         ]);
@@ -163,9 +163,7 @@ class EmployeeController extends Controller
 
     public function resetPassword(Request $request, $id)
     {
-        $request->validate([
-            'password' => 'required|min:6'
-        ]);
+
 
         $emp = Employee::findOrFail($id);
         $emp->password = bcrypt($request->password);

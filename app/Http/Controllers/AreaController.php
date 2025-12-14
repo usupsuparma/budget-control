@@ -10,7 +10,7 @@ class AreaController extends Controller
 {
     public function data()
     {
-        $query = Area::select(['id', 'area', 'code', 'notes', 'status']);
+        $query = Area::select(['id', 'continent_province', 'country_city', 'code', 'notes', 'status']);
 
         return DataTables::of($query)
             ->addColumn('status_badge', function ($row) {
@@ -37,9 +37,8 @@ class AreaController extends Controller
     {
 
         $request->validate([
-            'area' => 'required|string|max:255',
+            'country_city' => 'required|string|max:255',
             'code' => 'nullable|string',
-            'notes' => 'nullable|string',
             'status' => 'required|integer|in:0,1',
         ]);
 
@@ -58,10 +57,10 @@ class AreaController extends Controller
         $area = Area::findOrFail($id);
 
         $request->validate([
-            'area' => 'required|string|max:255',
+            'country_city' => 'required|string|max:255',
             'code' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'status' => 'required|string',
+            'status' => 'required|integer|in:0,1'
+
         ]);
 
         $area->update($request->all());

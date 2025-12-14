@@ -112,4 +112,24 @@ class AuthorizationController extends Controller
         $user->syncRoles([$request->role]);
         return response()->json(['success' => true]);
     }
+
+    public function removeUserRole(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:employee,id',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $user = Employee::find($request->user_id);
+        $role = Role::find($request->role_id);
+
+        if ($user && $role) {
+            $user->removeRole($role->name);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User berhasil dihapus dari role'
+        ]);
+    }
 }

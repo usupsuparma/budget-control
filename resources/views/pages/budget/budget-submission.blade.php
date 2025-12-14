@@ -77,7 +77,7 @@
                                     </td>
                                     <td class="text-end">Rp {{ number_format($submission->estimation_amount, 0, ',', '.') }}</td>
                                     <td>
-                                        <small>{{ $submission->budgetAccount->stock_code ?? '-' }}</small>
+                                        <small>{{ $submission->budgetAccount->name ?? '-' }}</small>
                                     </td>
                                     <td>
                                         <span class="badge bg-{{ $submission->status_color }}">
@@ -137,8 +137,8 @@
             </div>
             <form id="budgetSubmissionForm" method="POST" action="{{ route('budget.submission.store') }}">
                 @csrf
+                <div id="methodField"></div>
                 <input type="hidden" id="submission_id" name="submission_id">
-                <input type="hidden" id="form_method" name="_method" value="">
                 
                 <div class="modal-body">
                     <div class="row mb-3">
@@ -238,34 +238,31 @@
 @endsection
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if (session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: "{{ session('success') }}",
+        timer: 2000,
+        showConfirmButton: false
+    });
+</script>
+@endif
+
+@if (session('error'))
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: "{{ session('error') }}",
+    });
+</script>
+@endif
 
 <script>
-    // Initialize Choices.js for all select elements
-    
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    @if (session('success'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: "{{ session('success') }}",
-                timer: 2000,
-                showConfirmButton: false
-            });
-        </script>
-    @endif
-
-    @if (session('error'))
-        <script>
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal!',
-                text: "{{ session('error') }}",
-            });
-        </script>
-    @endif
     let divisionChoice, workPlanChoice, budgetAccountChoice;
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -294,13 +291,13 @@
     function resetForm() {
         document.getElementById('budgetSubmissionForm').reset();
         document.getElementById('submission_id').value = '';
-        document.getElementById('form_method').value = '';
+        document.getElementById('methodField').innerHTML = '';
         document.getElementById('budgetSubmissionModalLabel').textContent = 'Add Budget Submission';
         document.getElementById('budgetSubmissionForm').action = '{{ route("budget.submission.store") }}';
         document.getElementById('submission_date').value = '{{ date("Y-m-d") }}';
         
         // Reset choices
-        if (divisionChoice) divisionChoice.setChoiceByValue('{{ Auth::user()->division_id ?? "" }}');
+        if (divisionChoice) divisionChoice.setChoiceByValue('');
         if (workPlanChoice) workPlanChoice.setChoiceByValue('');
         if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue('');
     }
@@ -313,12 +310,14 @@
                     const data = result.data;
                     
                     document.getElementById('submission_id').value = data.id;
-                    document.getElementById('form_method').value = 'PUT';
+                    document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
                     document.getElementById('budgetSubmissionModalLabel').textContent = 'Edit Budget Submission';
                     document.getElementById('budgetSubmissionForm').action = `/budget-submission/${data.id}`;
                     
                     // Set form values
-                    if (divisionChoice) divisionChoice.setChoiceByValue(data.division_id.toString());
+                    if (divisionChoice) divisionChoice.setChoiceByValue(String(data.division_id));
+                    
+                    // Set date directly (already in Y-m-d format from controller)
                     document.getElementById('submission_date').value = data.submission_date;
                     
                     // Set type radio
@@ -328,8 +327,8 @@
                         document.getElementById('type_relocation').checked = true;
                     }
                     
-                    if (workPlanChoice) workPlanChoice.setChoiceByValue(data.work_plan_id.toString());
-                    if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue(data.budget_account_id.toString());
+                    if (workPlanChoice) workPlanChoice.setChoiceByValue(String(data.work_plan_id));
+                    if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue(String(data.budget_account_id));
                     document.getElementById('description').value = data.description || '';
                     document.getElementById('estimation_amount').value = data.estimation_amount;
                     

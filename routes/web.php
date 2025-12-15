@@ -560,14 +560,37 @@ Route::middleware('auth')->group(function () {
     ======================== */
     Route::prefix('admission')->group(function () {
 
-        Route::get('/user', [SubmissionController::class, 'user'])
+        // User Submission Routes
+        Route::prefix('user')
             ->middleware('permission:transaction.user.view')
-            ->name('userSubmission.index');
+            ->group(function () {
+                
+                Route::get('/', [SubmissionController::class, 'user'])
+                    ->name('userSubmission.index');
 
-        Route::get('/user_create', [SubmissionController::class, 'user_create'])
-            // ->middleware('permission:transaction.user.view')
-            ->name('userSubmission.create');
+                Route::get('/create', [SubmissionController::class, 'user_create'])
+                    ->name('userSubmission.create');
 
+                Route::get('/data', [SubmissionController::class, 'getData'])
+                    ->name('userSubmission.data');
+
+                Route::post('/store', [SubmissionController::class, 'store'])
+                    ->name('userSubmission.store');
+
+                Route::get('/show/{id}', [SubmissionController::class, 'show'])
+                    ->name('userSubmission.show');
+
+                Route::put('/update/{id}', [SubmissionController::class, 'update'])
+                    ->name('userSubmission.update');
+
+                Route::delete('/delete/{id}', [SubmissionController::class, 'destroy'])
+                    ->name('userSubmission.destroy');
+
+                Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
+                    ->name('userSubmission.budget.info');
+            });
+
+        // Admin Submission Routes
         Route::get('/admin', [SubmissionController::class, 'admin'])
             ->middleware('permission:transaction.admin.view')
             ->name('adminSubmission.index');

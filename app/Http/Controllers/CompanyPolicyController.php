@@ -111,49 +111,11 @@ class CompanyPolicyController extends Controller
         return back()->with('success', 'Company Policy saved successfully');
     }
 
-
-    // public function store(Request $request)
-    // {
-    //     try {
-    //         $request->validate([
-    //             'tahun'        => 'required|integer',
-    //             'file_dokumen' => 'required|file|mimes:pdf',
-    //             'goal'         => 'required|array|min:1',
-    //             'goal.*'       => 'required|string',
-    //             'deskripsi'    => 'required|array|min:1',
-    //             'deskripsi.*'  => 'required|string',
-    //             'target'       => 'required|array|min:1',
-    //             'target.*'     => 'required|string',
-    //         ]);
-
-    //         // Upload file
-    //         $path = $request->file('file_dokumen')->store('dokumen', 'public');
-
-    //         // Simpan ke tabel dokumen
-    //         $dokumen = CompanyPolicy::create([
-    //             'tahun'        => $request->tahun,
-    //             'nama_dokumen' => $request->file('file_dokumen')->getClientOriginalName(),
-    //             'file_path'    => $path,
-    //         ]);
-
-    //         // Simpan ke tabel detail_dokumen
-    //         foreach ($request->goal as $index => $goal) {
-    //             CompanyPolicyDetail::create([
-    //                 'company_policy_id' => $dokumen->id,
-    //                 'strategic_goal'    => $goal,
-    //                 'description'       => $request->deskripsi[$index] ?? null,
-    //                 'target'            => $request->target[$index] ?? null,
-    //             ]);
-    //         }
-
-    //         return redirect()->route('company-policy.index')->with('success', 'Dokumen dan detail berhasil disimpan.');
-    //     } catch (\Exception $e) {
-
-    //         return back()
-    //             ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
-    //             ->withInput();
-    //     }
-    // }
+    public function json($id)
+    {
+        $policy = CompanyPolicy::with('details')->findOrFail($id);
+        return response()->json($policy);
+    }
 
     public function show($id)
     {
@@ -170,7 +132,56 @@ class CompanyPolicyController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Update data company policy
+        $request->validate([
+            'tahun'             => 'required|integer',
+
+            'header'            => 'required|string',
+            'contents_en'       => 'required|string',
+            'contents_id'       => 'required|string',
+            'prologue_en'       => 'required|string',
+            'prologue_id'       => 'required|string',
+            'closing_en'        => 'required|string',
+            'closing_id'        => 'required|string',
+            'signature'         => 'required|string',
+
+            'company_policy_core_en'   => 'required|array|min:1',
+            'company_policy_desc_en'   => 'required|array|min:1',
+            'company_policy_core_id'   => 'required|array|min:1',
+            'company_policy_desc_id'   => 'required|array|min:1',
+        ]);
+
+        $policy = CompanyPolicy::findOrFail($id);
+
+        // update master
+        $policy->update([
+            'tahun'        => $request->tahun,
+            'header'       => $request->header,
+            'contents_en'  => $request->contents_en,
+            'contents_id'  => $request->contents_id,
+            'prologue_en'  => $request->prologue_en,
+            'prologue_id'  => $request->prologue_id,
+            'closing_en'   => $request->closing_en,
+            'closing_id'   => $request->closing_id,
+            'signature'    => $request->signature,
+        ]);
+
+        // replace detail
+        $policy->details()->delete();
+
+        foreach ($request->company_policy_core_en as $index => $coreEn) {
+            CompanyPolicyDetail::create([
+                'company_policy_id' => $policy->id,
+
+                'strategic_goal'    => $coreEn,
+                'description'       => $request->company_policy_desc_en[$index] ?? '',
+                'strategic_goal_id' => $request->company_policy_core_id[$index] ?? '',
+                'description_id'    => $request->company_policy_desc_id[$index] ?? '',
+
+                'target' => '0',
+            ]);
+        }
+
+        return back()->with('success', 'Company Policy updated successfully');
     }
 
     public function destroy(CompanyPolicy $dokumen)

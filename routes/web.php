@@ -169,6 +169,14 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:companypolicy.edit')
                 ->name('company-policy.edit');
 
+            Route::get('/{id}/json', [CompanyPolicyController::class, 'json'])
+                // ->middleware('permission:companypolicy.edit')
+                ->name('company-policy.json');
+
+            Route::put('/{id}', [CompanyPolicyController::class, 'update'])
+                // ->middleware('permission:companypolicy.update')
+                ->name('company-policy.update');
+
             Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])
                 ->middleware('permission:companypolicy.delete')
                 ->name('company-policy.destroy');

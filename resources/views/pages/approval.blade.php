@@ -1,76 +1,52 @@
 @extends('layouts.master')
 
-@section('title', 'Settings | Approval')
+@section('title', 'Setting | Master')
+@section('title-sub', 'Master')
+@section('pagetitle', 'Setting')
 
-@section('title-sub', 'Settings')
-@section('pagetitle', 'Approval')
-@section('css')
-<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
-@endsection
 @section('content')
 
-<!-- Begin page -->
-<div id="layout-wrapper">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex">
-                    <div class="col-md-12 text-end">
+<div class="col-12 col-lg-12">
+    <!-- ✅ CARD PEMBUNGKUS UTAMA -->
+    <div class="card card-h-100 shadow-sm border">
 
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDivision">
-                            <i class="bi bi-plus-lg me-1"></i>Add Approval
-                        </button>
 
-                    </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- LEFT SIDEBAR (Tab) -->
+                <div class="col-md-3 border-end">
+                    <ul class="nav nav-pills flex-column" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#transaction" role="tab">
+                                <i class="fas fa-user me-2"></i> Transactions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#addBudget" role="tab">
+                                <i class="fas fa-user-tie me-2"></i> Add Budget
+                            </a>
+                        </li>
+
+
+                    </ul>
                 </div>
 
-                <div class="card-body">
-                    <table id="approvalTable" class="table table-bordered table-striped w-100">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 37%;">Approval Layer</th>
-                                <th style="width: 10%;">Layer 1</th>
-                                <th style="width: 10%;">Layer 2</th>
-                                <th style="width: 10%;">Layer 3</th>
-                                <th style="width: 10%;">Layer 4</th>
-                                <th style="width: 10%;">Layer 5</th>
-                                <th style="width: 10%;">Actions</th>
-                            </tr>
-                        </thead>
+                <!-- RIGHT CONTENT -->
+                <div class="col-md-9">
+                    <div class="tab-content pt-3">
+                        <div class="tab-pane fade show active" id="transaction">
+                            @include('pages.settings.authorizationTransaction')
+                        </div>
+                        <div class="tab-pane fade" id="addBudget">
+                            @include('pages.settings.authorizationAddBudget')
+                        </div>
 
-                    </table>
 
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-</main>
+
 @endsection
-
-@section('js')
-
-<!-- App js -->
-<script type="module" src="{{ asset('assets/js/app.js') }}"></script>
-
-<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
-
-<script src="{{ asset('assets/js/app/project-list.init.js') }}"></script>
-@endsection
-@push('page-scripts')
-<script>
-    $(document).ready(function() {
-        $('#approvalTable').DataTable({
-            responsive: true,
-            paging: true,
-            searching: true,
-            ordering: true,
-            info: true,
-            autoWidth: false,
-        });
-    });
-</script>
-
-
-
-@endpush

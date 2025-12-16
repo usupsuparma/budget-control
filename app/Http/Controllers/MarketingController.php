@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\MarketingPlanTemplateExport;
+use App\Imports\MarketingPlanImport;
 use App\Models\Division;
 use App\Models\SalesPlanning;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
 
 class MarketingController extends Controller
@@ -41,5 +45,25 @@ class MarketingController extends Controller
             })
             ->rawColumns(['action'])
             ->make(true);
+    }
+
+    public function uploadExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx'
+        ]);
+
+        Excel::import(new MarketingPlanImport, $request->file('file'));
+
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data Marketing Plan berhasil di-import'
+        ]);
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new MarketingPlanTemplateExport, 'marketing_plan_template.xlsx');
     }
 }

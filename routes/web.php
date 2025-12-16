@@ -544,6 +544,11 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:marketing.delete')
                 ->name('marketing.destroy');
         });
+    Route::post('/marketing-plan/upload-excel', [MarketingController::class, 'uploadExcel'])
+        ->name('marketing.upload_excel');
+    Route::get('/marketing/download-template', [MarketingController::class, 'downloadTemplate'])
+        ->name('marketing.downloadTemplate');
+
 
 
     Route::prefix('resume-anggaran')
@@ -564,7 +569,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('user')
             ->middleware('permission:transaction.user.view')
             ->group(function () {
-                
+
                 Route::get('/', [SubmissionController::class, 'user'])
                     ->name('userSubmission.index');
 
@@ -767,7 +772,7 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-resume.index');
         });
 
-    
+
 
     /* ========================
         MASTER

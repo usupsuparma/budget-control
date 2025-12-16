@@ -62,9 +62,10 @@
             <div class="grid-header-wrapper mb-3">
                 <div id="customGridSearch"></div>
 
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#salesPlanningModal">
-                    + Tambah Sales Planning
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Upload Excel
                 </button>
+
             </div>
 
 
@@ -82,171 +83,43 @@
 </div>
 
 
-<!-- ========== MODAL FORM ========== -->
-<div class="modal fade" id="salesPlanningModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+<!-- ========== MODAL UPLOAD EXCEL ========== -->
+<div class="modal fade" id="uploadExcelModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Tambah Sales Planning</h5>
+                <h5 class="modal-title">Upload Marketing Plan Excel</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
 
-                <form id="salesPlanningForm">
+                <form id="uploadExcelForm" enctype="multipart/form-data">
                     @csrf
 
-                    <div class="row g-4">
-
-                        <!-- LEFT COLUMN -->
-                        <div class="col-md-6">
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">No</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="no">
-                                        <option>Select</option>
-                                        @for ($i=1; $i<=100; $i++)
-                                            <option value="{{ $i }}">{{ $i }}</option>
-                                            @endfor
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Actual Delivery & Prognosis</label>
-                                <div class="col-8">
-                                    <input type="text" class="form-control" name="actual_delivery_prognosis">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Sales Per Segment</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="sales_segment">
-                                        <option>Select</option>
-                                        <option>B2B</option>
-                                        <option>Retail</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Brand</label>
-                                <div class="col-8">
-                                    <input type="text" class="form-control" name="brand">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Conc %</label>
-                                <div class="col-8">
-                                    <input type="text" class="form-control" name="conc">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Packing 1</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="packing1">
-                                        <option>Select</option>
-                                        <option>Bag</option>
-                                        <option>Box</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Packing 2</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="packing2">
-                                        <option>Select</option>
-                                        <option>Bag</option>
-                                        <option>Box</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- RIGHT COLUMN -->
-                        <div class="col-md-6">
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Segmen</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="segment">
-                                        <option>Select</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Area 1</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="area1">
-                                        <option>Select</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Area 2</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="area2">
-                                        <option>Select</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Product Cost/kg</label>
-                                <div class="col-8">
-                                    <input type="number" class="form-control" name="production_cost">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Price</label>
-                                <div class="col-8">
-                                    <input type="number" class="form-control" name="price">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Increase/Decrease Price</label>
-                                <div class="col-8">
-                                    <input type="number" class="form-control" name="increase_decrease_price">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-4 col-form-label">Status</label>
-                                <div class="col-8">
-                                    <select class="form-control" name="status">
-                                        <option>Active</option>
-                                        <option>Inactive</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                        </div>
-
+                    <div class="mb-3">
+                        <label class="form-label">Pilih File Excel (.xlsx)</label>
+                        <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
                     </div>
 
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ route('marketing.downloadTemplate') }}" class="btn btn-success">
+                            <i class="bi bi-download"></i> Download Template
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Upload Data
+                        </button>
+                    </div>
                 </form>
 
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" id="btnSave">Simpan</button>
             </div>
 
         </div>
     </div>
 </div>
+
 
 
 @endsection
@@ -359,5 +232,32 @@
         }
     });
 </script>
+
+<script>
+    $("#btnUploadExcel").click(function() {
+
+        let formData = new FormData($("#uploadExcelForm")[0]);
+
+        $.ajax({
+            url: "{{ route('marketing.upload_excel') }}",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+
+            success: function(response) {
+                Swal.fire("Success", "Excel berhasil di-upload!", "success");
+                $("#uploadExcelModal").modal("hide");
+                grid.updateConfig({}).forceRender();
+            },
+
+            error: function(xhr) {
+                Swal.fire("Error", xhr.responseJSON?.message ?? "Gagal upload file", "error");
+            }
+        });
+
+    });
+</script>
+
 
 @endpush

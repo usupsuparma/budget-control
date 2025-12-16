@@ -423,4 +423,139 @@ class SubmissionController extends Controller
         $title = 'Submission Admin';
         return view('pages.submission.admin', compact('title'));
     }
+
+    /**
+     * Get job positions filtered by job level
+     */
+    public function getJobPositions($jobLevelId)
+    {
+        try {
+            $jobPositions = JobPosition::where('job_level_id', $jobLevelId)
+                ->orderBy('job_position_name')
+                ->get(['id', 'job_position_name']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $jobPositions
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching job positions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get programs (KPI Workplans) based on job level
+     * If job level indicates 'section', get section KPIs
+     * If job level indicates 'department', get department KPIs
+     */
+    public function getPrograms($jobLevelId)
+    {
+        try {
+            // Get job level to determine kpi_type
+            $jobLevel = JobLevel::find($jobLevelId);
+            
+            if (!$jobLevel) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Job level not found'
+                ], 404);
+            }
+
+            // Determine kpi_type based on job level name or a specific field
+            // You may need to adjust this logic based on your business rules
+            $jobLevelName = strtolower($jobLevel->job_level_name);
+            
+            // If job level contains 'section' -> kpi_type = 'section'
+            // If job level contains 'department' or 'manager' -> kpi_type = 'department'
+            $kpiType = null;
+            if (str_contains($jobLevelName, 'section') || str_contains($jobLevelName, 'staff')) {
+                $kpiType = 'section';
+            } elseif (str_contains($jobLevelName, 'department') || str_contains($jobLevelName, 'manager') || str_contains($jobLevelName, 'head')) {
+                $kpiType = 'department';
+            }
+
+            if (!$kpiType) {
+                // Default to both if cannot determine
+                $workplans = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
+                    ->orderBy('year', 'desc')
+                    ->orderBy('activity')
+                    ->get();
+            } else {
+                $workplans = KPIWorkPlan::where('kpi_type', $kpiType)
+                    ->with(['kpiDepartment.department', 'kpiSection.section'])
+                    ->orderBy('year', 'desc')
+                    ->orderBy('activity')
+                    ->get();
+            }
+
+            // Format the data
+            $formattedWorkplans = $workplans->map(function ($workplan) {
+                $label = $workplan->activity . ' (' . $workplan->year . ')';
+                
+                if ($workplan->kpi_type === 'department' && $workplan->kpiDepartment) {
+                    $label .= ' - ' . ($workplan->kpiDepartment->department->department_name ?? '');
+                } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
+                    $label .= ' - ' . ($workplan->kpiSection->section->section_name ?? '');
+                }
+
+                return [
+                    'id' => $workplan->id,
+                    'activity' => $workplan->activity,
+                    'year' => $workplan->year,
+                    'kpi_type' => $workplan->kpi_type,
+                    'label' => $label
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedWorkplans,
+                'kpi_type' => $kpiType
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching programs: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get budget items filtered by workplan (program) ID
+     */
+    public function getBudgetItems($programId)
+    {
+        try {
+            $budgetItems = WorkplanBudgetItem::where('kpi_workplan_id', $programId)
+                ->with(['budgetCodeRelation', 'category'])
+                ->orderBy('description')
+                ->get();
+
+            // Format the data
+            $formattedItems = $budgetItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'description' => $item->description,
+                    'stock_code' => $item->stock_code,
+                    'budget_code' => $item->budget_code,
+                    'category_name' => $item->category->category_name ?? '',
+                    'total' => $item->total,
+                    'label' => $item->description . ' (' . ($item->stock_code ?? $item->budget_code) . ')'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedItems
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching budget items: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

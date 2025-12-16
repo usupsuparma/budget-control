@@ -60,23 +60,27 @@ function initializeEventListeners() {
         resetItemForm();
     });
     
-    // Auto-calculate total when monthly activities change
-    $(document).on('input', '.monthly-activity', function() {
+    // Auto-calculate total when monthly activities or price estimation change
+    $(document).on('input', '.monthly-activity, #priceEstimation', function() {
         calculateTotal();
     });
 }
 
 /**
- * Calculate total from monthly activities
+ * Calculate total from monthly activities × price estimation
  */
 function calculateTotal() {
-    let total = 0;
+    let sumMonths = 0;
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     
     months.forEach(month => {
         const value = parseInt($(`input[name="activity_${month}"]`).val()) || 0;
-        total += value;
+        sumMonths += value;
     });
+    
+    // Total = sum of months × price estimation
+    const priceEstimation = parseFloat($('#priceEstimation').val()) || 0;
+    const total = sumMonths * priceEstimation;
     
     $('#total').val(total);
 }
@@ -238,9 +242,6 @@ function renderItemRowForTable(item) {
         html += `<td class="text-center ${qtyClass}" style="font-size: 10px;">${qty}</td>`;
     });
     
-    // Calculate total
-    const total = months.reduce((sum, month) => sum + (item[`activity_${month}`] || 0), 0);
-    html += `<td class="text-end" style="font-size: 10px;">${total}</strong></td>`;
     
     // Price estimation
     html += `
@@ -248,6 +249,11 @@ function renderItemRowForTable(item) {
         <td style="font-size: 10px;">${item.price_estimation_description || '-'}</td>
     `;
     
+    // Calculate total = sum of months × price estimation
+    const sumMonths = months.reduce((sum, month) => sum + (item[`activity_${month}`] || 0), 0);
+    const priceEstimation = parseFloat(item.price_estimation) || 0;
+    const total = sumMonths * priceEstimation;
+    html += `<td class="text-end" style="font-size: 10px;"><strong>${formatCurrency(total)}</strong></td>`;
     html += `</tr>`;
     
     return html;
@@ -316,7 +322,6 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
 function openAddItemModalWithWorkplan(workplanId) {
     resetItemForm();
     $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
-    $('#budgetCategoryId').val('');
     $('#itemId').val('');
     
     // Load all dropdown data
@@ -338,7 +343,6 @@ function openAddItemModalWithWorkplan(workplanId) {
 function openAddItemModal() {
     resetItemForm();
     $('#itemModalLabel').html('<i class="bi bi-plus-circle me-2"></i>Add Budget Item');
-    $('#budgetCategoryId').val('');
     $('#itemId').val('');
     
     // Load all dropdown data
@@ -463,9 +467,14 @@ function editItem(itemId) {
  */
 function populateItemForm(item) {
     $('#itemId').val(item.id);
-    $('#categoryType').val(item.budget_category_id);
+    $('#budgetCategoryId').val(item.budget_category_id);
     $('#description').val(item.description);
     $('#stockCode').val(item.stock_code);
+    
+    // Set category_type radio button
+    if (item.category_type) {
+        $('input[name="category_type"][value="' + item.category_type + '"]').prop('checked', true);
+    }
     
     // Set Program ID using Choices
     if (programIdChoices && item.kpi_workplan_id) {
@@ -505,9 +514,10 @@ function populateItemForm(item) {
  * Reset item form
  */
 function resetItemForm() {
+    // Reset radio buttons
+    $('input[name="category_type"]').prop('checked', false);
     $('#itemForm')[0].reset();
     $('#itemId').val('');
-    $('#budgetCategoryId').val('');
     
     // Reset monthly activity inputs to 0
     const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
@@ -546,7 +556,7 @@ function loadBudgetCategories() {
         method: 'GET',
         success: function(response) {
             if (response.success) {
-                const select = $('#categoryType');
+                const select = $('#budgetCategoryId');
                 select.empty();
                 select.append('<option value="">Select Budget Category...</option>');
                 
@@ -845,12 +855,22 @@ function loadBudgetCodes() {
  * Save item (create or update)
  */
 function saveItem() {
+    // Validate category_type
+    if (!$('input[name="category_type"]:checked').val()) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Validation Error',
+            text: 'Please select a category type',
+            confirmButtonColor: '#3085d6'
+        });
+        return;
+    }
     const itemId = $('#itemId').val();
     const isEdit = itemId !== '';
     
     // Validate required fields
     const programId = $('#programId').val();
-    const budgetCategoryId = $('#categoryType').val();
+    const budgetCategoryId = $('#budgetCategoryId').val();
     const description = $('#description').val();
     
     if (!programId) {
@@ -879,6 +899,7 @@ function saveItem() {
     const formData = {
         kpi_workplan_id: programId,
         budget_category_id: budgetCategoryId,
+        category_type: $('input[name="category_type"]:checked').val(),
         description: description,
         stock_code: $('#stockCode').val(),
         budget_code: $('#budgetCode').val(),

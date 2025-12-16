@@ -593,6 +593,14 @@ Route::middleware('auth')->group(function () {
 
                 Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
                     ->name('userSubmission.budget.info');
+
+                // Cascading dropdown routes
+                Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
+                    ->name('userSubmission.jobPositions');
+                Route::get('/programs/{jobLevelId}', [SubmissionController::class, 'getPrograms'])
+                    ->name('userSubmission.programs');
+                Route::get('/budget-items/{programId}', [SubmissionController::class, 'getBudgetItems'])
+                    ->name('userSubmission.budgetItems');
             });
 
         // Admin Submission Routes

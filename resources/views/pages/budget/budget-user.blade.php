@@ -297,9 +297,9 @@
                                     <th rowspan="2">Cons Rate</th>
                                     <th rowspan="2">Unit</th>
                                     <th colspan="12" class="month-header text-center">Qty</th>
-                                    <th rowspan="2">Total</th>
                                     <th rowspan="2">Price Estimation</th>
                                     <th rowspan="2">Price Estimation Description</th>
+                                    <th rowspan="2">Total</th>
                                 </tr>
                                 <tr>
                                     <th class="month-header">Jan</th>
@@ -340,14 +340,13 @@
             <div class="modal-body">
                 <form id="itemForm">
                     <input type="hidden" id="itemId" name="item_id">
-                    <input type="hidden" id="budgetCategoryId" name="budget_category_id">
                     
                     <div class="row">
                         <div class="col-md-6">
                             {{-- Left Column --}}
                             <div class="mb-3">
-                                <label for="categoryType" class="form-label fw-bold">Type (Budget Category) <span class="text-danger">*</span></label>
-                                <select class="form-select" id="categoryType" name="budget_category_id" required>
+                                <label for="budgetCategoryId" class="form-label fw-bold">Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="budgetCategoryId" name="budget_category_id" required>
                                     <option value="">Select Budget Category...</option>
                                 </select>
                             </div>
@@ -359,6 +358,46 @@
                                 </select>
                                 <small class="text-muted">Choose a department or section work plan</small>
                             </div>
+
+                            {{-- Radio Button Category Type --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category_type" id="categoryRoutine" value="Routine" required>
+                                            <label class="form-check-label" for="categoryRoutine">
+                                                Routine
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category_type" id="categoryCarryOver" value="Carry Over">
+                                            <label class="form-check-label" for="categoryCarryOver">
+                                                Carry Over
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category_type" id="categoryTurnAround" value="Turn Around">
+                                            <label class="form-check-label" for="categoryTurnAround">
+                                                Turn Around
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category_type" id="categoryMultiYear" value="Multi Year">
+                                            <label class="form-check-label" for="categoryMultiYear">
+                                                Multi Year
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
 
                             <div class="mb-3">
                                 <label for="description" class="form-label fw-bold">Description <span class="text-danger">*</span></label>
@@ -476,10 +515,6 @@
                                 <input type="number" class="form-control monthly-activity" name="activity_dec" value="0" min="0">
                             </div>
 
-                            <div class="mb-3">
-                                <label for="total" class="form-label fw-bold">Total</label>
-                                <input type="number" class="form-control bg-light" id="total" name="total" readonly value="0">
-                            </div>
 
                             <div class="mb-3">
                                 <label for="priceEstimation" class="form-label fw-bold">Price Estimation</label>
@@ -489,6 +524,11 @@
                             <div class="mb-3">
                                 <label for="priceEstimationDescription" class="form-label fw-bold">Price Estimation Description</label>
                                 <textarea class="form-control" id="priceEstimationDescription" name="price_estimation_description" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="total" class="form-label fw-bold">Total</label>
+                                <input type="number" class="form-control bg-light" id="total" name="total" readonly value="0">
                             </div>
                         </div>
                     </div>

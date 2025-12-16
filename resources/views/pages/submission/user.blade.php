@@ -352,6 +352,7 @@ let currentPage = 1;
 let itemRowCounter = 0;
 const budgetCodes = @json($budgetCodes);
 const units = @json($units);
+let availableBudgetItems = [];
 
 $(document).ready(function() {
     // Load data on page load
@@ -386,7 +387,111 @@ $(document).ready(function() {
     $('#submissionModal').on('hidden.bs.modal', function() {
         resetForm();
     });
+
+    // Cascading dropdown: Job Level -> Job Position
+    $('#jobLevel').on('change', function() {
+        const jobLevelId = $(this).val();
+        $('#jobPosition').html('<option value="">Loading...</option>').prop('disabled', true);
+        $('#programId').html('<option value="">Select Program</option>').prop('disabled', true);
+        
+        if (jobLevelId) {
+            loadJobPositions(jobLevelId);
+            loadPrograms(jobLevelId);
+        } else {
+            $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
+            $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
+        }
+    });
+
+    // Cascading dropdown: Program ID -> Budget ID
+    $('#programId').on('change', function() {
+        const programId = $(this).val();
+        
+        if (programId) {
+            loadBudgetItems(programId);
+        }
+    });
 });
+
+// Load job positions based on job level
+function loadJobPositions(jobLevelId) {
+let urlJobPositions = '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
+    $.ajax({
+        url: urlJobPositions,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                let options = '<option value="">Select Job Position</option>';
+                response.data.forEach(function(position) {
+                    options += `<option value="${position.id}">${position.job_position_name}</option>`;
+                });
+                $('#jobPosition').html(options).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            showAlert('Error loading job positions', 'danger');
+            $('#jobPosition').html('<option value="">Error loading positions</option>').prop('disabled', false);
+        }
+    });
+}
+
+// Load programs based on job level
+function loadPrograms(jobLevelId) {
+    let urlPrograms = '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
+    $.ajax({
+        url: urlPrograms,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                let options = '<option value="">Select Program</option>';
+                response.data.forEach(function(program) {
+                    options += `<option value="${program.id}">${program.label}</option>`;
+                });
+                $('#programId').html(options).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            showAlert('Error loading programs', 'danger');
+            $('#programId').html('<option value="">Error loading programs</option>').prop('disabled', false);
+        }
+    });
+}
+
+// Load budget items based on program ID
+function loadBudgetItems(programId) {
+    $.ajax({
+        url: `/admission/budget-items/${programId}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                availableBudgetItems = response.data;
+                // Update all budget select dropdowns in item rows
+                updateAllBudgetSelects();
+            }
+        },
+        error: function(xhr) {
+            showAlert('Error loading budget items', 'danger');
+            availableBudgetItems = [];
+            updateAllBudgetSelects();
+        }
+    });
+}
+
+// Update all budget select dropdowns
+function updateAllBudgetSelects() {
+    let options = '<option value="">Select Budget</option>';
+    availableBudgetItems.forEach(function(item) {
+        options += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
+    });
+    
+    $('.budget-select').each(function() {
+        const currentValue = $(this).val();
+        $(this).html(options);
+        if (currentValue) {
+            $(this).val(currentValue);
+        }
+    });
+}
 
 // Load data function
 function loadData() {
@@ -498,6 +603,19 @@ function changePage(page) {
 // Add item row
 function addItemRow() {
     itemRowCounter++;
+    
+    // Prepare budget options from available budget items
+    let budgetOptions = '<option value="">Select Budget</option>';
+    availableBudgetItems.forEach(function(item) {
+        budgetOptions += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
+    });
+    
+    // Prepare unit options
+    let unitOptions = '<option value="">Select Unit</option>';
+    units.forEach(function(unit) {
+        unitOptions += `<option value="${unit.id}">${unit.unit || unit.unit_name}</option>`;
+    });
+    
     let html = `
         <tr data-row="${itemRowCounter}">
             <td>
@@ -505,21 +623,15 @@ function addItemRow() {
             </td>
             <td>
                 <select class="form-select form-select-sm budget-select" name="items[${itemRowCounter}][budget_id]" data-row="${itemRowCounter}" required>
-                    <option value="">Select Budget</option>
-                    ${budgetCodes.map(budget => `
-                        <option value="${budget.id}" data-value="${budget.total}" data-name="${budget.description}">
-                            ${budget.budget_code} - ${budget.description}
-                        </option>
-                    `).join('')}
+                    ${budgetOptions}
                 </select>
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm budget-value" readonly>
+                <input type="text" class="form-control form-control-sm budget-value bg-light" readonly>
             </td>
             <td>
                 <select class="form-select form-select-sm unit-select" name="items[${itemRowCounter}][unit_id]" required>
-                    <option value="">Select Unit</option>
-                    ${units.map(unit => `<option value="${unit.id}">${unit.unit}</option>`).join('')}
+                    ${unitOptions}
                 </select>
             </td>
             <td>
@@ -529,7 +641,7 @@ function addItemRow() {
                 <input type="text" class="form-control form-control-sm price-input" name="items[${itemRowCounter}][price]" data-row="${itemRowCounter}" required>
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm total-input" readonly>
+                <input type="text" class="form-control form-control-sm total-input bg-light" readonly>
             </td>
             <td>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(${itemRowCounter})">
@@ -807,11 +919,16 @@ function resetForm() {
     $('#itemsTableBody').html('');
     itemRowCounter = 0;
     $('#estimatedValue').val('');
+    availableBudgetItems = [];
     
     // Clear validation errors
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').remove();
     $('#modalErrorAlert').remove();
+    
+    // Reset cascading dropdowns
+    $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
+    $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
 }
 
 // Helper functions

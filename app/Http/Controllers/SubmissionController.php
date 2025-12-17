@@ -74,6 +74,36 @@ class SubmissionController extends Controller
         ));
     }
 
+    public function getSummary(Request $request)
+    {
+        try {
+            $userId = Auth::id();
+            
+            $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
+            $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
+            $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
+            $completion = Transaction::where('user_id', $userId)->where('status', 8)->count();
+            $totalSubmission = Transaction::where('user_id', $userId)->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'newSubmission' => $newSubmission,
+                    'progress' => $progress,
+                    'paid' => $paid,
+                    'completion' => $completion,
+                    'totalSubmission' => $totalSubmission
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching summary: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching summary: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getData(Request $request)
     {
         try {

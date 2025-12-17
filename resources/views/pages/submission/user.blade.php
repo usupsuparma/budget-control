@@ -86,7 +86,9 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">New Submission</h6>
-                                <h3 class="mb-0">{{ $newSubmission }}</h3>
+                                <h3 class="mb-0" id="newSubmissionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-file-add-line stat-icon text-primary"></i>
@@ -103,7 +105,9 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Progress</h6>
-                                <h3 class="mb-0">{{ $progress }}</h3>
+                                <h3 class="mb-0" id="progressCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-time-line stat-icon text-warning"></i>
@@ -119,7 +123,9 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Paid</h6>
-                                <h3 class="mb-0">{{ $paid }}</h3>
+                                <h3 class="mb-0" id="paidCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-money-dollar-circle-line stat-icon text-success"></i>
@@ -135,7 +141,9 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Completion</h6>
-                                <h3 class="mb-0">{{ $completion }}</h3>
+                                <h3 class="mb-0" id="completionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-checkbox-circle-line stat-icon text-secondary"></i>
@@ -151,7 +159,9 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Total Submission</h6>
-                                <h3 class="mb-0">{{ $totalSubmission }}</h3>
+                                <h3 class="mb-0" id="totalSubmissionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-file-list-3-line stat-icon text-purple"></i>
@@ -361,6 +371,9 @@ const units = @json($units);
 let availableBudgetItems = [];
 
 $(document).ready(function() {
+    // Load summary data on page load
+    loadSummary();
+    
     // Load data on page load
     loadData();
 
@@ -368,6 +381,7 @@ $(document).ready(function() {
     $('#btnFilter').on('click', function() {
         currentPage = 1;
         loadData();
+        loadSummary(); // Reload summary when filter changes
     });
 
     // Add data button
@@ -482,6 +496,31 @@ function loadBudgetItems(programId) {
             showAlert('Error loading budget items', 'danger');
             availableBudgetItems = [];
             updateAllBudgetSelects();
+        }
+    });
+}
+
+// Load summary data function
+function loadSummary() {
+    $.ajax({
+        url: '{{ route("userSubmission.summary") }}',
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                $('#newSubmissionCount').text(response.data.newSubmission);
+                $('#progressCount').text(response.data.progress);
+                $('#paidCount').text(response.data.paid);
+                $('#completionCount').text(response.data.completion);
+                $('#totalSubmissionCount').text(response.data.totalSubmission);
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading summary:', xhr);
+            $('#newSubmissionCount').text('0');
+            $('#progressCount').text('0');
+            $('#paidCount').text('0');
+            $('#completionCount').text('0');
+            $('#totalSubmissionCount').text('0');
         }
     });
 }
@@ -770,6 +809,7 @@ function saveSubmission() {
                 $('#submissionModal').modal('hide');
                 showAlert(response.message || 'Submission saved successfully', 'success');
                 loadData();
+                loadSummary(); // Reload summary after save
             }
         },
         error: function(xhr) {
@@ -984,6 +1024,7 @@ function deleteSubmission(id) {
                     if (response.success) {
                         showAlert(response.message, 'success');
                         loadData();
+                        loadSummary(); // Reload summary after delete
                     }
                 },
                 error: function(xhr) {

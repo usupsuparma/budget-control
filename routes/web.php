@@ -579,6 +579,9 @@ Route::middleware('auth')->group(function () {
                 Route::get('/data', [SubmissionController::class, 'getData'])
                     ->name('userSubmission.data');
 
+                Route::get('/summary', [SubmissionController::class, 'getSummary'])
+                    ->name('userSubmission.summary');
+
                 Route::post('/store', [SubmissionController::class, 'store'])
                     ->name('userSubmission.store');
 

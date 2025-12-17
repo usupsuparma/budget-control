@@ -230,6 +230,34 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidivision.inline');
         });
 
+        Route::prefix('kpidivisioncompanypolicy')
+        // ->middleware('permission:kpi.kpidivisioncp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPIDivisionCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.dataTable')
+                ->name('kpidivisioncompanypolicy.datatable');
+
+            Route::post('/', [KPIDivisionCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.store')
+                ->name('kpidivisioncompanypolicy.store');
+
+            Route::get('/{id}/show', [KPIDivisionCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.show')
+                ->name('kpidivisioncompanypolicy.show');
+
+            Route::put('/{id}/update', [KPIDivisionCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.update')
+                ->name('kpidivisioncompanypolicy.update');
+
+            Route::delete('/{id}', [KPIDivisionCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.destroy')
+                ->name('kpidivisioncompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPIDivisionCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpidivisioncompanypolicy.pdf')
+                ->name('kpidivisioncompanypolicy.pdf');
+        });
+
     /* ========================
         KPI Department
     ======================== */

@@ -22,16 +22,98 @@ class Transaction extends Model
         'estimated_amount',
         'actual_amount',
         'urgency',
-        'status', // 0 = Submission 1 = Approved parent 2 = Approve finance 3 = Approve Division 4= Approve Finance Director 5= Approve President Director 6= Rejected 7 = Pain 8=Complete -1 = cancel
+        'status',
+        'threshold_id',
+        'current_approval_level',
+        'required_approval_levels',
+        'approval_completed_at',
+        'rejection_reason',
     ];
 
-    public function details()
+   // Status constants
+    const STATUS_PENDING = 0;
+    const STATUS_IN_PROGRESS = 1;
+    const STATUS_APPROVED = 2;
+    const STATUS_REJECTED = 3;
+    const STATUS_CANCELLED = 4;
+
+    // Relationships
+    public function threshold()
     {
-        return $this->hasMany(TransactionDetail::class, 'transaction_id');
+        return $this->belongsTo(TransactionApprovalThreshold::class, 'threshold_id');
     }
 
-    public function historyApprovals()
+    public function approvals()
     {
-        return $this->hasMany(TransactionHistoryApproval::class, 'transaction_id');
+        return $this->hasMany(TransactionApproval::class, 'transaction_id')
+                    ->orderBy('sequence_order');
+    }
+
+    public function pendingApprovals()
+    {
+        return $this->hasMany(TransactionApproval::class, 'transaction_id')
+                    ->where('status', TransactionApproval::STATUS_PENDING)
+                    ->orderBy('sequence_order');
+    }
+
+    public function nextApprover()
+    {
+        return $this->hasOne(TransactionApproval::class, 'transaction_id')
+                    ->where('status', TransactionApproval::STATUS_PENDING)
+                    ->orderBy('sequence_order')
+                    ->oldest();
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(TransactionApprovalLog::class, 'transaction_id')
+                    ->orderBy('created_at', 'desc');
+    }
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeInProgress($query)
+    {
+        return $query->where('status', self::STATUS_IN_PROGRESS);
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
+    }
+
+    // Helper methods
+    public function isFullyApproved()
+    {
+        return $this->current_approval_level >= $this->required_approval_levels;
+    }
+
+    public function getApprovalProgress()
+    {
+        if ($this->required_approval_levels == 0) {
+            return 0;
+        }
+        return round(($this->current_approval_level / $this->required_approval_levels) * 100);
+    }
+
+    public function getStatusLabel()
+    {
+        return match($this->status) {
+            self::STATUS_PENDING => 'Pending',
+            self::STATUS_IN_PROGRESS => 'In Progress',
+            self::STATUS_APPROVED => 'Approved',
+            self::STATUS_REJECTED => 'Rejected',
+            self::STATUS_CANCELLED => 'Cancelled',
+            default => 'Unknown',
+        };
     }
 }

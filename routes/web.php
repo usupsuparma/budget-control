@@ -21,6 +21,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\KPIDivisionController;
+use App\Http\Controllers\KPIDivisionCompanyPolicyController;
 use App\Http\Controllers\KPIDepartmentController;
 use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;

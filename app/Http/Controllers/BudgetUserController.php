@@ -665,7 +665,7 @@ class BudgetUserController extends Controller
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);
             if ($workplan) {
-                $workplan->updateBudgetTotal();
+                $workplan->updateBudgetFromItems();
             }
 
             return response()->json([
@@ -734,7 +734,7 @@ class BudgetUserController extends Controller
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);
             if ($workplan) {
-                $workplan->updateBudgetTotal();
+                $workplan->updateBudgetFromItems();
             }
 
             return response()->json([

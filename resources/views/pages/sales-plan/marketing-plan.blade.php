@@ -46,40 +46,167 @@
         align-items: center;
         width: 100%;
     }
+
+    .stat-card {
+        border-radius: 14px;
+        min-height: 120px;
+        /* ⬅️ dari 140 → 100 */
+    }
+
+    .stat-card .card-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        /* ⬅️ diperkecil */
+    }
+
+    .stat-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #6c757d;
+        line-height: 1.25;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        /* ⬅️ sedikit lebih kecil */
+        font-weight: 700;
+        margin-top: 4px;
+        color: #212529;
+    }
+
+    .stat-icon {
+        font-size: 24px;
+        /* ⬅️ seimbang dengan tinggi card */
+        opacity: 0.9;
+    }
 </style>
 
 
 
 
-<div class="container">
+<div id="layout-wrapper">
+    <div class="container-fluid">
+        <div class="d-flex align-items-center gap-2">
+            <div>
+                <select id="yearFilter" class="form-select form-select-sm">
+                    @php
+                    $currentYear = date('Y');
+                    @endphp
+                    @for ($y = $currentYear; $y >= $currentYear - 5; $y--)
+                    <option value="{{ $y }}">{{ $y }}</option>
+                    @endfor
+                </select>
+            </div>
 
+            <div id="customGridSearch"></div>
+        </div>
+        <br>
+        <div class="row mb-3">
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-primary border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Total Sales<br>Quantity</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-bar-chart-fill stat-icon text-primary"></i>
+                    </div>
+                </div>
+            </div>
 
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-warning border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Total Sales<br>Amount</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-money-dollar-circle-line stat-icon text-warning"></i>
+                    </div>
+                </div>
+            </div>
 
-    <!-- DATATABLE -->
-    <div class="card">
-        <div class="card-body">
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-success border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Total Margin<br>Amount</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-funds-line stat-icon text-success"></i>
+                    </div>
+                </div>
+            </div>
 
-            <div class="grid-header-wrapper mb-3">
-                <div id="customGridSearch"></div>
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-secondary border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Total Full<br>Cost</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-calculator-line stat-icon text-secondary"></i>
+                    </div>
+                </div>
+            </div>
 
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
-                    <i class="bi bi-file-earmark-spreadsheet"></i> Upload Excel
-                </button>
-
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-info border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Total Transport<br>Amount</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-truck-line stat-icon text-info"></i>
+                    </div>
+                </div>
             </div>
 
 
-            <div style="overflow-x:auto; width:100%;">
-                <div id="salesGridTable"></div>
+            <div class="col-md-6 col-xl-2">
+                <div class="card stat-card shadow-sm border-start border-dark border-4">
+                    <div class="card-body">
+                        <div>
+                            <div class="stat-title">Packing<br>Amount</div>
+                            <div class="stat-value">21,766,075</div>
+                        </div>
+                        <i class="ri-box-3-line stat-icon text-dark"></i>
+                    </div>
+                </div>
             </div>
 
 
 
         </div>
+
+        <!-- DATATABLE -->
+        <div class="card">
+            <div class="card-body">
+
+                <div class="grid-header-wrapper mb-3">
+                    <div id="customGridSearch"></div>
+
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Upload Excel
+                    </button>
+
+                </div>
+
+
+                <div style="overflow-x:auto; width:100%;">
+                    <div id="salesGridTable"></div>
+                </div>
+
+
+
+            </div>
+        </div>
+
+
     </div>
-
-
-
 </div>
 
 

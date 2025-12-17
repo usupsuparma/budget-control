@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KPIDivisionCompanyPolicy;
+use App\Models\KPISectionCompanyPolicy;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class KPIDivisionCompanyPolicyController extends Controller
+class KPISectionCompanyPolicyController extends Controller
 {
     public function dataTable()
     {
-        $rows = KPIDivisionCompanyPolicy::orderBy('tahun', 'desc')->get()->map(function ($r) {
+        $rows = KPISectionCompanyPolicy::orderBy('tahun', 'desc')->get()->map(function ($r) {
             return [
                 'id'    => $r->id,
                 'tahun' => $r->tahun,
-                'file'  => '<a href="'.route('kpidivisioncompanypolicy.pdf', $r->id).'" target="_blank"
+                'file'  => '<a href="'.route('kpisectioncompanypolicy.pdf', $r->id).'" target="_blank"
                                 class="btn btn-link btn-sm">
                                 Document PDF
                             </a>', // (opsional) ganti jadi link PDF kalau kamu punya route PDF
@@ -39,7 +39,7 @@ class KPIDivisionCompanyPolicyController extends Controller
         ]);
 
         // 1 tahun 1 policy (optional, tapi biasanya iya)
-        $cp = KPIDivisionCompanyPolicy::updateOrCreate(
+        $cp = KPISectionCompanyPolicy::updateOrCreate(
             ['tahun' => $validated['tahun']],
             $validated
         );
@@ -47,13 +47,13 @@ class KPIDivisionCompanyPolicyController extends Controller
         return response()->json([
             'status'  => 'success',
             'id'      => $cp->id,
-            'message' => 'Company Policy by KPI Division saved.',
+            'message' => 'Company Policy by KPI Section saved.',
         ], 201);
     }
 
     public function show($id)
     {
-        $cp = KPIDivisionCompanyPolicy::findOrFail($id);
+        $cp = KPISectionCompanyPolicy::findOrFail($id);
 
         return response()->json([
             'status' => 'success',
@@ -63,7 +63,7 @@ class KPIDivisionCompanyPolicyController extends Controller
 
     public function update(Request $request, $id)
     {
-        $cp = KPIDivisionCompanyPolicy::findOrFail($id);
+        $cp = KPISectionCompanyPolicy::findOrFail($id);
 
         $validated = $request->validate([
             'tahun'       => ['required', 'integer'],
@@ -82,13 +82,13 @@ class KPIDivisionCompanyPolicyController extends Controller
         return response()->json([
             'status'  => 'success',
             'id'      => $cp->id,
-            'message' => 'Company Policy by KPI Division updated.',
+            'message' => 'Company Policy by KPI Section updated.',
         ]);
     }
 
     public function destroy($id)
     {
-        $cp = KPIDivisionCompanyPolicy::find($id);
+        $cp = KPISectionCompanyPolicy::find($id);
 
         if (!$cp) {
             return response()->json([
@@ -101,26 +101,26 @@ class KPIDivisionCompanyPolicyController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Company Policy by KPI Division berhasil dihapus.',
+            'message' => 'Company Policy by KPI Section berhasil dihapus.',
         ]);
     }
 
     public function downloadPdf($id)
     {
         // Ambil data policy + detail
-        $policy = KPIDivisionCompanyPolicy::findOrFail($id);
+        $policy = KPISectionCompanyPolicy::findOrFail($id);
 
         // Load view PDF
-        $pdf = Pdf::loadView('pages.kpi.division-company-policy-pdf', [
+        $pdf = Pdf::loadView('pages.kpi.section-company-policy-pdf', [
             'policy' => $policy,
         ])->setPaper('A4', 'portrait'); // bisa 'landscape' kalau mau
 
         // Nama file
-        $fileName = 'KPI-Division-Company-Policy-' . $policy->tahun . '.pdf';
+        $fileName = 'KPI-Section-Company-Policy-' . $policy->tahun . '.pdf';
 
         // return $pdf->download($fileName);
         // atau kalau mau preview di browser:
         return $pdf->stream($fileName);
-        // return view('pages.kpi.division-company-policy-pdf', compact('policy'));
+        // return view('pages.kpi.section-company-policy-pdf', compact('policy'));
     }
 }

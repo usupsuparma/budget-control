@@ -6,7 +6,9 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AuthorizationAddBudgetController;
 use App\Http\Controllers\AuthorizationController;
+use App\Http\Controllers\AuthorizationTransactionController;
 use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
@@ -23,7 +25,9 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDivisionCompanyPolicyController;
 use App\Http\Controllers\KPIDepartmentController;
+use App\Http\Controllers\KPIDepartmentCompanyPolicyController;
 use App\Http\Controllers\KPISectionController;
+use App\Http\Controllers\KPISectionCompanyPolicyController;
 use App\Http\Controllers\KPIWorkPlanController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\PengajuanAnggaranController;
@@ -231,7 +235,7 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidivision.inline');
         });
 
-        Route::prefix('kpidivisioncompanypolicy')
+    Route::prefix('kpidivisioncompanypolicy')
         // ->middleware('permission:kpi.kpidivisioncp.view')
         ->group(function () {
             Route::get('/datatable', [KPIDivisionCompanyPolicyController::class, 'dataTable'])
@@ -302,6 +306,34 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidepartment.inline');
         });
 
+    Route::prefix('kpidepartmentcompanypolicy')
+        // ->middleware('permission:kpi.kpidepartmentcp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPIDepartmentCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.dataTable')
+                ->name('kpidepartmentcompanypolicy.datatable');
+
+            Route::post('/', [KPIDepartmentCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.store')
+                ->name('kpidepartmentcompanypolicy.store');
+
+            Route::get('/{id}/show', [KPIDepartmentCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.show')
+                ->name('kpidepartmentcompanypolicy.show');
+
+            Route::put('/{id}/update', [KPIDepartmentCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.update')
+                ->name('kpidepartmentcompanypolicy.update');
+
+            Route::delete('/{id}', [KPIDepartmentCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.destroy')
+                ->name('kpidepartmentcompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPIDepartmentCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpidepartmentcompanypolicy.pdf')
+                ->name('kpidepartmentcompanypolicy.pdf');
+        });
+
     /* ========================
         KPI Section
     ======================== */
@@ -343,6 +375,34 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{kpiSection}/inline', [KPISectionController::class, 'inlineUpdate'])
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
+        });
+
+    Route::prefix('kpisectioncompanypolicy')
+        // ->middleware('permission:kpi.kpisectioncp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPISectionCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.dataTable')
+                ->name('kpisectioncompanypolicy.datatable');
+
+            Route::post('/', [KPISectionCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.store')
+                ->name('kpisectioncompanypolicy.store');
+
+            Route::get('/{id}/show', [KPISectionCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.show')
+                ->name('kpisectioncompanypolicy.show');
+
+            Route::put('/{id}/update', [KPISectionCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.update')
+                ->name('kpisectioncompanypolicy.update');
+
+            Route::delete('/{id}', [KPISectionCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.destroy')
+                ->name('kpisectioncompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPISectionCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpisectioncompanypolicy.pdf')
+                ->name('kpisectioncompanypolicy.pdf');
         });
 
     /* ========================
@@ -1076,4 +1136,23 @@ Route::middleware('auth')->group(function () {
             Route::post('/role/remove-user', [AuthorizationController::class, 'removeUserRole'])
                 ->name('role.removeUser');
         });
+
+    Route::prefix('authorizationTransaction')->group(function () {
+        Route::get('/', [AuthorizationTransactionController::class, 'index'])->name('authorizationTransaction.index');
+        Route::get('/data', [AuthorizationTransactionController::class, 'data'])->name('authorizationTransaction.data');
+        Route::post('/', [AuthorizationTransactionController::class, 'store'])->name('authorizationTransaction.store');
+        Route::get('/{id}/edit', [AuthorizationTransactionController::class, 'edit'])->name('authorizationTransaction.edit');
+        Route::put('/{id}', [AuthorizationTransactionController::class, 'update'])->name('authorizationTransaction.update');
+        Route::delete('/{id}', [AuthorizationTransactionController::class, 'destroy'])->name('authorizationTransaction.destroy');
+    });
+
+
+    Route::prefix('authorizationAddBudget')->group(function () {
+        Route::get('/', [AuthorizationAddBudgetController::class, 'index'])->name('authorizationAddBudget.index');
+        Route::get('/data', [AuthorizationAddBudgetController::class, 'data'])->name('authorizationAddBudget.data');
+        Route::post('/', [AuthorizationAddBudgetController::class, 'store'])->name('authorizationAddBudget.store');
+        Route::get('/{id}/edit', [AuthorizationAddBudgetController::class, 'edit'])->name('authorizationAddBudget.edit');
+        Route::put('/{id}', [AuthorizationAddBudgetController::class, 'update'])->name('authorizationAddBudget.update');
+        Route::delete('/{id}', [AuthorizationAddBudgetController::class, 'destroy'])->name('authorizationAddBudget.destroy');
+    });
 });

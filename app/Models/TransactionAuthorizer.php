@@ -56,4 +56,9 @@ class TransactionAuthorizer extends Model
     {
         return $this->max_approval_amount >= $amount;
     }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

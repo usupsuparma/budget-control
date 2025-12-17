@@ -254,7 +254,7 @@
             $('#edit_level_number').val(data.level_number);
             $('#edit_authorizer').val(data.authorizer_name);
             $('#edit_authority').val(data.authority);
-            $('#edit_employee').val(data.employee);
+            $('#edit_employee').val(data.employee_id);
             $('#edit_status').val(data.status);
 
             $('#editTransactionAuthorizerForm').attr('action', "{{ url('/authorizationTransaction') }}/" + id);

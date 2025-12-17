@@ -30,12 +30,24 @@ class Transaction extends Model
         'rejection_reason',
     ];
 
+    protected $casts = [
+        'transaction_date' => 'date',
+        'estimated_amount' => 'decimal:2',
+        'actual_amount' => 'decimal:2',
+        'approval_completed_at' => 'datetime',
+    ];
+
    // Status constants
     const STATUS_PENDING = 0;
     const STATUS_IN_PROGRESS = 1;
     const STATUS_APPROVED = 2;
     const STATUS_REJECTED = 3;
     const STATUS_CANCELLED = 4;
+
+    // Urgency constants
+    const URGENCY_LOW = 'low';
+    const URGENCY_MEDIUM = 'medium';
+    const URGENCY_HIGH = 'high';
 
     // Relationships
     public function threshold()
@@ -70,6 +82,31 @@ class Transaction extends Model
                     ->orderBy('created_at', 'desc');
     }
 
+    public function details()
+    {
+        return $this->hasMany(TransactionDetail::class, 'transaction_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(Employee::class, 'user_id');
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
+    }
+
+    public function jobLevel()
+    {
+        return $this->belongsTo(JobLevel::class, 'job_level_id');
+    }
+
+    public function jobPosition()
+    {
+        return $this->belongsTo(JobPosition::class, 'job_position_id');
+    }
+
     // Scopes
     public function scopePending($query)
     {
@@ -91,10 +128,65 @@ class Transaction extends Model
         return $query->where('status', self::STATUS_REJECTED);
     }
 
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', self::STATUS_CANCELLED);
+    }
+
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function scopeByYear($query, $year)
+    {
+        return $query->whereYear('transaction_date', $year);
+    }
+
+    public function scopeByMonth($query, $month)
+    {
+        return $query->whereMonth('transaction_date', $month);
+    }
+
     // Helper methods
     public function isFullyApproved()
     {
         return $this->current_approval_level >= $this->required_approval_levels;
+    }
+
+    public function isPending()
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isInProgress()
+    {
+        return $this->status === self::STATUS_IN_PROGRESS;
+    }
+
+    public function isApproved()
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isRejected()
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    public function isCancelled()
+    {
+        return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function canBeEdited()
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function canBeCancelled()
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_IN_PROGRESS]);
     }
 
     public function getApprovalProgress()
@@ -115,5 +207,94 @@ class Transaction extends Model
             self::STATUS_CANCELLED => 'Cancelled',
             default => 'Unknown',
         };
+    }
+
+    public function getStatusBadgeClass()
+    {
+        return match($this->status) {
+            self::STATUS_PENDING => 'warning',
+            self::STATUS_IN_PROGRESS => 'info',
+            self::STATUS_APPROVED => 'success',
+            self::STATUS_REJECTED => 'danger',
+            self::STATUS_CANCELLED => 'secondary',
+            default => 'light',
+        };
+    }
+
+    public function getUrgencyLabel()
+    {
+        return match($this->urgency) {
+            self::URGENCY_LOW => 'Low',
+            self::URGENCY_MEDIUM => 'Medium',
+            self::URGENCY_HIGH => 'High',
+            default => 'Unknown',
+        };
+    }
+
+    public function getUrgencyBadgeClass()
+    {
+        return match($this->urgency) {
+            self::URGENCY_LOW => 'success',
+            self::URGENCY_MEDIUM => 'warning',
+            self::URGENCY_HIGH => 'danger',
+            default => 'light',
+        };
+    }
+
+    /**
+     * Get the next pending approval
+     */
+    public function getNextPendingApproval()
+    {
+        return $this->approvals()
+            ->where('status', TransactionApproval::STATUS_PENDING)
+            ->orderBy('sequence_order')
+            ->first();
+    }
+
+    /**
+     * Get current approver info
+     */
+    public function getCurrentApproverInfo()
+    {
+        $nextApproval = $this->getNextPendingApproval();
+        
+        if ($nextApproval) {
+            return [
+                'level' => $nextApproval->approval_level,
+                'name' => $nextApproval->approver_name,
+                'id' => $nextApproval->approver_id,
+            ];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if a user can approve this transaction
+     */
+    public function canBeApprovedBy($userId)
+    {
+        if ($this->status !== self::STATUS_IN_PROGRESS) {
+            return false;
+        }
+
+        $nextApproval = $this->getNextPendingApproval();
+        
+        if (!$nextApproval) {
+            return false;
+        }
+
+        // Check if user is the assigned approver
+        if ($nextApproval->approver_id === $userId) {
+            return true;
+        }
+
+        // Check if user has override permission
+        $authorizer = TransactionAuthorizer::where('employee_id', $userId)
+            ->where('can_override', true)
+            ->first();
+
+        return $authorizer !== null;
     }
 }

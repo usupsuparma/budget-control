@@ -14,6 +14,7 @@ class TransactionAuthorizer extends Model
     protected $fillable = [
         'level_number',
         'authorizer_name',
+        'authority',
         'employee_id',
         'status',
         'position_code',

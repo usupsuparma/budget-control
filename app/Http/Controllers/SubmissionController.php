@@ -11,6 +11,7 @@ use App\Models\KPIWorkPlan;
 use App\Models\BudgetCode;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
+use App\Services\ApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,13 @@ use Illuminate\Support\Facades\Validator;
 
 class SubmissionController extends Controller
 {
+    protected $approvalService;
+
+    public function __construct(ApprovalService $approvalService)
+    {
+        $this->approvalService = $approvalService;
+    }
+
     public function user()
     {
         $title = 'Submission Users';
@@ -109,7 +117,7 @@ class SubmissionController extends Controller
         try {
 
             $query = Transaction::query();
-            $query->with(['details', 'historyApprovals']);
+            $query->with(['details']);
 
             // Filter by year
             if ($request->has('year') && $request->year != '' && $request->year != 'all') {
@@ -227,10 +235,17 @@ class SubmissionController extends Controller
 
             DB::commit();
 
+            // Create approval chain after transaction is committed
+            $approvalResult = $this->approvalService->createApprovalChain($transaction->id);
+            
+            if (!$approvalResult['success']) {
+                Log::warning('Failed to create approval chain: ' . $approvalResult['message']);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Transaction created successfully',
-                'data' => $transaction->load('details')
+                'data' => $transaction->load(['details', 'approvals'])
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

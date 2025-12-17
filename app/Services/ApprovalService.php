@@ -142,7 +142,6 @@ class ApprovalService
                 ];
             }
 
-            DB::beginTransaction();
 
             $fromStatus = $approval->status;
 
@@ -182,12 +181,10 @@ class ApprovalService
                 $ipAddress
             );
 
-            DB::commit();
 
             return array_merge(['success' => true], $result);
 
         } catch (Exception $e) {
-            DB::rollBack();
             Log::error('Process approval failed: ' . $e->getMessage());
             
             return [

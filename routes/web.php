@@ -686,6 +686,14 @@ Route::middleware('auth')->group(function () {
                 Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
                     ->name('userSubmission.budget.info');
 
+                Route::prefix('{id}')->group(function () {
+                    Route::post('/approve', [SubmissionController::class, 'approve'])
+                        ->name('userSubmission.approve');
+
+                    Route::post('/reject', [SubmissionController::class, 'reject'])
+                        ->name('userSubmission.reject');
+                });
+
                 // Cascading dropdown routes
                 Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
                     ->name('userSubmission.jobPositions');
@@ -1031,49 +1039,49 @@ Route::middleware('auth')->group(function () {
             // Dashboard
             Route::get('/', [ApprovalController::class, 'index'])
                 ->name('approval');
-            
+
             // Get pending approvals for current user (AJAX)
             Route::get('/pending', [ApprovalController::class, 'getPendingApprovals'])
                 ->name('approval.pending');
-            
+
             // Get all transactions for admin (AJAX)
             Route::get('/transactions', [ApprovalController::class, 'getAllTransactions'])
                 ->name('approval.transactions');
-            
+
             // Get statistics (AJAX)
             Route::get('/statistics', [ApprovalController::class, 'getStatistics'])
                 ->name('approval.statistics');
-            
+
             // Get approval detail
             Route::get('/detail/{id}', [ApprovalController::class, 'show'])
                 ->name('approval.show');
-            
+
             // Get transaction detail with approvals
             Route::get('/transaction/{transactionId}', [ApprovalController::class, 'getTransactionDetail'])
                 ->name('approval.transaction.detail');
-            
+
             // Get approval history
             Route::get('/history/{transactionId}', [ApprovalController::class, 'getHistory'])
                 ->name('approval.history');
-            
+
             // Process approval (approve)
             Route::post('/approve/{id}', [ApprovalController::class, 'approve'])
                 ->middleware('permission:approval.create')
                 ->name('approval.approve');
-            
+
             // Process approval (reject)
             Route::post('/reject/{id}', [ApprovalController::class, 'reject'])
                 ->middleware('permission:approval.create')
                 ->name('approval.reject');
-            
+
             // Cancel transaction
             Route::post('/cancel/{transactionId}', [ApprovalController::class, 'cancel'])
                 ->name('approval.cancel');
-            
+
             // Check threshold for amount
             Route::post('/check-threshold', [ApprovalController::class, 'checkThreshold'])
                 ->name('approval.checkThreshold');
-            
+
             // Threshold Management
             Route::prefix('threshold')->group(function () {
                 Route::get('/', [ApprovalController::class, 'thresholdIndex'])
@@ -1090,7 +1098,7 @@ Route::middleware('auth')->group(function () {
                     ->middleware('permission:approval.delete')
                     ->name('approval.threshold.delete');
             });
-            
+
             // Authorizer Management
             Route::prefix('authorizer')->group(function () {
                 Route::get('/', [ApprovalController::class, 'authorizerIndex'])

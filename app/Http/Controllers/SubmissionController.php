@@ -115,9 +115,12 @@ class SubmissionController extends Controller
     public function getData(Request $request)
     {
         try {
-
+            $userId = Auth::id();
             $query = Transaction::query();
-            $query->with(['details']);
+            $query->with(['details', 'approvals' => function($q) use ($userId) {
+                $q->where('approver_id', $userId)
+                  ->where('status', 0); // pending
+            }]);
 
             // Filter by year
             if ($request->has('year') && $request->year != '' && $request->year != 'all') {
@@ -132,6 +135,13 @@ class SubmissionController extends Controller
             // Pagination
             $perPage = $request->per_page ?? 10;
             $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+            // Add can_approve flag to each transaction
+            $transactions->getCollection()->transform(function($transaction) use ($userId) {
+                $transaction->can_approve = $transaction->approvals->isNotEmpty();
+                $transaction->pending_approval = $transaction->approvals->first();
+                return $transaction;
+            });
 
             return response()->json([
                 'success' => true,
@@ -606,6 +616,134 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching budget items: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve transaction
+     */
+    public function approve(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'comments' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $userId = Auth::id();
+            $userName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+
+            // Find pending approval for this user
+            $approval = \App\Models\TransactionApproval::where('transaction_id', $id)
+                ->where('approver_id', $userId)
+                ->where('status', 0) // pending
+                ->first();
+
+            if (!$approval) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approval not found or already processed'
+                ], 404);
+            }
+
+            // Process approval using ApprovalService
+            $result = $this->approvalService->processApproval(
+                $approval->id,
+                1, // status approved
+                $userId,
+                $userName,
+                $request->comments,
+                $request->ip()
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error approving transaction: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving transaction: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject transaction
+     */
+    public function reject(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'comments' => 'required|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $userId = Auth::id();
+            $userName = Auth::user()->name;
+
+            // Find pending approval for this user
+            $approval = \App\Models\TransactionApproval::where('transaction_id', $id)
+                ->where('approver_id', $userId)
+                ->where('status', 0) // pending
+                ->first();
+
+            if (!$approval) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approval not found or already processed'
+                ], 404);
+            }
+
+            // Process rejection using ApprovalService
+            $result = $this->approvalService->processApproval(
+                $approval->id,
+                2, // status rejected
+                $userId,
+                $userName,
+                $request->comments,
+                $request->ip()
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error rejecting transaction: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting transaction: ' . $e->getMessage()
             ], 500);
         }
     }

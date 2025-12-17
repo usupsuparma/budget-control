@@ -598,6 +598,14 @@ function renderTable(data) {
                                     <i class="ri-delete-bin-line"></i>
                                 </button>
                             ` : ''}
+                            ${item.can_approve ? `
+                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                    <i class="ri-check-line"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                    <i class="ri-close-line"></i> Reject
+                                </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1132,9 +1140,94 @@ function showModalError(message, errors = null) {
         icon: 'error',
         title: 'Validation Error',
         html: errorMessage,
-        confirmButtonColor: '#dc3545',
-        width: '600px'
+        confirmButtonColor: '#dc3545'
     });
 }
+
+// Approve submission
+function approveSubmission(id) {
+    Swal.fire({
+        title: 'Approve Submission?',
+        text: 'Are you sure you want to approve this submission?',
+        icon: 'question',
+        input: 'textarea',
+        inputLabel: 'Comments (optional)',
+        inputPlaceholder: 'Enter your comments here...',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Approve',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let url = "{{route('userSubmission.approve', ':id')}}".replace(':id', id);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    comments: result.value
+                },
+                success: function(response) {
+                    showAlert("Sukses Approve Submission", 'success');
+                    loadData();
+                    loadSummary();
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert(response.message || 'Error approving submission', 'error');
+                }
+            });
+        }
+    });
+}
+
+// Reject submission
+function rejectSubmission(id) {
+    Swal.fire({
+        title: 'Reject Submission?',
+        text: 'Are you sure you want to reject this submission?',
+        icon: 'warning',
+        input: 'textarea',
+        inputLabel: 'Rejection Reason (required)',
+        inputPlaceholder: 'Please provide a reason for rejection...',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Rejection reason is required!';
+            }
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Reject',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let url = "{{ route('userSubmission.reject', ':id') }}".replace(':id', id);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    comments: result.value
+                },
+                success: function(response) {
+                    console.log(response);
+                    
+                    showAlert("Sukses Reject Submission", 'success');
+                    loadData();
+                    loadSummary();
+                },
+                error: function(xhr) {
+                    console.log(xhr);
+                    
+                    const response = xhr.responseJSON;
+                    showAlert(response.message || 'Error rejecting submission', 'error');
+                }
+            });
+        }
+    });
+}
+
 </script>
 @endsection

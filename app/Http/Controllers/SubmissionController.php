@@ -159,6 +159,9 @@ class SubmissionController extends Controller
                 'user_name' => $user->first_name . ' ' . $user->last_name,
                 'unit_id' => $unit->id ?? 0,
                 'unit_name' => $unit->name ?? '',
+                'job_level_id' => $request->job_level_id,
+                'job_position_id' => $request->job_position_id,
+                'program_id' => $request->program_id,
                 'purpose' => $request->purpose,
                 'estimated_amount' => $estimatedAmount,
                 'actual_amount' => 0,
@@ -294,6 +297,9 @@ class SubmissionController extends Controller
             // Update transaction
             $transaction->update([
                 'transaction_date' => $request->transaction_date,
+                'job_level_id' => $request->job_level_id,
+                'job_position_id' => $request->job_position_id,
+                'program_id' => $request->program_id,
                 'purpose' => $request->purpose,
                 'estimated_amount' => $estimatedAmount,
                 'urgency' => $request->urgency,

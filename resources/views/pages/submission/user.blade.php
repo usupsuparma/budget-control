@@ -876,18 +876,81 @@ function editSubmission(id) {
                 $('#purpose').val(data.purpose);
                 $('#urgency').val(data.urgency);
                 
-                // Clear and add item rows
-                $('#itemsTableBody').html('');
-                data.details.forEach(detail => {
-                    addItemRow();
-                    const row = itemRowCounter;
-                    $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
-                    $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id).trigger('change');
-                    $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
-                    $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
-                    $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
-                    calculateRowTotal(row);
-                });
+                // Set Job Level first
+                $('#jobLevel').val(data.job_level_id);
+                
+                // Load Job Positions based on Job Level, then set the value
+                if (data.job_level_id) {
+                    $.ajax({
+                        url: '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                        type: 'GET',
+                        success: function(jobPosResponse) {
+                            if (jobPosResponse.success) {
+                                let options = '<option value="">Select Job Position</option>';
+                                jobPosResponse.data.forEach(function(jp) {
+                                    options += `<option value="${jp.id}">${jp.job_position_name}</option>`;
+                                });
+                                $('#jobPosition').html(options).prop('disabled', false);
+                                $('#jobPosition').val(data.job_position_id);
+                            }
+                        }
+                    });
+                }
+                
+                // Load Programs based on Job Level, then set the value
+                if (data.job_level_id) {
+                    $.ajax({
+                        url: '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                        type: 'GET',
+                        success: function(programResponse) {
+                            if (programResponse.success) {
+                                let options = '<option value="">Select Program</option>';
+                                programResponse.data.forEach(function(prog) {
+                                    options += `<option value="${prog.id}">${prog.name}</option>`;
+                                });
+                                $('#programId').html(options).prop('disabled', false);
+                                $('#programId').val(data.program_id);
+                                
+                                // Load Budget Items based on Program, then populate item rows
+                                if (data.program_id) {
+                                    $.ajax({
+                                        url: '{{ route("userSubmission.budgetItems", ":programId") }}'.replace(':programId', data.program_id),
+                                        type: 'GET',
+                                        success: function(budgetResponse) {
+                                            if (budgetResponse.success) {
+                                                availableBudgetItems = budgetResponse.data;
+                                                
+                                                // Now populate the item rows
+                                                $('#itemsTableBody').html('');
+                                                itemRowCounter = 0;
+                                                
+                                                data.details.forEach(detail => {
+                                                    addItemRow();
+                                                    const row = itemRowCounter;
+                                                    
+                                                    // Set values for each field
+                                                    $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
+                                                    $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id);
+                                                    
+                                                    // Update budget value after setting budget_id
+                                                    const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
+                                                    if (selectedBudget) {
+                                                        $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(selectedBudget.total));
+                                                    }
+                                                    
+                                                    $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
+                                                    $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
+                                                    $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
+                                                    calculateRowTotal(row);
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
                 
                 $('#submissionModal').modal('show');
             }

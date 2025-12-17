@@ -23,7 +23,9 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPIDivisionCompanyPolicyController;
 use App\Http\Controllers\KPIDepartmentController;
+use App\Http\Controllers\KPIDepartmentCompanyPolicyController;
 use App\Http\Controllers\KPISectionController;
+use App\Http\Controllers\KPISectionCompanyPolicyController;
 use App\Http\Controllers\KPIWorkPlanController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\PengajuanAnggaranController;
@@ -231,7 +233,7 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidivision.inline');
         });
 
-        Route::prefix('kpidivisioncompanypolicy')
+    Route::prefix('kpidivisioncompanypolicy')
         // ->middleware('permission:kpi.kpidivisioncp.view')
         ->group(function () {
             Route::get('/datatable', [KPIDivisionCompanyPolicyController::class, 'dataTable'])
@@ -302,6 +304,34 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidepartment.inline');
         });
 
+    Route::prefix('kpidepartmentcompanypolicy')
+        // ->middleware('permission:kpi.kpidepartmentcp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPIDepartmentCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.dataTable')
+                ->name('kpidepartmentcompanypolicy.datatable');
+
+            Route::post('/', [KPIDepartmentCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.store')
+                ->name('kpidepartmentcompanypolicy.store');
+
+            Route::get('/{id}/show', [KPIDepartmentCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.show')
+                ->name('kpidepartmentcompanypolicy.show');
+
+            Route::put('/{id}/update', [KPIDepartmentCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.update')
+                ->name('kpidepartmentcompanypolicy.update');
+
+            Route::delete('/{id}', [KPIDepartmentCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.destroy')
+                ->name('kpidepartmentcompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPIDepartmentCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpidepartmentcompanypolicy.pdf')
+                ->name('kpidepartmentcompanypolicy.pdf');
+        });
+
     /* ========================
         KPI Section
     ======================== */
@@ -343,6 +373,34 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{kpiSection}/inline', [KPISectionController::class, 'inlineUpdate'])
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
+        });
+
+    Route::prefix('kpisectioncompanypolicy')
+        // ->middleware('permission:kpi.kpisectioncp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPISectionCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.dataTable')
+                ->name('kpisectioncompanypolicy.datatable');
+
+            Route::post('/', [KPISectionCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.store')
+                ->name('kpisectioncompanypolicy.store');
+
+            Route::get('/{id}/show', [KPISectionCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.show')
+                ->name('kpisectioncompanypolicy.show');
+
+            Route::put('/{id}/update', [KPISectionCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.update')
+                ->name('kpisectioncompanypolicy.update');
+
+            Route::delete('/{id}', [KPISectionCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.destroy')
+                ->name('kpisectioncompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPISectionCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpisectioncompanypolicy.pdf')
+                ->name('kpisectioncompanypolicy.pdf');
         });
 
     /* ========================

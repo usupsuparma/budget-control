@@ -25,11 +25,11 @@ class BudgetUserController extends Controller
             ->select('division_id')
             ->distinct()
             ->get();
-        
-        $divisions = $kpiDivisions->map(function($kpi) {
+
+        $divisions = $kpiDivisions->map(function ($kpi) {
             return $kpi->division;
         })->filter()->unique('id')->values();
-        
+
         $years = range(date('Y') + 2, date('Y') - 5);
         return view('pages.budget.budget-user', compact('years', 'divisions'));
     }
@@ -44,8 +44,8 @@ class BudgetUserController extends Controller
                 ->select('division_id')
                 ->distinct()
                 ->get();
-            
-            $divisions = $kpiDivisions->map(function($kpi) {
+
+            $divisions = $kpiDivisions->map(function ($kpi) {
                 return $kpi->division;
             })->filter()->unique('id')->values();
 
@@ -80,22 +80,31 @@ class BudgetUserController extends Controller
 
             // Get all workplans for this division and year
             $workplans = KPIWorkPlan::with([
-                    'kpiDepartment' => function($query) {
-                        $query->with(['department', 'kpiDivision']);
-                    },
-                    'kpiSection' => function($query) {
-                        $query->with('section');
-                    }
-                ])
+                'kpiDepartment' => function ($query) {
+                    $query->with(['department', 'kpiDivision']);
+                },
+                'kpiSection' => function ($query) {
+                    $query->with(['section.department']);
+                }
+            ])
                 ->where('year', $year)
-                ->whereHas('kpiDepartment.kpiDivision', function($query) use ($divisionId) {
-                    $query->where('division_id', $divisionId);
+                ->where(function ($query) use ($divisionId) {
+                    // Get department-level workplans
+                    $query->whereHas('kpiDepartment.kpiDivision', function ($q) use ($divisionId) {
+                        $q->where('division_id', $divisionId);
+                    })
+                        // OR get section-level workplans
+                        ->orWhere(function ($q) use ($divisionId) {
+                            $q->whereHas('kpiSection.section.department', function ($deptQuery) use ($divisionId) {
+                                $deptQuery->where('division_id', $divisionId);
+                            });
+                        });
                 })
                 ->get();
 
             // Get all budget items from these workplans
             $workplanIds = $workplans->pluck('id')->toArray();
-            
+
             $items = WorkplanBudgetItem::with(['category', 'budgetCodeRelation', 'approver', 'workplan'])
                 ->whereIn('kpi_workplan_id', $workplanIds)
                 ->orderBy('kpi_workplan_id')
@@ -232,7 +241,9 @@ class BudgetUserController extends Controller
         try {
             $validated = $request->validate([
                 'kpi_workplan_id' => 'required|exists:kpi_workplans,id',
-                'budget_category_id' => 'required|exists:budget_categories,id',                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',                'description' => 'required|string',
+                'budget_category_id' => 'required|exists:budget_categories,id',
+                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',
                 'product_line' => 'nullable|string|max:100',
@@ -277,7 +288,7 @@ class BudgetUserController extends Controller
                 ($validated['activity_dec'] ?? 0)
             );
             $validated['total'] = $total;
-            
+
             // Set sort order
             $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $validated['kpi_workplan_id'])
                 ->max('sort_order');
@@ -285,6 +296,11 @@ class BudgetUserController extends Controller
 
             $item = WorkplanBudgetItem::create($validated);
             $item->load(['category', 'budgetCodeRelation', 'workplan']);
+
+             $workplan = $item->workplan;
+            if ($workplan) {
+                $workplan->updateBudgetFromItems();
+            }
 
             return response()->json([
                 'success' => true,
@@ -348,7 +364,7 @@ class BudgetUserController extends Controller
                 'activity_dec' => 'nullable|integer|min:0',
             ]);
 
-            
+
             $total = $validated['price_estimation'] * (
                 ($validated['activity_jan'] ?? 0) +
                 ($validated['activity_feb'] ?? 0) +
@@ -445,26 +461,26 @@ class BudgetUserController extends Controller
                 ->where('year', $year)
                 ->whereIn('kpi_type', ['department', 'section'])
                 ->get()
-                ->filter(function($workplan) use ($divisionId) {
+                ->filter(function ($workplan) use ($divisionId) {
                     if ($workplan->kpi_type === 'department') {
-                        return $workplan->kpiDepartment && 
-                               $workplan->kpiDepartment->department && 
-                               $workplan->kpiDepartment->department->division_id == $divisionId;
+                        return $workplan->kpiDepartment &&
+                            $workplan->kpiDepartment->department &&
+                            $workplan->kpiDepartment->department->division_id == $divisionId;
                     } else if ($workplan->kpi_type === 'section') {
-                        return $workplan->kpiSection && 
-                               $workplan->kpiSection->section && 
-                               $workplan->kpiSection->section->department &&
-                               $workplan->kpiSection->section->department->division_id == $divisionId;
+                        return $workplan->kpiSection &&
+                            $workplan->kpiSection->section &&
+                            $workplan->kpiSection->section->department &&
+                            $workplan->kpiSection->section->department->division_id == $divisionId;
                     }
                     return false;
                 })
                 ->values()
-                ->map(function($workplan) {
+                ->map(function ($workplan) {
                     return [
                         'id' => $workplan->id,
                         'activity' => $workplan->activity,
                         'kpi_type' => $workplan->kpi_type,
-                        'kpi_name' => $workplan->kpi_type === 'department' 
+                        'kpi_name' => $workplan->kpi_type === 'department'
                             ? ($workplan->kpiDepartment->department->name ?? '-')
                             : ($workplan->kpiSection->section->name ?? '-'),
                         'year' => $workplan->year
@@ -502,35 +518,35 @@ class BudgetUserController extends Controller
 
             // Get workplans based on division and year
             $workplans = KPIWorkPlan::with([
-                    'kpiDepartment' => function($query) {
-                        $query->with(['department', 'kpiDivision']);
-                    },
-                    'kpiSection' => function($query) {
-                        $query->with(['section', 'kpiDepartment.kpiDivision']);
-                    }
-                ])
+                'kpiDepartment' => function ($query) {
+                    $query->with(['department', 'kpiDivision']);
+                },
+                'kpiSection' => function ($query) {
+                    $query->with(['section', 'kpiDepartment.kpiDivision']);
+                }
+            ])
                 ->where('year', $year)
-                ->where(function($query) use ($divisionId) {
+                ->where(function ($query) use ($divisionId) {
                     // For department workplans (kpi_type = 'department')
-                    $query->where(function($q) use ($divisionId) {
+                    $query->where(function ($q) use ($divisionId) {
                         $q->where('kpi_type', 'department')
-                          ->whereHas('kpiDepartment', function($dept) use ($divisionId) {
-                              $dept->whereHas('kpiDivision', function($div) use ($divisionId) {
-                                  $div->where('division_id', $divisionId);
-                              });
-                          });
+                            ->whereHas('kpiDepartment', function ($dept) use ($divisionId) {
+                                $dept->whereHas('kpiDivision', function ($div) use ($divisionId) {
+                                    $div->where('division_id', $divisionId);
+                                });
+                            });
                     })
-                    // For section workplans (kpi_type = 'section')
-                    ->orWhere(function($q) use ($divisionId) {
-                        $q->where('kpi_type', 'section')
-                          ->whereHas('kpiSection', function($sect) use ($divisionId) {
-                              $sect->whereHas('kpiDepartment', function($dept) use ($divisionId) {
-                                  $dept->whereHas('kpiDivision', function($div) use ($divisionId) {
-                                      $div->where('division_id', $divisionId);
-                                  });
-                              });
-                          });
-                    });
+                        // For section workplans (kpi_type = 'section')
+                        ->orWhere(function ($q) use ($divisionId) {
+                            $q->where('kpi_type', 'section')
+                                ->whereHas('kpiSection', function ($sect) use ($divisionId) {
+                                    $sect->whereHas('kpiDepartment', function ($dept) use ($divisionId) {
+                                        $dept->whereHas('kpiDivision', function ($div) use ($divisionId) {
+                                            $div->where('division_id', $divisionId);
+                                        });
+                                    });
+                                });
+                        });
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -555,17 +571,17 @@ class BudgetUserController extends Controller
     {
         try {
             $workplan = KPIWorkPlan::findOrFail($workplanId);
-            
+
             // Get parent categories (level 1) with their children (level 2)
-            $categories = BudgetCategory::with(['children' => function($query) {
+            $categories = BudgetCategory::with(['children' => function ($query) {
                 $query->where('level', 2)
-                      ->where('is_active', true)
-                      ->orderBy('sort_order');
+                    ->where('is_active', true)
+                    ->orderBy('sort_order');
             }])
-            ->where('level', 1)
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+                ->where('level', 1)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -588,7 +604,7 @@ class BudgetUserController extends Controller
     {
         try {
             $categoryId = $request->input('category_id');
-            
+
             $items = WorkplanBudgetItem::with(['category', 'budgetCodeRelation', 'approver'])
                 ->where('kpi_workplan_id', $workplanId)
                 ->where('budget_category_id', $categoryId)
@@ -652,7 +668,7 @@ class BudgetUserController extends Controller
 
             $validated['kpi_workplan_id'] = $workplanId;
             $validated['status'] = 'draft';
-            
+
             // Set sort order
             $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $workplanId)
                 ->where('budget_category_id', $validated['budget_category_id'])
@@ -665,7 +681,7 @@ class BudgetUserController extends Controller
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);
             if ($workplan) {
-                $workplan->updateBudgetTotal();
+                $workplan->updateBudgetFromItems();
             }
 
             return response()->json([
@@ -734,7 +750,7 @@ class BudgetUserController extends Controller
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);
             if ($workplan) {
-                $workplan->updateBudgetTotal();
+                $workplan->updateBudgetFromItems();
             }
 
             return response()->json([

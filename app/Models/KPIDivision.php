@@ -103,4 +103,9 @@ class KPIDivision extends Model
         return $this->hasMany(KpiDepartment::class, 'kpi_division_id');
     }
 
+    public function companyPolicyByDivision()
+    {
+        // kpi_division.year -> kpidivision_company_policy.tahun
+        return $this->belongsTo(KPIDivisionCompanyPolicy::class, 'year', 'tahun');
+    }
 }

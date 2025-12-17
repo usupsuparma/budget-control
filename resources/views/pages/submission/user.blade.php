@@ -7,6 +7,7 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
     .stat-card {
         border-left: 4px solid;
@@ -21,7 +22,7 @@
         opacity: 0.8;
     }
     .table-responsive {
-        min-height: 400px;
+        min-height: 150px;
     }
     .badge-status {
         padding: 0.35rem 0.65rem;
@@ -329,7 +330,7 @@
                         </table>
                     </div>
 
-                    <div class="row mt-3">
+                    <div class="row">
                         <div class="col-md-12">
                             <label class="form-label">Urgency <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="urgency" name="urgency" rows="3" required></textarea>
@@ -349,6 +350,7 @@
 @section('js')
 <script type="module" src="{{ asset('assets/js/app.js') }}"></script>
 <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 // Global variables
@@ -463,8 +465,9 @@ function loadPrograms(jobLevelId) {
 
 // Load budget items based on program ID
 function loadBudgetItems(programId) {
+    let urlBudgetItems = `{{route('userSubmission.budgetItems', ':programId')}}`.replace(':programId', programId);
     $.ajax({
-        url: `/admission/budget-items/${programId}`,
+        url: urlBudgetItems,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -474,6 +477,8 @@ function loadBudgetItems(programId) {
             }
         },
         error: function(xhr) {
+            console.log(xhr);
+            
             showAlert('Error loading budget items', 'danger');
             availableBudgetItems = [];
             updateAllBudgetSelects();
@@ -842,7 +847,12 @@ function viewSubmission(id) {
         success: function(response) {
             if (response.success) {
                 // Display view modal (you can create a separate modal for viewing)
-                alert('View functionality - ID: ' + id);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'View Submission',
+                    text: 'View functionality - ID: ' + id,
+                    confirmButtonColor: '#0d6efd'
+                });
             }
         },
         error: function(xhr) {
@@ -890,28 +900,37 @@ function editSubmission(id) {
 
 // Delete submission
 function deleteSubmission(id) {
-    if (!confirm('Are you sure you want to delete this submission?')) {
-        return;
-    }
-
-    $.ajax({
-        url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
-        type: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.success) {
-                showAlert(response.message, 'success');
-                loadData();
-            }
-        },
-        error: function(xhr) {
-            let message = 'Error deleting submission';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                message = xhr.responseJSON.message;
-            }
-            showAlert(message, 'danger');
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        loadData();
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error deleting submission';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    showAlert(message, 'danger');
+                }
+            });
         }
     });
 }
@@ -972,38 +991,25 @@ function getStatusBadge(status) {
 }
 
 function showAlert(message, type) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const iconClass = type === 'success' ? 'ri-checkbox-circle-line' : 'ri-error-warning-line';
+    const icon = type === 'success' ? 'success' : 'error';
+    const title = type === 'success' ? 'Success!' : 'Error!';
     
-    const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-            <i class="${iconClass} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Remove existing alerts
-    $('.alert').remove();
-    
-    // Add new alert at the top of the container
-    $('.container-fluid').prepend(alertHtml);
-    
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        $('.alert').alert('close');
-    }, 5000);
+    Swal.fire({
+        icon: icon,
+        title: title,
+        text: message,
+        confirmButtonColor: type === 'success' ? '#28a745' : '#dc3545',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: true
+    });
 }
 
 function showModalError(message, errors = null) {
-    let errorHtml = `
-        <div id="modalErrorAlert" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-            <i class="ri-error-warning-line me-2"></i>
-            <strong>${message}</strong>
-    `;
+    let errorMessage = message;
     
     if (errors) {
-        errorHtml += '<ul class="mb-0 mt-2">';
+        errorMessage += '<br><br><ul style="text-align: left; margin-left: 20px;">';
         Object.keys(errors).forEach(function(field) {
             // Make error messages more readable
             let fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -1013,21 +1019,18 @@ function showModalError(message, errors = null) {
                 const fieldName = parts[2].replace(/_/g, ' ');
                 fieldLabel = `Item ${index} - ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
             }
-            errorHtml += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
+            errorMessage += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
         });
-        errorHtml += '</ul>';
+        errorMessage += '</ul>';
     }
     
-    errorHtml += `
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Remove existing modal errors
-    $('#modalErrorAlert').remove();
-    
-    // Add error at the top of modal body
-    $('.modal-body').prepend(errorHtml);
+    Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        html: errorMessage,
+        confirmButtonColor: '#dc3545',
+        width: '600px'
+    });
 }
 </script>
 @endsection

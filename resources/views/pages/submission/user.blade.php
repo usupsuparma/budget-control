@@ -63,7 +63,7 @@
 @section('content')
 <div id="layout-wrapper">
     <div class="container-fluid">
-
+        {{-- === PAGE TITLE & BREADCRUMB === --}}
         <div class="d-flex align-items-center mt-2 mb-2">
             <h6 class="mb-0 flex-grow-1">List Pengajuan</h6>
             <div class="flex-shrink-0">
@@ -78,7 +78,8 @@
 
         {{-- === SUMMARY CARD === --}}
         <div class="row mb-3">
-            <div class="col-md-6 col-xl-3">
+            {{-- New Submission --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #0d6efd !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -93,7 +94,9 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+
+            {{-- Progress --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #ffc107 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -108,7 +111,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+            {{-- Paid --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #198754 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -123,7 +127,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+            {{-- Completion --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6c757d !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -138,7 +143,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12">
+            {{-- Total Submission --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6610f2 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -338,8 +344,6 @@
         </div>
     </div>
 </div>
-
-</main>
 @endsection
 
 @section('js')

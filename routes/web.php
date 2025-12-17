@@ -6,7 +6,9 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AuthorizationAddBudgetController;
 use App\Http\Controllers\AuthorizationController;
+use App\Http\Controllers\AuthorizationTransactionController;
 use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
@@ -1044,4 +1046,23 @@ Route::middleware('auth')->group(function () {
             Route::post('/role/remove-user', [AuthorizationController::class, 'removeUserRole'])
                 ->name('role.removeUser');
         });
+
+    Route::prefix('authorizationTransaction')->group(function () {
+        Route::get('/', [AuthorizationTransactionController::class, 'index'])->name('authorizationTransaction.index');
+        Route::get('/data', [AuthorizationTransactionController::class, 'data'])->name('authorizationTransaction.data');
+        Route::post('/', [AuthorizationTransactionController::class, 'store'])->name('authorizationTransaction.store');
+        Route::get('/{id}/edit', [AuthorizationTransactionController::class, 'edit'])->name('authorizationTransaction.edit');
+        Route::put('/{id}', [AuthorizationTransactionController::class, 'update'])->name('authorizationTransaction.update');
+        Route::delete('/{id}', [AuthorizationTransactionController::class, 'destroy'])->name('authorizationTransaction.destroy');
+    });
+
+
+    Route::prefix('authorizationAddBudget')->group(function () {
+        Route::get('/', [AuthorizationAddBudgetController::class, 'index'])->name('authorizationAddBudget.index');
+        Route::get('/data', [AuthorizationAddBudgetController::class, 'data'])->name('authorizationAddBudget.data');
+        Route::post('/', [AuthorizationAddBudgetController::class, 'store'])->name('authorizationAddBudget.store');
+        Route::get('/{id}/edit', [AuthorizationAddBudgetController::class, 'edit'])->name('authorizationAddBudget.edit');
+        Route::put('/{id}', [AuthorizationAddBudgetController::class, 'update'])->name('authorizationAddBudget.update');
+        Route::delete('/{id}', [AuthorizationAddBudgetController::class, 'destroy'])->name('authorizationAddBudget.destroy');
+    });
 });

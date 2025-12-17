@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class ApprovalController extends Controller
@@ -9,6 +10,7 @@ class ApprovalController extends Controller
     public function index()
     {
         $title = 'Approval';
-        return view('pages.approval', compact('title'));
+        $employees = Employee::orderBy('first_name')->get();
+        return view('pages.approval', compact('title', 'employees'));
     }
 }

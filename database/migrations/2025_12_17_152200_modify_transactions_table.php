@@ -36,7 +36,8 @@ return new class extends Migration
     public function down(): void
     {
          Schema::table('transactions', function (Blueprint $table) {
-            $table->dropForeign(['threshold_id']);
+           
+            // drop index
             $table->dropIndex('idx_status_level');
             $table->dropIndex(['approval_completed_at']);
             

@@ -115,8 +115,9 @@ function loadAllBudgetItems() {
 
     showLoading();
 
+    let urlBudgetUserAll = "{{route('budget-user.items.all')}}";
     $.ajax({
-        url: '/budget-user/items/all',
+        url: urlBudgetUserAll,
         method: 'GET',
         data: {
             division_id: selectedDivisionId,

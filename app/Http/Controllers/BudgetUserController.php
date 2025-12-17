@@ -84,12 +84,21 @@ class BudgetUserController extends Controller
                         $query->with(['department', 'kpiDivision']);
                     },
                     'kpiSection' => function($query) {
-                        $query->with('section');
+                        $query->with(['section.department']);
                     }
                 ])
                 ->where('year', $year)
-                ->whereHas('kpiDepartment.kpiDivision', function($query) use ($divisionId) {
-                    $query->where('division_id', $divisionId);
+                ->where(function($query) use ($divisionId) {
+                    // Get department-level workplans
+                    $query->whereHas('kpiDepartment.kpiDivision', function($q) use ($divisionId) {
+                        $q->where('division_id', $divisionId);
+                    })
+                    // OR get section-level workplans
+                    ->orWhere(function($q) use ($divisionId) {
+                        $q->whereHas('kpiSection.section.department', function($deptQuery) use ($divisionId) {
+                            $deptQuery->where('division_id', $divisionId);
+                        });
+                    });
                 })
                 ->get();
 

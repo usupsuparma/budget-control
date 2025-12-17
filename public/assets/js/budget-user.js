@@ -60,8 +60,39 @@ function initializeEventListeners() {
         resetItemForm();
     });
     
-    // Auto-calculate total when monthly activities or price estimation change
-    $(document).on('input', '.monthly-activity, #priceEstimation', function() {
+    // Auto-calculate total when monthly activities change
+    $(document).on('input', '.monthly-activity', function() {
+        calculateTotal();
+    });
+    
+    // Format price estimation with thousand separator on input (real-time)
+    let priceEstimationTimeout;
+    $(document).on('input', '#priceEstimation', function() {
+        clearTimeout(priceEstimationTimeout);
+        const input = $(this);
+        const cursorPosition = this.selectionStart;
+        const oldValue = input.val();
+        const oldLength = oldValue.length;
+        
+        priceEstimationTimeout = setTimeout(() => {
+            const value = parseFormattedNumber(oldValue);
+            const formattedValue = value > 0 ? formatNumberWithSeparator(value) : '0';
+            input.val(formattedValue);
+            
+            // Restore cursor position
+            const newLength = formattedValue.length;
+            const newPosition = cursorPosition + (newLength - oldLength);
+            this.setSelectionRange(newPosition, newPosition);
+            
+            calculateTotal();
+        }, 500); // 500ms debounce
+    });
+    
+    // Format on blur to ensure proper formatting
+    $(document).on('blur', '#priceEstimation', function() {
+        const value = parseFormattedNumber($(this).val());
+        const formattedValue = value > 0 ? formatNumberWithSeparator(value) : '0';
+        $(this).val(formattedValue);
         calculateTotal();
     });
 }
@@ -78,11 +109,12 @@ function calculateTotal() {
         sumMonths += value;
     });
     
-    // Total = sum of months × price estimation
-    const priceEstimation = parseFloat($('#priceEstimation').val()) || 0;
+    // Total = sum of months × price estimation (parse formatted number)
+    const priceEstimation = parseFormattedNumber($('#priceEstimation').val());
     const total = sumMonths * priceEstimation;
     
-    $('#total').val(total);
+    // Format total with thousand separator
+    $('#total').val(formatNumberWithSeparator(total));
 }
 
 /**
@@ -115,9 +147,8 @@ function loadAllBudgetItems() {
 
     showLoading();
 
-    let urlBudgetUserAll = "{{route('budget-user.items.all')}}";
     $.ajax({
-        url: urlBudgetUserAll,
+        url: '/budget-user/items/all',
         method: 'GET',
         data: {
             division_id: selectedDivisionId,
@@ -500,8 +531,15 @@ function populateItemForm(item) {
     $('#supplier').val(item.supplier_id);
     $('#consRate').val(item.cons_rate);
     $('#unit').val(item.unit_id);
-    $('#total').val(item.total);
-    $('#priceEstimation').val(item.price_estimation);
+    
+    // Format price estimation and total with separator
+    if (item.price_estimation) {
+        $('#priceEstimation').val(formatNumberWithSeparator(item.price_estimation));
+    }
+    if (item.total) {
+        $('#total').val(formatNumberWithSeparator(item.total));
+    }
+    
     $('#priceEstimationDescription').val(item.price_estimation_description);
 
     // Monthly activities
@@ -527,7 +565,8 @@ function resetItemForm() {
     });
     
     // Reset total
-    $('#total').val(0);
+    $('#total').val('0');
+    $('#priceEstimation').val('0');
     
     // Destroy Choices instances if they exist
     const budgetCodeSelect = document.getElementById('budgetCode');
@@ -856,6 +895,13 @@ function loadBudgetCodes() {
  * Save item (create or update)
  */
 function saveItem() {
+    // Parse formatted numbers before sending
+    const priceEstimationValue = parseFormattedNumber($('#priceEstimation').val());
+    const totalValue = parseFormattedNumber($('#total').val());
+    
+    // Temporarily set pure numbers for form submission
+    $('#priceEstimation').val(priceEstimationValue);
+    $('#total').val(totalValue);
     // Validate category_type
     if (!$('input[name="category_type"]:checked').val()) {
         Swal.fire({
@@ -1043,10 +1089,39 @@ function showToast(message, type = 'info') {
  * Format currency
  */
 function formatCurrency(value) {
+    if (!value) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(value);
+}
+
+/**
+ * Format number with thousand separator (without currency symbol)
+ */
+function formatNumberWithSeparator(value) {
+    if (!value || value === 0) return '0';
+    // Remove non-numeric characters except decimal point
+    let numValue = value.toString().replace(/[^0-9.]/g, '');
+    // Parse to float
+    numValue = parseFloat(numValue);
+    if (isNaN(numValue)) return '0';
+    // Format with thousand separator using Indonesian locale
+    return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(numValue);
+}
+
+/**
+ * Remove thousand separator and return pure number
+ */
+function parseFormattedNumber(value) {
+    if (!value) return 0;
+    // Remove all dots (thousand separator) and replace comma with dot (decimal separator)
+    const cleaned = value.toString().replace(/\./g, '').replace(',', '.');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
 }

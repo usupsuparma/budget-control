@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TransactionAuthorizer;
 use App\Models\Employee;
+use App\Models\TransactionAuthorizer;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -79,11 +79,19 @@ class AuthorizationTransactionController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'level_number' => 'required|numeric',
+            'authorizer'   => 'required',
+            'authority'    => 'required',
+            'employee'     => 'required',
+            'status'       => 'required|numeric',
+        ]);
+
         $row = TransactionAuthorizer::findOrFail($id);
 
         $row->update([
             'level_number' => $request->level_number,
-            'authorizer' => $request->authorizer,
+            'authorizer_name' => $request->authorizer,
             'authority' => $request->authority,
             'employee_id' => $request->employee,
             'status' => $request->status,

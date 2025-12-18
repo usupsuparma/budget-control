@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KpiDepartment;
-use App\Models\KpiSection;
+use App\Models\KPIDepartment;
+use App\Models\KPISection;
 use App\Models\Section;
 use Illuminate\Http\Request;
 
@@ -14,7 +14,7 @@ class KPISectionController extends Controller
         $title = 'KPI Section';
 
         // dropdown modal
-        $kpiDepartments = KpiDepartment::orderBy('id', 'desc')->get();
+        $kpiDepartments = KPIDepartment::orderBy('id', 'desc')->get();
         $sections       = Section::orderBy('name')->get();
 
         return view('pages.kpi.section_rev1', compact('title', 'kpiDepartments', 'sections'));
@@ -25,7 +25,7 @@ class KPISectionController extends Controller
      */
     public function dataTable(Request $request)
     {
-        $rows = KpiSection::with(['kpiDepartment', 'section'])
+        $rows = KPISection::with(['kpiDepartment', 'section'])
             ->orderBy('id', 'desc')
             ->get();
 
@@ -131,7 +131,7 @@ class KPISectionController extends Controller
             $data[$m] = $toBool($request->input($m));
         }
 
-        $kpi = KpiSection::create($data);
+        $kpi = KPISection::create($data);
 
         return response()->json([
             'status' => 'success',
@@ -142,7 +142,7 @@ class KPISectionController extends Controller
 
     public function show($id)
     {
-        $kpi = KpiSection::with(['kpiDepartment', 'section'])->findOrFail($id);
+        $kpi = KPISection::with(['kpiDepartment', 'section'])->findOrFail($id);
 
         return response()->json([
             'status' => 'success',
@@ -178,7 +178,7 @@ class KPISectionController extends Controller
 
     public function update(Request $request, $id)
     {
-        $kpi = KpiSection::findOrFail($id);
+        $kpi = KPISection::findOrFail($id);
 
         $validated = $request->validate([
             'year' => ['required', 'integer'],
@@ -249,7 +249,7 @@ class KPISectionController extends Controller
 
     public function destroy($id)
     {
-        $kpi = KpiSection::findOrFail($id);
+        $kpi = KPISection::findOrFail($id);
         $kpi->delete();
 
         return response()->json([

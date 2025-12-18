@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KPIDivisionCompanyPolicy;
+use App\Models\KpiDivisionCompanyPolicy;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 

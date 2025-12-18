@@ -612,9 +612,13 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:production.template')
                 ->name('production.template');
 
-            Route::get('production/{production}/json', [ProductionController::class, 'json'])
+            Route::get('{production}/json', [ProductionController::class, 'json'])
                 // ->middleware('permission:production.json')
                 ->name('production.json');
+
+            Route::get('/datatable', [ProductionController::class, 'dataTable'])
+                // ->middleware('permission:production.datatable')
+                ->name('production.datatable');
         });
 
     // Route::prefix('marketing')

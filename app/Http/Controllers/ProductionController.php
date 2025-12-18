@@ -137,10 +137,28 @@ class ProductionController extends Controller
         return Excel::download(new ProductionTemplateExport, 'production_import_template.xlsx');
     }
 
-    // app/Http/Controllers/ProductionController.php
+    public function dataTable()
+    {
+        $rows = Production::withCount('details')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'type' => $p->type,
+                    'production' => $p->production,
+                    'year' => $p->year,
+                    'details_count' => $p->details_count,
+                ];
+            });
+
+        return response()->json(['data' => $rows]);
+    }
+
     public function json(Production $production)
     {
         $production->load('details');
+
         return response()->json([
             'status' => 'success',
             'data' => $production,

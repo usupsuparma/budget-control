@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('productions', function (Blueprint $table) {
             $table->id();
-            $table->string('type'); // enum-ish via validation
-            $table->string('production'); // nama production (parent)
+            $table->string('type', 100); // enum-ish via validation
+            $table->string('production', 100); // nama production (parent)
             $table->year('year')->nullable(); // optional kalau perlu per tahun
             $table->timestamps();
 

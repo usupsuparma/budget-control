@@ -603,40 +603,39 @@ Route::middleware('auth')->group(function () {
                 ->name('production.destroy');
         });
 
-    Route::prefix('marketing')
-        ->middleware('permission:marketing.view')
-        ->group(function () {
+    // Route::prefix('marketing')
+    //     ->middleware('permission:marketing.view')
+    //     ->group(function () {
 
-            Route::get('/', [MarketingController::class, 'index'])
-                ->name('marketing.index');
+    //         Route::get('/', [MarketingController::class, 'index'])
+    //             ->name('marketing.index');
 
-            Route::get('/create', [MarketingController::class, 'create'])
-                ->middleware('permission:marketing.create')
-                ->name('marketing.create');
+    //         Route::get('/data', [MarketingController::class, 'getData'])
+    //             ->name('marketing.data');
 
-            Route::post('/', [MarketingController::class, 'store'])
-                ->middleware('permission:marketing.create')
-                ->name('marketing.store');
+    //         Route::post('/upload-excel', [MarketingController::class, 'uploadExcel'])
+    //             ->middleware('permission:marketing.create')
+    //             ->name('marketing.upload_excel');
 
-            Route::get('/data', [MarketingController::class, 'getData'])
-                ->name('marketing.data');
+    //         Route::get('/download-template', [MarketingController::class, 'downloadTemplate'])
+    //             ->name('marketing.downloadTemplate');
+    //     });
+    Route::prefix('marketing')->group(function () {
 
-            Route::get('/{id}/edit', [MarketingController::class, 'edit'])
-                ->middleware('permission:marketing.edit')
-                ->name('marketing.edit');
+        Route::get('/', [MarketingController::class, 'index'])
+            ->middleware('permission:marketing.view')
+            ->name('marketing.index');
 
-            Route::put('/{id}', [MarketingController::class, 'update'])
-                ->middleware('permission:marketing.edit')
-                ->name('marketing.update');
+        Route::get('/data', [MarketingController::class, 'getData'])
+            ->name('marketing.data');
+        Route::post('/upload-excel', [MarketingController::class, 'uploadExcel'])
+            ->middleware('permission:marketing.create') // ⬅️ INI PENTING
+            ->name('marketing.upload_excel');
 
-            Route::delete('/{id}', [MarketingController::class, 'destroy'])
-                ->middleware('permission:marketing.delete')
-                ->name('marketing.destroy');
-        });
-    Route::post('/marketing-plan/upload-excel', [MarketingController::class, 'uploadExcel'])
-        ->name('marketing.upload_excel');
-    Route::get('/marketing/download-template', [MarketingController::class, 'downloadTemplate'])
-        ->name('marketing.downloadTemplate');
+        Route::get('/download-template', [MarketingController::class, 'downloadTemplate'])
+            ->middleware('permission:marketing.view')
+            ->name('marketing.downloadTemplate');
+    });
 
 
 

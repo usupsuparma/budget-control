@@ -101,7 +101,7 @@
                 </select>
             </div>
 
-            <div id="customGridSearch"></div>
+
         </div>
         <br>
         <div class="row mb-3">
@@ -361,9 +361,10 @@
 </script>
 
 <script>
-    $("#btnUploadExcel").click(function() {
+    $("#uploadExcelForm").on("submit", function(e) {
+        e.preventDefault(); // ⛔ STOP refresh
 
-        let formData = new FormData($("#uploadExcelForm")[0]);
+        let formData = new FormData(this);
 
         $.ajax({
             url: "{{ route('marketing.upload_excel') }}",
@@ -371,6 +372,9 @@
             data: formData,
             contentType: false,
             processData: false,
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
 
             success: function(response) {
                 Swal.fire("Success", "Excel berhasil di-upload!", "success");
@@ -382,7 +386,6 @@
                 Swal.fire("Error", xhr.responseJSON?.message ?? "Gagal upload file", "error");
             }
         });
-
     });
 </script>
 

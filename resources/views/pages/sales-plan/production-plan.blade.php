@@ -6,53 +6,59 @@
 @section('pagetitle', 'Production Plan')
 
 @section('content')
-    {{-- <a class="btn btn-primary btn-sm" href="{{ route('production.create') }}">Add</a> --}}
+    <div id="layout-wrapper">
 
-    <a class="btn btn-outline-success btn-sm" href="{{ route('production.template') }}">Download Template</a>
-
-    <form action="{{ route('production.import') }}" method="POST" enctype="multipart/form-data" class="d-inline">
-        @csrf
-        <input type="file" name="file" required>
-        <button class="btn btn-success btn-sm" type="submit">Import Excel</button>
-    </form>
-
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <button class="btn btn-primary btn-sm mb-3" id="btnAddProduction">
-        <i class="bi bi-plus-circle"></i> Add Production
-    </button>
-
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>Production</th>
-                <th>Year</th>
-                <th>Details</th>
-                <th style="width:150px;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($rows as $r)
-                <tr>
-                    <td>{{ $r->type }}</td>
-                    <td>{{ $r->production }}</td>
-                    <td>{{ $r->year }}</td>
-                    <td>{{ $r->details->count() }}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm btnEditProduction" data-id="{{ $r->id }}">
-                            Edit
+        {{-- Table KPI Section --}}
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card card-h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Production Plan</h6>
+                        <button class="btn btn-primary btn-sm mb-3" id="btnAddProduction">
+                            <i class="bi bi-plus-circle"></i> Add Production
                         </button>
-                        <form class="d-inline" method="POST" action="{{ route('production.destroy', $r) }}"
-                            onsubmit="return confirm('Delete?')">
-                            @csrf @method('DELETE')
-                            <button class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+                    </div>
+                    <div class="card-body">
+                        <div style="overflow-x:auto; width:100%;">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Production</th>
+                                        <th>Year</th>
+                                        <th>Details</th>
+                                        <th style="width:150px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($rows as $r)
+                                        <tr>
+                                            <td>{{ $r->type }}</td>
+                                            <td>{{ $r->production }}</td>
+                                            <td>{{ $r->year }}</td>
+                                            <td>{{ $r->details->count() }}</td>
+                                            <td>
+                                                <button class="btn btn-warning btn-sm btnEditProduction"
+                                                    data-id="{{ $r->id }}">
+                                                    Edit
+                                                </button>
+                                                <form class="d-inline" method="POST"
+                                                    action="{{ route('production.destroy', $r) }}"
+                                                    onsubmit="return confirm('Delete?')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> z
 
     <div class="modal fade" id="productionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -311,8 +317,8 @@
                 const isEdit = !!id;
 
                 const url = isEdit ?
-                    `{{ url('production') }}/${id}` :
-                    `{{ url('production') }}`;
+                    `{{ url('production') }}/${id}/update` :
+                    `{{ route('production.store') }}`;
 
                 const method = isEdit ? 'PUT' : 'POST';
 

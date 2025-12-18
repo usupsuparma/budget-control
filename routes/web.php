@@ -587,7 +587,7 @@ Route::middleware('auth')->group(function () {
                 ->name('production.create');
 
             Route::post('/', [ProductionController::class, 'store'])
-                ->middleware('permission:production.create')
+                // ->middleware('permission:production.store')
                 ->name('production.store');
 
             Route::get('/{id}/edit', [ProductionController::class, 'edit'])
@@ -595,11 +595,11 @@ Route::middleware('auth')->group(function () {
                 ->name('production.edit');
 
             Route::put('/{id}', [ProductionController::class, 'update'])
-                ->middleware('permission:production.edit')
+                ->middleware('permission:production.update')
                 ->name('production.update');
 
             Route::delete('/{id}', [ProductionController::class, 'destroy'])
-                ->middleware('permission:production.delete')
+                ->middleware('permission:production.destroy')
                 ->name('production.destroy');
 
             // Import

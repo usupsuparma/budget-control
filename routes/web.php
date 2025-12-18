@@ -601,6 +601,20 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [ProductionController::class, 'destroy'])
                 ->middleware('permission:production.delete')
                 ->name('production.destroy');
+
+            // Import
+            Route::post('/import', [ProductionController::class, 'import'])
+            // ->middleware('permission:production.import')
+                ->name('production.import');
+
+            // Download template
+            Route::get('/template', [ProductionController::class, 'template'])
+                // ->middleware('permission:production.template')
+                ->name('production.template');
+
+            Route::get('production/{production}/json', [ProductionController::class, 'json'])
+                // ->middleware('permission:production.json')
+                ->name('production.json');
         });
 
     Route::prefix('marketing')

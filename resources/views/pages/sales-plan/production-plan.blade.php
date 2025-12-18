@@ -252,8 +252,19 @@
                 calcTotalForRow(tr);
             }
 
+            function safeResetForm(formSelector) {
+                const form = document.querySelector(formSelector);
+                if (!form) {
+                    console.error('Form not found:', formSelector);
+                    return;
+                }
+                form.reset();
+            }
+
+
             function resetModalForm() {
-                $('#productionModalForm')[0].reset();
+                // $('#productionModalForm')[0].reset();
+                safeResetForm('#productionModalForm');
                 $('#production_id').val('');
                 $('#form_method').val('POST');
                 $('#productionModalTitle').text('Add Production');
@@ -490,7 +501,8 @@
             }
 
             function resetForm() {
-                $('#productionForm')[0].reset();
+                // $('#productionForm')[0].reset();
+                safeResetForm('#productionForm');
                 $('#production_id').val('');
                 $('#productionModalTitle').text('Add Production');
                 $('#btnSaveProduction').text('Save');
@@ -542,12 +554,21 @@
                     (d.details || []).forEach(item => {
                         tbody.append(`
           <tr>
-            <td>${item.detail ?? ''}</td>
-            <td>${item.jan ?? 0}</td><td>${item.feb ?? 0}</td><td>${item.mar ?? 0}</td><td>${item.apr ?? 0}</td>
-            <td>${item.may ?? 0}</td><td>${item.jun ?? 0}</td><td>${item.jul ?? 0}</td><td>${item.aug ?? 0}</td>
-            <td>${item.sep ?? 0}</td><td>${item.oct ?? 0}</td><td>${item.nov ?? 0}</td><td>${item.dec ?? 0}</td>
-            <td>${item.total ?? 0}</td>
-          </tr>
+    <td>${item.detail ?? ''}</td>
+    <td>${formatIDRNumber(item.jan)}</td>
+    <td>${formatIDRNumber(item.feb)}</td>
+    <td>${formatIDRNumber(item.mar)}</td>
+    <td>${formatIDRNumber(item.apr)}</td>
+    <td>${formatIDRNumber(item.may)}</td>
+    <td>${formatIDRNumber(item.jun)}</td>
+    <td>${formatIDRNumber(item.jul)}</td>
+    <td>${formatIDRNumber(item.aug)}</td>
+    <td>${formatIDRNumber(item.sep)}</td>
+    <td>${formatIDRNumber(item.oct)}</td>
+    <td>${formatIDRNumber(item.nov)}</td>
+    <td>${formatIDRNumber(item.dec)}</td>
+    <td><b>${formatIDRNumber(item.total)}</b></td>
+  </tr>
         `);
                     });
 
@@ -691,5 +712,17 @@
             });
 
         });
+
+        function formatIDRNumber(value, decimals = 2) {
+            if (value === null || value === undefined || value === '') return '0,00';
+
+            const num = Number(value);
+            if (isNaN(num)) return '0,00';
+
+            return new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(num);
+        }
     </script>
 @endpush

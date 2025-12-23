@@ -38,7 +38,7 @@
 
                         <div class="col-12">
                             <label>Segmen Name</label>
-                            <input type="text" name="supplier" class="form-control" required>
+                            <input type="text" name="segmen" class="form-control" required>
                         </div>
 
                         <div class="col-12">
@@ -82,9 +82,8 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editSegmenForm">
+            <form id="editSegmenForm" method="POST">
                 @csrf
-                @method('PUT')
 
                 <input type="hidden" id="edit_id">
 
@@ -109,8 +108,8 @@
                         <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
                             </select>
                         </div>
 
@@ -119,7 +118,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary">Update</button>
+                    <button class="btn btn-primary" form="editSegmenForm">Update</button>
                 </div>
 
             </form>
@@ -210,12 +209,10 @@
         let id = $(this).data('id');
 
         $.get("{{ url('/segmen') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
-            $('#edit_segmen').val(data.supplier);
-            $('#edit_code').val(data.address);
+            $('#edit_segmen').val(data.segmen);
+            $('#edit_code').val(data.code);
             $('#edit_notes').val(data.notes);
             $('#edit_status').val(data.status);
-
             $('#editSegmenForm').attr('action', "{{ url('/segmen') }}/" + id);
 
             $('#editSegmenModal').modal('show');
@@ -226,17 +223,32 @@
     $('#editSegmenForm').submit(function(e) {
         e.preventDefault();
 
-        let id = $('#edit_id').val();
+        let form = $(this);
+        let url = form.attr('action');
 
         $.ajax({
-            url: "{{ url('/segmen') }}/" + id,
-            method: "POST",
-            data: $(this).serialize(),
-            success: res => {
+            url: url,
+            method: "PUT",
+            data: form.serialize(),
+            success: function(res) {
                 $('#editSegmenModal').modal('hide');
-                segmenTable.ajax.reload();
 
-                Swal.fire("Updated!", res.message, "success");
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#segmenTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Customer updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });

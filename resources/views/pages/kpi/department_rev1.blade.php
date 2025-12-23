@@ -416,7 +416,7 @@
                 const duration = parseInt(durationInput.value, 10);
                 const startVal = startInput.value;
                 const selectedYear = parseInt(yearSelect.value, 10);
-console.log(startVal);
+
                 if (!duration || !startVal || !selectedYear) {
                     endInput.value = '';
                     return;

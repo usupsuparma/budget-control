@@ -32,7 +32,7 @@
                     <div class="tab-content pt-3">
 
                         <div class="tab-pane fade show active" id="user">
-                            @include('pages.settings.userMenu')
+                            @include('authorization.users')
                         </div>
 
                         <div class="tab-pane fade" id="authorization">

@@ -12,7 +12,7 @@ class SupplierController extends Controller
 
     public function data()
     {
-        $query = Supplier::select(['id', 'supplier', 'address', 'notes', 'status']);
+        $query = Supplier::select(['id', 'supplier', 'callSign', 'address', 'notes', 'status']);
 
         return DataTables::of($query)
             ->addColumn('status_badge', function ($row) {

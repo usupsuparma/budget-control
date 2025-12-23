@@ -11,7 +11,7 @@ class UnitController extends Controller
 
     public function data()
     {
-        $query = Unit::select(['id', 'unit', 'code', 'notes', 'status']);
+        $query = Unit::select(['id', 'unit', 'code', 'status']);
 
         return DataTables::of($query)
             ->addColumn('status_badge', function ($row) {
@@ -40,7 +40,6 @@ class UnitController extends Controller
         $request->validate([
             'unit' => 'required|string|max:255',
             'code' => 'nullable|string',
-            'notes' => 'nullable|string',
             'status' => 'required|integer|in:0,1',
         ]);
 
@@ -61,8 +60,7 @@ class UnitController extends Controller
         $request->validate([
             'unit' => 'required|string|max:255',
             'code' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'status' => 'required|string',
+            'status' => 'required|integer|in:0,1',
         ]);
 
         $unit->update($request->all());

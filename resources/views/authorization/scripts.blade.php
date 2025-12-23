@@ -292,6 +292,35 @@
 
         });
 
+        $(document).on('click', '.removeUserFromRole', function(e) {
+            e.preventDefault();
+
+            let userId = $(this).data('user');
+            let roleId = $(this).data('role');
+
+            $.ajax({
+                url: "{{ route('role.removeUser') }}",
+                method: "POST",
+                data: {
+                    user_id: userId,
+                    role_id: roleId,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed!',
+                        text: res.message,
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                    location.reload(); // atau ajax refresh
+                }
+            });
+        });
+
+
 
     });
 </script>

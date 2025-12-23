@@ -9,203 +9,252 @@ use Illuminate\Http\Request;
 
 class KPISectionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $kpiSections = KpiSection::orderBy('id')
-            ->get();
-        
-        $section = Section::orderBy('id')
-            ->get();
-            
-        $kpiDepartments = KPIDepartment::orderBy('id')
-            ->get();
+        $title = 'KPI Section';
 
-        return view('pages.kpi.section', [
-            'kpiDepartment' => $kpiDepartments,
-            'section'       => $section,
-            'kpiSections'   => $kpiSections,
-        ]);
+        // dropdown modal
+        $kpiDepartments = KpiDepartment::orderBy('id', 'desc')->get();
+        $sections       = Section::orderBy('name')->get();
+
+        return view('pages.kpi.section_rev1', compact('title', 'kpiDepartments', 'sections'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * DataTables AJAX
      */
-    public function create()
+    public function dataTable(Request $request)
     {
-        //
+        $rows = KpiSection::with(['kpiDepartment', 'section'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $data = $rows->map(function ($kpi, $i) {
+            $monthKeys = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+            $months = [];
+            foreach ($monthKeys as $m) {
+                $months[$m] = [
+                    'value' => (int) $kpi->{$m},
+                    'label' => $kpi->{$m} ? 'Yes' : 'No',
+                ];
+            }
+
+            return [
+                'no' => $i + 1,
+                'id' => $kpi->id,
+
+                'year' => $kpi->year,
+                'kpi_department_id' => $kpi->kpi_department_id,
+                'kpi_department' => optional($kpi->kpiDepartment)->department_goals ?? '-',
+
+                'section_id' => $kpi->section_id,
+                'section' => optional($kpi->section)->name ?? '-',
+
+                'section_goals' => $kpi->section_goals,
+                'activities' => $kpi->activities,
+                'target_section' => $kpi->target_section,
+                'duration_days' => $kpi->duration_days,
+                'schedule_start' => optional($kpi->schedule_start)->format('Y-m-d'),
+                'schedule_end' => optional($kpi->schedule_end)->format('Y-m-d'),
+
+                // months
+                ...$months,
+
+                'revenue_cost' => $kpi->revenue_cost,
+                'unit_id' => $kpi->unit_id,
+                'description' => $kpi->description,
+            ];
+        });
+
+        return response()->json(['data' => $data]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request, KpiDepartment $kpiDepartment, Section $section)
+    public function store(Request $request)
     {
-        $year = $kpiDepartment->year ?? date('Y');
-
         $validated = $request->validate([
-            'department_goals'  => ['nullable', 'string'],
-            'section_id'     => ['required', 'string'],
-            'section_goals'     => ['required', 'string'],
-            'activities'        => ['nullable', 'string'],
-            'target_section'    => ['nullable', 'string'],
-            'duration_days'     => ['nullable', 'integer'],
-            'schedule_start'    => ['nullable', 'date'],
-            'schedule_end'      => ['nullable', 'date'],
-            'revenue_cost'      => ['nullable', 'string'],
-            'unit_id'           => ['nullable', 'string'],
-            'description'       => ['nullable', 'string'],
+            'year' => ['required', 'integer'],
+            'kpi_department_id' => ['required', 'exists:kpi_department,id'],
+            'section_id' => ['required', 'exists:section,id'],
+
+            'section_goals' => ['required', 'string'],
+            'activities' => ['nullable', 'string'],
+            'target_section' => ['nullable', 'string'],
+            'duration_days' => ['nullable', 'integer'],
+            'schedule_start' => ['nullable', 'date'],
+            'schedule_end' => ['nullable', 'date'],
+
+            'jan' => ['nullable'],
+            'feb' => ['nullable'],
+            'mar' => ['nullable'],
+            'apr' => ['nullable'],
+            'may' => ['nullable'],
+            'jun' => ['nullable'],
+            'jul' => ['nullable'],
+            'aug' => ['nullable'],
+            'sep' => ['nullable'],
+            'oct' => ['nullable'],
+            'nov' => ['nullable'],
+            'dec' => ['nullable'],
+
+            'revenue_cost' => ['nullable', 'string'],
+            'unit_id' => ['nullable', 'string'],
+            'description' => ['nullable', 'string'],
         ]);
 
         $toBool = function ($val) {
-            if ($val === null) return false;
-            $v = strtolower((string) $val);
-            return in_array($v, ['1','true','yes','y','ya'], true);
+            if (is_null($val)) return false;
+            $val = strtolower((string) $val);
+            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
         };
 
         $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
         $data = [
-            'kpi_department_id' => $validated['department_goals'] ?? null,
-            'section_id'        => $validated['section_id'] ?? null,
-            'year'              => $year,
-            'section_goals'     => $validated['section_goals'],
-            'activities'        => $validated['activities'] ?? null,
-            'target_section'    => $validated['target_section'] ?? null,
-            'duration_days'     => $validated['duration_days'] ?? null,
-            'schedule_start'    => $validated['schedule_start'] ?? null,
-            'schedule_end'      => $validated['schedule_end'] ?? null,
-            'revenue_cost'      => $validated['revenue_cost'] ?? null,
-            'unit_id'           => $validated['unit_id'] ?? null,
-            'description'       => $validated['description'] ?? null,
+            'year' => $validated['year'],
+            'kpi_department_id' => $validated['kpi_department_id'],
+            'section_id' => $validated['section_id'],
+
+            'section_goals' => $validated['section_goals'],
+            'activities' => $validated['activities'] ?? null,
+            'target_section' => $validated['target_section'] ?? null,
+            'duration_days' => $validated['duration_days'] ?? null,
+            'schedule_start' => $validated['schedule_start'] ?? null,
+            'schedule_end' => $validated['schedule_end'] ?? null,
+
+            'revenue_cost' => $validated['revenue_cost'] ?? null,
+            'unit_id' => $validated['unit_id'] ?? null,
+            'description' => $validated['description'] ?? null,
         ];
 
         foreach ($months as $m) {
             $data[$m] = $toBool($request->input($m));
         }
 
-        $kpiSection = KpiSection::create($data);
+        $kpi = KpiSection::create($data);
 
         return response()->json([
-            'status'  => 'success',
-            'id'      => $kpiSection->id,
-            'message' => 'KPI Section created.',
+            'status' => 'success',
+            'id' => $kpi->id,
+            'message' => 'KPI Section created successfully.',
         ], 201);
     }
 
-    public function inlineUpdate(Request $request, KpiDepartment $kpiDepartment, Section $section, KpiSection $kpiSection)
+    public function show($id)
     {
-        if ($kpiSection->kpi_department_id !== $kpiDepartment->id ||
-            $kpiSection->section_id        !== $section->id) {
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak sesuai dengan parent.',
-            ], 403);
-        }
-
-        $field = $request->input('field');
-        $value = $request->input('value');
-
-        $allowed = [
-            'department_goals',
-            'section_goals',
-            'activities',
-            'target_section',
-            'duration_days',
-            'schedule_start',
-            'schedule_end',
-            'jan','feb','mar','apr','may','jun',
-            'jul','aug','sep','oct','nov','dec',
-            'revenue_cost',
-            'unit_id',
-            'description',
-        ];
-
-        if (! in_array($field, $allowed, true)) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Field tidak boleh diubah inline.',
-            ], 422);
-        }
-
-        if ($field === 'duration_days') {
-            $kpiSection->duration_days = $value !== null ? (int) $value : null;
-        } elseif (in_array($field, ['schedule_start','schedule_end'], true)) {
-            $request->validate(['value' => ['nullable','date']]);
-            $kpiSection->{$field} = $value ?: null;
-        } elseif (in_array($field, ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'], true)) {
-            $toBool = function ($v) {
-                if ($v === null) return false;
-                $v = strtolower((string) $v);
-                return in_array($v, ['1','true','yes','y','ya'], true);
-            };
-            $kpiSection->{$field} = $toBool($value);
-        } else {
-            $kpiSection->{$field} = $value;
-        }
-
-        $kpiSection->save();
-
-        $display = $value;
-        if (in_array($field, ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'], true)) {
-            $display = $kpiSection->{$field} ? 'Yes' : 'No';
-        }
+        $kpi = KpiSection::with(['kpiDepartment', 'section'])->findOrFail($id);
 
         return response()->json([
-            'status'        => 'success',
-            'message'       => 'Data berhasil diperbarui.',
-            'field'         => $field,
-            'value'         => $kpiSection->{$field},
-            'display_value' => $display,
+            'status' => 'success',
+            'data' => [
+                'id' => $kpi->id,
+                'year' => $kpi->year,
+                'kpi_department_id' => $kpi->kpi_department_id,
+                'section_id' => $kpi->section_id,
+                'section_goals' => $kpi->section_goals,
+                'activities' => $kpi->activities,
+                'target_section' => $kpi->target_section,
+                'duration_days' => $kpi->duration_days,
+                'schedule_start' => optional($kpi->schedule_start)->format('Y-m-d'),
+                'schedule_end' => optional($kpi->schedule_end)->format('Y-m-d'),
+                'jan' => (int) $kpi->jan,
+                'feb' => (int) $kpi->feb,
+                'mar' => (int) $kpi->mar,
+                'apr' => (int) $kpi->apr,
+                'may' => (int) $kpi->may,
+                'jun' => (int) $kpi->jun,
+                'jul' => (int) $kpi->jul,
+                'aug' => (int) $kpi->aug,
+                'sep' => (int) $kpi->sep,
+                'oct' => (int) $kpi->oct,
+                'nov' => (int) $kpi->nov,
+                'dec' => (int) $kpi->dec,
+                'revenue_cost' => $kpi->revenue_cost,
+                'unit_id' => $kpi->unit_id,
+                'description' => $kpi->description,
+            ],
         ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, $id)
     {
-        //
-    }
+        $kpi = KpiSection::findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        $validated = $request->validate([
+            'year' => ['required', 'integer'],
+            'kpi_department_id' => ['required', 'exists:kpi_department,id'],
+            'section_id' => ['required', 'exists:section,id'],
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+            'section_goals' => ['required', 'string'],
+            'activities' => ['nullable', 'string'],
+            'target_section' => ['nullable', 'string'],
+            'duration_days' => ['nullable', 'integer'],
+            'schedule_start' => ['nullable', 'date'],
+            'schedule_end' => ['nullable', 'date'],
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(KpiDepartment $kpiDepartment, Section $section, KpiSection $kpiSection)
-    {
-        if ($kpiSection->kpi_department_id !== $kpiDepartment->id ||
-            $kpiSection->section_id        !== $section->id) {
+            'jan' => ['nullable'],
+            'feb' => ['nullable'],
+            'mar' => ['nullable'],
+            'apr' => ['nullable'],
+            'may' => ['nullable'],
+            'jun' => ['nullable'],
+            'jul' => ['nullable'],
+            'aug' => ['nullable'],
+            'sep' => ['nullable'],
+            'oct' => ['nullable'],
+            'nov' => ['nullable'],
+            'dec' => ['nullable'],
 
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak sesuai dengan parent.',
-            ], 403);
+            'revenue_cost' => ['nullable', 'string'],
+            'unit_id' => ['nullable', 'string'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $toBool = function ($val) {
+            if (is_null($val)) return false;
+            $val = strtolower((string) $val);
+            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
+        };
+
+        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+        $kpi->fill([
+            'year' => $validated['year'],
+            'kpi_department_id' => $validated['kpi_department_id'],
+            'section_id' => $validated['section_id'],
+
+            'section_goals' => $validated['section_goals'],
+            'activities' => $validated['activities'] ?? null,
+            'target_section' => $validated['target_section'] ?? null,
+            'duration_days' => $validated['duration_days'] ?? null,
+            'schedule_start' => $validated['schedule_start'] ?? null,
+            'schedule_end' => $validated['schedule_end'] ?? null,
+
+            'revenue_cost' => $validated['revenue_cost'] ?? null,
+            'unit_id' => $validated['unit_id'] ?? null,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        foreach ($months as $m) {
+            $kpi->{$m} = $toBool($request->input($m));
         }
 
-        $kpiSection->delete();
+        $kpi->save();
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'KPI Section berhasil dihapus.',
+            'status' => 'success',
+            'message' => 'KPI Section updated successfully.',
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $kpi = KpiSection::findOrFail($id);
+        $kpi->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'KPI Section deleted successfully.',
         ]);
     }
 }

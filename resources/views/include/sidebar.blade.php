@@ -141,13 +141,13 @@
 
 
                     <li class="pe-slide-item">
-                        <a href="{{ route('anggaran.index') }}" class="pe-nav-link {{ Request::is('anggaran*') ? 'active' : '' }}">
+                        <a href="{{ route('budget-resume.index') }}" class="pe-nav-link {{ Request::is('budget-resume*') ? 'active' : '' }}">
                             <i class="bi bi-wallet2"></i> Budget Resume
                         </a>
                     </li>
 
                     <li class="pe-slide-item">
-                        <a href="{{ route('pengajuan.anggaran.index') }}" class="pe-nav-link {{ Request::is('pengajuan.anggaran*') ? 'active' : '' }}">
+                        <a href="{{ route('budget.submission.index') }}" class="pe-nav-link {{ Request::is('budget-submission*') ? 'active' : '' }}">
                             <i class="bi bi-file-earmark-text"></i> Budget Submission
                         </a>
                     </li>

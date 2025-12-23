@@ -16,7 +16,16 @@ class BudgetCodeController extends Controller
 
     public function data()
     {
-        $query = BudgetCodes::query();
+
+        $query = BudgetCode::select([
+            'id',
+            'stock_code',
+            'name',
+            'inchargeCode',
+            'remarks',
+            'goods_code',
+            'status'
+        ]);
 
         return DataTables::of($query)
             ->addColumn('status_label', function ($row) {
@@ -55,7 +64,7 @@ class BudgetCodeController extends Controller
             'status' => 'nullable|integer'
         ]);
 
-        $save = BudgetCodes::create($validated);
+        $save = BudgetCode::create($validated);
 
         return response()->json([
             'success' => true,
@@ -66,12 +75,12 @@ class BudgetCodeController extends Controller
 
     public function edit($id)
     {
-        return BudgetCodes::findOrFail($id);
+        return BudgetCode::findOrFail($id);
     }
 
     public function update(Request $request, $id)
     {
-        $code = BudgetCodes::findOrFail($id);
+        $code = BudgetCode::findOrFail($id);
 
         $validated = $request->validate([
             'stock_code' => 'required|string|max:100',
@@ -97,7 +106,7 @@ class BudgetCodeController extends Controller
 
     public function destroy($id)
     {
-        BudgetCodes::findOrFail($id)->delete();
+        BudgetCode::findOrFail($id)->delete();
 
         return response()->json([
             'success' => true,

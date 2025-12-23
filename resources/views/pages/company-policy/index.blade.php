@@ -96,6 +96,10 @@
                                                     data-id="{{ $policy->id }}">
                                                     Detail
                                                 </button>
+                                                <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                    data-id="{{ $policy->id }}">
+                                                    Edit
+                                                </button>
                                                 <button type="button" class="btn btn-danger btn-sm btn-delete"
                                                     data-id="{{ $policy->id }}">
                                                     Delete
@@ -162,7 +166,7 @@
     </main>
     <form id="companyPolicyForm" action="{{ route('company-policy.store') }}" method="POST">
         @csrf
-
+        <input type="hidden" name="_method" id="formMethod" value="POST">
         <div class="modal fade" id="extraLargeModel" data-bs-keyboard="false" tabindex="-1"
             aria-labelledby="extraLargeModelLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
@@ -759,6 +763,94 @@
 
                 // biarkan form lanjut submit ke server
             });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+
+            // Klik Add -> reset modal jadi mode CREATE
+            $('[data-bs-target="#extraLargeModel"]').on('click', function() {
+                $('#extraLargeModelLabel').text('Add Company Policy');
+                $('#companyPolicyForm').attr('action', "{{ route('company-policy.store') }}");
+                $('#formMethod').val('POST');
+
+                // reset year
+                $('#form-select-01').val('');
+
+                // reset rows company policy (detail)
+                companyPolicyIndex = 0;
+                policyEditors.coreEn = [];
+                policyEditors.descEn = [];
+                policyEditors.coreId = [];
+                policyEditors.descId = [];
+                companyPolicyContainer.innerHTML = '';
+
+                // minimal 1 baris
+                addCompanyPolicyRow();
+            });
+
+            // Klik Edit -> fetch JSON -> set modal jadi mode EDIT + prefill
+            $('#companyPolicyTable tbody').on('click', '.btn-edit', function() {
+                const id = $(this).data('id');
+
+                $.ajax({
+                    url: "{{ url('/company-policy') }}/" + id + "/json",
+                    type: "GET",
+                    success: function(res) {
+console.log(res);
+                        $('#extraLargeModelLabel').text('Edit Company Policy');
+                        $('#companyPolicyForm').attr('action',
+                            "{{ url('/company-policy') }}/" + id);
+                        $('#formMethod').val('PUT');
+
+                        // set year
+                        $('#form-select-01').val(res.tahun);
+
+                        // set quill utama
+                        headerEditor.clipboard.dangerouslyPasteHTML(res.header || '');
+                        contentsEnEditor.clipboard.dangerouslyPasteHTML(res.contents_en || '');
+                        contentsIdEditor.clipboard.dangerouslyPasteHTML(res.contents_id || '');
+                        prologueEnEditor.clipboard.dangerouslyPasteHTML(res.prologue_en || '');
+                        prologueIdEditor.clipboard.dangerouslyPasteHTML(res.prologue_id || '');
+                        closingEnEditor.clipboard.dangerouslyPasteHTML(res.closing_en || '');
+                        closingIdEditor.clipboard.dangerouslyPasteHTML(res.closing_id || '');
+                        signatureEditor.clipboard.dangerouslyPasteHTML(res.signature || '');
+
+                        // reset rows detail
+                        companyPolicyIndex = 0;
+                        policyEditors.coreEn = [];
+                        policyEditors.descEn = [];
+                        policyEditors.coreId = [];
+                        policyEditors.descId = [];
+                        companyPolicyContainer.innerHTML = '';
+
+                        // render detail rows
+                        if (res.details && res.details.length > 0) {
+                            res.details.forEach((d) => {
+                                addCompanyPolicyRow();
+
+                                const i = policyEditors.coreEn.length - 1;
+                                policyEditors.coreEn[i].clipboard.dangerouslyPasteHTML(d
+                                    .strategic_goal || '');
+                                policyEditors.descEn[i].clipboard.dangerouslyPasteHTML(d
+                                    .description || '');
+                                policyEditors.coreId[i].clipboard.dangerouslyPasteHTML(d
+                                    .strategic_goal_id || '');
+                                policyEditors.descId[i].clipboard.dangerouslyPasteHTML(d
+                                    .description_id || '');
+                            });
+                        } else {
+                            addCompanyPolicyRow();
+                        }
+
+                        // buka modal
+                        const modal = new bootstrap.Modal(document.getElementById(
+                            'extraLargeModel'));
+                        modal.show();
+                    }
+                });
+            });
+
         });
     </script>
 

@@ -44,8 +44,8 @@ class KPIDivisionController extends Controller
                 'division_goals'  => $kpi->division_goals,
                 'target_division' => $kpi->target_division,
                 'duration_days'   => $kpi->duration_days,
-                'schedule_start'  => date("d-m-Y", strtotime($kpi->schedule_start)), // sudah format Y-m-d kalau di-cast date
-                'schedule_end'    => date("d-m-Y", strtotime($kpi->schedule_end)),
+                'schedule_start'  => optional($kpi->schedule_start)->format('Y-m-d'),
+                'schedule_end'    => optional($kpi->schedule_end)->format('Y-m-d'),
 
                 // bulan (kalau masih mau pakai dari DB)
                 'jan' => (bool) $kpi->jan,

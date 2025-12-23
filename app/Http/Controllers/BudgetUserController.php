@@ -30,7 +30,7 @@ class BudgetUserController extends Controller
             return $kpi->division;
         })->filter()->unique('id')->values();
         
-        $years = range(date('Y'), date('Y') - 5);
+        $years = range(date('Y') + 2, date('Y') - 5);
         return view('pages.budget.budget-user', compact('years', 'divisions'));
     }
 
@@ -232,8 +232,7 @@ class BudgetUserController extends Controller
         try {
             $validated = $request->validate([
                 'kpi_workplan_id' => 'required|exists:kpi_workplans,id',
-                'budget_category_id' => 'required|exists:budget_categories,id',
-                'description' => 'required|string',
+                'budget_category_id' => 'required|exists:budget_categories,id',                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',                'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',
                 'product_line' => 'nullable|string|max:100',
@@ -262,6 +261,22 @@ class BudgetUserController extends Controller
             ]);
 
             $validated['status'] = 'draft';
+
+            $total = $validated['price_estimation'] * (
+                ($validated['activity_jan'] ?? 0) +
+                ($validated['activity_feb'] ?? 0) +
+                ($validated['activity_mar'] ?? 0) +
+                ($validated['activity_apr'] ?? 0) +
+                ($validated['activity_may'] ?? 0) +
+                ($validated['activity_jun'] ?? 0) +
+                ($validated['activity_jul'] ?? 0) +
+                ($validated['activity_aug'] ?? 0) +
+                ($validated['activity_sep'] ?? 0) +
+                ($validated['activity_oct'] ?? 0) +
+                ($validated['activity_nov'] ?? 0) +
+                ($validated['activity_dec'] ?? 0)
+            );
+            $validated['total'] = $total;
             
             // Set sort order
             $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $validated['kpi_workplan_id'])
@@ -304,6 +319,7 @@ class BudgetUserController extends Controller
             $validated = $request->validate([
                 'kpi_workplan_id' => 'nullable|exists:kpi_workplans,id',
                 'budget_category_id' => 'nullable|exists:budget_categories,id',
+                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
                 'description' => 'required|string',
                 'stock_code' => 'nullable|string|max:50',
                 'budget_code' => 'nullable|string|max:50',
@@ -332,6 +348,22 @@ class BudgetUserController extends Controller
                 'activity_dec' => 'nullable|integer|min:0',
             ]);
 
+            
+            $total = $validated['price_estimation'] * (
+                ($validated['activity_jan'] ?? 0) +
+                ($validated['activity_feb'] ?? 0) +
+                ($validated['activity_mar'] ?? 0) +
+                ($validated['activity_apr'] ?? 0) +
+                ($validated['activity_may'] ?? 0) +
+                ($validated['activity_jun'] ?? 0) +
+                ($validated['activity_jul'] ?? 0) +
+                ($validated['activity_aug'] ?? 0) +
+                ($validated['activity_sep'] ?? 0) +
+                ($validated['activity_oct'] ?? 0) +
+                ($validated['activity_nov'] ?? 0) +
+                ($validated['activity_dec'] ?? 0)
+            );
+            $validated['total'] = $total;
             $item->update($validated);
             $item->load(['category', 'budgetCodeRelation', 'workplan']);
 

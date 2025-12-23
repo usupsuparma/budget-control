@@ -8,6 +8,11 @@ class Division extends Model
 {
     protected $table = 'division';
     protected $guarded = [];
+    protected $fillable = [
+        'director_id',
+        'name',
+        'status',
+    ];
 
     public function director()
     {

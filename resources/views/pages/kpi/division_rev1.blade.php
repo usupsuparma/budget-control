@@ -77,10 +77,16 @@
                 <div class="card card-h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0">KPI Division</h6>
+                        <div class="ms-auto d-flex gap-2">
+                        {{-- <button type="button" class="btn btn-info btn-sm" id="btn-add-cpdivision" data-bs-toggle="modal"
+                            data-bs-target="#extraLargeModelcpdivision">
+                            <i class="bi bi-plus-circle"></i> Add Company Policy by Division
+                        </button> --}}
                         <button type="button" class="btn btn-primary btn-sm" id="btn-add-kpi" data-bs-toggle="modal"
                             data-bs-target="#extraLargeModel">
                             <i class="bi bi-plus-circle"></i> Add New KPI Division
                         </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="row g-5">

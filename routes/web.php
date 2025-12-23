@@ -32,6 +32,8 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\BudgetCategoryController;
 use App\Http\Controllers\BudgetCodeController;
+use App\Http\Controllers\BudgetResumeController;
+use App\Http\Controllers\BudgetSubmissionController;
 use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
 use App\Http\Controllers\CustomerController;
@@ -76,7 +78,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'executive'])
             ->name('dashboard');   // <- WAJIB ADA
     });
-
+    Route::get('/dash-executive/policies', [DashboardController::class, 'executivePoliciesByYear'])
+        ->name('dash.executive.policies');
+    Route::get('/budget/summary', [DashboardController::class, 'budgetSummaryByYear'])
+        ->name('budget.summary.year');
 
 
     /* ========================
@@ -164,6 +169,14 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:companypolicy.edit')
                 ->name('company-policy.edit');
 
+            Route::get('/{id}/json', [CompanyPolicyController::class, 'json'])
+                // ->middleware('permission:companypolicy.edit')
+                ->name('company-policy.json');
+
+            Route::put('/{id}', [CompanyPolicyController::class, 'update'])
+                // ->middleware('permission:companypolicy.update')
+                ->name('company-policy.update');
+
             Route::delete('/{dokumen}', [CompanyPolicyController::class, 'destroy'])
                 ->middleware('permission:companypolicy.delete')
                 ->name('company-policy.destroy');
@@ -242,7 +255,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.edit');
-            
+
             Route::get('/{id}/show', [KPIDepartmentController::class, 'show'])
                 // ->middleware('permission:kpi.kpidepartment.edit')
                 ->name('kpidepartment.show');
@@ -270,6 +283,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [KPISectionController::class, 'index'])
                 ->name('kpisection.index');
 
+            Route::get('/datatable', [KPISectionController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpisection.datatable')
+                ->name('kpisection.datatable');
+
             Route::get('/create', [KPISectionController::class, 'create'])
                 // ->middleware('permission:kpi.kpisection.create')
                 ->name('kpisection.create');
@@ -282,11 +299,15 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.edit');
 
-            Route::put('/{id}', [KPISectionController::class, 'update'])
+            Route::get('/{id}/show', [KPISectionController::class, 'show'])
+                // ->middleware('permission:kpi.kpisection.edit')
+                ->name('kpisection.show');
+
+            Route::put('/{id}/update', [KPISectionController::class, 'update'])
                 // ->middleware('permission:kpi.kpisection.edit')
                 ->name('kpisection.update');
 
-            Route::delete('/{kpiSection}', [KPISectionController::class, 'destroy'])
+            Route::delete('/{kpiSection}/destroy', [KPISectionController::class, 'destroy'])
                 // ->middleware('permission:kpi.kpisection.delete')
                 ->name('kpisection.destroy');
 
@@ -294,6 +315,32 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
         });
+
+    /* ========================
+        BUDGET SUBMISSION
+    ======================== */
+    Route::prefix('budget-submission')->group(function () {
+        Route::get('/', [BudgetSubmissionController::class, 'index'])
+            ->name('budget.submission.index');
+
+        Route::post('/', [BudgetSubmissionController::class, 'store'])
+            ->name('budget.submission.store');
+
+        Route::get('/{id}/edit', [BudgetSubmissionController::class, 'edit'])
+            ->name('budget.submission.edit');
+
+        Route::put('/{id}', [BudgetSubmissionController::class, 'update'])
+            ->name('budget.submission.update');
+
+        Route::delete('/{id}', [BudgetSubmissionController::class, 'destroy'])
+            ->name('budget.submission.destroy');
+
+        Route::post('/{id}/approve', [BudgetSubmissionController::class, 'approve'])
+            ->name('budget.submission.approve');
+
+        Route::post('/{id}/reject', [BudgetSubmissionController::class, 'reject'])
+            ->name('budget.submission.reject');
+    });
 
 
     Route::prefix('supplier')->group(function () {
@@ -497,6 +544,11 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:marketing.delete')
                 ->name('marketing.destroy');
         });
+    Route::post('/marketing-plan/upload-excel', [MarketingController::class, 'uploadExcel'])
+        ->name('marketing.upload_excel');
+    Route::get('/marketing/download-template', [MarketingController::class, 'downloadTemplate'])
+        ->name('marketing.downloadTemplate');
+
 
 
     Route::prefix('resume-anggaran')
@@ -513,14 +565,45 @@ Route::middleware('auth')->group(function () {
     ======================== */
     Route::prefix('admission')->group(function () {
 
-        Route::get('/user', [SubmissionController::class, 'user'])
+        // User Submission Routes
+        Route::prefix('user')
             ->middleware('permission:transaction.user.view')
-            ->name('userSubmission.index');
+            ->group(function () {
 
-        Route::get('/user_create', [SubmissionController::class, 'user_create'])
-            // ->middleware('permission:transaction.user.view')
-            ->name('userSubmission.create');
+                Route::get('/', [SubmissionController::class, 'user'])
+                    ->name('userSubmission.index');
 
+                Route::get('/create', [SubmissionController::class, 'user_create'])
+                    ->name('userSubmission.create');
+
+                Route::get('/data', [SubmissionController::class, 'getData'])
+                    ->name('userSubmission.data');
+
+                Route::post('/store', [SubmissionController::class, 'store'])
+                    ->name('userSubmission.store');
+
+                Route::get('/show/{id}', [SubmissionController::class, 'show'])
+                    ->name('userSubmission.show');
+
+                Route::put('/update/{id}', [SubmissionController::class, 'update'])
+                    ->name('userSubmission.update');
+
+                Route::delete('/delete/{id}', [SubmissionController::class, 'destroy'])
+                    ->name('userSubmission.destroy');
+
+                Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
+                    ->name('userSubmission.budget.info');
+
+                // Cascading dropdown routes
+                Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
+                    ->name('userSubmission.jobPositions');
+                Route::get('/programs/{jobLevelId}', [SubmissionController::class, 'getPrograms'])
+                    ->name('userSubmission.programs');
+                Route::get('/budget-items/{programId}', [SubmissionController::class, 'getBudgetItems'])
+                    ->name('userSubmission.budgetItems');
+            });
+
+        // Admin Submission Routes
         Route::get('/admin', [SubmissionController::class, 'admin'])
             ->middleware('permission:transaction.admin.view')
             ->name('adminSubmission.index');
@@ -580,7 +663,7 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BudgetUserController::class, 'index'])
                 ->name('budget-user.index');
-            
+
             // New endpoints for all items
             Route::get('/items/all', [BudgetUserController::class, 'getAllItems'])
                 ->name('budget-user.items.all');
@@ -590,7 +673,7 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.items.update');
             Route::delete('/items/{itemId}', [BudgetUserController::class, 'destroyItem'])
                 ->name('budget-user.items.destroy');
-            
+
             // Dropdown data endpoints
             Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
                 ->name('budget-user.budget-categories');
@@ -600,11 +683,11 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.suppliers');
             Route::get('/units', [BudgetUserController::class, 'getUnits'])
                 ->name('budget-user.units');
-            
+
             // Workplans dropdown for department and section
             Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])
                 ->name('budget-user.workplans.dropdown');
-            
+
             // Old endpoints (kept for compatibility)
             Route::get('/divisions', [BudgetUserController::class, 'getDivisions'])
                 ->name('budget-user.divisions');
@@ -688,6 +771,17 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-admin.index');
         });
 
+    // Budget Resume
+    Route::prefix('budget-resume')
+        ->middleware('permission:budget.view')
+        ->group(function () {
+
+            Route::get('/', [BudgetResumeController::class, 'index'])
+                ->name('budget-resume.index');
+        });
+
+
+
     /* ========================
         MASTER
     ======================== */
@@ -695,23 +789,22 @@ Route::middleware('auth')->group(function () {
     Route::prefix('employee')
         ->middleware('permission:employee.view')
         ->group(function () {
-
             Route::get('/data', [EmployeeController::class, 'getData'])
                 ->name('employee.data');
-
             Route::post('/{id}/reset-password', [EmployeeController::class, 'resetPassword'])
                 ->middleware('permission:employee.edit');
-
             Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
                 ->name('employee.edit')
                 ->middleware('permission:employee.edit');
-
             Route::post('/create', [EmployeeController::class, 'store'])
                 ->name('employee.store')
                 ->middleware('permission:employee.create');
-
             Route::post('/delete/{id}', [EmployeeController::class, 'destroy'])
                 ->middleware('permission:employee.delete');
+            Route::get('/{id}', [EmployeeController::class, 'show'])
+                ->name('employee.show');
+            Route::post('/update/{id}', [EmployeeController::class, 'update'])
+                ->name('employee.update');
         });
 
 
@@ -947,5 +1040,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/assign-role/{id}', [AuthorizationController::class, 'assignRoleView'])->name('auth.assign.view');
             Route::post('/assign-role', [AuthorizationController::class, 'assignRole'])->name('auth.assign.role');
+
+            Route::post('/role/remove-user', [AuthorizationController::class, 'removeUserRole'])
+                ->name('role.removeUser');
         });
 });

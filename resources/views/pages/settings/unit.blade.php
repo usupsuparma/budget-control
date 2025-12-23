@@ -38,17 +38,12 @@
 
                         <div class="col-12">
                             <label>Unit Name</label>
-                            <input type="text" name="supplier" class="form-control" required>
+                            <input type="text" name="unit" class="form-control" required>
                         </div>
 
                         <div class="col-12">
                             <label>Code</label>
                             <input type="text" name="code" class="form-control">
-                        </div>
-
-                        <div class="col-12">
-                            <label>Notes</label>
-                            <textarea name="notes" class="form-control" rows="3"></textarea>
                         </div>
 
                         <div class="col-12">
@@ -82,9 +77,8 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editUnitForm">
+            <form id="editUnitForm" method="POST">
                 @csrf
-                @method('PUT')
 
                 <input type="hidden" id="edit_id">
 
@@ -101,16 +95,13 @@
                             <input type="text" id="edit_code" name="code" class="form-control">
                         </div>
 
-                        <div class="col-12">
-                            <label>Notes</label>
-                            <textarea id="edit_notes" name="notes" class="form-control" rows="3"></textarea>
-                        </div>
+
 
                         <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
                             </select>
                         </div>
 
@@ -119,7 +110,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary">Update</button>
+                    <button class="btn btn-primary" form="editUnitForm">Update</button>
                 </div>
 
             </form>
@@ -210,14 +201,10 @@
         let id = $(this).data('id');
 
         $.get("{{ url('/unit') }}/" + id + "/edit", function(data) {
-            $('#edit_id').val(data.id);
-            $('#edit_unit').val(data.supplier);
-            $('#edit_code').val(data.address);
-            $('#edit_notes').val(data.notes);
+            $('#edit_unit').val(data.unit);
+            $('#edit_code').val(data.code);
             $('#edit_status').val(data.status);
-
             $('#editUnitForm').attr('action', "{{ url('/unit') }}/" + id);
-
             $('#editUnitModal').modal('show');
         });
     });
@@ -226,20 +213,36 @@
     $('#editUnitForm').submit(function(e) {
         e.preventDefault();
 
-        let id = $('#edit_id').val();
+        let form = $(this);
+        let url = form.attr('action');
 
         $.ajax({
-            url: "{{ url('/unit') }}/" + id,
-            method: "POST",
-            data: $(this).serialize(),
-            success: res => {
+            url: url,
+            method: "PUT",
+            data: form.serialize(),
+            success: function(res) {
                 $('#editUnitModal').modal('hide');
-                unitTable.ajax.reload();
 
-                Swal.fire("Updated!", res.message, "success");
+                // Fix overlay nyangkut
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+
+                $('#unitTable').DataTable().ajax.reload();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Updated!",
+                    text: "Unit updated successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
             }
         });
     });
+
 
     // DELETE
     $(document).on('click', '.unit-delete-btn', function() {

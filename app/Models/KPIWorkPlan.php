@@ -64,6 +64,15 @@ class KPIWorkPlan extends Model
         'approved_at' => 'datetime',
     ];
 
+    public function scopeIsKpiSection($query)
+    {
+        return $query->where('kpi_type', 'section');
+    }
+    public function scopeIsKpiDepartment($query)
+    {
+        return $query->where('kpi_type', 'department');
+    }
+
     // Polymorphic relationship
     public function kpi()
     {

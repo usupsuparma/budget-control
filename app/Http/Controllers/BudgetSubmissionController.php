@@ -23,12 +23,11 @@ class BudgetSubmissionController extends Controller
         $workPlans = KPIWorkPlan::orderBy('year', 'desc')
             ->orderBy('activity')
             ->get();
-        $budgetAccounts = BudgetCode::orderBy('stock_code')->limit(10)->get();
+        // budgetCodes will be loaded via AJAX
         return view('pages.budget.budget-submission', compact(
             'budgetSubmissions',
             'divisions',
             'workPlans',
-            'budgetAccounts',
             'user'
         ));
     }
@@ -91,7 +90,7 @@ class BudgetSubmissionController extends Controller
     public function edit($id)
     {
         try {
-            $budgetSubmission = BudgetSubmission::findOrFail($id);
+            $budgetSubmission = BudgetSubmission::with('budgetAccount')->findOrFail($id);
             
             // Check if user can edit (only pending submissions)
             if ($budgetSubmission->status != 0) {
@@ -100,6 +99,11 @@ class BudgetSubmissionController extends Controller
                     'message' => 'Only pending submissions can be edited. This submission has already been ' . 
                                 ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.'
                 ], 403);
+            }
+
+            $budgetAccountText = null;
+            if ($budgetSubmission->budgetAccount) {
+                $budgetAccountText = $budgetSubmission->budgetAccount->stock_code . ' - ' . $budgetSubmission->budgetAccount->name;
             }
 
             return response()->json([
@@ -111,6 +115,7 @@ class BudgetSubmissionController extends Controller
                     'type' => $budgetSubmission->type,
                     'work_plan_id' => $budgetSubmission->work_plan_id,
                     'budget_account_id' => $budgetSubmission->budget_account_id,
+                    'budget_account_text' => $budgetAccountText,
                     'estimation_amount' => $budgetSubmission->estimation_amount,
                     'description' => $budgetSubmission->description,
                     'status' => $budgetSubmission->status,
@@ -294,5 +299,83 @@ class BudgetSubmissionController extends Controller
                 'message' => 'Failed to reject budget submission: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get all budget codes for dropdown (simple AJAX)
+     */
+    public function getAllBudgetCodes()
+    {
+        $budgetCodes = BudgetCode::select('id', 'stock_code', 'name')
+            ->orderBy('stock_code')
+            ->get()
+            ->map(function($code) {
+                return [
+                    'value' => $code->id,
+                    'label' => $code->stock_code . ' - ' . $code->name
+                ];
+            });
+
+        return response()->json($budgetCodes);
+    }
+
+    /**
+     * Get budget codes with pagination and search for AJAX requests
+     */
+    public function getBudgetCodes(Request $request)
+    {
+        $search = $request->get('search', '');
+        $page = $request->get('page', 1);
+        $id = $request->get('id', null);
+        $perPage = 30; // Load 30 items per request
+
+        // If requesting specific ID (for edit mode)
+        if ($id) {
+            $budgetCode = BudgetCode::find($id);
+            if ($budgetCode) {
+                return response()->json([
+                    'results' => [[
+                        'id' => $budgetCode->id,
+                        'text' => $budgetCode->stock_code . ' - ' . $budgetCode->name
+                    ]]
+                ]);
+            }
+            return response()->json(['results' => []]);
+        }
+
+        $query = BudgetCode::query();
+
+        // If there's a search term, filter by stock_code or name
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('stock_code', 'like', '%' . $search . '%')
+                  ->orWhere('name', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Get total count for pagination
+        $total = $query->count();
+
+        // Get paginated results
+        $budgetCodes = $query->select('id', 'stock_code', 'name')
+            ->orderBy('stock_code')
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        // Format for Select2
+        $results = $budgetCodes->map(function($code) {
+            return [
+                'id' => $code->id,
+                'text' => $code->stock_code . ' - ' . $code->name
+            ];
+        });
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => [
+                'more' => ($page * $perPage) < $total
+            ]
+        ]);
     }
 }

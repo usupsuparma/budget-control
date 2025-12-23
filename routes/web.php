@@ -412,6 +412,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [BudgetSubmissionController::class, 'index'])
             ->name('budget.submission.index');
 
+        Route::get('/budget-codes-all', [BudgetSubmissionController::class, 'getAllBudgetCodes'])
+            ->name('budget.submission.budgetCodesAll');
+
+        Route::get('/budget-codes', [BudgetSubmissionController::class, 'getBudgetCodes'])
+            ->name('budget.submission.budgetCodes');
+
         Route::post('/', [BudgetSubmissionController::class, 'store'])
             ->name('budget.submission.store');
 

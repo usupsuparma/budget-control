@@ -201,12 +201,7 @@
                         <label for="budget_account_id" class="col-sm-3 col-form-label">Budget Account <span class="text-danger">*</span></label>
                         <div class="col-sm-9">
                             <select class="form-select" id="budget_account_id" name="budget_account_id" required>
-                                <option value="">Select Budget Account</option>
-                                @foreach($budgetAccounts as $account)
-                                    <option value="{{ $account->id }}">
-                                        {{ $account->stock_code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
+                                <option value="">Loading budget accounts...</option>
                             </select>
                         </div>
                     </div>
@@ -238,7 +233,11 @@
 @endsection
 
 @section('js')
+
+<script type="module" src="{{ asset('assets/js/app.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 
 @if (session('success'))
 <script>
@@ -264,8 +263,12 @@
 
 <script>
     let divisionChoice, workPlanChoice, budgetAccountChoice;
+    let budgetCodesData = [];
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Load budget codes immediately on page load
+        loadBudgetCodes();
+        
         divisionChoice = new Choices('#division_id', {
             searchEnabled: true,
             removeItemButton: false,
@@ -280,13 +283,63 @@
             placeholderValue: 'Select Work Plan'
         });
 
+        // Initialize Choices.js for Budget Account (will be populated after AJAX loads)
         budgetAccountChoice = new Choices('#budget_account_id', {
             searchEnabled: true,
             removeItemButton: false,
             placeholder: true,
-            placeholderValue: 'Select Budget Account'
+            placeholderValue: 'Select Budget Account',
+            searchPlaceholderValue: 'Search budget account...'
         });
     });
+
+    /**
+     * Load budget codes via AJAX
+     */
+    function loadBudgetCodes() {
+        // Show loading state
+        if (budgetAccountChoice) {
+            budgetAccountChoice.setChoices([{
+                value: '',
+                label: 'Loading budget accounts...',
+                disabled: true
+            }], 'value', 'label', true);
+        }
+
+        fetch('{{ route("budget.submission.budgetCodesAll") }}')
+            .then(response => response.json())
+            .then(data => {
+                budgetCodesData = data;
+                
+                if (budgetAccountChoice) {
+                    // Clear existing choices
+                    budgetAccountChoice.clearStore();
+                    
+                    // Add placeholder
+                    budgetAccountChoice.setChoices([{
+                        value: '',
+                        label: 'Select Budget Account',
+                        disabled: true,
+                        selected: true
+                    }], 'value', 'label', true);
+                    
+                    // Add all budget codes
+                    budgetAccountChoice.setChoices(data, 'value', 'label', false);
+                }
+                
+                console.log('Budget codes loaded:', data.length);
+            })
+            .catch(error => {
+                console.error('Error loading budget codes:', error);
+                if (budgetAccountChoice) {
+                    budgetAccountChoice.setChoices([{
+                        value: '',
+                        label: 'Error loading budget accounts',
+                        disabled: true
+                    }], 'value', 'label', true);
+                }
+            });
+    }
 
     function resetForm() {
         document.getElementById('budgetSubmissionForm').reset();

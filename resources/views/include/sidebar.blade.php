@@ -190,6 +190,46 @@
             </li>
             @endcanany
 
+            {{-- FINANCE --}}
+            {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
+            <li class="pe-slide pe-has-sub">
+                <a href="#collapseFinance"
+                    class="pe-nav-link {{ Request::is('finance/*') ? 'active' : '' }}"
+                    data-bs-toggle="collapse">
+
+                    <i class="bi bi-clipboard2-data-fill"></i>
+                    <span class="pe-nav-content">Finance</span>
+                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+                </a>
+
+                <ul class="pe-slide-menu collapse {{ Request::is('finance/*') ? 'show' : '' }}" id="collapseFinance">
+
+                    {{-- @can('transaction.user.view') --}}
+                    <li class="pe-slide-item">
+                        <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
+                            Budget Assumption
+                        </a>
+                    </li>
+                    {{-- @endcan --}}
+
+                    {{-- @can('transaction.admin.view') --}}
+                    <li class="pe-slide-item">
+                        <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                            Master Price
+                        </a>
+                    </li>
+                    {{-- @endcan --}}
+                    {{-- @can('transaction.admin.view') --}}
+                    <li class="pe-slide-item">
+                        <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                            Report
+                        </a>
+                    </li>
+                    {{-- @endcan --}}
+
+                </ul>
+            </li>
+            {{-- @endcanany --}}
 
             {{-- SETTINGS --}}
             @canany([

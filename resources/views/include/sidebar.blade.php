@@ -212,6 +212,14 @@
                     </li>
                     {{-- @endcan --}}
 
+                    {{-- @can('transaction.user.view') --}}
+                    <li class="pe-slide-item">
+                        <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
+                            Budget Accrual
+                        </a>
+                    </li>
+                    {{-- @endcan --}}
+
                     {{-- @can('transaction.admin.view') --}}
                     <li class="pe-slide-item">
                         <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">

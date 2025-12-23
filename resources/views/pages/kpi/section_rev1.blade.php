@@ -5,6 +5,8 @@
 @section('pagetitle', 'Add Data')
 
 @section('css')
+    <link rel="stylesheet" href="{{ asset('assets/libs/quill/quill.bubble.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/libs/quill/quill.snow.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.css">
@@ -70,52 +72,229 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="card card-h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">KPI Section</h6>
-                        <button id="btnAddRow" type="button" class="btn btn-primary btn-sm">
-                            <i class="bi bi-plus-circle"></i> Add New KPI Section
-                        </button>
+                    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-pills" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab"
+                                    aria-selected="true">
+                                    <span><i class="fas fa-home"></i></span>
+                                    <span>Company Policy by Section</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab"
+                                    aria-selected="false" tabindex="-1">
+                                    <span><i class="far fa-user"></i></span>
+                                    <span>KPI Section</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div>
+                            <button type="button" class="btn btn-info btn-sm mb-3 d-none" id="btnAddCpSection"
+                                data-bs-toggle="modal" data-bs-target="#cpSectionModal">
+                                <i class="bi bi-plus-circle"></i> Add Company Policy By Section
+                            </button>
+
+                            <button id="btnAddRow" type="button" class="btn btn-primary  btn-sm">
+                                <i class="bi bi-plus-circle"></i> Add New KPI Section
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive" style="overflow-x:auto;">
-                            <table id="kpi_section_table" class="display" style="width:100%;">
-                                <thead>
-                                    <tr>
-                                        <th>Action</th>
-                                        <th>No</th>
-                                        <th>Year</th>
-                                        <th>KPI Department</th>
-                                        <th>Section</th>
-                                        <th>KPI Section</th>
-                                        <th>Section Activities</th>
-                                        <th>Target Section</th>
-                                        <th>Duration (Days)</th>
-                                        <th>Schedule Start</th>
-                                        <th>Schedule End</th>
-                                        <th>Jan</th>
-                                        <th>Feb</th>
-                                        <th>Mar</th>
-                                        <th>Apr</th>
-                                        <th>May</th>
-                                        <th>Jun</th>
-                                        <th>Jul</th>
-                                        <th>Aug</th>
-                                        <th>Sep</th>
-                                        <th>Oct</th>
-                                        <th>Nov</th>
-                                        <th>Dec</th>
-                                        <th>Revenue/Cost</th>
-                                        <th>Unit ID</th>
-                                        <th>Description</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <div class="tab-content">
+                            <div class="tab-pane" id="demo-tab-5_home" role="tabpanel">
+                                <div class="col-xl-12">
+                                    <div class="card card-h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Company Policy by KPI Section</h6>
+                                            <div class="ms-auto d-flex gap-2">
 
-                                </tbody>
-                            </table>
-                        </div> <!-- table-responsive -->
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-5">
+                                                <div class="col-xl-12">
+                                                    <div class="p-3">
+                                                        <div class="table-responsive" style="overflow-x:auto;">
+                                                            <table id="cp_kpisection_table" class="display"
+                                                                style="width:100%">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Action</th>
+                                                                        <th>No</th>
+                                                                        <th>Year</th>
+                                                                        <th>File</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+
+                                                                </tbody>
+
+                                                            </table>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><!--End col-->
+                            </div>
+                            <div class="tab-pane active show" id="demo-tab-5_profile" role="tabpanel">
+                                <div class="col-xl-12">
+                                    <div class="card card-h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">KPI Department</h6>
+                                            <div class="ms-auto d-flex gap-2">
+
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-5">
+                                                <div class="col-xl-12">
+                                                    <div class="p-3">
+                                                        <div class="table-responsive" style="overflow-x:auto;">
+                                                            <table id="kpi_section_table" class="display"
+                                                                style="width:100%;">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Action</th>
+                                                                        <th>No</th>
+                                                                        <th>Year</th>
+                                                                        <th>KPI Department</th>
+                                                                        <th>Section</th>
+                                                                        <th>KPI Section</th>
+                                                                        <th>Section Activities</th>
+                                                                        <th>Target Section</th>
+                                                                        <th>Duration (Days)</th>
+                                                                        <th>Schedule Start</th>
+                                                                        <th>Schedule End</th>
+                                                                        <th>Jan</th>
+                                                                        <th>Feb</th>
+                                                                        <th>Mar</th>
+                                                                        <th>Apr</th>
+                                                                        <th>May</th>
+                                                                        <th>Jun</th>
+                                                                        <th>Jul</th>
+                                                                        <th>Aug</th>
+                                                                        <th>Sep</th>
+                                                                        <th>Oct</th>
+                                                                        <th>Nov</th>
+                                                                        <th>Dec</th>
+                                                                        <th>Revenue/Cost</th>
+                                                                        <th>Unit ID</th>
+                                                                        <th>Description</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+
+                                                                </tbody>
+                                                            </table>
+                                                        </div> <!-- table-responsive -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><!--End col-->
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cpSectionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="cpSectionForm">
+                    @csrf
+                    <input type="hidden" id="cp_section_id">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cpSectionModalLabel">Add Company Policy By Section</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Year</label>
+                                <select class="form-select" id="cp_tahun" name="tahun" required>
+                                    <option value="">Select</option>
+                                    @for ($year = 2023; $year <= date('Y') + 1; $year++)
+                                        <option value="{{ $year }}" {{ $year == date('Y') + 1 ? 'selected' : '' }}>
+                                            {{ $year }}
+                                        </option>
+                                    @endfor
+                                </select>
+                            </div>
+
+                            <!-- HEADER -->
+                            <input type="hidden" id="cp_header_input" name="header">
+                            <div class="col-12">
+                                <label class="form-label">Header</label>
+                                <div id="cp_header_editor" style="min-height:120px;"></div>
+                            </div>
+
+                            <!-- CONTENTS EN -->
+                            <input type="hidden" id="cp_contents_en_input" name="contents_en">
+                            <div class="col-md-6">
+                                <label class="form-label">Contents (EN)</label>
+                                <div id="cp_contents_en_editor" style="min-height:160px;"></div>
+                            </div>
+
+                            <!-- CONTENTS ID -->
+                            <input type="hidden" id="cp_contents_id_input" name="contents_id">
+                            <div class="col-md-6">
+                                <label class="form-label">Contents (ID)</label>
+                                <div id="cp_contents_id_editor" style="min-height:160px;"></div>
+                            </div>
+
+                            <!-- PROLOGUE -->
+                            <input type="hidden" id="cp_prologue_en_input" name="prologue_en">
+                            <div class="col-md-6">
+                                <label class="form-label">Prologue (EN)</label>
+                                <div id="cp_prologue_en_editor" style="min-height:140px;"></div>
+                            </div>
+
+                            <input type="hidden" id="cp_prologue_id_input" name="prologue_id">
+                            <div class="col-md-6">
+                                <label class="form-label">Prologue (ID)</label>
+                                <div id="cp_prologue_id_editor" style="min-height:140px;"></div>
+                            </div>
+
+                            <!-- CLOSING -->
+                            <input type="hidden" id="cp_closing_en_input" name="closing_en">
+                            <div class="col-md-6">
+                                <label class="form-label">Closing (EN)</label>
+                                <div id="cp_closing_en_editor" style="min-height:140px;"></div>
+                            </div>
+
+                            <input type="hidden" id="cp_closing_id_input" name="closing_id">
+                            <div class="col-md-6">
+                                <label class="form-label">Closing (ID)</label>
+                                <div id="cp_closing_id_editor" style="min-height:140px;"></div>
+                            </div>
+
+                            <!-- SIGNATURE -->
+                            <input type="hidden" id="cp_signature_input" name="signature">
+                            <div class="col-12">
+                                <label class="form-label">Signature</label>
+                                <div id="cp_signature_editor" style="min-height:140px;"></div>
+                            </div>
+
+                            <div class="alert alert-danger d-none" id="cpDeptFormError"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveCpSection">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -276,6 +455,7 @@
 
 @section('js')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.bootstrap5.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -546,8 +726,7 @@
                 scrollX: true,
                 scrollCollapse: true,
                 autoWidth: true,
-                columns: [
-                    {
+                columns: [{
                         data: null,
                         title: 'Action',
                         orderable: false,
@@ -915,6 +1094,317 @@
                 });
             });
 
+        });
+    </script>
+
+    <script>
+        $(function() {
+            const URL_BASE = `{{ url('kpisectioncompanypolicy') }}`;
+            const URL_DT = `{{ route('kpisectioncompanypolicy.datatable') }}`;
+
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            // ===== DataTable =====
+            const cpDeptTable = $('#cp_kpisection_table').DataTable({
+                scrollX: true,
+                scrollCollapse: true,
+                autoWidth: true,
+                processing: true,
+                ajax: {
+                    url: URL_DT,
+                    type: 'GET',
+                    dataSrc: 'data'
+                },
+                columns: [{
+                        data: 'id',
+                        width: '140px',
+                        orderable: false,
+                        searchable: false,
+                        render: (id) => `
+          <button class="btn btn-sm btn-warning cpdept-edit" data-id="${id}">Edit</button>
+          <button class="btn btn-sm btn-danger cpdept-delete" data-id="${id}">Delete</button>
+        `
+                    },
+                    {
+                        data: null,
+                        width: '60px',
+                        orderable: false,
+                        searchable: false,
+                        render: (d, t, r, meta) => meta.row + 1
+                    },
+                    {
+                        data: 'tahun',
+                        width: '90px'
+                    },
+                    {
+                        data: 'file',
+                        width: '200px'
+                    },
+                ]
+            });
+
+            // ===== Quill =====
+            const quillOptions = {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{
+                            header: [1, 2, 3, false]
+                        }],
+                        ['bold', 'italic', 'underline'],
+                        [{
+                            list: 'ordered'
+                        }, {
+                            list: 'bullet'
+                        }],
+                        [{
+                            align: []
+                        }],
+                        ['link'],
+                        ['clean']
+                    ],
+                    clipboard: {
+                        matchVisual: false
+                    }
+                }
+            };
+
+            let q = {};
+            let quillInited = false;
+            let pendingEditData = null;
+
+            const modalEl = document.getElementById('cpSectionModal');
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+            function initQuillOnce() {
+                if (quillInited) return;
+
+                q.header = new Quill('#cp_header_editor', quillOptions);
+                q.contents_en = new Quill('#cp_contents_en_editor', quillOptions);
+                q.contents_id = new Quill('#cp_contents_id_editor', quillOptions);
+                q.prologue_en = new Quill('#cp_prologue_en_editor', quillOptions);
+                q.prologue_id = new Quill('#cp_prologue_id_editor', quillOptions);
+                q.closing_en = new Quill('#cp_closing_en_editor', quillOptions);
+                q.closing_id = new Quill('#cp_closing_id_editor', quillOptions);
+                q.signature = new Quill('#cp_signature_editor', quillOptions);
+
+                q.header.on('text-change', () => $('#cp_header_input').val(q.header.root.innerHTML));
+                q.contents_en.on('text-change', () => $('#cp_contents_en_input').val(q.contents_en.root.innerHTML));
+                q.contents_id.on('text-change', () => $('#cp_contents_id_input').val(q.contents_id.root.innerHTML));
+                q.prologue_en.on('text-change', () => $('#cp_prologue_en_input').val(q.prologue_en.root.innerHTML));
+                q.prologue_id.on('text-change', () => $('#cp_prologue_id_input').val(q.prologue_id.root.innerHTML));
+                q.closing_en.on('text-change', () => $('#cp_closing_en_input').val(q.closing_en.root.innerHTML));
+                q.closing_id.on('text-change', () => $('#cp_closing_id_input').val(q.closing_id.root.innerHTML));
+                q.signature.on('text-change', () => $('#cp_signature_input').val(q.signature.root.innerHTML));
+
+                quillInited = true;
+            }
+
+            function setQuill(quill, hiddenSel, html) {
+                if (!quill) return;
+                const v = html ?? '';
+                quill.setContents([]);
+                quill.clipboard.dangerouslyPasteHTML(v);
+                $(hiddenSel).val(v);
+            }
+
+            function resetCpDeptFormToDefault() {
+                $('#cpSectionForm')[0].reset();
+                $('#cp_section_id').val('');
+                $('#cpDeptFormError').addClass('d-none').html('');
+
+                // default contoh (silakan ubah)
+                const defaultHeader = `<h3>THE COMPANY POLICY</h3><p>{{ date('d F Y') }}</p>`;
+                setQuill(q.header, '#cp_header_input', defaultHeader);
+
+                setQuill(q.contents_en, '#cp_contents_en_input', '');
+                setQuill(q.contents_id, '#cp_contents_id_input', '');
+                setQuill(q.prologue_en, '#cp_prologue_en_input', '');
+                setQuill(q.prologue_id, '#cp_prologue_id_input', '');
+                setQuill(q.closing_en, '#cp_closing_en_input', '');
+                setQuill(q.closing_id, '#cp_closing_id_input', '');
+                setQuill(q.signature, '#cp_signature_input', '');
+            }
+
+            function resetCpFormtoDefault() {
+                setQuill(
+                    q.header,
+                    '#cp_header_input',
+                    `<h3>THE COMPANY POLICY OF FY{{ date('Y') }}</h3>
+                    <h3>PT PEROKSIDA INDONESIA PRATAMA</h3>
+                    <p>=================================</p>
+                    <h3>[FOR THE PREPARATION OF THE COMPANY BUDGET FOR FISCAL YEAR {{ date('Y') }}]</h3>
+                    <p>Cikampek, {{ date('d F Y') }}</p>`
+                );
+
+                setQuill(q.contents_en, '#cp_contents_en_input', `<h3>REFER TO:</h3><br><br>
+                                            <h3>CONSIDERING:</h3><br><br>
+                                            <h3>DECISION:</h3><br><br>
+                                            <h3>Background:</h3>`);
+                setQuill(q.contents_id, '#cp_contents_id_input', `<h3>MENGACU PADA:</h3><br><br>
+                                            <h3>MEMPERTIMBANGKAN:</h3><br><br>
+                                            <h3>MEMUTUSKAN:</h3><br><br>
+                                            <h3>Latar belakang:</h3>`);
+                setQuill(q.prologue_en, '#cp_prologue_en_input', '');
+                setQuill(q.prologue_id, '#cp_prologue_id_input', '');
+                setQuill(q.closing_en, '#cp_closing_en_input', '');
+                setQuill(q.closing_id, '#cp_closing_id_input', '');
+                q.signature.clipboard.dangerouslyPasteHTML(`
+                                            <div style="text-align:center; font-weight:700; font-size:18px; margin-bottom:8px;">
+                                                THE BOARD OF DIRECTOR/DEWAN DIREKSI
+                                            </div>
+
+                                            <table>
+                                                <tr>
+                                                    <td>President Director</td>
+                                                    <td>Operations and Production Director</td>
+                                                    <td>Finance and General Affair Director</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><u><b>Yasuhiko Takaizumi</b></u></td>
+                                                    <td><u><b>Daichi Ogawa</b></u></td>
+                                                    <td><u><b>Yara Budhi Widowati</b></u></td>
+                                                </tr>
+                                            </table>
+                                            `);
+
+            }
+
+            function fillEdit(d) {
+                $('#cp_section_id').val(d.id);
+                $('#cp_tahun').val(d.tahun);
+
+                setQuill(q.header, '#cp_header_input', d.header);
+                setQuill(q.contents_en, '#cp_contents_en_input', d.contents_en);
+                setQuill(q.contents_id, '#cp_contents_id_input', d.contents_id);
+                setQuill(q.prologue_en, '#cp_prologue_en_input', d.prologue_en);
+                setQuill(q.prologue_id, '#cp_prologue_id_input', d.prologue_id);
+                setQuill(q.closing_en, '#cp_closing_en_input', d.closing_en);
+                setQuill(q.closing_id, '#cp_closing_id_input', d.closing_id);
+                setQuill(q.signature, '#cp_signature_input', d.signature);
+            }
+
+            modalEl.addEventListener('shown.bs.modal', function() {
+                initQuillOnce();
+
+                if (pendingEditData) {
+                    fillEdit(pendingEditData);
+                    pendingEditData = null;
+                } else {
+                    resetCpFormtoDefault();
+                }
+            });
+
+            // ===== ADD =====
+            $('#btnAddCpSection').on('click', function() {
+                pendingEditData = null;
+                resetCpFormtoDefault();
+                bsModal.show();
+            });
+
+            // ===== EDIT =====
+            $('#cp_kpisection_table').on('click', '.cpdept-edit', function() {
+                const id = $(this).data('id');
+
+                $.get(`${URL_BASE}/${id}/show`, function(res) {
+                    pendingEditData = res.data ?? res;
+                    bsModal.show();
+                });
+            });
+
+            // ===== SUBMIT (create/update) =====
+            $('#cpSectionForm').on('submit', function(e) {
+                e.preventDefault();
+
+                // sync hidden input (jaga-jaga)
+                if (quillInited) {
+                    $('#cp_header_input').val(q.header.root.innerHTML);
+                    $('#cp_contents_en_input').val(q.contents_en.root.innerHTML);
+                    $('#cp_contents_id_input').val(q.contents_id.root.innerHTML);
+                    $('#cp_prologue_en_input').val(q.prologue_en.root.innerHTML);
+                    $('#cp_prologue_id_input').val(q.prologue_id.root.innerHTML);
+                    $('#cp_closing_en_input').val(q.closing_en.root.innerHTML);
+                    $('#cp_closing_id_input').val(q.closing_id.root.innerHTML);
+                    $('#cp_signature_input').val(q.signature.root.innerHTML);
+                }
+
+                const id = $('#cp_section_id').val();
+                const isEdit = !!id;
+
+                const url = isEdit ? `${URL_BASE}/${id}/update` : `${URL_BASE}`;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                $('#btnSaveCpSection').prop('disabled', true);
+                $('#cpDeptFormError').addClass('d-none').html('');
+
+                $.ajax({
+                    url,
+                    type: method,
+                    data: $(this).serialize(),
+                    success: function() {
+                        bsModal.hide();
+                        cpDeptTable.ajax.reload(null, false);
+                    },
+                    error: function(xhr) {
+                        let msg = 'Terjadi kesalahan.';
+                        if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                            msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        } else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        $('#cpDeptFormError').removeClass('d-none').html(msg);
+                    },
+                    complete: function() {
+                        $('#btnSaveCpSection').prop('disabled', false);
+                    }
+                });
+            });
+
+            // ===== DELETE =====
+            $('#cp_kpisection_table').on('click', '.cpdept-delete', function() {
+                const id = $(this).data('id');
+                if (!confirm('Hapus data ini?')) return;
+
+                $.ajax({
+                    url: `${URL_BASE}/${id}`,
+                    type: 'DELETE',
+                    success: function() {
+                        cpDeptTable.ajax.reload(null, false);
+                    },
+                    error: function(xhr) {
+                        alert(xhr.responseJSON?.message ?? 'Gagal menghapus data.');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const btnKpi1 = document.getElementById('btnAddCpSection');
+            const btnKpi2 = document.getElementById('btnAddRow');
+
+            // Dengarkan event tab bootstrap
+            document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const target = event.target.getAttribute('href');
+
+                    if (target === '#demo-tab-5_home') {
+                        btnKpi1.classList.remove('d-none');
+                        btnKpi2.classList.add('d-none');
+                    }
+
+                    if (target === '#demo-tab-5_profile') {
+                        btnKpi2.classList.remove('d-none');
+                        btnKpi1.classList.add('d-none');
+                    }
+                });
+            });
         });
     </script>
 @endsection

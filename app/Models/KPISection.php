@@ -50,7 +50,7 @@ class KPISection extends Model
 
     public function kpiDepartment()
     {
-        return $this->belongsTo(KpiDepartment::class, 'kpi_department_id');
+        return $this->belongsTo(KPIDepartment::class, 'kpi_department_id');
     }
 
     public function section()

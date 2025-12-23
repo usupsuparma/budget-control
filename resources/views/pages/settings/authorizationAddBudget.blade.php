@@ -1,17 +1,19 @@
 <div class="card">
     <div class="card-header d-flex justify-content-end">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-            <i class="bi bi-plus-lg me-1"></i> Add Customer
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddBudgetAuthorizerModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Authorizer
         </button>
     </div>
 
     <div class="card-body">
-        <table id="customerTable" class="table table-bordered table-striped w-100">
+        <table id="addBudgetAuthorizerTable" class="table table-bordered table-striped w-100">
             <thead class="table-light">
                 <tr>
                     <th>ID</th>
-                    <th>Customer</th>
-                    <th>Call Sign</th>
+                    <th>Level Number</th>
+                    <th>Authorizer</th>
+                    <th>Authority</th>
+                    <th>Employee</th>
                     <th>Status</th>
                     <th width="120px">Action</th>
                 </tr>
@@ -20,35 +22,53 @@
     </div>
 </div>
 
+
 {{-- ================= ADD ================= --}}
-<div class="modal fade" id="addCustomerModal">
+<div class="modal fade" id="addAddBudgetAuthorizerModal">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5>Add Customer</h5>
+                <h5>Add Authorizer</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="createCustomerForm" method="POST" action="{{ route('customer.store') }}">
 
+            <form id="createAddBudgetAuthorizerForm" method="POST" action="{{ route('authorizationAddBudget.store') }}">
                 @csrf
 
                 <div class="modal-body">
                     <div class="row g-3">
 
+
                         <div class="col-12">
-                            <label>Customer Name</label>
-                            <input type="text" name="customer" class="form-control" required>
+                            <label>Level Number</label>
+                            <select name="level_number" class="form-select" required>
+                                <option value="" selected disabled>-- Select Level --</option>
+                                @for ($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                            </select>
+                        </div>
+
+
+                        <div class="col-12">
+                            <label>Authorizer</label>
+                            <input type="text" name="authorizer" class="form-control" required>
                         </div>
 
                         <div class="col-12">
-                            <label>Call Sign</label>
-                            <input type="text" name="callSign" class="form-control">
+                            <label>Authority</label>
+                            <input type="text" name="authority" class="form-control" required>
                         </div>
 
                         <div class="col-12">
-                            <label>Notes</label>
-                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                            <label>Employee</label>
+                            <select name="employee" class="form-select">
+                                <option value="" selected disabled>-- Select Employee --</option>
+                                @foreach ($employees as $emp)
+                                <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div class="col-12">
@@ -64,7 +84,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary" id="saveCustomer">Save</button>
+                    <button class="btn btn-primary" id="saveAddBudgetAuthorizer">Save</button>
                 </div>
 
             </form>
@@ -72,17 +92,18 @@
     </div>
 </div>
 
+
 {{-- ================= EDIT ================= --}}
-<div class="modal fade" id="editCustomer">
+<div class="modal fade" id="editAddBudgetAuthorizer">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5>Edit Customer</h5>
+                <h5>Edit Authorizer</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="editCustomerForm" method="POST">
+            <form id="editAddBudgetAuthorizerForm" method="POST">
                 @csrf
 
 
@@ -91,21 +112,36 @@
                 <div class="modal-body">
                     <div class="row g-3">
 
+
                         <div class="col-12">
-                            <label>Customer Name</label>
-                            <input type="text" id="edit_customer" name="customer" class="form-control" required>
+                            <label>Level Number</label>
+                            <select id="edit_level_number" name="level_number" class="form-select" required>
+                                <option value="" selected disabled>-- Select Level --</option>
+                                @for ($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                            </select>
+                        </div>
+
+
+                        <div class="col-12">
+                            <label>Authorizer</label>
+                            <input type="text" id="edit_authorizer" name="authorizer" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label>Authority</label>
+                            <input type="text" id="edit_authority" name="authority" class="form-control">
                         </div>
 
                         <div class="col-12">
-                            <label>Call Sign</label>
-                            <input type="text" id="edit_callSign" name="callSign" class="form-control">
+                            <label>Employee</label>
+                            <select id="edit_employee" name="employee" class="form-select">
+                                <option value="" selected disabled>-- Select Employee --</option>
+                                @foreach ($employees as $emp)
+                                <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-
-                        <div class="col-12">
-                            <label>Notes</label>
-                            <textarea id="edit_notes" name="notes" class="form-control" rows="3"></textarea>
-                        </div>
-
                         <div class="col-12">
                             <label>Status</label>
                             <select id="edit_status" name="status" class="form-select">
@@ -119,7 +155,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary" form="editCustomerForm">Update</button>
+                    <button class="btn btn-primary" form="editAddBudgetAuthorizerForm">Update</button>
                 </div>
 
             </form>
@@ -130,19 +166,24 @@
 
 @push('scripts')
 <script>
-    // INIT DATATABLE
-    let customerTable = $('#customerTable').DataTable({
+    let addBudgetAuthorizerTable = $('#addBudgetAuthorizerTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('customer.data') }}",
+        ajax: "{{ route('authorizationAddBudget.data') }}",
         columns: [{
                 data: 'id'
             },
             {
-                data: 'customer'
+                data: 'level_number'
             },
             {
-                data: 'callSign'
+                data: 'authorizer_name'
+            },
+            {
+                data: 'authority'
+            },
+            {
+                data: 'employee_name'
             },
             {
                 data: 'status_badge',
@@ -160,39 +201,37 @@
         ]
     });
 
-    // CREATE
-
-    // CREATE (AJAX)
-    $('#saveCustomer').click(function(e) {
+    // ========================= CREATE =========================
+    $('#saveAddBudgetAuthorizer').click(function(e) {
         e.preventDefault();
 
-        let form = $('#createCustomerForm');
+        let form = $('#createAddBudgetAuthorizerForm');
         let url = form.attr('action');
 
         $.ajax({
             url: url,
             method: "POST",
             data: form.serialize(),
-            success: function(res) {
 
+            success: function(res) {
                 // Tutup modal
-                $('#addCustomerModal').modal('hide');
+                $('#addAddBudgetAuthorizerModal').modal('hide');
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
                 // Reload DataTable tanpa reload halaman
-                $('#customerTable').DataTable().ajax.reload(null, false);
+                $('#addBudgetAuthorizerTable').DataTable().ajax.reload(null, false);
 
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Customer added successfully",
+                    text: "Budget Authorizer added successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });
 
                 // Reset form
-                form.trigger('reset');
+                form.trigger('reset')
             },
             error: function(xhr) {
                 console.log(xhr.responseText);
@@ -205,23 +244,26 @@
         });
     });
 
-    // SHOW EDIT
+    // ========================= SHOW EDIT =========================
+    $(document).on('click', '.AddBudgetAuthorizer-edit-btn', function() {
+        let id = $(this).data('id');
 
-    $(document).on('click', '.customer-edit-btn', function() {
-        var id = $(this).data('id');
+        $.get("{{ url('/authorizationAddBudget') }}/" + id + "/edit", function(data) {
 
-        $.get("{{ url('/customer') }}/" + id + "/edit", function(data) {
-            $('#edit_customer').val(data.customer);
-            $('#edit_callSign').val(data.callSign).change();
-            $('#edit_notes').val(data.notes);
+            $('#edit_id').val(data.id);
+            $('#edit_level_number').val(data.level_number);
+            $('#edit_authorizer').val(data.authorizer_name);
+            $('#edit_authority').val(data.authority);
+            $('#edit_employee').val(data.employee);
             $('#edit_status').val(data.status);
-            $('#editCustomerForm').attr('action', "{{ url('/customer') }}/" + id);
-            $('#editCustomer').modal('show');
+
+            $('#editAddBudgetAuthorizerForm').attr('action', "{{ url('/authorizationAddBudget') }}/" + id);
+            $('#editAddBudgetAuthorizer').modal('show');
         });
     });
 
-
-    $('#editCustomerForm').submit(function(e) {
+    // ========================= UPDATE =========================
+    $('#editAddBudgetAuthorizerForm').submit(function(e) {
         e.preventDefault();
 
         let form = $(this);
@@ -229,21 +271,22 @@
 
         $.ajax({
             url: url,
-            method: "PUT",
+            method: "POST",
             data: form.serialize(),
+
             success: function(res) {
-                $('#editCustomer').modal('hide');
+                $('#editAddBudgetAuthorizer').modal('hide');
 
                 // Fix overlay nyangkut
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
-                $('#customerTable').DataTable().ajax.reload();
+                $('#addBudgetAuthorizerTable').DataTable().ajax.reload();
 
                 Swal.fire({
                     icon: "success",
                     title: "Updated!",
-                    text: "Customer updated successfully",
+                    text: "Budget Authorizer updated successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -251,17 +294,16 @@
             error: function(xhr) {
                 console.log(xhr.responseText);
             }
+
         });
     });
 
-
-
-    // DELETE
-    $(document).on('click', '.customer-delete-btn', function() {
+    // ========================= DELETE =========================
+    $(document).on('click', '.AddBudgetAuthorizer-delete-btn', function() {
         let id = $(this).data('id');
 
         Swal.fire({
-            title: "Delete Customer?",
+            title: "Delete Budget Authorizer?",
             text: "This action cannot be undone.",
             icon: "warning",
             showCancelButton: true,
@@ -269,22 +311,21 @@
             confirmButtonText: "Delete"
         }).then(result => {
             if (result.isConfirmed) {
-
                 $.ajax({
-                    url: "/customer/" + id,
+                    url: "/authorizationAddBudget/" + id,
                     type: "DELETE",
                     data: {
                         _token: "{{ csrf_token() }}"
                     },
+
                     success: res => {
-                        customerTable.ajax.reload();
+                        transactionAuthorizerTable.ajax.reload();
+
                         Swal.fire("Deleted!", res.message, "success");
                     }
                 });
-
             }
         });
     });
 </script>
-
 @endpush

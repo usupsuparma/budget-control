@@ -6,6 +6,9 @@
 @section('pagetitle', 'Add Data')
 
 @section('css')
+    <link rel="stylesheet" href="{{ asset('assets/libs/quill/quill.bubble.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/libs/quill/quill.snow.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/libs/simplebar/simplebar.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.css">
@@ -62,6 +65,21 @@
             display: inline-block;
             width: 40px;
         }
+
+        .ql-editor table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ql-editor th,
+        .ql-editor td {
+            border: 1px solid #ddd;
+            padding: 6px;
+        }
+
+        .ql-editor .table-wrap {
+            overflow-x: auto;
+        }
     </style>
 @endsection
 
@@ -73,69 +91,143 @@
 
         {{-- CARD: Detail KPI Division --}}
         <div class="row">
-            <div class="col-xl-12">
+            <div class="col-12">
                 <div class="card card-h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">KPI Division</h6>
-                        <div class="ms-auto d-flex gap-2">
-                        {{-- <button type="button" class="btn btn-info btn-sm" id="btn-add-cpdivision" data-bs-toggle="modal"
-                            data-bs-target="#extraLargeModelcpdivision">
-                            <i class="bi bi-plus-circle"></i> Add Company Policy by Division
-                        </button> --}}
-                        <button type="button" class="btn btn-primary btn-sm" id="btn-add-kpi" data-bs-toggle="modal"
-                            data-bs-target="#extraLargeModel">
-                            <i class="bi bi-plus-circle"></i> Add New KPI Division
-                        </button>
+                    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-pills" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab"
+                                    aria-selected="true">
+                                    <span><i class="fas fa-home"></i></span>
+                                    <span>Company Policy by Division</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab"
+                                    aria-selected="false" tabindex="-1">
+                                    <span><i class="far fa-user"></i></span>
+                                    <span>KPI Division</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div>
+                            <button type="button" class="btn btn-info btn-sm d-none" id="btn-add-cpdivision"
+                                data-bs-toggle="modal" data-bs-target="#extraLargeModelcpdivision">
+                                <i class="bi bi-plus-circle"></i> Add Company Policy by KPI Division
+                            </button>
+
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-add-kpi" data-bs-toggle="modal"
+                                data-bs-target="#extraLargeModel">
+                                <i class="bi bi-plus-circle"></i> Add New KPI Division
+                            </button>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="row g-5">
-                            <div class="col-xl-12">
-                                <div class="p-3">
-                                    <div class="table-responsive" style="overflow-x: auto;">
-                                        <table id="kpi_division_table" class="display" style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th>Action</th>
-                                                    <th>No</th>
-                                                    <th>Year</th>
-                                                    <th>Company Policy</th>
-                                                    <th>Division</th>
-                                                    <th>Division Goals</th>
-                                                    <th>Target Division</th>
-                                                    <th>Duration (Days)</th>
-                                                    <th>Schedule Start</th>
-                                                    <th>Schedule End</th>
-                                                    <th>Jan</th>
-                                                    <th>Feb</th>
-                                                    <th>Mar</th>
-                                                    <th>Apr</th>
-                                                    <th>May</th>
-                                                    <th>Jun</th>
-                                                    <th>Jul</th>
-                                                    <th>Aug</th>
-                                                    <th>Sep</th>
-                                                    <th>Oct</th>
-                                                    <th>Nov</th>
-                                                    <th>Dec</th>
-                                                    <th>Revenue/Cost</th>
-                                                    <th>PIC</th>
-                                                    <th>Description</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div class="tab-pane" id="demo-tab-5_home" role="tabpanel">
+                                <div class="col-xl-12">
+                                    <div class="card card-h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Company Policy by KPI Division</h6>
+                                            <div class="ms-auto d-flex gap-2">
 
-                                            </tbody>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-5">
+                                                <div class="col-xl-12">
+                                                    <div class="p-3">
+                                                        <div class="table-responsive" style="overflow-x: auto;">
+                                                            <table id="cp_kpidivision_table" class="display"
+                                                                style="width:100%">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Action</th>
+                                                                        <th>No</th>
+                                                                        <th>Year</th>
+                                                                        <th>File</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
 
-                                        </table>
+                                                                </tbody>
+
+                                                            </table>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                </div><!--End col-->
+                            </div>
+                            <div class="tab-pane active show" id="demo-tab-5_profile" role="tabpanel">
+                                <div class="col-xl-12">
+                                    <div class="card card-h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">KPI Division</h6>
+                                            <div class="ms-auto d-flex gap-2">
 
-                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-5">
+                                                <div class="col-xl-12">
+                                                    <div class="p-3">
+                                                        <div class="table-responsive" style="overflow-x: auto;">
+                                                            <table id="kpi_division_table" class="display"
+                                                                style="width:100%">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Action</th>
+                                                                        <th>No</th>
+                                                                        <th>Year</th>
+                                                                        <th>Company Policy</th>
+                                                                        <th>Division</th>
+                                                                        <th>Division Goals</th>
+                                                                        <th>Target Division</th>
+                                                                        <th>Duration (Days)</th>
+                                                                        <th>Schedule Start</th>
+                                                                        <th>Schedule End</th>
+                                                                        <th>Jan</th>
+                                                                        <th>Feb</th>
+                                                                        <th>Mar</th>
+                                                                        <th>Apr</th>
+                                                                        <th>May</th>
+                                                                        <th>Jun</th>
+                                                                        <th>Jul</th>
+                                                                        <th>Aug</th>
+                                                                        <th>Sep</th>
+                                                                        <th>Oct</th>
+                                                                        <th>Nov</th>
+                                                                        <th>Dec</th>
+                                                                        <th>Revenue/Cost</th>
+                                                                        <th>PIC</th>
+                                                                        <th>Description</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+
+                                                                </tbody>
+
+                                                            </table>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><!--End col-->
                             </div>
                         </div>
                     </div>
                 </div>
-            </div><!--End col-->
+            </div>
+
         </div><!--End row-->
 
         {{-- tidak ada tombol submit semua --}}
@@ -207,8 +299,8 @@
                             {{-- Target Division --}}
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Target Division</label>
-                                <input type="text" name="target_division" class="form-control" placeholder="e.g. 95% KPI"
-                                    required>
+                                <input type="text" name="target_division" class="form-control"
+                                    placeholder="e.g. 95% KPI" required>
                             </div>
 
                             {{-- Duration (Days) --}}
@@ -385,6 +477,101 @@
         </div>
     </div><!-- end:: Extra Large Modal Size -->
 
+    {{-- Modal: Company Policy by KPI Division (Quill) --}}
+    <div class="modal fade" id="extraLargeModelcpdivision" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="extraLargeModelcpdivisionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="extraLargeModelcpdivisionLabel">Add Company Policy by KPI Division</h5>
+                    <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="ri-close-large-line fw-semibold"></i>
+                    </button>
+                </div>
+
+                <form id="cpDivisionForm">
+                    @csrf
+                    <input type="hidden" id="cpdivision_id" name="id">
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Year</label>
+                                <select class="form-select" id="cp_tahun" name="tahun" required>
+                                    <option value="">Select</option>
+                                    @for ($year = 2023; $year <= date('Y') + 5; $year++)
+                                        <option value="{{ $year }}">{{ $year }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+
+                            {{-- Header --}}
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Header</label>
+                                <input type="hidden" name="header" id="cp_header_input">
+                                <div id="cp_header_editor" style="height: 120px;"></div>
+                            </div>
+
+                            {{-- Contents --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Contents (EN)</label>
+                                <input type="hidden" name="contents_en" id="cp_contents_en_input">
+                                <div id="cp_contents_en_editor" style="height: 180px;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Contents (ID)</label>
+                                <input type="hidden" name="contents_id" id="cp_contents_id_input">
+                                <div id="cp_contents_id_editor" style="height: 180px;"></div>
+                            </div>
+
+                            {{-- Prologue --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Prologue (EN)</label>
+                                <input type="hidden" name="prologue_en" id="cp_prologue_en_input">
+                                <div id="cp_prologue_en_editor" style="height: 150px;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Pendahuluan (ID)</label>
+                                <input type="hidden" name="prologue_id" id="cp_prologue_id_input">
+                                <div id="cp_prologue_id_editor" style="height: 150px;">
+                                </div>
+                            </div>
+
+                            {{-- Closing --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Closing (EN)</label>
+                                <input type="hidden" name="closing_en" id="cp_closing_en_input">
+                                <div id="cp_closing_en_editor" style="height: 150px;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Closing (ID)</label>
+                                <input type="hidden" name="closing_id" id="cp_closing_id_input">
+                                <div id="cp_closing_id_editor" style="height: 150px;"></div>
+                            </div>
+
+                            {{-- Signature --}}
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Signature</label>
+                                <input type="hidden" name="signature" id="cp_signature_input">
+                                <div id="cp_signature_editor" style="height: 120px;"></div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-danger d-none" id="cpdivision_form_error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-cpdivision">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @if (session('success'))
@@ -430,6 +617,7 @@
     <script type="module" src="{{ asset('assets/js/app.js') }}"></script>
 
     <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.bootstrap5.js"></script>
@@ -465,6 +653,367 @@
 
             durationInput.addEventListener('input', updateEndDate);
             startInput.addEventListener('change', updateEndDate);
+        });
+    </script>
+
+    {{-- Company Policy by KPI Division: DataTable + Quill CRUD (AJAX) --}}
+    <script>
+        $(document).ready(function() {
+            // =========================
+            // DataTable (Company Policy by KPI Division)
+            // =========================
+            const cpTable = $('#cp_kpidivision_table').DataTable({
+                scrollX: true,
+                scrollCollapse: true,
+                autoWidth: true,
+                processing: true,
+                ajax: {
+                    url: "{{ route('kpidivisioncompanypolicy.datatable') }}",
+                    type: "GET",
+                    dataSrc: 'data'
+                },
+                columns: [{
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data) {
+                            return `
+                                <button type="button" class="btn btn-sm btn-warning btn-edit-cpdivision" data-id="${data}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete-cpdivision" data-id="${data}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            `;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row, meta) {
+                            return meta.row + 1;
+                        }
+                    },
+                    {
+                        data: 'tahun',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'file',
+                        orderable: false,
+                        searchable: false,
+                        defaultContent: '-'
+                    }
+                ]
+            });
+
+            // =========================
+            // Quill Setup (inside modal)
+            // =========================
+            const modalId = '#extraLargeModelcpdivision';
+            const modalEl = document.querySelector(modalId);
+            if (!modalEl) {
+                console.error('Modal CP Division tidak ditemukan:', modalId);
+                return;
+            }
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+            // CSRF untuk AJAX Laravel
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            const quillOptions = {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ align: [] }],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['link'],
+                        ['clean']
+                    ],
+                    clipboard: {
+                        matchVisual: false   // ⬅️ penting untuk paste HTML (table/grid)
+                    }
+                }
+            };
+
+            let quillInited = false;
+            let q = {};
+            let pendingFill = null; // simpan data edit sampai modal tampil
+
+            function initQuillOnce() {
+                if (quillInited) return;
+
+                const required = [
+                    '#cp_header_editor',
+                    '#cp_contents_en_editor',
+                    '#cp_contents_id_editor',
+                    '#cp_prologue_en_editor',
+                    '#cp_prologue_id_editor',
+                    '#cp_closing_en_editor',
+                    '#cp_closing_id_editor',
+                    '#cp_signature_editor'
+                ];
+
+                for (const sel of required) {
+                    if (!document.querySelector(sel)) {
+                        console.error('Quill container tidak ditemukan:', sel);
+                        return;
+                    }
+                }
+
+                q.header = new Quill('#cp_header_editor', quillOptions);
+                q.contents_en = new Quill('#cp_contents_en_editor', quillOptions);
+                q.contents_id = new Quill('#cp_contents_id_editor', quillOptions);
+                q.prologue_en = new Quill('#cp_prologue_en_editor', quillOptions);
+                q.prologue_id = new Quill('#cp_prologue_id_editor', quillOptions);
+                q.closing_en = new Quill('#cp_closing_en_editor', quillOptions);
+                q.closing_id = new Quill('#cp_closing_id_editor', quillOptions);
+                q.signature = new Quill('#cp_signature_editor', quillOptions);
+
+                // auto-sync hidden input saat mengetik
+                q.header.on('text-change', () => $('#cp_header_input').val(q.header.root.innerHTML));
+                q.contents_en.on('text-change', () => $('#cp_contents_en_input').val(q.contents_en.root.innerHTML));
+                q.contents_id.on('text-change', () => $('#cp_contents_id_input').val(q.contents_id.root.innerHTML));
+                q.prologue_en.on('text-change', () => $('#cp_prologue_en_input').val(q.prologue_en.root.innerHTML));
+                q.prologue_id.on('text-change', () => $('#cp_prologue_id_input').val(q.prologue_id.root.innerHTML));
+                q.closing_en.on('text-change', () => $('#cp_closing_en_input').val(q.closing_en.root.innerHTML));
+                q.closing_id.on('text-change', () => $('#cp_closing_id_input').val(q.closing_id.root.innerHTML));
+                q.signature.on('text-change', () => $('#cp_signature_input').val(q.signature.root.innerHTML));
+
+                quillInited = true;
+            }
+
+            function setQuill(quill, hiddenSelector, html) {
+                if (!quill) return;
+                const val = html ?? '';
+                quill.setContents([]);
+                quill.clipboard.dangerouslyPasteHTML(val);
+                $(hiddenSelector).val(val);
+            }
+
+            function resetCpForm() {
+                $('#cpDivisionForm')[0].reset();
+                $('#cpdivision_id').val('');
+                $('#cpdivision_form_error').addClass('d-none').html('');
+
+                if (!quillInited) return;
+                setQuill(q.header, '#cp_header_input', '');
+                setQuill(q.contents_en, '#cp_contents_en_input', '');
+                setQuill(q.contents_id, '#cp_contents_id_input', '');
+                setQuill(q.prologue_en, '#cp_prologue_en_input', '');
+                setQuill(q.prologue_id, '#cp_prologue_id_input', '');
+                setQuill(q.closing_en, '#cp_closing_en_input', '');
+                setQuill(q.closing_id, '#cp_closing_id_input', '');
+                setQuill(q.signature, '#cp_signature_input', '');
+            }
+
+            function resetCpFormtoDefault() {
+                setQuill(
+                    q.header,
+                    '#cp_header_input',
+                    `<h3>THE COMPANY POLICY OF FY{{ date('Y') }}</h3>
+                    <h3>PT PEROKSIDA INDONESIA PRATAMA</h3>
+                    <p>=================================</p>
+                    <h3>[FOR THE PREPARATION OF THE COMPANY BUDGET FOR FISCAL YEAR {{ date('Y') }}]</h3>
+                    <p>Cikampek, {{ date('d F Y') }}</p>`
+                );
+
+                setQuill(q.contents_en, '#cp_contents_en_input', `<h3>REFER TO:</h3><br><br>
+                                            <h3>CONSIDERING:</h3><br><br>
+                                            <h3>DECISION:</h3><br><br>
+                                            <h3>Background:</h3>`);
+                setQuill(q.contents_id, '#cp_contents_id_input', `<h3>MENGACU PADA:</h3><br><br>
+                                            <h3>MEMPERTIMBANGKAN:</h3><br><br>
+                                            <h3>MEMUTUSKAN:</h3><br><br>
+                                            <h3>Latar belakang:</h3>`);
+                setQuill(q.prologue_en, '#cp_prologue_en_input', '');
+                setQuill(q.prologue_id, '#cp_prologue_id_input', '');
+                setQuill(q.closing_en, '#cp_closing_en_input', '');
+                setQuill(q.closing_id, '#cp_closing_id_input', '');
+                q.signature.clipboard.dangerouslyPasteHTML(`
+                                            <div style="text-align:center; font-weight:700; font-size:18px; margin-bottom:8px;">
+                                                THE BOARD OF DIRECTOR/DEWAN DIREKSI
+                                            </div>
+
+                                            <table>
+                                                <tr>
+                                                    <td>President Director</td>
+                                                    <td>Operations and Production Director</td>
+                                                    <td>Finance and General Affair Director</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><u><b>Yasuhiko Takaizumi</b></u></td>
+                                                    <td><u><b>Daichi Ogawa</b></u></td>
+                                                    <td><u><b>Yara Budhi Widowati</b></u></td>
+                                                </tr>
+                                            </table>
+                                            `);
+
+            }
+
+            function fillCpForm(d) {
+                $('#cpdivision_id').val(d.id ?? '');
+                $('#cp_tahun').val(d.tahun ?? '');
+
+                setQuill(q.header, '#cp_header_input', d.header);
+                setQuill(q.contents_en, '#cp_contents_en_input', d.contents_en);
+                setQuill(q.contents_id, '#cp_contents_id_input', d.contents_id);
+                setQuill(q.prologue_en, '#cp_prologue_en_input', d.prologue_en);
+                setQuill(q.prologue_id, '#cp_prologue_id_input', d.prologue_id);
+                setQuill(q.closing_en, '#cp_closing_en_input', d.closing_en);
+                setQuill(q.closing_id, '#cp_closing_id_input', d.closing_id);
+                setQuill(q.signature, '#cp_signature_input', d.signature);
+            }
+
+            // init quill ketika modal benar-benar tampil
+            modalEl.addEventListener('shown.bs.modal', function() {
+                initQuillOnce();
+                if (!pendingFill) {
+                    resetCpFormtoDefault();
+                    return;
+                }
+
+                if (pendingFill) {
+                    fillCpForm(pendingFill);
+                    pendingFill = null;
+                }
+            });
+
+            // =========================
+            // Button Add
+            // =========================
+            $('#btn-add-cpdivision').on('click', function() {
+                // resetCpForm();
+                resetCpFormtoDefault();
+                $('#extraLargeModelcpdivisionLabel').text('Add Company Policy by KPI Division');
+                bsModal.show();
+            });
+
+            // =========================
+            // Edit
+            // =========================
+            $('#cp_kpidivision_table').on('click', '.btn-edit-cpdivision', function() {
+                const id = $(this).data('id');
+                resetCpForm();
+                $('#extraLargeModelcpdivisionLabel').text('Edit Company Policy by KPI Division');
+
+                $.get(`{{ url('kpidivisioncompanypolicy') }}/${id}/show`, function(res) {
+                    const d = res.data ?? res;
+                    pendingFill = d; // isi setelah modal shown
+                    bsModal.show();
+                }).fail(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal mengambil data untuk edit.'
+                    });
+                });
+            });
+
+            // =========================
+            // Submit (Create/Update)
+            // =========================
+            $('#cpDivisionForm').on('submit', function(e) {
+                e.preventDefault();
+
+                // pastikan hidden input terisi
+                if (quillInited) {
+                    $('#cp_header_input').val(q.header.root.innerHTML);
+                    $('#cp_contents_en_input').val(q.contents_en.root.innerHTML);
+                    $('#cp_contents_id_input').val(q.contents_id.root.innerHTML);
+                    $('#cp_prologue_en_input').val(q.prologue_en.root.innerHTML);
+                    $('#cp_prologue_id_input').val(q.prologue_id.root.innerHTML);
+                    $('#cp_closing_en_input').val(q.closing_en.root.innerHTML);
+                    $('#cp_closing_id_input').val(q.closing_id.root.innerHTML);
+                    $('#cp_signature_input').val(q.signature.root.innerHTML);
+                }
+
+                const id = $('#cpdivision_id').val();
+                const isEdit = !!id;
+
+                const url = isEdit ?
+                    `{{ url('kpidivisioncompanypolicy') }}/${id}/update` :
+                    `{{ url('kpidivisioncompanypolicy') }}`;
+
+                const method = isEdit ? 'PUT' : 'POST';
+
+                $('#btn-save-cpdivision').prop('disabled', true);
+                $('#cpdivision_form_error').addClass('d-none').html('');
+
+                $.ajax({
+                    url: url,
+                    type: method,
+                    data: $(this).serialize(),
+                    success: function() {
+                        bsModal.hide();
+                        cpTable.ajax.reload(null, false);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Company Policy by KPI Division berhasil disimpan.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        let msg = 'Terjadi kesalahan.';
+                        if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                            msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        } else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        $('#cpdivision_form_error').removeClass('d-none').html(msg);
+                    },
+                    complete: function() {
+                        $('#btn-save-cpdivision').prop('disabled', false);
+                    }
+                });
+            });
+
+            // =========================
+            // Delete
+            // =========================
+            $('#cp_kpidivision_table').on('click', '.btn-delete-cpdivision', function() {
+                const id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Hapus data?',
+                    text: 'Data Company Policy by KPI Division akan dihapus.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: `{{ url('kpidivisioncompanypolicy') }}/${id}`,
+                        type: 'DELETE',
+                        success: function() {
+                            cpTable.ajax.reload(null, false);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Terhapus',
+                                timer: 1200,
+                                showConfirmButton: false
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ??
+                                    'Gagal menghapus data.'
+                            });
+                        }
+                    });
+                });
+            });
         });
     </script>
 
@@ -1171,5 +1720,31 @@
 
         });
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const btnKpi1 = document.getElementById('btn-add-cpdivision');
+            const btnKpi2 = document.getElementById('btn-add-kpi');
+
+            // Dengarkan event tab bootstrap
+            document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const target = event.target.getAttribute('href');
+
+                    if (target === '#demo-tab-5_home') {
+                        btnKpi1.classList.remove('d-none');
+                        btnKpi2.classList.add('d-none');
+                    }
+
+                    if (target === '#demo-tab-5_profile') {
+                        btnKpi2.classList.remove('d-none');
+                        btnKpi1.classList.add('d-none');
+                    }
+                });
+            });
+        });
+    </script>
+
 
 @endsection

@@ -797,7 +797,6 @@
                     url: "{{ url('/company-policy') }}/" + id + "/json",
                     type: "GET",
                     success: function(res) {
-console.log(res);
                         $('#extraLargeModelLabel').text('Edit Company Policy');
                         $('#companyPolicyForm').attr('action',
                             "{{ url('/company-policy') }}/" + id);

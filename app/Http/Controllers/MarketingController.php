@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\MarketingPlanTemplateExport;
 use App\Imports\MarketingPlanImport;
 use App\Models\Division;
+use App\Models\MarketingPlan;
 use App\Models\SalesPlanning;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -33,7 +34,7 @@ class MarketingController extends Controller
 
     public function getData(Request $request)
     {
-        $query = SalesPlanning::query();
+        $query = MarketingPlan::query();
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -50,15 +51,12 @@ class MarketingController extends Controller
     public function uploadExcel(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx'
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
-        Excel::import(new MarketingPlanImport, $request->file('file'));
-
-
         return response()->json([
-            'success' => true,
-            'message' => 'Data Marketing Plan berhasil di-import'
+            'validated' => true,
+            'filename' => $request->file('file')->getClientOriginalName(),
         ]);
     }
 

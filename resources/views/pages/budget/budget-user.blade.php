@@ -518,7 +518,8 @@
 
                             <div class="mb-3">
                                 <label for="priceEstimation" class="form-label fw-bold">Price Estimation</label>
-                                <input type="number" class="form-control" id="priceEstimation" name="price_estimation" step="0.01">
+                                <input type="text" class="form-control" id="priceEstimation" name="price_estimation" placeholder="0" inputmode="decimal">
+                                <small class="text-muted">Format: 1.000.000 atau 1000000</small>
                             </div>
 
                             <div class="mb-3">
@@ -528,14 +529,15 @@
                             
                             <div class="mb-3">
                                 <label for="total" class="form-label fw-bold">Total</label>
-                                <input type="number" class="form-control bg-light" id="total" name="total" readonly value="0">
+                                <input type="text" class="form-control bg-light" id="total" name="total" readonly value="0">
+                                <small class="text-muted">Otomatis: Jumlah bulan × Price Estimation</small>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-save-item" id="saveItemBtn">
+                <button type="button" class="btn btn-primary btn-save-item" id="saveItemBtn">
                     Simpan
                 </button>
                 <button type="button" class="btn btn-secondary" id="resetItemBtn">
@@ -570,6 +572,7 @@
     const paramDivisionId = urlParams.get('division_id');
     const paramYear = urlParams.get('year');
     const paramWorkplanId = urlParams.get('workplan_id');
+    
 </script>
 <script src="{{ asset('assets/js/budget-user.js') }}"></script>
 @endsection

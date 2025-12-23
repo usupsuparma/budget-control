@@ -7,6 +7,7 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
     .stat-card {
         border-left: 4px solid;
@@ -21,7 +22,7 @@
         opacity: 0.8;
     }
     .table-responsive {
-        min-height: 400px;
+        min-height: 150px;
     }
     .badge-status {
         padding: 0.35rem 0.65rem;
@@ -63,7 +64,7 @@
 @section('content')
 <div id="layout-wrapper">
     <div class="container-fluid">
-
+        {{-- === PAGE TITLE & BREADCRUMB === --}}
         <div class="d-flex align-items-center mt-2 mb-2">
             <h6 class="mb-0 flex-grow-1">List Pengajuan</h6>
             <div class="flex-shrink-0">
@@ -78,13 +79,16 @@
 
         {{-- === SUMMARY CARD === --}}
         <div class="row mb-3">
-            <div class="col-md-6 col-xl-3">
+            {{-- New Submission --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #0d6efd !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">New Submission</h6>
-                                <h3 class="mb-0">{{ $newSubmission }}</h3>
+                                <h3 class="mb-0" id="newSubmissionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-file-add-line stat-icon text-primary"></i>
@@ -93,13 +97,17 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+
+            {{-- Progress --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #ffc107 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Progress</h6>
-                                <h3 class="mb-0">{{ $progress }}</h3>
+                                <h3 class="mb-0" id="progressCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-time-line stat-icon text-warning"></i>
@@ -108,13 +116,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+            {{-- Paid --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #198754 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Paid</h6>
-                                <h3 class="mb-0">{{ $paid }}</h3>
+                                <h3 class="mb-0" id="paidCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-money-dollar-circle-line stat-icon text-success"></i>
@@ -123,13 +134,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-3">
+            {{-- Completion --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6c757d !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Completion</h6>
-                                <h3 class="mb-0">{{ $completion }}</h3>
+                                <h3 class="mb-0" id="completionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-checkbox-circle-line stat-icon text-secondary"></i>
@@ -138,13 +152,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12">
+            {{-- Total Submission --}}
+            <div class="col-md-6 col-xl-4">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6610f2 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-1">Total Submission</h6>
-                                <h3 class="mb-0">{{ $totalSubmission }}</h3>
+                                <h3 class="mb-0" id="totalSubmissionCount">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </h3>
                             </div>
                             <div class="flex-shrink-0">
                                 <i class="ri-file-list-3-line stat-icon text-purple"></i>
@@ -323,7 +340,7 @@
                         </table>
                     </div>
 
-                    <div class="row mt-3">
+                    <div class="row">
                         <div class="col-md-12">
                             <label class="form-label">Urgency <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="urgency" name="urgency" rows="3" required></textarea>
@@ -338,13 +355,12 @@
         </div>
     </div>
 </div>
-
-</main>
 @endsection
 
 @section('js')
 <script type="module" src="{{ asset('assets/js/app.js') }}"></script>
 <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 // Global variables
@@ -355,6 +371,9 @@ const units = @json($units);
 let availableBudgetItems = [];
 
 $(document).ready(function() {
+    // Load summary data on page load
+    loadSummary();
+    
     // Load data on page load
     loadData();
 
@@ -362,6 +381,7 @@ $(document).ready(function() {
     $('#btnFilter').on('click', function() {
         currentPage = 1;
         loadData();
+        loadSummary(); // Reload summary when filter changes
     });
 
     // Add data button
@@ -459,8 +479,9 @@ function loadPrograms(jobLevelId) {
 
 // Load budget items based on program ID
 function loadBudgetItems(programId) {
+    let urlBudgetItems = `{{route('userSubmission.budgetItems', ':programId')}}`.replace(':programId', programId);
     $.ajax({
-        url: `/admission/budget-items/${programId}`,
+        url: urlBudgetItems,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -470,9 +491,36 @@ function loadBudgetItems(programId) {
             }
         },
         error: function(xhr) {
+            console.log(xhr);
+            
             showAlert('Error loading budget items', 'danger');
             availableBudgetItems = [];
             updateAllBudgetSelects();
+        }
+    });
+}
+
+// Load summary data function
+function loadSummary() {
+    $.ajax({
+        url: '{{ route("userSubmission.summary") }}',
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                $('#newSubmissionCount').text(response.data.newSubmission);
+                $('#progressCount').text(response.data.progress);
+                $('#paidCount').text(response.data.paid);
+                $('#completionCount').text(response.data.completion);
+                $('#totalSubmissionCount').text(response.data.totalSubmission);
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading summary:', xhr);
+            $('#newSubmissionCount').text('0');
+            $('#progressCount').text('0');
+            $('#paidCount').text('0');
+            $('#completionCount').text('0');
+            $('#totalSubmissionCount').text('0');
         }
     });
 }
@@ -548,6 +596,14 @@ function renderTable(data) {
                                 </button>
                                 <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
                                     <i class="ri-delete-bin-line"></i>
+                                </button>
+                            ` : ''}
+                            ${item.can_approve ? `
+                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                    <i class="ri-check-line"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                    <i class="ri-close-line"></i> Reject
                                 </button>
                             ` : ''}
                         </div>
@@ -761,6 +817,7 @@ function saveSubmission() {
                 $('#submissionModal').modal('hide');
                 showAlert(response.message || 'Submission saved successfully', 'success');
                 loadData();
+                loadSummary(); // Reload summary after save
             }
         },
         error: function(xhr) {
@@ -838,7 +895,12 @@ function viewSubmission(id) {
         success: function(response) {
             if (response.success) {
                 // Display view modal (you can create a separate modal for viewing)
-                alert('View functionality - ID: ' + id);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'View Submission',
+                    text: 'View functionality - ID: ' + id,
+                    confirmButtonColor: '#0d6efd'
+                });
             }
         },
         error: function(xhr) {
@@ -862,18 +924,81 @@ function editSubmission(id) {
                 $('#purpose').val(data.purpose);
                 $('#urgency').val(data.urgency);
                 
-                // Clear and add item rows
-                $('#itemsTableBody').html('');
-                data.details.forEach(detail => {
-                    addItemRow();
-                    const row = itemRowCounter;
-                    $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
-                    $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id).trigger('change');
-                    $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
-                    $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
-                    $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
-                    calculateRowTotal(row);
-                });
+                // Set Job Level first
+                $('#jobLevel').val(data.job_level_id);
+                
+                // Load Job Positions based on Job Level, then set the value
+                if (data.job_level_id) {
+                    $.ajax({
+                        url: '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                        type: 'GET',
+                        success: function(jobPosResponse) {
+                            if (jobPosResponse.success) {
+                                let options = '<option value="">Select Job Position</option>';
+                                jobPosResponse.data.forEach(function(jp) {
+                                    options += `<option value="${jp.id}">${jp.job_position_name}</option>`;
+                                });
+                                $('#jobPosition').html(options).prop('disabled', false);
+                                $('#jobPosition').val(data.job_position_id);
+                            }
+                        }
+                    });
+                }
+                
+                // Load Programs based on Job Level, then set the value
+                if (data.job_level_id) {
+                    $.ajax({
+                        url: '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                        type: 'GET',
+                        success: function(programResponse) {
+                            if (programResponse.success) {
+                                let options = '<option value="">Select Program</option>';
+                                programResponse.data.forEach(function(prog) {
+                                    options += `<option value="${prog.id}">${prog.name}</option>`;
+                                });
+                                $('#programId').html(options).prop('disabled', false);
+                                $('#programId').val(data.program_id);
+                                
+                                // Load Budget Items based on Program, then populate item rows
+                                if (data.program_id) {
+                                    $.ajax({
+                                        url: '{{ route("userSubmission.budgetItems", ":programId") }}'.replace(':programId', data.program_id),
+                                        type: 'GET',
+                                        success: function(budgetResponse) {
+                                            if (budgetResponse.success) {
+                                                availableBudgetItems = budgetResponse.data;
+                                                
+                                                // Now populate the item rows
+                                                $('#itemsTableBody').html('');
+                                                itemRowCounter = 0;
+                                                
+                                                data.details.forEach(detail => {
+                                                    addItemRow();
+                                                    const row = itemRowCounter;
+                                                    
+                                                    // Set values for each field
+                                                    $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
+                                                    $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id);
+                                                    
+                                                    // Update budget value after setting budget_id
+                                                    const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
+                                                    if (selectedBudget) {
+                                                        $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(selectedBudget.total));
+                                                    }
+                                                    
+                                                    $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
+                                                    $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
+                                                    $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
+                                                    calculateRowTotal(row);
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
                 
                 $('#submissionModal').modal('show');
             }
@@ -886,28 +1011,38 @@ function editSubmission(id) {
 
 // Delete submission
 function deleteSubmission(id) {
-    if (!confirm('Are you sure you want to delete this submission?')) {
-        return;
-    }
-
-    $.ajax({
-        url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
-        type: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.success) {
-                showAlert(response.message, 'success');
-                loadData();
-            }
-        },
-        error: function(xhr) {
-            let message = 'Error deleting submission';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                message = xhr.responseJSON.message;
-            }
-            showAlert(message, 'danger');
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        loadData();
+                        loadSummary(); // Reload summary after delete
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error deleting submission';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    showAlert(message, 'danger');
+                }
+            });
         }
     });
 }
@@ -968,38 +1103,25 @@ function getStatusBadge(status) {
 }
 
 function showAlert(message, type) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const iconClass = type === 'success' ? 'ri-checkbox-circle-line' : 'ri-error-warning-line';
+    const icon = type === 'success' ? 'success' : 'error';
+    const title = type === 'success' ? 'Success!' : 'Error!';
     
-    const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-            <i class="${iconClass} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Remove existing alerts
-    $('.alert').remove();
-    
-    // Add new alert at the top of the container
-    $('.container-fluid').prepend(alertHtml);
-    
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        $('.alert').alert('close');
-    }, 5000);
+    Swal.fire({
+        icon: icon,
+        title: title,
+        text: message,
+        confirmButtonColor: type === 'success' ? '#28a745' : '#dc3545',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: true
+    });
 }
 
 function showModalError(message, errors = null) {
-    let errorHtml = `
-        <div id="modalErrorAlert" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-            <i class="ri-error-warning-line me-2"></i>
-            <strong>${message}</strong>
-    `;
+    let errorMessage = message;
     
     if (errors) {
-        errorHtml += '<ul class="mb-0 mt-2">';
+        errorMessage += '<br><br><ul style="text-align: left; margin-left: 20px;">';
         Object.keys(errors).forEach(function(field) {
             // Make error messages more readable
             let fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -1009,21 +1131,103 @@ function showModalError(message, errors = null) {
                 const fieldName = parts[2].replace(/_/g, ' ');
                 fieldLabel = `Item ${index} - ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
             }
-            errorHtml += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
+            errorMessage += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
         });
-        errorHtml += '</ul>';
+        errorMessage += '</ul>';
     }
     
-    errorHtml += `
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Remove existing modal errors
-    $('#modalErrorAlert').remove();
-    
-    // Add error at the top of modal body
-    $('.modal-body').prepend(errorHtml);
+    Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        html: errorMessage,
+        confirmButtonColor: '#dc3545'
+    });
 }
+
+// Approve submission
+function approveSubmission(id) {
+    Swal.fire({
+        title: 'Approve Submission?',
+        text: 'Are you sure you want to approve this submission?',
+        icon: 'question',
+        input: 'textarea',
+        inputLabel: 'Comments (optional)',
+        inputPlaceholder: 'Enter your comments here...',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Approve',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let url = "{{route('userSubmission.approve', ':id')}}".replace(':id', id);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    comments: result.value
+                },
+                success: function(response) {
+                    showAlert("Sukses Approve Submission", 'success');
+                    loadData();
+                    loadSummary();
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert(response.message || 'Error approving submission', 'error');
+                }
+            });
+        }
+    });
+}
+
+// Reject submission
+function rejectSubmission(id) {
+    Swal.fire({
+        title: 'Reject Submission?',
+        text: 'Are you sure you want to reject this submission?',
+        icon: 'warning',
+        input: 'textarea',
+        inputLabel: 'Rejection Reason (required)',
+        inputPlaceholder: 'Please provide a reason for rejection...',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Rejection reason is required!';
+            }
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Reject',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let url = "{{ route('userSubmission.reject', ':id') }}".replace(':id', id);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    comments: result.value
+                },
+                success: function(response) {
+                    console.log(response);
+                    
+                    showAlert("Sukses Reject Submission", 'success');
+                    loadData();
+                    loadSummary();
+                },
+                error: function(xhr) {
+                    console.log(xhr);
+                    
+                    const response = xhr.responseJSON;
+                    showAlert(response.message || 'Error rejecting submission', 'error');
+                }
+            });
+        }
+    });
+}
+
 </script>
 @endsection

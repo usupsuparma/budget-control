@@ -6,7 +6,9 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AuthorizationAddBudgetController;
 use App\Http\Controllers\AuthorizationController;
+use App\Http\Controllers\AuthorizationTransactionController;
 use App\Http\Controllers\BudgetAdminController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\RealisasiController;
@@ -21,8 +23,11 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\KPIDivisionController;
+use App\Http\Controllers\KPIDivisionCompanyPolicyController;
 use App\Http\Controllers\KPIDepartmentController;
+use App\Http\Controllers\KPIDepartmentCompanyPolicyController;
 use App\Http\Controllers\KPISectionController;
+use App\Http\Controllers\KPISectionCompanyPolicyController;
 use App\Http\Controllers\KPIWorkPlanController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\PengajuanAnggaranController;
@@ -230,6 +235,34 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidivision.inline');
         });
 
+    Route::prefix('kpidivisioncompanypolicy')
+        // ->middleware('permission:kpi.kpidivisioncp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPIDivisionCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.dataTable')
+                ->name('kpidivisioncompanypolicy.datatable');
+
+            Route::post('/', [KPIDivisionCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.store')
+                ->name('kpidivisioncompanypolicy.store');
+
+            Route::get('/{id}/show', [KPIDivisionCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.show')
+                ->name('kpidivisioncompanypolicy.show');
+
+            Route::put('/{id}/update', [KPIDivisionCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.update')
+                ->name('kpidivisioncompanypolicy.update');
+
+            Route::delete('/{id}', [KPIDivisionCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidivisioncompanypolicy.destroy')
+                ->name('kpidivisioncompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPIDivisionCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpidivisioncompanypolicy.pdf')
+                ->name('kpidivisioncompanypolicy.pdf');
+        });
+
     /* ========================
         KPI Department
     ======================== */
@@ -273,6 +306,34 @@ Route::middleware('auth')->group(function () {
                 ->name('kpidepartment.inline');
         });
 
+    Route::prefix('kpidepartmentcompanypolicy')
+        // ->middleware('permission:kpi.kpidepartmentcp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPIDepartmentCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.dataTable')
+                ->name('kpidepartmentcompanypolicy.datatable');
+
+            Route::post('/', [KPIDepartmentCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.store')
+                ->name('kpidepartmentcompanypolicy.store');
+
+            Route::get('/{id}/show', [KPIDepartmentCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.show')
+                ->name('kpidepartmentcompanypolicy.show');
+
+            Route::put('/{id}/update', [KPIDepartmentCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.update')
+                ->name('kpidepartmentcompanypolicy.update');
+
+            Route::delete('/{id}', [KPIDepartmentCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpidepartmentcompanypolicy.destroy')
+                ->name('kpidepartmentcompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPIDepartmentCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpidepartmentcompanypolicy.pdf')
+                ->name('kpidepartmentcompanypolicy.pdf');
+        });
+
     /* ========================
         KPI Section
     ======================== */
@@ -314,6 +375,34 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{kpiSection}/inline', [KPISectionController::class, 'inlineUpdate'])
                 // ->middleware('permission:kpi.kpisection.inline')
                 ->name('kpisection.inline');
+        });
+
+    Route::prefix('kpisectioncompanypolicy')
+        // ->middleware('permission:kpi.kpisectioncp.view')
+        ->group(function () {
+            Route::get('/datatable', [KPISectionCompanyPolicyController::class, 'dataTable'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.dataTable')
+                ->name('kpisectioncompanypolicy.datatable');
+
+            Route::post('/', [KPISectionCompanyPolicyController::class, 'store'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.store')
+                ->name('kpisectioncompanypolicy.store');
+
+            Route::get('/{id}/show', [KPISectionCompanyPolicyController::class, 'show'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.show')
+                ->name('kpisectioncompanypolicy.show');
+
+            Route::put('/{id}/update', [KPISectionCompanyPolicyController::class, 'update'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.update')
+                ->name('kpisectioncompanypolicy.update');
+
+            Route::delete('/{id}', [KPISectionCompanyPolicyController::class, 'destroy'])
+                // ->middleware('permission:kpi.kpisectioncompanypolicy.destroy')
+                ->name('kpisectioncompanypolicy.destroy');
+
+            Route::get('/{id}/pdf', [KPISectionCompanyPolicyController::class, 'downloadPdf'])
+                // ->middleware('permission:kpisectioncompanypolicy.pdf')
+                ->name('kpisectioncompanypolicy.pdf');
         });
 
     /* ========================
@@ -498,7 +587,7 @@ Route::middleware('auth')->group(function () {
                 ->name('production.create');
 
             Route::post('/', [ProductionController::class, 'store'])
-                ->middleware('permission:production.create')
+                // ->middleware('permission:production.store')
                 ->name('production.store');
 
             Route::get('/{id}/edit', [ProductionController::class, 'edit'])
@@ -506,48 +595,65 @@ Route::middleware('auth')->group(function () {
                 ->name('production.edit');
 
             Route::put('/{id}', [ProductionController::class, 'update'])
-                ->middleware('permission:production.edit')
+                ->middleware('permission:production.update')
                 ->name('production.update');
 
             Route::delete('/{id}', [ProductionController::class, 'destroy'])
-                ->middleware('permission:production.delete')
+                ->middleware('permission:production.destroy')
                 ->name('production.destroy');
+
+            // Import
+            Route::post('/import', [ProductionController::class, 'import'])
+            // ->middleware('permission:production.import')
+                ->name('production.import');
+
+            // Download template
+            Route::get('/template', [ProductionController::class, 'template'])
+                // ->middleware('permission:production.template')
+                ->name('production.template');
+
+            Route::get('{production}/json', [ProductionController::class, 'json'])
+                // ->middleware('permission:production.json')
+                ->name('production.json');
+
+            Route::get('/datatable', [ProductionController::class, 'dataTable'])
+                // ->middleware('permission:production.datatable')
+                ->name('production.datatable');
         });
 
-    Route::prefix('marketing')
-        ->middleware('permission:marketing.view')
-        ->group(function () {
+    // Route::prefix('marketing')
+    //     ->middleware('permission:marketing.view')
+    //     ->group(function () {
 
-            Route::get('/', [MarketingController::class, 'index'])
-                ->name('marketing.index');
+    //         Route::get('/', [MarketingController::class, 'index'])
+    //             ->name('marketing.index');
 
-            Route::get('/create', [MarketingController::class, 'create'])
-                ->middleware('permission:marketing.create')
-                ->name('marketing.create');
+    //         Route::get('/data', [MarketingController::class, 'getData'])
+    //             ->name('marketing.data');
 
-            Route::post('/', [MarketingController::class, 'store'])
-                ->middleware('permission:marketing.create')
-                ->name('marketing.store');
+    //         Route::post('/upload-excel', [MarketingController::class, 'uploadExcel'])
+    //             ->middleware('permission:marketing.create')
+    //             ->name('marketing.upload_excel');
 
-            Route::get('/data', [MarketingController::class, 'getData'])
-                ->name('marketing.data');
+    //         Route::get('/download-template', [MarketingController::class, 'downloadTemplate'])
+    //             ->name('marketing.downloadTemplate');
+    //     });
+    Route::prefix('marketing')->group(function () {
 
-            Route::get('/{id}/edit', [MarketingController::class, 'edit'])
-                ->middleware('permission:marketing.edit')
-                ->name('marketing.edit');
+        Route::get('/', [MarketingController::class, 'index'])
+            ->middleware('permission:marketing.view')
+            ->name('marketing.index');
 
-            Route::put('/{id}', [MarketingController::class, 'update'])
-                ->middleware('permission:marketing.edit')
-                ->name('marketing.update');
+        Route::get('/data', [MarketingController::class, 'getData'])
+            ->name('marketing.data');
+        Route::post('/upload-excel', [MarketingController::class, 'uploadExcel'])
+            ->middleware('permission:marketing.create') // ⬅️ INI PENTING
+            ->name('marketing.upload_excel');
 
-            Route::delete('/{id}', [MarketingController::class, 'destroy'])
-                ->middleware('permission:marketing.delete')
-                ->name('marketing.destroy');
-        });
-    Route::post('/marketing-plan/upload-excel', [MarketingController::class, 'uploadExcel'])
-        ->name('marketing.upload_excel');
-    Route::get('/marketing/download-template', [MarketingController::class, 'downloadTemplate'])
-        ->name('marketing.downloadTemplate');
+        Route::get('/download-template', [MarketingController::class, 'downloadTemplate'])
+            ->middleware('permission:marketing.view')
+            ->name('marketing.downloadTemplate');
+    });
 
 
 
@@ -579,6 +685,9 @@ Route::middleware('auth')->group(function () {
                 Route::get('/data', [SubmissionController::class, 'getData'])
                     ->name('userSubmission.data');
 
+                Route::get('/summary', [SubmissionController::class, 'getSummary'])
+                    ->name('userSubmission.summary');
+
                 Route::post('/store', [SubmissionController::class, 'store'])
                     ->name('userSubmission.store');
 
@@ -593,6 +702,14 @@ Route::middleware('auth')->group(function () {
 
                 Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
                     ->name('userSubmission.budget.info');
+
+                Route::prefix('{id}')->group(function () {
+                    Route::post('/approve', [SubmissionController::class, 'approve'])
+                        ->name('userSubmission.approve');
+
+                    Route::post('/reject', [SubmissionController::class, 'reject'])
+                        ->name('userSubmission.reject');
+                });
 
                 // Cascading dropdown routes
                 Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
@@ -930,26 +1047,67 @@ Route::middleware('auth')->group(function () {
                 ->name('director.delete');
         });
 
+    /* ========================
+        DYNAMIC APPROVAL SYSTEM
+    ======================== */
     Route::prefix('approval')
         ->middleware('permission:approval.view')
         ->group(function () {
+            // Main Approval Page with Tabs (Dashboard, Authorizer, Threshold)
             Route::get('/', [ApprovalController::class, 'index'])
-                ->middleware('permission:approval.view')
                 ->name('approval');
-            Route::get('/datatables', [ApprovalController::class, 'getData'])
-                ->name('approval.data');
-            Route::post('/create', [ApprovalController::class, 'store'])
+
+            // Dashboard API Endpoints
+            Route::get('/pending', [ApprovalController::class, 'getPendingApprovals'])
+                ->name('approval.pending');
+            Route::get('/statistics', [ApprovalController::class, 'getStatistics'])
+                ->name('approval.statistics');
+            Route::get('/transactions', [ApprovalController::class, 'getAllTransactions'])
+                ->name('approval.transactions');
+            Route::get('/detail/{id}', [ApprovalController::class, 'show'])
+                ->name('approval.show');
+            Route::get('/transaction/{transactionId}', [ApprovalController::class, 'getTransactionDetail'])
+                ->name('approval.transaction.detail');
+            Route::get('/history/{transactionId}', [ApprovalController::class, 'getHistory'])
+                ->name('approval.history');
+
+            // Approval Actions
+            Route::post('/approve/{id}', [ApprovalController::class, 'approve'])
                 ->middleware('permission:approval.create')
-                ->name('approval.store');
-            Route::get('/{id}/edit', [ApprovalController::class, 'edit'])
+                ->name('approval.approve');
+            Route::post('/reject/{id}', [ApprovalController::class, 'reject'])
+                ->middleware('permission:approval.create')
+                ->name('approval.reject');
+            Route::post('/cancel/{transactionId}', [ApprovalController::class, 'cancel'])
+                ->name('approval.cancel');
+            Route::post('/check-threshold', [ApprovalController::class, 'checkThreshold'])
+                ->name('approval.checkThreshold');
+
+            // Threshold Management API (Accessed via Tab)
+            Route::get('/threshold/data', [ApprovalController::class, 'getThresholds'])
+                ->name('approval.threshold.data');
+            Route::post('/threshold/store', [ApprovalController::class, 'storeThreshold'])
+                ->middleware('permission:approval.create')
+                ->name('approval.threshold.store');
+            Route::put('/threshold/update/{id}', [ApprovalController::class, 'updateThreshold'])
                 ->middleware('permission:approval.edit')
-                ->name('approval.edit');
-            Route::post('/update/{id}', [ApprovalController::class, 'update'])
-                ->middleware('permission:approval.edit')
-                ->name('approval.update');
-            Route::delete('delete/{id}', [ApprovalController::class, 'destroy'])
+                ->name('approval.threshold.update');
+            Route::delete('/threshold/delete/{id}', [ApprovalController::class, 'deleteThreshold'])
                 ->middleware('permission:approval.delete')
-                ->name('approval.delete');
+                ->name('approval.threshold.delete');
+
+            // Authorizer Management API (Accessed via Tab)
+            Route::get('/authorizer/data', [ApprovalController::class, 'getAuthorizers'])
+                ->name('approval.authorizer.data');
+            Route::post('/authorizer/store', [ApprovalController::class, 'storeAuthorizer'])
+                ->middleware('permission:approval.create')
+                ->name('approval.authorizer.store');
+            Route::put('/authorizer/update/{id}', [ApprovalController::class, 'updateAuthorizer'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.authorizer.update');
+            Route::delete('/authorizer/delete/{id}', [ApprovalController::class, 'deleteAuthorizer'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.authorizer.delete');
         });
 
     /* ========================
@@ -1044,4 +1202,23 @@ Route::middleware('auth')->group(function () {
             Route::post('/role/remove-user', [AuthorizationController::class, 'removeUserRole'])
                 ->name('role.removeUser');
         });
+
+    Route::prefix('authorizationTransaction')->group(function () {
+        Route::get('/', [AuthorizationTransactionController::class, 'index'])->name('authorizationTransaction.index');
+        Route::get('/data', [AuthorizationTransactionController::class, 'data'])->name('authorizationTransaction.data');
+        Route::post('/', [AuthorizationTransactionController::class, 'store'])->name('authorizationTransaction.store');
+        Route::get('/{id}/edit', [AuthorizationTransactionController::class, 'edit'])->name('authorizationTransaction.edit');
+        Route::put('/{id}', [AuthorizationTransactionController::class, 'update'])->name('authorizationTransaction.update');
+        Route::delete('/{id}', [AuthorizationTransactionController::class, 'destroy'])->name('authorizationTransaction.destroy');
+    });
+
+
+    Route::prefix('authorizationAddBudget')->group(function () {
+        Route::get('/', [AuthorizationAddBudgetController::class, 'index'])->name('authorizationAddBudget.index');
+        Route::get('/data', [AuthorizationAddBudgetController::class, 'data'])->name('authorizationAddBudget.data');
+        Route::post('/', [AuthorizationAddBudgetController::class, 'store'])->name('authorizationAddBudget.store');
+        Route::get('/{id}/edit', [AuthorizationAddBudgetController::class, 'edit'])->name('authorizationAddBudget.edit');
+        Route::put('/{id}', [AuthorizationAddBudgetController::class, 'update'])->name('authorizationAddBudget.update');
+        Route::delete('/{id}', [AuthorizationAddBudgetController::class, 'destroy'])->name('authorizationAddBudget.destroy');
+    });
 });

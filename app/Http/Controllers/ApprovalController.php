@@ -27,7 +27,7 @@ class ApprovalController extends Controller
      */
     public function index()
     {
-        $title = 'Approval Dashboard';
+        $title = 'Approval Management';
         $user = Auth::user();
         
         // Get statistics
@@ -36,7 +36,7 @@ class ApprovalController extends Controller
         // Get pending approvals for current user
         $pendingApprovals = $this->approvalService->getPendingApprovalsForUser($user->id);
         
-        return view('pages.approval.index', compact('title', 'stats', 'pendingApprovals'));
+        return view('pages.approval.main', compact('title', 'stats', 'pendingApprovals'));
     }
 
     /**

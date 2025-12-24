@@ -270,7 +270,15 @@ class SubmissionController extends Controller
     public function show($id)
     {
         try {
-            $transaction = Transaction::with('details')->findOrFail($id);
+            $transaction = Transaction::with([
+                'details',
+                'approvals' => function($query) {
+                    $query->orderBy('sequence_order', 'asc');
+                },
+                'jobLevel',
+                'jobPosition',
+                'unit'
+            ])->findOrFail($id);
 
             // Check if user owns this transaction
             if ($transaction->user_id != Auth::id()) {
@@ -285,6 +293,7 @@ class SubmissionController extends Controller
                 'data' => $transaction
             ]);
         } catch (\Exception $e) {
+            Log::error('Error fetching transaction: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Transaction not found'

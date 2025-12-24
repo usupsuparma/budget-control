@@ -412,6 +412,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [BudgetSubmissionController::class, 'index'])
             ->name('budget.submission.index');
 
+        Route::get('/budget-codes-all', [BudgetSubmissionController::class, 'getAllBudgetCodes'])
+            ->name('budget.submission.budgetCodesAll');
+
+        Route::get('/budget-codes', [BudgetSubmissionController::class, 'getBudgetCodes'])
+            ->name('budget.submission.budgetCodes');
+
         Route::post('/', [BudgetSubmissionController::class, 'store'])
             ->name('budget.submission.store');
 
@@ -1053,85 +1059,61 @@ Route::middleware('auth')->group(function () {
     Route::prefix('approval')
         ->middleware('permission:approval.view')
         ->group(function () {
-            // Dashboard
+            // Main Approval Page with Tabs (Dashboard, Authorizer, Threshold)
             Route::get('/', [ApprovalController::class, 'index'])
                 ->name('approval');
 
-            // Get pending approvals for current user (AJAX)
+            // Dashboard API Endpoints
             Route::get('/pending', [ApprovalController::class, 'getPendingApprovals'])
                 ->name('approval.pending');
-
-            // Get all transactions for admin (AJAX)
-            Route::get('/transactions', [ApprovalController::class, 'getAllTransactions'])
-                ->name('approval.transactions');
-
-            // Get statistics (AJAX)
             Route::get('/statistics', [ApprovalController::class, 'getStatistics'])
                 ->name('approval.statistics');
-
-            // Get approval detail
+            Route::get('/transactions', [ApprovalController::class, 'getAllTransactions'])
+                ->name('approval.transactions');
             Route::get('/detail/{id}', [ApprovalController::class, 'show'])
                 ->name('approval.show');
-
-            // Get transaction detail with approvals
             Route::get('/transaction/{transactionId}', [ApprovalController::class, 'getTransactionDetail'])
                 ->name('approval.transaction.detail');
-
-            // Get approval history
             Route::get('/history/{transactionId}', [ApprovalController::class, 'getHistory'])
                 ->name('approval.history');
 
-            // Process approval (approve)
+            // Approval Actions
             Route::post('/approve/{id}', [ApprovalController::class, 'approve'])
                 ->middleware('permission:approval.create')
                 ->name('approval.approve');
-
-            // Process approval (reject)
             Route::post('/reject/{id}', [ApprovalController::class, 'reject'])
                 ->middleware('permission:approval.create')
                 ->name('approval.reject');
-
-            // Cancel transaction
             Route::post('/cancel/{transactionId}', [ApprovalController::class, 'cancel'])
                 ->name('approval.cancel');
-
-            // Check threshold for amount
             Route::post('/check-threshold', [ApprovalController::class, 'checkThreshold'])
                 ->name('approval.checkThreshold');
 
-            // Threshold Management
-            Route::prefix('threshold')->group(function () {
-                Route::get('/', [ApprovalController::class, 'thresholdIndex'])
-                    ->name('approval.threshold');
-                Route::get('/data', [ApprovalController::class, 'getThresholds'])
-                    ->name('approval.threshold.data');
-                Route::post('/store', [ApprovalController::class, 'storeThreshold'])
-                    ->middleware('permission:approval.create')
-                    ->name('approval.threshold.store');
-                Route::put('/update/{id}', [ApprovalController::class, 'updateThreshold'])
-                    ->middleware('permission:approval.edit')
-                    ->name('approval.threshold.update');
-                Route::delete('/delete/{id}', [ApprovalController::class, 'deleteThreshold'])
-                    ->middleware('permission:approval.delete')
-                    ->name('approval.threshold.delete');
-            });
+            // Threshold Management API (Accessed via Tab)
+            Route::get('/threshold/data', [ApprovalController::class, 'getThresholds'])
+                ->name('approval.threshold.data');
+            Route::post('/threshold/store', [ApprovalController::class, 'storeThreshold'])
+                ->middleware('permission:approval.create')
+                ->name('approval.threshold.store');
+            Route::put('/threshold/update/{id}', [ApprovalController::class, 'updateThreshold'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.threshold.update');
+            Route::delete('/threshold/delete/{id}', [ApprovalController::class, 'deleteThreshold'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.threshold.delete');
 
-            // Authorizer Management
-            Route::prefix('authorizer')->group(function () {
-                Route::get('/', [ApprovalController::class, 'authorizerIndex'])
-                    ->name('approval.authorizer');
-                Route::get('/data', [ApprovalController::class, 'getAuthorizers'])
-                    ->name('approval.authorizer.data');
-                Route::post('/store', [ApprovalController::class, 'storeAuthorizer'])
-                    ->middleware('permission:approval.create')
-                    ->name('approval.authorizer.store');
-                Route::put('/update/{id}', [ApprovalController::class, 'updateAuthorizer'])
-                    ->middleware('permission:approval.edit')
-                    ->name('approval.authorizer.update');
-                Route::delete('/delete/{id}', [ApprovalController::class, 'deleteAuthorizer'])
-                    ->middleware('permission:approval.delete')
-                    ->name('approval.authorizer.delete');
-            });
+            // Authorizer Management API (Accessed via Tab)
+            Route::get('/authorizer/data', [ApprovalController::class, 'getAuthorizers'])
+                ->name('approval.authorizer.data');
+            Route::post('/authorizer/store', [ApprovalController::class, 'storeAuthorizer'])
+                ->middleware('permission:approval.create')
+                ->name('approval.authorizer.store');
+            Route::put('/authorizer/update/{id}', [ApprovalController::class, 'updateAuthorizer'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.authorizer.update');
+            Route::delete('/authorizer/delete/{id}', [ApprovalController::class, 'deleteAuthorizer'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.authorizer.delete');
         });
 
     /* ========================

@@ -58,6 +58,22 @@
         border-color: #dc3545 !important;
         background-image: none;
     }
+    
+    /* View Modal Styling */
+    .form-control-plaintext {
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+        margin-bottom: 0;
+        font-size: inherit;
+        line-height: 1.5;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    #viewModal .form-label {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: #495057;
+    }
 </style>
 @endsection
 
@@ -251,6 +267,111 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+{{-- === VIEW DETAIL MODAL === --}}
+<div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel">Submission Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Transaction Date</label>
+                        <p class="form-control-plaintext" id="view_transaction_date">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">User</label>
+                        <p class="form-control-plaintext" id="view_user_name">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Job Level</label>
+                        <p class="form-control-plaintext" id="view_job_level">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Job Position</label>
+                        <p class="form-control-plaintext" id="view_job_position">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Program</label>
+                        <p class="form-control-plaintext" id="view_program">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Unit</label>
+                        <p class="form-control-plaintext" id="view_unit">-</p>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Purpose</label>
+                        <p class="form-control-plaintext" id="view_purpose">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Estimated Amount</label>
+                        <p class="form-control-plaintext" id="view_estimated_amount">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Status</label>
+                        <p class="form-control-plaintext" id="view_status">-</p>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Urgency</label>
+                        <p class="form-control-plaintext" id="view_urgency">-</p>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="mb-3">Budget Items</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="20%">Description of Goods/Service</th>
+                                <th width="15%">Budget Code</th>
+                                <th width="15%">Budget Value</th>
+                                <th width="10%">Unit</th>
+                                <th width="10%">Qty</th>
+                                <th width="12%">Price</th>
+                                <th width="13%">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="view_items_body">
+                            <!-- Dynamic rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row mt-3" id="view_approval_section" style="display: none;">
+                    <div class="col-md-12">
+                        <hr class="my-4">
+                        <h6 class="mb-3">Approval History</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Level</th>
+                                        <th>Approver</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="view_approval_body">
+                                    <!-- Dynamic approval rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -894,17 +1015,84 @@ function viewSubmission(id) {
         type: 'GET',
         success: function(response) {
             if (response.success) {
-                // Display view modal (you can create a separate modal for viewing)
-                Swal.fire({
-                    icon: 'info',
-                    title: 'View Submission',
-                    text: 'View functionality - ID: ' + id,
-                    confirmButtonColor: '#0d6efd'
-                });
+                const data = response.data;
+                
+                // Populate basic information
+                $('#view_transaction_date').text(formatDate(data.transaction_date));
+                $('#view_user_name').text(data.user_name || '-');
+                $('#view_job_level').text(data.job_level ? data.job_level.job_level_name : '-');
+                $('#view_job_position').text(data.job_position ? data.job_position.job_position_name : '-');
+                $('#view_program').text(data.program_id || '-');
+                $('#view_unit').text(data.unit_name || '-');
+                $('#view_purpose').text(data.purpose || '-');
+                $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) + '</strong>');
+                $('#view_status').html(getStatusBadge(data.status));
+                $('#view_urgency').text(data.urgency || '-');
+                
+                // Populate items
+                let itemsHtml = '';
+                if (data.details && data.details.length > 0) {
+                    data.details.forEach(function(item, index) {
+                        itemsHtml += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${item.goods_service_name || '-'}</td>
+                                <td>${item.budget_name || '-'}</td>
+                                <td class="text-end">${formatCurrency(item.balance || 0)}</td>
+                                <td>${item.unit_name || '-'}</td>
+                                <td class="text-center">${item.estimated_quantity || 0}</td>
+                                <td class="text-end">${formatCurrency(item.estimated_price || 0)}</td>
+                                <td class="text-end"><strong>${formatCurrency(item.estimated_total || 0)}</strong></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    itemsHtml = '<tr><td colspan="8" class="text-center">No items found</td></tr>';
+                }
+                $('#view_items_body').html(itemsHtml);
+                
+                // Populate approval history if available
+                if (data.approvals && data.approvals.length > 0) {
+                    let approvalHtml = '';
+                    data.approvals.forEach(function(approval) {
+                        const statusLabel = approval.status === 0 ? '<span class="badge bg-warning">Pending</span>' :
+                                          approval.status === 1 ? '<span class="badge bg-success">Approved</span>' :
+                                          approval.status === 2 ? '<span class="badge bg-danger">Rejected</span>' :
+                                          '<span class="badge bg-secondary">-</span>';
+                        
+                        const approvedDate = approval.approved_at ? formatDate(approval.approved_at) : '-';
+                        
+                        approvalHtml += `
+                            <tr>
+                                <td>Level ${approval.approval_level}</td>
+                                <td>${approval.approver_name || '-'}</td>
+                                <td>${statusLabel}</td>
+                                <td>${approvedDate}</td>
+                                <td>${approval.comments || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    $('#view_approval_body').html(approvalHtml);
+                    $('#view_approval_section').show();
+                } else {
+                    $('#view_approval_section').hide();
+                }
+                
+                // Show modal
+                $('#viewModal').modal('show');
             }
         },
         error: function(xhr) {
-            showAlert('Error loading submission', 'danger');
+            let message = 'Error loading submission';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                confirmButtonColor: '#dc3545'
+            });
         }
     });
 }

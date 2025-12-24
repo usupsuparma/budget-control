@@ -16,6 +16,8 @@ class BudgetResumeController extends Controller
     {
         $title = 'Budget Resume';
         $year = $request->get('year', date('Y'));
+        
+        $years = range(date('Y') + 2, date('Y') - 5);
         $categoryId = $request->get('category_id');
         $divisionId = $request->get('division_id');
         $budgetCode = $request->get('budget_code');
@@ -81,7 +83,8 @@ class BudgetResumeController extends Controller
             'budgetData',
             'categoryId',
             'divisionId',
-            'budgetCode'
+            'budgetCode',
+            'years'
         ));
     }
 

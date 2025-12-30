@@ -13,52 +13,56 @@
         border-left: 4px solid;
         transition: transform 0.2s, box-shadow 0.2s;
     }
+
     .stat-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
+
     .stat-icon {
         font-size: 2rem;
         opacity: 0.8;
     }
+
     .table-responsive {
         min-height: 150px;
     }
+
     .badge-status {
         padding: 0.35rem 0.65rem;
         font-size: 0.75rem;
     }
-    
+
     /* Modal error alert styling */
     #modalErrorAlert {
         position: sticky;
         top: 0;
         z-index: 1050;
         margin-bottom: 1rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
-    
+
     #modalErrorAlert ul {
         margin-left: 1rem;
     }
-    
+
     .modal-body {
         max-height: calc(100vh - 200px);
         overflow-y: auto;
     }
-    
+
     /* Invalid feedback styling */
     .invalid-feedback {
         display: block;
         font-size: 0.875rem;
         margin-top: 0.25rem;
     }
-    
+
     .is-invalid {
         border-color: #dc3545 !important;
         background-image: none;
     }
-    
+
     /* View Modal Styling */
     .form-control-plaintext {
         padding-top: 0.375rem;
@@ -68,7 +72,7 @@
         line-height: 1.5;
         border-bottom: 1px solid #dee2e6;
     }
-    
+
     #viewModal .form-label {
         margin-bottom: 0.25rem;
         font-weight: 600;
@@ -96,7 +100,7 @@
         {{-- === SUMMARY CARD === --}}
         <div class="row mb-3">
             {{-- New Submission --}}
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-2">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #0d6efd !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -115,7 +119,7 @@
             </div>
 
             {{-- Progress --}}
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-2">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #ffc107 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -133,7 +137,7 @@
                 </div>
             </div>
             {{-- Paid --}}
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-2">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #198754 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -151,7 +155,7 @@
                 </div>
             </div>
             {{-- Completion --}}
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-2">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6c757d !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -169,7 +173,7 @@
                 </div>
             </div>
             {{-- Total Submission --}}
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-2">
                 <div class="card border-0 shadow-sm stat-card" style="border-left-color: #6610f2 !important;">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -197,7 +201,7 @@
                         <select id="filterYear" class="form-select">
                             <option value="all">Semua Tahun</option>
                             @foreach($years as $year)
-                                <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
+                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -206,7 +210,7 @@
                         <select id="filterStatus" class="form-select">
                             <option value="all">Semua Status</option>
                             @foreach($statuses as $status)
-                                <option value="{{ $status['value'] }}">{{ $status['label'] }}</option>
+                            <option value="{{ $status['value'] }}">{{ $status['label'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -400,7 +404,7 @@
                             <select class="form-select" id="jobLevel" name="job_level_id" required>
                                 <option value="">Select Job Level</option>
                                 @foreach($jobLevels as $level)
-                                    <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
+                                <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -409,7 +413,7 @@
                             <select class="form-select" id="jobPosition" name="job_position_id" required>
                                 <option value="">Select Job Position</option>
                                 @foreach($jobPositions as $position)
-                                    <option value="{{ $position->id }}">{{ $position->job_position_name }}</option>
+                                <option value="{{ $position->id }}">{{ $position->job_position_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -418,7 +422,7 @@
                             <select class="form-select" id="programId" name="program_id" required>
                                 <option value="">Select Program</option>
                                 @foreach($workplans as $workplan)
-                                    <option value="{{ $workplan->id }}">{{ $workplan->activity }}</option>
+                                <option value="{{ $workplan->id }}">{{ $workplan->activity }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -484,221 +488,221 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// Global variables
-let currentPage = 1;
-let itemRowCounter = 0;
-const budgetCodes = @json($budgetCodes);
-const units = @json($units);
-let availableBudgetItems = [];
+    // Global variables
+    let currentPage = 1;
+    let itemRowCounter = 0;
+    const budgetCodes = @json($budgetCodes);
+    const units = @json($units);
+    let availableBudgetItems = [];
 
-$(document).ready(function() {
-    // Load summary data on page load
-    loadSummary();
-    
-    // Load data on page load
-    loadData();
+    $(document).ready(function() {
+        // Load summary data on page load
+        loadSummary();
 
-    // Filter button
-    $('#btnFilter').on('click', function() {
-        currentPage = 1;
+        // Load data on page load
         loadData();
-        loadSummary(); // Reload summary when filter changes
-    });
 
-    // Add data button
-    $('#btnAddData').on('click', function() {
-        resetForm();
-        $('#submissionModalLabel').text('Add Submission');
-        $('#submissionModal').modal('show');
-        addItemRow();
-    });
+        // Filter button
+        $('#btnFilter').on('click', function() {
+            currentPage = 1;
+            loadData();
+            loadSummary(); // Reload summary when filter changes
+        });
 
-    // Add item row button
-    $('#btnAddItem').on('click', function() {
-        addItemRow();
-    });
+        // Add data button
+        $('#btnAddData').on('click', function() {
+            resetForm();
+            $('#submissionModalLabel').text('Add Submission');
+            $('#submissionModal').modal('show');
+            addItemRow();
+        });
 
-    // Form submit
-    $('#submissionForm').on('submit', function(e) {
-        e.preventDefault();
-        saveSubmission();
-    });
+        // Add item row button
+        $('#btnAddItem').on('click', function() {
+            addItemRow();
+        });
 
-    // Modal hidden event
-    $('#submissionModal').on('hidden.bs.modal', function() {
-        resetForm();
-    });
+        // Form submit
+        $('#submissionForm').on('submit', function(e) {
+            e.preventDefault();
+            saveSubmission();
+        });
 
-    // Cascading dropdown: Job Level -> Job Position
-    $('#jobLevel').on('change', function() {
-        const jobLevelId = $(this).val();
-        $('#jobPosition').html('<option value="">Loading...</option>').prop('disabled', true);
-        $('#programId').html('<option value="">Select Program</option>').prop('disabled', true);
-        
-        if (jobLevelId) {
-            loadJobPositions(jobLevelId);
-            loadPrograms(jobLevelId);
-        } else {
-            $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
-            $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
-        }
-    });
+        // Modal hidden event
+        $('#submissionModal').on('hidden.bs.modal', function() {
+            resetForm();
+        });
 
-    // Cascading dropdown: Program ID -> Budget ID
-    $('#programId').on('change', function() {
-        const programId = $(this).val();
-        
-        if (programId) {
-            loadBudgetItems(programId);
-        }
-    });
-});
+        // Cascading dropdown: Job Level -> Job Position
+        $('#jobLevel').on('change', function() {
+            const jobLevelId = $(this).val();
+            $('#jobPosition').html('<option value="">Loading...</option>').prop('disabled', true);
+            $('#programId').html('<option value="">Select Program</option>').prop('disabled', true);
 
-// Load job positions based on job level
-function loadJobPositions(jobLevelId) {
-let urlJobPositions = '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
-    $.ajax({
-        url: urlJobPositions,
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                let options = '<option value="">Select Job Position</option>';
-                response.data.forEach(function(position) {
-                    options += `<option value="${position.id}">${position.job_position_name}</option>`;
-                });
-                $('#jobPosition').html(options).prop('disabled', false);
+            if (jobLevelId) {
+                loadJobPositions(jobLevelId);
+                loadPrograms(jobLevelId);
+            } else {
+                $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
+                $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
             }
-        },
-        error: function(xhr) {
-            showAlert('Error loading job positions', 'danger');
-            $('#jobPosition').html('<option value="">Error loading positions</option>').prop('disabled', false);
-        }
-    });
-}
+        });
 
-// Load programs based on job level
-function loadPrograms(jobLevelId) {
-    let urlPrograms = '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
-    $.ajax({
-        url: urlPrograms,
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                let options = '<option value="">Select Program</option>';
-                response.data.forEach(function(program) {
-                    options += `<option value="${program.id}">${program.label}</option>`;
-                });
-                $('#programId').html(options).prop('disabled', false);
+        // Cascading dropdown: Program ID -> Budget ID
+        $('#programId').on('change', function() {
+            const programId = $(this).val();
+
+            if (programId) {
+                loadBudgetItems(programId);
             }
-        },
-        error: function(xhr) {
-            showAlert('Error loading programs', 'danger');
-            $('#programId').html('<option value="">Error loading programs</option>').prop('disabled', false);
-        }
+        });
     });
-}
 
-// Load budget items based on program ID
-function loadBudgetItems(programId) {
-    let urlBudgetItems = `{{route('userSubmission.budgetItems', ':programId')}}`.replace(':programId', programId);
-    $.ajax({
-        url: urlBudgetItems,
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                availableBudgetItems = response.data;
-                // Update all budget select dropdowns in item rows
+    // Load job positions based on job level
+    function loadJobPositions(jobLevelId) {
+        let urlJobPositions = '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
+        $.ajax({
+            url: urlJobPositions,
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    let options = '<option value="">Select Job Position</option>';
+                    response.data.forEach(function(position) {
+                        options += `<option value="${position.id}">${position.job_position_name}</option>`;
+                    });
+                    $('#jobPosition').html(options).prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading job positions', 'danger');
+                $('#jobPosition').html('<option value="">Error loading positions</option>').prop('disabled', false);
+            }
+        });
+    }
+
+    // Load programs based on job level
+    function loadPrograms(jobLevelId) {
+        let urlPrograms = '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', jobLevelId);
+        $.ajax({
+            url: urlPrograms,
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    let options = '<option value="">Select Program</option>';
+                    response.data.forEach(function(program) {
+                        options += `<option value="${program.id}">${program.label}</option>`;
+                    });
+                    $('#programId').html(options).prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading programs', 'danger');
+                $('#programId').html('<option value="">Error loading programs</option>').prop('disabled', false);
+            }
+        });
+    }
+
+    // Load budget items based on program ID
+    function loadBudgetItems(programId) {
+        let urlBudgetItems = `{{route('userSubmission.budgetItems', ':programId')}}`.replace(':programId', programId);
+        $.ajax({
+            url: urlBudgetItems,
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    availableBudgetItems = response.data;
+                    // Update all budget select dropdowns in item rows
+                    updateAllBudgetSelects();
+                }
+            },
+            error: function(xhr) {
+                console.log(xhr);
+
+                showAlert('Error loading budget items', 'danger');
+                availableBudgetItems = [];
                 updateAllBudgetSelects();
             }
-        },
-        error: function(xhr) {
-            console.log(xhr);
-            
-            showAlert('Error loading budget items', 'danger');
-            availableBudgetItems = [];
-            updateAllBudgetSelects();
-        }
-    });
-}
+        });
+    }
 
-// Load summary data function
-function loadSummary() {
-    $.ajax({
-        url: '{{ route("userSubmission.summary") }}',
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                $('#newSubmissionCount').text(response.data.newSubmission);
-                $('#progressCount').text(response.data.progress);
-                $('#paidCount').text(response.data.paid);
-                $('#completionCount').text(response.data.completion);
-                $('#totalSubmissionCount').text(response.data.totalSubmission);
+    // Load summary data function
+    function loadSummary() {
+        $.ajax({
+            url: '{{ route("userSubmission.summary") }}',
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    $('#newSubmissionCount').text(response.data.newSubmission);
+                    $('#progressCount').text(response.data.progress);
+                    $('#paidCount').text(response.data.paid);
+                    $('#completionCount').text(response.data.completion);
+                    $('#totalSubmissionCount').text(response.data.totalSubmission);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading summary:', xhr);
+                $('#newSubmissionCount').text('0');
+                $('#progressCount').text('0');
+                $('#paidCount').text('0');
+                $('#completionCount').text('0');
+                $('#totalSubmissionCount').text('0');
             }
-        },
-        error: function(xhr) {
-            console.error('Error loading summary:', xhr);
-            $('#newSubmissionCount').text('0');
-            $('#progressCount').text('0');
-            $('#paidCount').text('0');
-            $('#completionCount').text('0');
-            $('#totalSubmissionCount').text('0');
-        }
-    });
-}
+        });
+    }
 
-// Update all budget select dropdowns
-function updateAllBudgetSelects() {
-    let options = '<option value="">Select Budget</option>';
-    availableBudgetItems.forEach(function(item) {
-        options += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
-    });
-    
-    $('.budget-select').each(function() {
-        const currentValue = $(this).val();
-        $(this).html(options);
-        if (currentValue) {
-            $(this).val(currentValue);
-        }
-    });
-}
+    // Update all budget select dropdowns
+    function updateAllBudgetSelects() {
+        let options = '<option value="">Select Budget</option>';
+        availableBudgetItems.forEach(function(item) {
+            options += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
+        });
 
-// Load data function
-function loadData() {
-    const year = $('#filterYear').val();
-    const status = $('#filterStatus').val();
-
-    $.ajax({
-        url: '{{ route("userSubmission.data") }}',
-        type: 'GET',
-        data: {
-            year: year,
-            status: status,
-            page: currentPage
-        },
-        success: function(response) {
-            console.log(response);
-            
-            if (response.success) {
-                renderTable(response.data);
-                renderPagination(response.data);
+        $('.budget-select').each(function() {
+            const currentValue = $(this).val();
+            $(this).html(options);
+            if (currentValue) {
+                $(this).val(currentValue);
             }
-        },
-        error: function(xhr) {
-            showAlert('Error loading data', 'danger');
-        }
-    });
-}
+        });
+    }
 
-// Render table
-function renderTable(data) {
-    let html = '';
-    
-    if (data.data.length === 0) {
-        html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
-    } else {
-        data.data.forEach((item, index) => {
-            const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
-            html += `
+    // Load data function
+    function loadData() {
+        const year = $('#filterYear').val();
+        const status = $('#filterStatus').val();
+
+        $.ajax({
+            url: '{{ route("userSubmission.data") }}',
+            type: 'GET',
+            data: {
+                year: year,
+                status: status,
+                page: currentPage
+            },
+            success: function(response) {
+                console.log(response);
+
+                if (response.success) {
+                    renderTable(response.data);
+                    renderPagination(response.data);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading data', 'danger');
+            }
+        });
+    }
+
+    // Render table
+    function renderTable(data) {
+        let html = '';
+
+        if (data.data.length === 0) {
+            html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        } else {
+            data.data.forEach((item, index) => {
+                const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                html += `
                 <tr>
                     <td>${rowNumber}</td>
                     <td>${formatDate(item.transaction_date)}</td>
@@ -731,69 +735,69 @@ function renderTable(data) {
                     </td>
                 </tr>
             `;
-        });
+            });
+        }
+
+        $('#tableBody').html(html);
     }
-    
-    $('#tableBody').html(html);
-}
 
-// Render pagination
-function renderPagination(data) {
-    let paginationInfo = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
-    $('#paginationInfo').text(paginationInfo);
+    // Render pagination
+    function renderPagination(data) {
+        let paginationInfo = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+        $('#paginationInfo').text(paginationInfo);
 
-    let paginationHtml = '<ul class="pagination mb-0">';
-    
-    // Previous button
-    paginationHtml += `
+        let paginationHtml = '<ul class="pagination mb-0">';
+
+        // Previous button
+        paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
         </li>
     `;
-    
-    // Page numbers
-    for (let i = 1; i <= data.last_page; i++) {
-        paginationHtml += `
+
+        // Page numbers
+        for (let i = 1; i <= data.last_page; i++) {
+            paginationHtml += `
             <li class="page-item ${i === data.current_page ? 'active' : ''}">
                 <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
             </li>
         `;
-    }
-    
-    // Next button
-    paginationHtml += `
+        }
+
+        // Next button
+        paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
         </li>
     `;
-    
-    paginationHtml += '</ul>';
-    $('#paginationLinks').html(paginationHtml);
-}
 
-// Change page function
-function changePage(page) {
-    currentPage = page;
-    loadData();
-}
+        paginationHtml += '</ul>';
+        $('#paginationLinks').html(paginationHtml);
+    }
 
-// Add item row
-function addItemRow() {
-    itemRowCounter++;
-    
-    // Prepare budget options from available budget items
-    let budgetOptions = '<option value="">Select Budget</option>';
-    availableBudgetItems.forEach(function(item) {
-        budgetOptions += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
-    });
-    
-    // Prepare unit options
-    let unitOptions = '<option value="">Select Unit</option>';
-    units.forEach(function(unit) {
-        unitOptions += `<option value="${unit.id}">${unit.unit || unit.unit_name}</option>`;
-    });
-    
-    let html = `
+    // Change page function
+    function changePage(page) {
+        currentPage = page;
+        loadData();
+    }
+
+    // Add item row
+    function addItemRow() {
+        itemRowCounter++;
+
+        // Prepare budget options from available budget items
+        let budgetOptions = '<option value="">Select Budget</option>';
+        availableBudgetItems.forEach(function(item) {
+            budgetOptions += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}">${item.label}</option>`;
+        });
+
+        // Prepare unit options
+        let unitOptions = '<option value="">Select Unit</option>';
+        units.forEach(function(unit) {
+            unitOptions += `<option value="${unit.id}">${unit.unit || unit.unit_name}</option>`;
+        });
+
+        let html = `
         <tr data-row="${itemRowCounter}">
             <td>
                 <input type="text" class="form-control form-control-sm goods-name-input" name="items[${itemRowCounter}][goods_service_name]" required>
@@ -827,213 +831,215 @@ function addItemRow() {
             </td>
         </tr>
     `;
-    $('#itemsTableBody').append(html);
-    
-    // Add event listeners
-    $(`[data-row="${itemRowCounter}"] .budget-select`).on('change', function() {
-        updateBudgetValue($(this));
-    });
-    
-    $(`[data-row="${itemRowCounter}"] .qty-input, [data-row="${itemRowCounter}"] .price-input`).on('input', function() {
-        calculateRowTotal($(this).data('row'));
-    });
-    
-    // Initialize price input with thousand separator
-    $(`[data-row="${itemRowCounter}"] .price-input`).on('input', function() {
-        formatPriceInput($(this));
-    });
-}
+        $('#itemsTableBody').append(html);
 
-// Remove item row
-function removeItemRow(rowId) {
-    $(`tr[data-row="${rowId}"]`).remove();
-    calculateEstimatedValue();
-}
+        // Add event listeners
+        $(`[data-row="${itemRowCounter}"] .budget-select`).on('change', function() {
+            updateBudgetValue($(this));
+        });
 
-// Update budget value when budget is selected
-function updateBudgetValue(selectElement) {
-    const row = selectElement.data('row');
-    const selectedOption = selectElement.find('option:selected');
-    const budgetValue = selectedOption.data('value');
-    
-    $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(budgetValue));
-}
+        $(`[data-row="${itemRowCounter}"] .qty-input, [data-row="${itemRowCounter}"] .price-input`).on('input', function() {
+            calculateRowTotal($(this).data('row'));
+        });
 
-// Format price input with thousand separator
-function formatPriceInput(input) {
-    let value = input.val().replace(/[^\d]/g, '');
-    input.val(formatNumber(value));
-    calculateRowTotal(input.data('row'));
-}
+        // Initialize price input with thousand separator
+        $(`[data-row="${itemRowCounter}"] .price-input`).on('input', function() {
+            formatPriceInput($(this));
+        });
+    }
 
-// Calculate row total
-function calculateRowTotal(rowId) {
-    const qty = parseFloat($(`tr[data-row="${rowId}"] .qty-input`).val()) || 0;
-    const price = parseFloat($(`tr[data-row="${rowId}"] .price-input`).val().replace(/[^\d]/g, '')) || 0;
-    const total = qty * price;
-    
-    $(`tr[data-row="${rowId}"] .total-input`).val(formatCurrency(total));
-    calculateEstimatedValue();
-}
+    // Remove item row
+    function removeItemRow(rowId) {
+        $(`tr[data-row="${rowId}"]`).remove();
+        calculateEstimatedValue();
+    }
 
-// Calculate estimated value (sum of all item totals)
-function calculateEstimatedValue() {
-    let total = 0;
-    $('.total-input').each(function() {
-        const value = parseFloat($(this).val().replace(/[^\d]/g, '')) || 0;
-        total += value;
-    });
-    $('#estimatedValue').val(formatCurrency(total));
-}
+    // Update budget value when budget is selected
+    function updateBudgetValue(selectElement) {
+        const row = selectElement.data('row');
+        const selectedOption = selectElement.find('option:selected');
+        const budgetValue = selectedOption.data('value');
 
-// Save submission
-function saveSubmission() {
-    // Clear previous errors
-    $('.is-invalid').removeClass('is-invalid');
-    $('.invalid-feedback').remove();
-    $('#modalErrorAlert').remove();
+        $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(budgetValue));
+    }
 
-    const submissionId = $('#submissionId').val();
-    const url = submissionId ? 
-        '{{ route("userSubmission.update", ":id") }}'.replace(':id', submissionId) :
-        '{{ route("userSubmission.store") }}';
-    const method = submissionId ? 'PUT' : 'POST';
+    // Format price input with thousand separator
+    function formatPriceInput(input) {
+        let value = input.val().replace(/[^\d]/g, '');
+        input.val(formatNumber(value));
+        calculateRowTotal(input.data('row'));
+    }
 
-    // Build data object properly
-    const data = {
-        transaction_date: $('#transactionDate').val(),
-        job_level_id: $('#jobLevel').val(),
-        job_position_id: $('#jobPosition').val(),
-        program_id: $('#programId').val(),
-        purpose: $('#purpose').val(),
-        urgency: $('#urgency').val(),
-        items: []
-    };
+    // Calculate row total
+    function calculateRowTotal(rowId) {
+        const qty = parseFloat($(`tr[data-row="${rowId}"] .qty-input`).val()) || 0;
+        const price = parseFloat($(`tr[data-row="${rowId}"] .price-input`).val().replace(/[^\d]/g, '')) || 0;
+        const total = qty * price;
 
-    // Collect items data from table rows
-    $('#itemsTableBody tr').each(function() {
-        const row = $(this);
-        const item = {
-            goods_service_name: row.find('.goods-name-input').val(),
-            budget_id: row.find('.budget-select').val(),
-            unit_id: row.find('.unit-select').val(),
-            quantity: parseFloat(row.find('.qty-input').val()) || 0,
-            price: parseFloat(row.find('.price-input').val().replace(/[^\d]/g, '')) || 0
+        $(`tr[data-row="${rowId}"] .total-input`).val(formatCurrency(total));
+        calculateEstimatedValue();
+    }
+
+    // Calculate estimated value (sum of all item totals)
+    function calculateEstimatedValue() {
+        let total = 0;
+        $('.total-input').each(function() {
+            const value = parseFloat($(this).val().replace(/[^\d]/g, '')) || 0;
+            total += value;
+        });
+        $('#estimatedValue').val(formatCurrency(total));
+    }
+
+    // Save submission
+    function saveSubmission() {
+        // Clear previous errors
+        $('.is-invalid').removeClass('is-invalid');
+        $('.invalid-feedback').remove();
+        $('#modalErrorAlert').remove();
+
+        const submissionId = $('#submissionId').val();
+        const url = submissionId ?
+            '{{ route("userSubmission.update", ":id") }}'.replace(':id', submissionId) :
+            '{{ route("userSubmission.store") }}';
+        const method = submissionId ? 'PUT' : 'POST';
+
+        // Build data object properly
+        const data = {
+            transaction_date: $('#transactionDate').val(),
+            job_level_id: $('#jobLevel').val(),
+            job_position_id: $('#jobPosition').val(),
+            program_id: $('#programId').val(),
+            purpose: $('#purpose').val(),
+            urgency: $('#urgency').val(),
+            items: []
         };
-        data.items.push(item);
-    });
 
-    console.log('Sending data:', data);
-    
-    $.ajax({
-        url: url,
-        type: method,
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.success) {
-                $('#submissionModal').modal('hide');
-                showAlert(response.message || 'Submission saved successfully', 'success');
-                loadData();
-                loadSummary(); // Reload summary after save
-            }
-        },
-        error: function(xhr) {
-            console.error('Error:', xhr);
-            
-            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-                // Validation errors
-                const errors = xhr.responseJSON.errors;
-                showModalError('Please correct the following errors:', errors);
-                
-                // Highlight fields with errors
-                Object.keys(errors).forEach(function(field) {
-                    // Handle items array errors
-                    if (field.startsWith('items.')) {
-                        const parts = field.split('.');
-                        const index = parseInt(parts[1]);
-                        const fieldName = parts[2];
-                        
-                        const row = $('#itemsTableBody tr').eq(index);
-                        if (row.length) {
-                            if (fieldName === 'goods_service_name') {
-                                row.find('.goods-name-input').addClass('is-invalid')
-                                    .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
-                            } else if (fieldName === 'budget_id') {
-                                row.find('.budget-select').addClass('is-invalid')
-                                    .parent().append(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
-                            } else if (fieldName === 'unit_id') {
-                                row.find('.unit-select').addClass('is-invalid')
-                                    .parent().append(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
-                            } else if (fieldName === 'quantity') {
-                                row.find('.qty-input').addClass('is-invalid')
-                                    .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
-                            } else if (fieldName === 'price') {
-                                row.find('.price-input').addClass('is-invalid')
+        // Collect items data from table rows
+        $('#itemsTableBody tr').each(function() {
+            const row = $(this);
+            const item = {
+                goods_service_name: row.find('.goods-name-input').val(),
+                budget_id: row.find('.budget-select').val(),
+                unit_id: row.find('.unit-select').val(),
+                quantity: parseFloat(row.find('.qty-input').val()) || 0,
+                price: parseFloat(row.find('.price-input').val().replace(/[^\d]/g, '')) || 0
+            };
+            data.items.push(item);
+        });
+
+        console.log('Sending data:', data);
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#submissionModal').modal('hide');
+                    showAlert(response.message || 'Submission saved successfully', 'success');
+                    loadData();
+                    loadSummary(); // Reload summary after save
+                }
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    // Validation errors
+                    const errors = xhr.responseJSON.errors;
+                    showModalError('Please correct the following errors:', errors);
+
+                    // Highlight fields with errors
+                    Object.keys(errors).forEach(function(field) {
+                        // Handle items array errors
+                        if (field.startsWith('items.')) {
+                            const parts = field.split('.');
+                            const index = parseInt(parts[1]);
+                            const fieldName = parts[2];
+
+                            const row = $('#itemsTableBody tr').eq(index);
+                            if (row.length) {
+                                if (fieldName === 'goods_service_name') {
+                                    row.find('.goods-name-input').addClass('is-invalid')
+                                        .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
+                                } else if (fieldName === 'budget_id') {
+                                    row.find('.budget-select').addClass('is-invalid')
+                                        .parent().append(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
+                                } else if (fieldName === 'unit_id') {
+                                    row.find('.unit-select').addClass('is-invalid')
+                                        .parent().append(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
+                                } else if (fieldName === 'quantity') {
+                                    row.find('.qty-input').addClass('is-invalid')
+                                        .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
+                                } else if (fieldName === 'price') {
+                                    row.find('.price-input').addClass('is-invalid')
+                                        .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
+                                }
+                            }
+                        } else {
+                            // Handle regular field errors
+                            const fieldMap = {
+                                'transaction_date': '#transactionDate',
+                                'job_level_id': '#jobLevel',
+                                'job_position_id': '#jobPosition',
+                                'program_id': '#programId',
+                                'purpose': '#purpose',
+                                'urgency': '#urgency'
+                            };
+
+                            if (fieldMap[field]) {
+                                $(fieldMap[field]).addClass('is-invalid')
                                     .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
                             }
                         }
-                    } else {
-                        // Handle regular field errors
-                        const fieldMap = {
-                            'transaction_date': '#transactionDate',
-                            'job_level_id': '#jobLevel',
-                            'job_position_id': '#jobPosition',
-                            'program_id': '#programId',
-                            'purpose': '#purpose',
-                            'urgency': '#urgency'
-                        };
-                        
-                        if (fieldMap[field]) {
-                            $(fieldMap[field]).addClass('is-invalid')
-                                .after(`<div class="invalid-feedback d-block">${errors[field][0]}</div>`);
-                        }
-                    }
-                });
-                
-                // Scroll to top of modal to see errors
-                $('.modal-body').animate({ scrollTop: 0 }, 300);
-            } else {
-                // General error
-                let message = 'An error occurred while saving the submission';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                }
-                showModalError(message);
-            }
-        }
-    });
-}
+                    });
 
-// View submission
-function viewSubmission(id) {
-    $.ajax({
-        url: '{{ route("userSubmission.show", ":id") }}'.replace(':id', id),
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                const data = response.data;
-                
-                // Populate basic information
-                $('#view_transaction_date').text(formatDate(data.transaction_date));
-                $('#view_user_name').text(data.user_name || '-');
-                $('#view_job_level').text(data.job_level ? data.job_level.job_level_name : '-');
-                $('#view_job_position').text(data.job_position ? data.job_position.job_position_name : '-');
-                $('#view_program').text(data.program_id || '-');
-                $('#view_unit').text(data.unit_name || '-');
-                $('#view_purpose').text(data.purpose || '-');
-                $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) + '</strong>');
-                $('#view_status').html(getStatusBadge(data.status));
-                $('#view_urgency').text(data.urgency || '-');
-                
-                // Populate items
-                let itemsHtml = '';
-                if (data.details && data.details.length > 0) {
-                    data.details.forEach(function(item, index) {
-                        itemsHtml += `
+                    // Scroll to top of modal to see errors
+                    $('.modal-body').animate({
+                        scrollTop: 0
+                    }, 300);
+                } else {
+                    // General error
+                    let message = 'An error occurred while saving the submission';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    showModalError(message);
+                }
+            }
+        });
+    }
+
+    // View submission
+    function viewSubmission(id) {
+        $.ajax({
+            url: '{{ route("userSubmission.show", ":id") }}'.replace(':id', id),
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const data = response.data;
+
+                    // Populate basic information
+                    $('#view_transaction_date').text(formatDate(data.transaction_date));
+                    $('#view_user_name').text(data.user_name || '-');
+                    $('#view_job_level').text(data.job_level ? data.job_level.job_level_name : '-');
+                    $('#view_job_position').text(data.job_position ? data.job_position.job_position_name : '-');
+                    $('#view_program').text(data.program_id || '-');
+                    $('#view_unit').text(data.unit_name || '-');
+                    $('#view_purpose').text(data.purpose || '-');
+                    $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) + '</strong>');
+                    $('#view_status').html(getStatusBadge(data.status));
+                    $('#view_urgency').text(data.urgency || '-');
+
+                    // Populate items
+                    let itemsHtml = '';
+                    if (data.details && data.details.length > 0) {
+                        data.details.forEach(function(item, index) {
+                            itemsHtml += `
                             <tr>
                                 <td>${index + 1}</td>
                                 <td>${item.goods_service_name || '-'}</td>
@@ -1045,24 +1051,24 @@ function viewSubmission(id) {
                                 <td class="text-end"><strong>${formatCurrency(item.estimated_total || 0)}</strong></td>
                             </tr>
                         `;
-                    });
-                } else {
-                    itemsHtml = '<tr><td colspan="8" class="text-center">No items found</td></tr>';
-                }
-                $('#view_items_body').html(itemsHtml);
-                
-                // Populate approval history if available
-                if (data.approvals && data.approvals.length > 0) {
-                    let approvalHtml = '';
-                    data.approvals.forEach(function(approval) {
-                        const statusLabel = approval.status === 0 ? '<span class="badge bg-warning">Pending</span>' :
-                                          approval.status === 1 ? '<span class="badge bg-success">Approved</span>' :
-                                          approval.status === 2 ? '<span class="badge bg-danger">Rejected</span>' :
-                                          '<span class="badge bg-secondary">-</span>';
-                        
-                        const approvedDate = approval.approved_at ? formatDate(approval.approved_at) : '-';
-                        
-                        approvalHtml += `
+                        });
+                    } else {
+                        itemsHtml = '<tr><td colspan="8" class="text-center">No items found</td></tr>';
+                    }
+                    $('#view_items_body').html(itemsHtml);
+
+                    // Populate approval history if available
+                    if (data.approvals && data.approvals.length > 0) {
+                        let approvalHtml = '';
+                        data.approvals.forEach(function(approval) {
+                            const statusLabel = approval.status === 0 ? '<span class="badge bg-warning">Pending</span>' :
+                                approval.status === 1 ? '<span class="badge bg-success">Approved</span>' :
+                                approval.status === 2 ? '<span class="badge bg-danger">Rejected</span>' :
+                                '<span class="badge bg-secondary">-</span>';
+
+                            const approvedDate = approval.approved_at ? formatDate(approval.approved_at) : '-';
+
+                            approvalHtml += `
                             <tr>
                                 <td>Level ${approval.approval_level}</td>
                                 <td>${approval.approver_name || '-'}</td>
@@ -1071,351 +1077,387 @@ function viewSubmission(id) {
                                 <td>${approval.comments || '-'}</td>
                             </tr>
                         `;
-                    });
-                    $('#view_approval_body').html(approvalHtml);
-                    $('#view_approval_section').show();
-                } else {
-                    $('#view_approval_section').hide();
-                }
-                
-                // Show modal
-                $('#viewModal').modal('show');
-            }
-        },
-        error: function(xhr) {
-            let message = 'Error loading submission';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                message = xhr.responseJSON.message;
-            }
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: message,
-                confirmButtonColor: '#dc3545'
-            });
-        }
-    });
-}
+                        });
+                        $('#view_approval_body').html(approvalHtml);
+                        $('#view_approval_section').show();
+                    } else {
+                        $('#view_approval_section').hide();
+                    }
 
-// Edit submission
-function editSubmission(id) {
-    $.ajax({
-        url: '{{ route("userSubmission.show", ":id") }}'.replace(':id', id),
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                const data = response.data;
-                
-                $('#submissionId').val(data.id);
-                $('#submissionModalLabel').text('Edit Submission');
-                $('#transactionDate').val(data.transaction_date);
-                $('#purpose').val(data.purpose);
-                $('#urgency').val(data.urgency);
-                
-                // Set Job Level first
-                $('#jobLevel').val(data.job_level_id);
-                
-                // Load Job Positions based on Job Level, then set the value
-                if (data.job_level_id) {
-                    $.ajax({
-                        url: '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
-                        type: 'GET',
-                        success: function(jobPosResponse) {
-                            if (jobPosResponse.success) {
-                                let options = '<option value="">Select Job Position</option>';
-                                jobPosResponse.data.forEach(function(jp) {
-                                    options += `<option value="${jp.id}">${jp.job_position_name}</option>`;
-                                });
-                                $('#jobPosition').html(options).prop('disabled', false);
-                                $('#jobPosition').val(data.job_position_id);
-                            }
-                        }
-                    });
+                    // Show modal
+                    $('#viewModal').modal('show');
                 }
-                
-                // Load Programs based on Job Level, then set the value
-                if (data.job_level_id) {
-                    $.ajax({
-                        url: '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
-                        type: 'GET',
-                        success: function(programResponse) {
-                            if (programResponse.success) {
-                                let options = '<option value="">Select Program</option>';
-                                programResponse.data.forEach(function(prog) {
-                                    options += `<option value="${prog.id}">${prog.name}</option>`;
-                                });
-                                $('#programId').html(options).prop('disabled', false);
-                                $('#programId').val(data.program_id);
-                                
-                                // Load Budget Items based on Program, then populate item rows
-                                if (data.program_id) {
-                                    $.ajax({
-                                        url: '{{ route("userSubmission.budgetItems", ":programId") }}'.replace(':programId', data.program_id),
-                                        type: 'GET',
-                                        success: function(budgetResponse) {
-                                            if (budgetResponse.success) {
-                                                availableBudgetItems = budgetResponse.data;
-                                                
-                                                // Now populate the item rows
-                                                $('#itemsTableBody').html('');
-                                                itemRowCounter = 0;
-                                                
-                                                data.details.forEach(detail => {
-                                                    addItemRow();
-                                                    const row = itemRowCounter;
-                                                    
-                                                    // Set values for each field
-                                                    $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
-                                                    $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id);
-                                                    
-                                                    // Update budget value after setting budget_id
-                                                    const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
-                                                    if (selectedBudget) {
-                                                        $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(selectedBudget.total));
-                                                    }
-                                                    
-                                                    $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
-                                                    $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
-                                                    $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
-                                                    calculateRowTotal(row);
-                                                });
-                                            }
-                                        }
+            },
+            error: function(xhr) {
+                let message = 'Error loading submission';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: message,
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        });
+    }
+
+    // Edit submission
+    function editSubmission(id) {
+        $.ajax({
+            url: '{{ route("userSubmission.show", ":id") }}'.replace(':id', id),
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const data = response.data;
+
+                    $('#submissionId').val(data.id);
+                    $('#submissionModalLabel').text('Edit Submission');
+                    $('#transactionDate').val(data.transaction_date);
+                    $('#purpose').val(data.purpose);
+                    $('#urgency').val(data.urgency);
+
+                    // Set Job Level first
+                    $('#jobLevel').val(data.job_level_id);
+
+                    // Load Job Positions based on Job Level, then set the value
+                    if (data.job_level_id) {
+                        $.ajax({
+                            url: '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                            type: 'GET',
+                            success: function(jobPosResponse) {
+                                if (jobPosResponse.success) {
+                                    let options = '<option value="">Select Job Position</option>';
+                                    jobPosResponse.data.forEach(function(jp) {
+                                        options += `<option value="${jp.id}">${jp.job_position_name}</option>`;
                                     });
+                                    $('#jobPosition').html(options).prop('disabled', false);
+                                    $('#jobPosition').val(data.job_position_id);
                                 }
                             }
-                        }
-                    });
-                }
-                
-                $('#submissionModal').modal('show');
-            }
-        },
-        error: function(xhr) {
-            showAlert('Error loading submission', 'danger');
-        }
-    });
-}
-
-// Delete submission
-function deleteSubmission(id) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showAlert(response.message, 'success');
-                        loadData();
-                        loadSummary(); // Reload summary after delete
+                        });
                     }
-                },
-                error: function(xhr) {
-                    let message = 'Error deleting submission';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        message = xhr.responseJSON.message;
+
+                    // Load Programs based on Job Level, then set the value
+                    if (data.job_level_id) {
+                        $.ajax({
+                            url: '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
+                            type: 'GET',
+                            success: function(programResponse) {
+                                if (programResponse.success) {
+                                    let options = '<option value="">Select Program</option>';
+                                    programResponse.data.forEach(function(prog) {
+                                        options += `<option value="${prog.id}">${prog.name}</option>`;
+                                    });
+                                    $('#programId').html(options).prop('disabled', false);
+                                    $('#programId').val(data.program_id);
+
+                                    // Load Budget Items based on Program, then populate item rows
+                                    if (data.program_id) {
+                                        $.ajax({
+                                            url: '{{ route("userSubmission.budgetItems", ":programId") }}'.replace(':programId', data.program_id),
+                                            type: 'GET',
+                                            success: function(budgetResponse) {
+                                                if (budgetResponse.success) {
+                                                    availableBudgetItems = budgetResponse.data;
+
+                                                    // Now populate the item rows
+                                                    $('#itemsTableBody').html('');
+                                                    itemRowCounter = 0;
+
+                                                    data.details.forEach(detail => {
+                                                        addItemRow();
+                                                        const row = itemRowCounter;
+
+                                                        // Set values for each field
+                                                        $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
+                                                        $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id);
+
+                                                        // Update budget value after setting budget_id
+                                                        const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
+                                                        if (selectedBudget) {
+                                                            $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(selectedBudget.total));
+                                                        }
+
+                                                        $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
+                                                        $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
+                                                        $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
+                                                        calculateRowTotal(row);
+                                                    });
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
                     }
-                    showAlert(message, 'danger');
+
+                    $('#submissionModal').modal('show');
                 }
-            });
-        }
-    });
-}
-
-// Reset form
-function resetForm() {
-    $('#submissionForm')[0].reset();
-    $('#submissionId').val('');
-    $('#itemsTableBody').html('');
-    itemRowCounter = 0;
-    $('#estimatedValue').val('');
-    availableBudgetItems = [];
-    
-    // Clear validation errors
-    $('.is-invalid').removeClass('is-invalid');
-    $('.invalid-feedback').remove();
-    $('#modalErrorAlert').remove();
-    
-    // Reset cascading dropdowns
-    $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
-    $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
-}
-
-// Helper functions
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function formatCurrency(number) {
-    return new Intl.NumberFormat('id-ID', { 
-        style: 'currency', 
-        currency: 'IDR',
-        minimumFractionDigits: 0
-    }).format(number);
-}
-
-function formatNumber(number) {
-    return new Intl.NumberFormat('id-ID').format(number);
-}
-
-function getStatusBadge(status) {
-    const statusMap = {
-        0: { label: 'Submission', class: 'bg-primary' },
-        1: { label: 'Approved Parent', class: 'bg-info' },
-        2: { label: 'Approved Finance', class: 'bg-info' },
-        3: { label: 'Approved Division', class: 'bg-info' },
-        4: { label: 'Approved Finance Director', class: 'bg-info' },
-        5: { label: 'Approved President Director', class: 'bg-success' },
-        6: { label: 'Rejected', class: 'bg-danger' },
-        7: { label: 'Paid', class: 'bg-success' },
-        8: { label: 'Complete', class: 'bg-secondary' },
-        '-1': { label: 'Cancelled', class: 'bg-dark' }
-    };
-    
-    const statusInfo = statusMap[status] || { label: 'Unknown', class: 'bg-secondary' };
-    return `<span class="badge ${statusInfo.class} badge-status">${statusInfo.label}</span>`;
-}
-
-function showAlert(message, type) {
-    const icon = type === 'success' ? 'success' : 'error';
-    const title = type === 'success' ? 'Success!' : 'Error!';
-    
-    Swal.fire({
-        icon: icon,
-        title: title,
-        text: message,
-        confirmButtonColor: type === 'success' ? '#28a745' : '#dc3545',
-        timer: 3000,
-        timerProgressBar: true,
-        showConfirmButton: true
-    });
-}
-
-function showModalError(message, errors = null) {
-    let errorMessage = message;
-    
-    if (errors) {
-        errorMessage += '<br><br><ul style="text-align: left; margin-left: 20px;">';
-        Object.keys(errors).forEach(function(field) {
-            // Make error messages more readable
-            let fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (field.startsWith('items.')) {
-                const parts = field.split('.');
-                const index = parseInt(parts[1]) + 1;
-                const fieldName = parts[2].replace(/_/g, ' ');
-                fieldLabel = `Item ${index} - ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
+            },
+            error: function(xhr) {
+                showAlert('Error loading submission', 'danger');
             }
-            errorMessage += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
         });
-        errorMessage += '</ul>';
     }
-    
-    Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        html: errorMessage,
-        confirmButtonColor: '#dc3545'
-    });
-}
 
-// Approve submission
-function approveSubmission(id) {
-    Swal.fire({
-        title: 'Approve Submission?',
-        text: 'Are you sure you want to approve this submission?',
-        icon: 'question',
-        input: 'textarea',
-        inputLabel: 'Comments (optional)',
-        inputPlaceholder: 'Enter your comments here...',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Approve',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            let url = "{{route('userSubmission.approve', ':id')}}".replace(':id', id);
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    comments: result.value
-                },
-                success: function(response) {
-                    showAlert("Sukses Approve Submission", 'success');
-                    loadData();
-                    loadSummary();
-                },
-                error: function(xhr) {
-                    const response = xhr.responseJSON;
-                    showAlert(response.message || 'Error approving submission', 'error');
-                }
-            });
-        }
-    });
-}
-
-// Reject submission
-function rejectSubmission(id) {
-    Swal.fire({
-        title: 'Reject Submission?',
-        text: 'Are you sure you want to reject this submission?',
-        icon: 'warning',
-        input: 'textarea',
-        inputLabel: 'Rejection Reason (required)',
-        inputPlaceholder: 'Please provide a reason for rejection...',
-        inputValidator: (value) => {
-            if (!value) {
-                return 'Rejection reason is required!';
+    // Delete submission
+    function deleteSubmission(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '{{ route("userSubmission.destroy", ":id") }}'.replace(':id', id),
+                    type: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showAlert(response.message, 'success');
+                            loadData();
+                            loadSummary(); // Reload summary after delete
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Error deleting submission';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        showAlert(message, 'danger');
+                    }
+                });
             }
-        },
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Reject',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            let url = "{{ route('userSubmission.reject', ':id') }}".replace(':id', id);
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    comments: result.value
-                },
-                success: function(response) {
-                    console.log(response);
-                    
-                    showAlert("Sukses Reject Submission", 'success');
-                    loadData();
-                    loadSummary();
-                },
-                error: function(xhr) {
-                    console.log(xhr);
-                    
-                    const response = xhr.responseJSON;
-                    showAlert(response.message || 'Error rejecting submission', 'error');
-                }
-            });
-        }
-    });
-}
+        });
+    }
 
+    // Reset form
+    function resetForm() {
+        $('#submissionForm')[0].reset();
+        $('#submissionId').val('');
+        $('#itemsTableBody').html('');
+        itemRowCounter = 0;
+        $('#estimatedValue').val('');
+        availableBudgetItems = [];
+
+        // Clear validation errors
+        $('.is-invalid').removeClass('is-invalid');
+        $('.invalid-feedback').remove();
+        $('#modalErrorAlert').remove();
+
+        // Reset cascading dropdowns
+        $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
+        $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
+    }
+
+    // Helper functions
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function formatCurrency(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
+
+    function formatNumber(number) {
+        return new Intl.NumberFormat('id-ID').format(number);
+    }
+
+    function getStatusBadge(status) {
+        const statusMap = {
+            0: {
+                label: 'Submission',
+                class: 'bg-primary'
+            },
+            1: {
+                label: 'Approved Parent',
+                class: 'bg-info'
+            },
+            2: {
+                label: 'Approved Finance',
+                class: 'bg-info'
+            },
+            3: {
+                label: 'Approved Division',
+                class: 'bg-info'
+            },
+            4: {
+                label: 'Approved Finance Director',
+                class: 'bg-info'
+            },
+            5: {
+                label: 'Approved President Director',
+                class: 'bg-success'
+            },
+            6: {
+                label: 'Rejected',
+                class: 'bg-danger'
+            },
+            7: {
+                label: 'Paid',
+                class: 'bg-success'
+            },
+            8: {
+                label: 'Complete',
+                class: 'bg-secondary'
+            },
+            '-1': {
+                label: 'Cancelled',
+                class: 'bg-dark'
+            }
+        };
+
+        const statusInfo = statusMap[status] || {
+            label: 'Unknown',
+            class: 'bg-secondary'
+        };
+        return `<span class="badge ${statusInfo.class} badge-status">${statusInfo.label}</span>`;
+    }
+
+    function showAlert(message, type) {
+        const icon = type === 'success' ? 'success' : 'error';
+        const title = type === 'success' ? 'Success!' : 'Error!';
+
+        Swal.fire({
+            icon: icon,
+            title: title,
+            text: message,
+            confirmButtonColor: type === 'success' ? '#28a745' : '#dc3545',
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: true
+        });
+    }
+
+    function showModalError(message, errors = null) {
+        let errorMessage = message;
+
+        if (errors) {
+            errorMessage += '<br><br><ul style="text-align: left; margin-left: 20px;">';
+            Object.keys(errors).forEach(function(field) {
+                // Make error messages more readable
+                let fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                if (field.startsWith('items.')) {
+                    const parts = field.split('.');
+                    const index = parseInt(parts[1]) + 1;
+                    const fieldName = parts[2].replace(/_/g, ' ');
+                    fieldLabel = `Item ${index} - ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
+                }
+                errorMessage += `<li><strong>${fieldLabel}:</strong> ${errors[field][0]}</li>`;
+            });
+            errorMessage += '</ul>';
+        }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            html: errorMessage,
+            confirmButtonColor: '#dc3545'
+        });
+    }
+
+    // Approve submission
+    function approveSubmission(id) {
+        Swal.fire({
+            title: 'Approve Submission?',
+            text: 'Are you sure you want to approve this submission?',
+            icon: 'question',
+            input: 'textarea',
+            inputLabel: 'Comments (optional)',
+            inputPlaceholder: 'Enter your comments here...',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let url = "{{route('userSubmission.approve', ':id')}}".replace(':id', id);
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        comments: result.value
+                    },
+                    success: function(response) {
+                        showAlert("Sukses Approve Submission", 'success');
+                        loadData();
+                        loadSummary();
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        showAlert(response.message || 'Error approving submission', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Reject submission
+    function rejectSubmission(id) {
+        Swal.fire({
+            title: 'Reject Submission?',
+            text: 'Are you sure you want to reject this submission?',
+            icon: 'warning',
+            input: 'textarea',
+            inputLabel: 'Rejection Reason (required)',
+            inputPlaceholder: 'Please provide a reason for rejection...',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Rejection reason is required!';
+                }
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Reject',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let url = "{{ route('userSubmission.reject', ':id') }}".replace(':id', id);
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        comments: result.value
+                    },
+                    success: function(response) {
+                        console.log(response);
+
+                        showAlert("Sukses Reject Submission", 'success');
+                        loadData();
+                        loadSummary();
+                    },
+                    error: function(xhr) {
+                        console.log(xhr);
+
+                        const response = xhr.responseJSON;
+                        showAlert(response.message || 'Error rejecting submission', 'error');
+                    }
+                });
+            }
+        });
+    }
 </script>
 @endsection

@@ -469,9 +469,12 @@
         }
 
         /**
-         * Load budget codes via AJAX
+         * Load budget codes via AJAX with localStorage caching (1 day)
          */
         function loadBudgetCodes() {
+            const CACHE_KEY = 'budgetCodes_cache';
+            const CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
             // Show loading state
             if (budgetAccountChoice) {
                 budgetAccountChoice.setChoices([{
@@ -481,11 +484,65 @@
                 }], 'value', 'label', true);
             }
 
+            // Check if data exists in localStorage and is not expired
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                try {
+                    const parsedCache = JSON.parse(cachedData);
+                    const now = new Date().getTime();
+                    
+                    // Check if cache is still valid (less than 1 day old)
+                    if (parsedCache.timestamp && (now - parsedCache.timestamp) < CACHE_DURATION) {
+                        console.log('Loading budget codes from cache');
+                        
+                        // Use cached data
+                        budgetCodesData = parsedCache.data;
+                        budgetCodesLoaded = true;
+
+                        if (budgetAccountChoice) {
+                            // Clear existing choices
+                            budgetAccountChoice.clearStore();
+
+                            // Add placeholder
+                            budgetAccountChoice.setChoices([{
+                                value: '',
+                                label: 'Select Budget Account',
+                                disabled: true,
+                                selected: true
+                            }], 'value', 'label', true);
+
+                            // Add all budget codes
+                            budgetAccountChoice.setChoices(parsedCache.data, 'value', 'label', false);
+                        }
+
+                        return Promise.resolve(parsedCache.data);
+                    } else {
+                        console.log('Cache expired, fetching fresh data');
+                    }
+                } catch (e) {
+                    console.warn('Error parsing cached data:', e);
+                    localStorage.removeItem(CACHE_KEY);
+                }
+            }
+
+            // Fetch from API if no valid cache
             return fetch('{{ route('budget.submission.budgetCodesAll') }}')
                 .then(response => response.json())
                 .then(data => {
                     budgetCodesData = data;
-                    budgetCodesLoaded = true; // Mark as loaded
+                    budgetCodesLoaded = true;
+
+                    // Store in localStorage with timestamp
+                    try {
+                        const cacheObject = {
+                            data: data,
+                            timestamp: new Date().getTime()
+                        };
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+                        console.log('Budget codes cached successfully');
+                    } catch (e) {
+                        console.warn('Error caching budget codes:', e);
+                    }
 
                     if (budgetAccountChoice) {
                         // Clear existing choices
@@ -503,8 +560,8 @@
                         budgetAccountChoice.setChoices(data, 'value', 'label', false);
                     }
 
-                    console.log('Budget codes loaded:', data.length);
-                    return data; // Return data for promise chain
+                    console.log('Budget codes loaded from API:', data.length);
+                    return data;
                 })
                 .catch(error => {
                     console.error('Error loading budget codes:', error);
@@ -516,7 +573,7 @@
                             disabled: true
                         }], 'value', 'label', true);
                     }
-                    throw error; // Re-throw for error handling
+                    throw error;
                 });
         }
 

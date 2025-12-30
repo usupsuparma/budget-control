@@ -95,8 +95,8 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <div class="btn-group" role="group">
-                                                    @if ($submission->isPending())
+                                                @if ($submission->status == 0)
+                                                    <div class="btn-group" role="group">
                                                         <button type="button" class="btn btn-sm btn-warning"
                                                             onclick="editSubmission({{ $submission->id }})" title="Edit">
                                                             <i class="ri-edit-line"></i>
@@ -111,12 +111,10 @@
                                                             title="Approve">
                                                             <i class="ri-check-line"></i>
                                                         </button>
-                                                    @else
-                                                        <button type="button" class="btn btn-sm btn-secondary" disabled>
-                                                            <i class="ri-eye-line"></i>
-                                                        </button>
-                                                    @endif
-                                                </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty

@@ -9,6 +9,7 @@ use App\Models\BudgetCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class BudgetSubmissionController extends Controller
 {
@@ -30,6 +31,84 @@ class BudgetSubmissionController extends Controller
             'workPlans',
             'user'
         ));
+    }
+
+    /**
+     * Get table data via AJAX (for refreshing without page reload)
+     */
+    public function getData(Request $request)
+    {
+        try {
+            $budgetSubmissions = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
+                ->orderBy('submission_date', 'desc')
+                ->get();
+
+            $html = '';
+            $no = 1;
+
+            foreach ($budgetSubmissions as $submission) {
+                $statusColor = match($submission->status) {
+                    0 => 'warning',
+                    1 => 'success',
+                    2 => 'danger',
+                    default => 'secondary'
+                };
+                
+                $statusLabel = match($submission->status) {
+                    0 => 'Pending',
+                    1 => 'Approved',
+                    2 => 'Rejected',
+                    default => 'Unknown'
+                };
+                
+                $typeColor = $submission->type == 'add' ? 'info' : 'secondary';
+                $typeLabel = $submission->type == 'add' ? 'Add Budget' : 'Relocation';
+                
+                $html .= '<tr>';
+                $html .= '<td>' . $no++ . '</td>';
+                $html .= '<td>' . $submission->submission_date->format('d/m/Y') . '</td>';
+                $html .= '<td>' . ($submission->division->name ?? '-') . '</td>';
+                $html .= '<td><span class="badge bg-' . $typeColor . '">' . $typeLabel . '</span></td>';
+                $html .= '<td><small>' . ($submission->workPlan->activity ?? '-') . '</small></td>';
+                $html .= '<td><small>' . \Illuminate\Support\Str::limit($submission->description, 50) . '</small></td>';
+                $html .= '<td class="text-end">Rp ' . number_format($submission->estimation_amount, 0, ',', '.') . '</td>';
+                $html .= '<td><small>' . ($submission->budgetAccount->stock_code ?? '-') . ' | ' . ($submission->budgetAccount->name ?? '-') . '</small></td>';
+                $html .= '<td><span class="badge bg-' . $statusColor . '">' . $statusLabel . '</span></td>';
+                
+                // Action buttons
+                $html .= '<td><div class="btn-group" role="group">';
+                
+                if ($submission->status == 0) { // Pending
+                    $html .= '<button type="button" class="btn btn-sm btn-warning" onclick="editSubmission(' . $submission->id . ')" title="Edit">';
+                    $html .= '<i class="ri-edit-line"></i></button>';
+                    $html .= '<button type="button" class="btn btn-sm btn-danger" onclick="deleteSubmission(' . $submission->id . ')" title="Delete">';
+                    $html .= '<i class="ri-delete-bin-line"></i></button>';
+                    $html .= '<button type="button" class="btn btn-sm btn-success" onclick="approveSubmission(' . $submission->id . ')" title="Approve">';
+                    $html .= '<i class="ri-check-line"></i></button>';
+                } else {
+                    $html .= '<button type="button" class="btn btn-sm btn-secondary" disabled>';
+                    $html .= '<i class="ri-eye-line"></i></button>';
+                }
+                
+                $html .= '</div></td>';
+                $html .= '</tr>';
+            }
+
+            if ($budgetSubmissions->isEmpty()) {
+                $html = '<tr><td colspan="10" class="text-center">No data available</td></tr>';
+            }
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'total' => $budgetSubmissions->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load table data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -70,17 +149,44 @@ class BudgetSubmissionController extends Controller
             ]);
 
             DB::commit();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Budget submission created successfully.'
+                ]);
+            }
+            
             return redirect()->route('budget.submission.index')
                 ->with('success', 'Budget submission created successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            dd($e);
             DB::rollback();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed. Please check the form and try again.',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput()
                 ->with('error', 'Validation failed. Please check the form and try again.');
         } catch (\Exception $e) {
             DB::rollback();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create budget submission: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Failed to create budget submission: ' . $e->getMessage());
@@ -173,20 +279,57 @@ class BudgetSubmissionController extends Controller
             ]);
 
             DB::commit();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Budget submission updated successfully.'
+                ]);
+            }
+            
             return redirect()->route('budget.submission.index')
                 ->with('success', 'Budget submission updated successfully.');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollback();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Budget submission not found. It may have been deleted.'
+                ], 404);
+            }
+            
             return redirect()->route('budget.submission.index')
                 ->with('error', 'Budget submission not found. It may have been deleted.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollback();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed. Please check the form and try again.',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput()
                 ->with('error', 'Validation failed. Please check the form and try again.');
         } catch (\Exception $e) {
             DB::rollback();
+            
+            // Check if AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update budget submission: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->route('budget.submission.index')
                 ->with('error', 'Failed to update budget submission: ' . $e->getMessage());
         }
@@ -306,15 +449,17 @@ class BudgetSubmissionController extends Controller
      */
     public function getAllBudgetCodes()
     {
-        $budgetCodes = BudgetCode::select('id', 'stock_code', 'name')
-            ->orderBy('stock_code')
-            ->get()
-            ->map(function($code) {
-                return [
-                    'value' => $code->id,
-                    'label' => $code->stock_code . ' - ' . $code->name
-                ];
-            });
+        $budgetCodes = Cache::remember('budget_codes_all', 3600, function() {
+            return BudgetCode::select('id', 'stock_code', 'name')
+                ->orderBy('stock_code')
+                ->get()
+                ->map(function($code) {
+                    return [
+                        'value' => $code->id,
+                        'label' => $code->stock_code . ' - ' . $code->name
+                    ];
+                });
+        });
 
         return response()->json($budgetCodes);
     }

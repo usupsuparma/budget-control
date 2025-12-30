@@ -27,7 +27,7 @@ class BudgetSubmission extends Model
 
     protected $casts = [
         'submission_date' => 'date',
-        'estimation_amount' => 'decimal:2',
+        'estimation_amount' => 'integer',
         'status' => 'integer',
     ];
 

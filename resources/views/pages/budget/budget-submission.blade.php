@@ -7,10 +7,15 @@
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
     <style>
         .badge {
             padding: 0.35em 0.65em;
             font-size: 0.85em;
+        }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
         }
     </style>
 @endsection
@@ -82,7 +87,7 @@
                                             <td class="text-end">Rp
                                                 {{ number_format($submission->estimation_amount, 0, ',', '.') }}</td>
                                             <td>
-                                                <small>{{ $submission->budgetAccount->name ?? '-' }}</small>
+                                                <small>{{$submission->budgetAccount->stock_code ?? '-'}} | {{ $submission->budgetAccount->name ?? '-' }}</small>
                                             </td>
                                             <td>
                                                 <span class="badge bg-{{ $submission->status_color }}">
@@ -122,17 +127,6 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div>
-                                Showing {{ $budgetSubmissions->firstItem() ?? 0 }} to
-                                {{ $budgetSubmissions->lastItem() ?? 0 }} of {{ $budgetSubmissions->total() }} entries
-                            </div>
-                            <div>
-                                {{ $budgetSubmissions->links() }}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -147,10 +141,9 @@
                         <h5 class="modal-title" id="budgetSubmissionModalLabel">Add Budget Submission</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form id="budgetSubmissionForm" method="POST" action="{{ route('budget.submission.store') }}">
-                        @csrf
-                        <div id="methodField"></div>
+                    <form id="budgetSubmissionForm">
                         <input type="hidden" id="submission_id" name="submission_id">
+                        <input type="hidden" id="form_method" name="_method" value="POST">
 
                         <div class="modal-body">
                             <div class="row mb-3">
@@ -239,7 +232,7 @@
                                         class="text-danger">*</span></label>
                                 <div class="col-sm-9">
                                     <input type="number" class="form-control" id="estimation_amount"
-                                        name="estimation_amount" step="0.01" min="0" required>
+                                        name="estimation_amount"  min="0" required>
                                 </div>
                             </div>
                         </div>
@@ -259,7 +252,8 @@
 
     <script type="module" src="{{ asset('assets/js/app.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 
     @if (session('success'))
@@ -287,8 +281,13 @@
     <script>
         let divisionChoice, workPlanChoice, budgetAccountChoice;
         let budgetCodesData = [];
+        let budgetCodesLoaded = false;
+        let dataTable;
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize DataTable
+            initDataTable();
+            
             // Load budget codes immediately on page load
             loadBudgetCodes();
 
@@ -314,7 +313,160 @@
                 placeholderValue: 'Select Budget Account',
                 searchPlaceholderValue: 'Search budget account...'
             });
+
+            // Handle form submission with AJAX
+            document.getElementById('budgetSubmissionForm').addEventListener('submit', handleFormSubmit);
         });
+
+        /**
+         * Initialize DataTable
+         */
+        function initDataTable() {
+            dataTable = $('#budgetSubmissionTable').DataTable({
+                processing: true,
+                serverSide: false,
+                pageLength: 15,
+                order: [[1, 'desc']], // Order by submission date
+                language: {
+                    search: 'Search:',
+                    lengthMenu: 'Show _MENU_ entries',
+                    info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+                    infoEmpty: 'Showing 0 to 0 of 0 entries',
+                    infoFiltered: '(filtered from _MAX_ total entries)',
+                    paginate: {
+                        first: 'First',
+                        last: 'Last',
+                        next: 'Next',
+                        previous: 'Previous'
+                    }
+                },
+                columnDefs: [
+                    { orderable: false, targets: -1 } // Disable sorting on action column
+                ]
+            });
+        }
+
+        /**
+         * Refresh table data via AJAX without page reload
+         */
+        function refreshTable() {
+            fetch('{{ route('budget.submission.data') }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Destroy existing DataTable
+                    if (dataTable) {
+                        dataTable.destroy();
+                    }
+                    
+                    // Update table body
+                    $('#budgetSubmissionTable tbody').html(result.html);
+                    
+                    // Reinitialize DataTable
+                    initDataTable();
+                    
+                    console.log('Table refreshed successfully');
+                } else {
+                    console.error('Failed to refresh table:', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing table:', error);
+            });
+        }
+
+        /**
+         * Handle form submission with AJAX
+         */
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submissionId = document.getElementById('submission_id').value;
+            const method = document.getElementById('form_method').value;
+            
+            let url = '{{ route('budget.submission.store') }}';
+            if (submissionId) {
+                url = `/budget-submission/${submissionId}`;
+                formData.append('_method', 'PUT');
+            }
+
+            // Disable submit button
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('budgetSubmissionModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: result.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    
+                    // Refresh table without page reload
+                    setTimeout(() => {
+                        refreshTable();
+                    }, 1500);
+                } else {
+                    // Show error message
+                    let errorMsg = result.message || 'Failed to save budget submission.';
+                    
+                    if (result.errors) {
+                        errorMsg += '<ul class="text-start mt-2">';
+                        Object.values(result.errors).forEach(errors => {
+                            errors.forEach(error => {
+                                errorMsg += `<li>${error}</li>`;
+                            });
+                        });
+                        errorMsg += '</ul>';
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        html: errorMsg
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'An error occurred. Please try again.'
+                });
+            })
+            .finally(() => {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
 
         /**
          * Load budget codes via AJAX
@@ -329,10 +481,11 @@
                 }], 'value', 'label', true);
             }
 
-            fetch('{{ route('budget.submission.budgetCodesAll') }}')
+            return fetch('{{ route('budget.submission.budgetCodesAll') }}')
                 .then(response => response.json())
                 .then(data => {
                     budgetCodesData = data;
+                    budgetCodesLoaded = true; // Mark as loaded
 
                     if (budgetAccountChoice) {
                         // Clear existing choices
@@ -351,9 +504,11 @@
                     }
 
                     console.log('Budget codes loaded:', data.length);
+                    return data; // Return data for promise chain
                 })
                 .catch(error => {
                     console.error('Error loading budget codes:', error);
+                    budgetCodesLoaded = false;
                     if (budgetAccountChoice) {
                         budgetAccountChoice.setChoices([{
                             value: '',
@@ -361,15 +516,15 @@
                             disabled: true
                         }], 'value', 'label', true);
                     }
+                    throw error; // Re-throw for error handling
                 });
         }
 
         function resetForm() {
             document.getElementById('budgetSubmissionForm').reset();
             document.getElementById('submission_id').value = '';
-            document.getElementById('methodField').innerHTML = '';
+            document.getElementById('form_method').value = 'POST';
             document.getElementById('budgetSubmissionModalLabel').textContent = 'Add Budget Submission';
-            document.getElementById('budgetSubmissionForm').action = '{{ route('budget.submission.store') }}';
             document.getElementById('submission_date').value = '{{ date('Y-m-d') }}';
 
             // Reset choices
@@ -379,55 +534,65 @@
         }
 
         function editSubmission(id) {
-            fetch(`/budget-submission/${id}/edit`)
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        const data = result.data;
+            // Ensure budget codes are loaded first
+            const loadPromise = budgetCodesLoaded ? Promise.resolve() : loadBudgetCodes();
 
-                        document.getElementById('submission_id').value = data.id;
-                        document.getElementById('methodField').innerHTML =
-                            '<input type="hidden" name="_method" value="PUT">';
-                        document.getElementById('budgetSubmissionModalLabel').textContent = 'Edit Budget Submission';
-                        document.getElementById('budgetSubmissionForm').action = `/budget-submission/${data.id}`;
+            loadPromise.then(() => {
+                return fetch(`/budget-submission/${id}/edit`);
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const data = result.data;
 
-                        // Set form values
-                        if (divisionChoice) divisionChoice.setChoiceByValue(String(data.division_id));
+                    document.getElementById('submission_id').value = data.id;
+                    document.getElementById('form_method').value = 'PUT';
+                    document.getElementById('budgetSubmissionModalLabel').textContent = 'Edit Budget Submission';
 
-                        // Set date directly (already in Y-m-d format from controller)
-                        document.getElementById('submission_date').value = data.submission_date;
+                    // Set form values
+                    if (divisionChoice) divisionChoice.setChoiceByValue(String(data.division_id));
 
-                        // Set type radio
-                        if (data.type === 'add') {
-                            document.getElementById('type_add').checked = true;
-                        } else {
-                            document.getElementById('type_relocation').checked = true;
-                        }
+                    // Set date directly (already in Y-m-d format from controller)
+                    document.getElementById('submission_date').value = data.submission_date;
 
-                        if (workPlanChoice) workPlanChoice.setChoiceByValue(String(data.work_plan_id));
-                        if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue(String(data.budget_account_id));
-                        document.getElementById('description').value = data.description || '';
-                        document.getElementById('estimation_amount').value = data.estimation_amount;
-
-                        // Show modal
-                        const modal = new bootstrap.Modal(document.getElementById('budgetSubmissionModal'));
-                        modal.show();
+                    // Set type radio
+                    if (data.type === 'add') {
+                        document.getElementById('type_add').checked = true;
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Failed!',
-                            text: result.message
-                        });
+                        document.getElementById('type_relocation').checked = true;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+
+                    if (workPlanChoice) workPlanChoice.setChoiceByValue(String(data.work_plan_id));
+                    
+                    // Set budget account - with a slight delay to ensure Choices.js is ready
+                    if (budgetAccountChoice && data.budget_account_id) {
+                        setTimeout(() => {
+                            budgetAccountChoice.setChoiceByValue(String(data.budget_account_id));
+                        }, 100);
+                    }
+                    
+                    document.getElementById('description').value = data.description || '';
+                    document.getElementById('estimation_amount').value = data.estimation_amount;
+
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('budgetSubmissionModal'));
+                    modal.show();
+                } else {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error!',
-                        text: 'Failed to load submission data. Please try again.'
+                        title: 'Failed!',
+                        text: result.message
                     });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to load submission data. Please try again.'
                 });
+            });
         }
 
         function deleteSubmission(id) {
@@ -457,11 +622,14 @@
                                     icon: 'success',
                                     title: 'Deleted!',
                                     text: result.message,
-                                    timer: 2000,
+                                    timer: 1500,
                                     showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
                                 });
+                                
+                                // Refresh table without page reload
+                                setTimeout(() => {
+                                    refreshTable();
+                                }, 1500);
                             } else {
                                 Swal.fire({
                                     icon: 'error',
@@ -509,11 +677,14 @@
                                     icon: 'success',
                                     title: 'Approved!',
                                     text: result.message,
-                                    timer: 2000,
+                                    timer: 1500,
                                     showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
                                 });
+                                
+                                // Refresh table without page reload
+                                setTimeout(() => {
+                                    refreshTable();
+                                }, 1500);
                             } else {
                                 Swal.fire({
                                     icon: 'error',

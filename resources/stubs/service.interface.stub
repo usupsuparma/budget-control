@@ -1,0 +1,9 @@
+<?php
+
+namespace {{ namespace }};
+
+interface {{ class }}
+{
+    // Define your service methods here
+    // public function someMethod();
+}

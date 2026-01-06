@@ -181,128 +181,190 @@
                     {{-- @can('transaction.admin.view')
                     <li class="pe-slide-item">
                         <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
-                            Admin Submission
-                        </a>
-                    </li>
-                    @endcan --}}
-
-                </ul>
+                    Admin Submission
+                    </a>
             </li>
-            @endcanany
+            @endcan --}}
 
-            {{-- FINANCE --}}
-            {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
-            <li class="pe-slide pe-has-sub">
-                <a href="#collapseFinance"
-                    class="pe-nav-link {{ Request::is('finance/*') ? 'active' : '' }}"
-                    data-bs-toggle="collapse">
+        </ul>
+        </li>
+        @endcanany
 
-                    <i class="bi bi-clipboard2-data-fill"></i>
-                    <span class="pe-nav-content">Finance</span>
-                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+        {{-- FINANCE --}}
+        {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
+        <li class="pe-slide pe-has-sub">
+            <a href="#collapseFinance"
+                class="pe-nav-link {{ Request::is('finance/*') ? 'active' : '' }}"
+                data-bs-toggle="collapse">
+
+                <i class="bi bi-clipboard2-data-fill"></i>
+                <span class="pe-nav-content">Finance</span>
+                <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+            </a>
+
+            <ul class="pe-slide-menu collapse {{ Request::is('finance/*') ? 'show' : '' }}" id="collapseFinance">
+
+                {{-- @can('transaction.user.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
+                        Budget Assumption
+                    </a>
+                </li>
+                {{-- @endcan --}}
+
+                {{-- @can('transaction.user.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
+                        Budget Accrual
+                    </a>
+                </li>
+                {{-- @endcan --}}
+
+                {{-- @can('transaction.admin.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                        Master Price
+                    </a>
+                </li>
+                {{-- @endcan --}}
+
+
+            </ul>
+        </li>
+        {{-- @endcanany --}}
+
+        {{-- FINANCE --}}
+        {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
+        <li class="pe-slide pe-has-sub">
+            <a href="#collapseReport"
+                class="pe-nav-link {{ Request::is('report/*') ? 'active' : '' }}"
+                data-bs-toggle="collapse">
+
+                <i class="bi bi-journal-bookmark-fill"></i>
+                <span class="pe-nav-content">Report</span>
+                <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+            </a>
+
+            <ul class="pe-slide-menu collapse {{ Request::is('report/*') ? 'show' : '' }}" id="collapseReport">
+                {{-- @can('expenditure.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/expenditure*') ? 'active' : '' }}">
+                        Expenditure
+                    </a>
+                </li>
+                {{-- @endcan --}}
+
+                {{-- @can('costCenter.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costCenter*') ? 'active' : '' }}">
+                        Cost Center
+                    </a>
+                </li>
+                {{-- @endcan --}}
+
+                {{-- @can('costAllocation.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costAllocation*') ? 'active' : '' }}">
+                        Cost Allocation
+                    </a>
+                </li>
+                {{-- @endcan --}}
+                {{-- @can('cogs.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cogs*') ? 'active' : '' }}">
+                        COGS
+                    </a>
+                </li>
+                {{-- @endcan --}}
+                {{-- @can('incomeStatement.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/incomeStatement*') ? 'active' : '' }}">
+                        Income Statement
+                    </a>
+                </li>
+                {{-- @endcan --}}
+                {{-- @can('cashflow.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cashflow*') ? 'active' : '' }}">
+                        Cash Flows
+                    </a>
+                </li>
+                {{-- @endcan --}}
+                {{-- @can('financialPosition.view') --}}
+                <li class="pe-slide-item">
+                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/financialPosition*') ? 'active' : '' }}">
+                        Financial Position
+                    </a>
+                </li>
+                {{-- @endcan --}}
+            </ul>
+        </li>
+        {{-- @endcanany --}}
+
+        {{-- SETTINGS --}}
+        @canany([
+        'setting.master.view',
+        'setting.users.view',
+        'setting.code.view',
+        'setting.production.view',
+        'approval.view',
+        'setting.history.view'
+        ])
+        <li class="pe-slide pe-has-sub">
+            <a href="#collapseSetting"
+                class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('setting.production*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
+                data-bs-toggle="collapse">
+
+                <i class="bi bi-gear pe-nav-icon"></i>
+                <span class="pe-nav-content">Settings</span>
+                <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+            </a>
+
+            <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('setting.production*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+
+                @can('setting.master.view')
+                <li class="pe-slide-item">
+                    <a href="{{ route('master') }}" class="pe-nav-link {{ Request::is('master*') ? 'active' : '' }}">
+                        Employment
+                    </a>
+                </li>
+                @endcan
+
+                @can('setting.code.view')
+                <a href="{{ route('code.index') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
+                    Code
                 </a>
+                @endcan
 
-                <ul class="pe-slide-menu collapse {{ Request::is('finance/*') ? 'show' : '' }}" id="collapseFinance">
-
-                    {{-- @can('transaction.user.view') --}}
-                    <li class="pe-slide-item">
-                        <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
-                            Budget Assumption
-                        </a>
-                    </li>
-                    {{-- @endcan --}}
-
-                    {{-- @can('transaction.user.view') --}}
-                    <li class="pe-slide-item">
-                        <a href="{{ route('userSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/user*') ? 'active' : '' }}">
-                            Budget Accrual
-                        </a>
-                    </li>
-                    {{-- @endcan --}}
-
-                    {{-- @can('transaction.admin.view') --}}
-                    <li class="pe-slide-item">
-                        <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
-                            Master Price
-                        </a>
-                    </li>
-                    {{-- @endcan --}}
-                    {{-- @can('transaction.admin.view') --}}
-                    <li class="pe-slide-item">
-                        <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
-                            Report
-                        </a>
-                    </li>
-                    {{-- @endcan --}}
-
-                </ul>
-            </li>
-            {{-- @endcanany --}}
-
-            {{-- SETTINGS --}}
-            @canany([
-            'setting.master.view',
-            'setting.users.view',
-            'setting.code.view',
-            'setting.production.view',
-            'approval.view',
-            'setting.history.view'
-            ])
-            <li class="pe-slide pe-has-sub">
-                <a href="#collapseSetting"
-                    class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('setting.production*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
-                    data-bs-toggle="collapse">
-
-                    <i class="bi bi-gear pe-nav-icon"></i>
-                    <span class="pe-nav-content">Settings</span>
-                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+                @can('setting.production.view')
+                <a href="{{ route('setting.production.index') }}" class="pe-nav-link {{ Request::is('setting.production*') ? 'active' : '' }}">
+                    Production
                 </a>
+                @endcan
 
-                <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('setting.production*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+                @can('setting.users.view')
+                <a href="{{ route('users.index') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
+                    Users
+                </a>
+                @endcan
 
-                    @can('setting.master.view')
-                    <li class="pe-slide-item">
-                        <a href="{{ route('master') }}" class="pe-nav-link {{ Request::is('master*') ? 'active' : '' }}">
-                            Employment
-                        </a>
-                    </li>
-                    @endcan
-
-                    @can('setting.code.view')
-                    <a href="{{ route('code.index') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
-                        Code
-                    </a>
-                    @endcan
-
-                    @can('setting.production.view')
-                    <a href="{{ route('setting.production.index') }}" class="pe-nav-link {{ Request::is('setting.production*') ? 'active' : '' }}">
-                        Production
-                    </a>
-                    @endcan
-
-                    @can('setting.users.view')
-                    <a href="{{ route('users.index') }}" class="pe-nav-link {{ Request::is('user*') ? 'active' : '' }}">
-                        Users
-                    </a>
-                    @endcan
-
-                    @can('approval.view')
-                    <a href="{{ route('approval') }}" class="pe-nav-link {{ Request::is('approval*') ? 'active' : '' }}">
-                        Approval
-                    </a>
-                    @endcan
+                @can('approval.view')
+                <a href="{{ route('approval') }}" class="pe-nav-link {{ Request::is('approval*') ? 'active' : '' }}">
+                    Approval
+                </a>
+                @endcan
 
 
 
-                    @can('setting.history.view')
-                    <a href="{{ route('history') }}" class="pe-nav-link {{ Request::is('history*') ? 'active' : '' }}">
-                        History
-                    </a>
-                    @endcan
+                @can('setting.history.view')
+                <a href="{{ route('history') }}" class="pe-nav-link {{ Request::is('history*') ? 'active' : '' }}">
+                    History
+                </a>
+                @endcan
 
-                </ul>
-            </li>
-            @endcanany
+            </ul>
+        </li>
+        @endcanany
 
         </ul>
     </nav>

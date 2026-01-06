@@ -206,7 +206,7 @@ class SubmissionController extends Controller
                 'user_id' => $user->id,
                 'user_name' => $user->first_name . ' ' . $user->last_name,
                 'unit_id' => $unit->id ?? 0,
-                'unit_name' => $unit->name ?? '',
+                'unit_name' => $unit->unit ?? '',
                 'job_level_id' => $request->job_level_id,
                 'job_position_id' => $request->job_position_id,
                 'program_id' => $request->program_id,

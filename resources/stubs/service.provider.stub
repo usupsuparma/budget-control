@@ -1,0 +1,30 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Support\ServiceProvider;
+use {{ serviceNamespace }}\{{ serviceName }};
+use {{ serviceNamespace }}\{{ serviceName }}Impl;
+
+class {{ class }} extends ServiceProvider
+{
+    /**
+     * Register services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->app->bind({{ serviceName }}::class, {{ serviceName }}Impl::class);
+    }
+
+    /**
+     * Bootstrap services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        //
+    }
+}

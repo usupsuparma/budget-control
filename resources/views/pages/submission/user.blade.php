@@ -800,7 +800,7 @@
         let html = `
         <tr data-row="${itemRowCounter}">
             <td>
-                <input type="text" class="form-control form-control-sm goods-name-input" name="items[${itemRowCounter}][goods_service_name]" required>
+                <input type="text" class="form-control form-control-sm goods-name-input" name="items[${itemRowCounter}][goods_service_name]" placeholder="Enter goods/service name" required>
             </td>
             <td>
                 <select class="form-select form-select-sm budget-select" name="items[${itemRowCounter}][budget_id]" data-row="${itemRowCounter}" required>
@@ -819,12 +819,12 @@
                 <input type="number" class="form-control form-control-sm qty-input" name="items[${itemRowCounter}][quantity]" min="1" value="1" data-row="${itemRowCounter}" required>
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm price-input" name="items[${itemRowCounter}][price]" data-row="${itemRowCounter}" required>
+                <input type="text" class="form-control form-control-sm price-input" name="items[${itemRowCounter}][price]" data-row="${itemRowCounter}" placeholder="0" required>
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm total-input bg-light" readonly>
             </td>
-            <td>
+            <td class="text-center">
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(${itemRowCounter})">
                     <i class="ri-delete-bin-line"></i>
                 </button>
@@ -1105,6 +1105,9 @@
 
     // Edit submission
     function editSubmission(id) {
+        // Reset form first
+        resetForm();
+
         $.ajax({
             url: '{{ route("userSubmission.show", ":id") }}'.replace(':id', id),
             type: 'GET',
@@ -1112,8 +1115,11 @@
                 if (response.success) {
                     const data = response.data;
 
+                    // Set submission ID and modal title
                     $('#submissionId').val(data.id);
                     $('#submissionModalLabel').text('Edit Submission');
+
+                    // Set basic fields
                     $('#transactionDate').val(data.transaction_date);
                     $('#purpose').val(data.purpose);
                     $('#urgency').val(data.urgency);
@@ -1123,24 +1129,14 @@
 
                     // Load Job Positions based on Job Level, then set the value
                     if (data.job_level_id) {
-                        $.ajax({
-                            url: '{{ route("userSubmission.jobPositions", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
-                            type: 'GET',
-                            success: function(jobPosResponse) {
-                                if (jobPosResponse.success) {
-                                    let options = '<option value="">Select Job Position</option>';
-                                    jobPosResponse.data.forEach(function(jp) {
-                                        options += `<option value="${jp.id}">${jp.job_position_name}</option>`;
-                                    });
-                                    $('#jobPosition').html(options).prop('disabled', false);
-                                    $('#jobPosition').val(data.job_position_id);
-                                }
-                            }
-                        });
-                    }
+                        loadJobPositions(data.job_level_id);
 
-                    // Load Programs based on Job Level, then set the value
-                    if (data.job_level_id) {
+                        // Wait a bit for job positions to load, then set value
+                        setTimeout(function() {
+                            $('#jobPosition').val(data.job_position_id);
+                        }, 500);
+
+                        // Load Programs based on Job Level
                         $.ajax({
                             url: '{{ route("userSubmission.programs", ":jobLevelId") }}'.replace(':jobLevelId', data.job_level_id),
                             type: 'GET',
@@ -1153,7 +1149,7 @@
                                     $('#programId').html(options).prop('disabled', false);
                                     $('#programId').val(data.program_id);
 
-                                    // Load Budget Items based on Program, then populate item rows
+                                    // Load Budget Items based on Program
                                     if (data.program_id) {
                                         $.ajax({
                                             url: '{{ route("userSubmission.budgetItems", ":programId") }}'.replace(':programId', data.program_id),
@@ -1162,43 +1158,138 @@
                                                 if (budgetResponse.success) {
                                                     availableBudgetItems = budgetResponse.data;
 
-                                                    // Now populate the item rows
+                                                    // Clear existing items
                                                     $('#itemsTableBody').html('');
                                                     itemRowCounter = 0;
 
-                                                    data.details.forEach(detail => {
-                                                        addItemRow();
-                                                        const row = itemRowCounter;
+                                                    // Populate item rows with existing data
+                                                    if (data.details && data.details.length > 0) {
+                                                        data.details.forEach(function(detail) {
+                                                            itemRowCounter++;
 
-                                                        // Set values for each field
-                                                        $(`tr[data-row="${row}"] input[name="items[${row}][goods_service_name]"]`).val(detail.goods_service_name);
-                                                        $(`tr[data-row="${row}"] select[name="items[${row}][budget_id]"]`).val(detail.budget_id);
+                                                            // Prepare budget options
+                                                            let budgetOptions = '<option value="">Select Budget</option>';
+                                                            availableBudgetItems.forEach(function(item) {
+                                                                const selected = item.id == detail.budget_id ? 'selected' : '';
+                                                                budgetOptions += `<option value="${item.id}" data-value="${item.total}" data-code="${item.stock_code || item.budget_code}" ${selected}>${item.label}</option>`;
+                                                            });
 
-                                                        // Update budget value after setting budget_id
-                                                        const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
-                                                        if (selectedBudget) {
-                                                            $(`tr[data-row="${row}"] .budget-value`).val(formatCurrency(selectedBudget.total));
-                                                        }
+                                                            // Prepare unit options
+                                                            let unitOptions = '<option value="">Select Unit</option>';
+                                                            units.forEach(function(unit) {
+                                                                const selected = unit.id == detail.unit_id ? 'selected' : '';
+                                                                unitOptions += `<option value="${unit.id}" ${selected}>${unit.unit || unit.unit_name}</option>`;
+                                                            });
 
-                                                        $(`tr[data-row="${row}"] select[name="items[${row}][unit_id]"]`).val(detail.unit_id);
-                                                        $(`tr[data-row="${row}"] input[name="items[${row}][quantity]"]`).val(detail.estimated_quantity);
-                                                        $(`tr[data-row="${row}"] .price-input`).val(formatNumber(detail.estimated_price));
-                                                        calculateRowTotal(row);
-                                                    });
+                                                            // Get budget value
+                                                            const selectedBudget = availableBudgetItems.find(item => item.id == detail.budget_id);
+                                                            const budgetValue = selectedBudget ? formatCurrency(selectedBudget.total) : '';
+
+                                                            // Create row HTML
+                                                            let html = `
+                                                            <tr data-row="${itemRowCounter}">
+                                                                <td class="text-center">${itemRowCounter}</td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm goods-name-input" 
+                                                                           name="items[${itemRowCounter}][goods_service_name]" 
+                                                                           value="${detail.goods_service_name || ''}" 
+                                                                           placeholder="Goods/Service Name" required>
+                                                                </td>
+                                                                <td>
+                                                                    <select class="form-select form-select-sm budget-select" 
+                                                                            name="items[${itemRowCounter}][budget_id]" 
+                                                                            data-row="${itemRowCounter}" required>
+                                                                        ${budgetOptions}
+                                                                    </select>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm budget-value" 
+                                                                           value="${budgetValue}" readonly>
+                                                                </td>
+                                                                <td>
+                                                                    <select class="form-select form-select-sm unit-select" 
+                                                                            name="items[${itemRowCounter}][unit_id]" required>
+                                                                        ${unitOptions}
+                                                                    </select>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="number" class="form-control form-control-sm qty-input" 
+                                                                           name="items[${itemRowCounter}][quantity]" 
+                                                                           value="${detail.estimated_quantity || 0}" 
+                                                                           data-row="${itemRowCounter}" 
+                                                                           min="1" step="1" required>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm price-input" 
+                                                                           name="items[${itemRowCounter}][price]" 
+                                                                           value="${formatNumber(detail.estimated_price || 0)}" 
+                                                                           data-row="${itemRowCounter}" 
+                                                                           placeholder="0" required>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm total-input" 
+                                                                           value="${formatCurrency(detail.estimated_total || 0)}" 
+                                                                           readonly>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-danger btn-sm" 
+                                                                            onclick="removeItemRow(${itemRowCounter})">
+                                                                        <i class="ri-delete-bin-line"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        `;
+
+                                                            $('#itemsTableBody').append(html);
+
+                                                            // Add event listeners for this row
+                                                            $(`[data-row="${itemRowCounter}"] .budget-select`).on('change', function() {
+                                                                updateBudgetValue($(this));
+                                                            });
+
+                                                            $(`[data-row="${itemRowCounter}"] .qty-input, [data-row="${itemRowCounter}"] .price-input`).on('input', function() {
+                                                                calculateRowTotal($(this).data('row'));
+                                                            });
+
+                                                            // Initialize price input with thousand separator
+                                                            $(`[data-row="${itemRowCounter}"] .price-input`).on('input', function() {
+                                                                formatPriceInput($(this));
+                                                            });
+                                                        });
+
+                                                        // Calculate initial estimated value
+                                                        calculateEstimatedValue();
+                                                    }
                                                 }
+                                            },
+                                            error: function(xhr) {
+                                                console.error('Error loading budget items:', xhr);
                                             }
                                         });
                                     }
                                 }
+                            },
+                            error: function(xhr) {
+                                console.error('Error loading programs:', xhr);
                             }
                         });
                     }
 
+                    // Show modal
                     $('#submissionModal').modal('show');
                 }
             },
             error: function(xhr) {
-                showAlert('Error loading submission', 'danger');
+                let message = 'Error loading submission for edit';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: message,
+                    confirmButtonColor: '#dc3545'
+                });
             }
         });
     }

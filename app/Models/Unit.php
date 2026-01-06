@@ -8,4 +8,9 @@ class Unit extends Model
 {
     protected $table = 'unit';
     protected $guarded = [];
+    protected $fillable = [
+        'unit',
+        'code',
+        'status'
+    ];
 }

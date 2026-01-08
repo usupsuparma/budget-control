@@ -19,12 +19,12 @@
                 </div>
             </div>
             <div class="flex-shrink-0 d-flex align-items-center gap-1">
-                <button type="button" class="btn header-btn d-none d-md-block" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo">
+                {{-- <button type="button" class="btn header-btn d-none d-md-block" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo">
                     <i class="bi bi-search"></i>
-                </button>
-                <button class="btn header-btn d-none d-md-block" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+                </button> --}}
+                {{-- <button class="btn header-btn d-none d-md-block" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
                     <i class="bi bi-gear"></i>
-                </button>
+                </button> --}}
                 <div class="dark-mode-btn" id="toggleMode">
                     <button class="btn header-btn active" id="lightModeBtn">
                         <i class="bi bi-brightness-high"></i>
@@ -36,34 +36,34 @@
                 <div class="dropdown pe-dropdown-mega d-none d-md-block">
                     <button class="header-profile-btn btn gap-1 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="header-btn btn position-relative">
-                            <img src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="Avatar Image" class="img-fluid rounded-circle">
+                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image" class="img-fluid rounded-circle">
                             <span class="position-absolute translate-middle badge border border-light rounded-circle bg-success"><span class="visually-hidden">unread messages</span></span>
                         </span>
                         <div class="d-none d-lg-block pe-2">
-                            <span class="d-block mb-0 fs-13 fw-semibold">Admin Budget Control</span>
+                            <span class="d-block mb-0 fs-13 fw-semibold">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</span>
                             <span class="d-block mb-0 fs-12 text-muted">Admin</span>
                         </div>
                     </button>
                     <div class="dropdown-menu dropdown-mega-sm header-dropdown-menu p-3">
                         <div class="border-bottom pb-2 mb-2 d-flex align-items-center gap-2">
-                            <img src="{{ asset('assets/images/avatar/avatar-10.jpg') }}" alt="Avatar Image" class="avatar-md">
+                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image" class="avatar-md">
                             <div>
                                 <a href="javascript:void(0)">
-                                    <h6 class="mb-0 lh-base">Admin Budget Control</h6>
+                                    <h6 class="mb-0 lh-base">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</h6>
                                 </a>
-                                <p class="mb-0 fs-13 text-muted">admin@budgetcontrol.com</p>
+                                <p class="mb-0 fs-13 text-muted">{{ Auth::user()->email }}</p>
                             </div>
                         </div>
                         <ul class="list-unstyled mb-1 border-bottom pb-1">
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-person me-1"></i> View Profile</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-gear me-1"></i> Settings</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-award me-1"></i> Subscription</a></li>
+                            {{-- <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-gear me-1"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-award me-1"></i> Subscription</a></li> --}}
                         </ul>
-                        <ul class="list-unstyled mb-1 border-bottom pb-1">
+                        {{-- <ul class="list-unstyled mb-1 border-bottom pb-1">
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-clock me-1"></i> ChangLog</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-people me-1"></i> Team</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-headset me-1"></i> Support</a></li>
-                        </ul>
+                        </ul> --}}
                         <ul class="list-unstyled mb-0">
                             <li>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">

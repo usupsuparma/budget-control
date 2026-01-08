@@ -29,4 +29,9 @@ class Employee extends Authenticatable
     {
         return $this->belongsTo(JobPosition::class, 'job_position_id', 'id');
     }
+
+    public function employment()
+    {
+        return $this->hasOne(Employment::class, 'employee_id', 'employee_id');
+    }
 }

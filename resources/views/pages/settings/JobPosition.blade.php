@@ -53,7 +53,7 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label">Organization</label>
+                            <label class="form-label">Level</label>
                             <select name="job_level_id" class="form-select" required>
                                 <option value="" disabled selected>-- Select Job Level --</option>
                                 @foreach ($jobLevel as $level)
@@ -96,7 +96,7 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label">Organization</label>
+                            <label class="form-label">Level</label>
                             <select name="job_level_id" id="edit_job_level_id" class="form-select" required>
                                 @foreach ($jobLevel as $level)
                                 <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
@@ -198,7 +198,7 @@
 
                 let html = `
                 <div class="col-12 mt-2">
-                    <label class="form-label">Parent Structure</label>
+                    <label class="form-label">Organization</label>
                     <select name="structure_id" class="form-select" required>
                         <option value="" disabled selected>-- Select --</option>
             `;

@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Employee;
+use App\Models\Employment;
+use App\Models\JobPosition;
 use App\Models\Roles;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Yajra\DataTables\DataTables;
 
 class EmployeeController extends Controller
@@ -74,33 +78,56 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
-        //  dd($request->all());
-        // $request->validate([
-        //     'first_name' => 'required|string|max:100',
-        //     'last_name' => 'required|string|max:100',
-        //     'employee_id' => 'required|string|max:50|unique:employee,employee_id',
-        //     'email' => 'required|email|unique:employee,email',
-        //     'password' => 'required|min:6',
-        //     'job_position_id' => 'required|exists:job_position,id',
-        //     'role_id' => 'required|exists:roles,id',
-        // ]);
+        DB::transaction(function () use ($request) {
 
-        Employee::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'employee_id' => $request->employee_id,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'job_position_id' => $request->job_position_id,
-            'role_id' => $request->role_id,
-            'status' => 'Active',
-        ]);
+            // Ambil data relasi
+            $jobPosition = JobPosition::with('jobLevel', 'organization')
+                ->findOrFail($request->job_position_id);
+
+            $role = Role::findOrFail($request->role_id);
+
+            // 1️⃣ SIMPAN EMPLOYEE
+            $employee = Employee::create([
+                'employee_id'      => $request->employee_id,
+                'first_name'       => $request->first_name,
+                'last_name'        => $request->last_name,
+                'email'            => $request->email,
+                'password'         => bcrypt($request->password),
+                'job_position_id'  => $jobPosition->id,
+                'role_id'          => $role->id,
+                'status'           => 'Active',
+            ]);
+
+            // 2️⃣ SIMPAN EMPLOYMENT
+            Employment::create([
+                'employee_id'        => $employee->id,
+
+                'organization_id'    => $jobPosition->organization->id ?? null,
+                'organization_name'  => $jobPosition->organization->organization_name ?? null,
+
+                'job_level_id'       => $jobPosition->jobLevel->id ?? null,
+                'job_level_name'     => $jobPosition->jobLevel->job_level_name ?? null,
+
+                'job_position_id'    => $jobPosition->id,
+                'job_position_name'  => $jobPosition->job_position_name,
+
+                'uppline_id'         => $request->uppline_id,
+                'uppline_id_name'    => $request->uppline_name,
+
+                'employment_status'  => 'Aktif',
+                'role_id'            => $role->id,
+                'role_name'          => $role->name,
+
+                'status'             => 'Active',
+            ]);
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Employee created successfully'
+            'message' => 'Employee & Employment created successfully'
         ]);
     }
+
 
     public function edit($id)
     {

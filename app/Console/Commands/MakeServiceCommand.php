@@ -98,27 +98,51 @@ class MakeServiceCommand extends GeneratorCommand
     protected function updateProviderClass($providerPath, $serviceName)
     {
         $content = $this->files->get($providerPath);
-        $binding = "\$this->app->bind(\\App\\Services\\{$serviceName}\\{$serviceName}::class, \\App\\Services\\{$serviceName}\\{$serviceName}Impl::class);";
 
-        // Check if binding already exists
-        if (Str::contains($content, $binding)) {
+        // Detect line ending used in the file
+        $eol = Str::contains($content, "\r\n") ? "\r\n" : "\n";
+
+        $interfaceClass = "{$serviceName}";
+        $implClass = "{$serviceName}Impl";
+        $interfaceNamespace = "App\\Services\\{$serviceName}\\{$interfaceClass}";
+        $implNamespace = "App\\Services\\{$serviceName}\\{$implClass}";
+
+        $useInterface = "use {$interfaceNamespace};";
+        $useImpl = "use {$implNamespace};";
+        $binding = "\$this->app->bind({$interfaceClass}::class, {$implClass}::class);";
+
+        // Check if binding already exists (check both short and FQCN format)
+        if (Str::contains($content, $binding) || Str::contains($content, "{$serviceName}::class, \\App\\Services")) {
             return;
         }
 
-        // Find the register method and append the binding
-        $search = 'public function register()' . PHP_EOL . '    {' . PHP_EOL;
-        $replace = 'public function register()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $binding . PHP_EOL;
+        // Add use statements after the last existing use statement
+        if (!Str::contains($content, $useInterface)) {
+            // Find all use statements and get the last one
+            // Pattern handles both \r\n and \n line endings
+            $pattern = '/^use\s+[^;]+;\s*$/m';
+            if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+                $lastMatch = end($matches[0]);
+                $lastUseStatement = $lastMatch[0];
+                $lastUsePosition = $lastMatch[1];
+                $lastUseEnd = $lastUsePosition + strlen($lastUseStatement);
 
-        if (Str::contains($content, $search)) {
-            $newContent = str_replace($search, $replace, $content);
-            $this->files->put($providerPath, $newContent);
-        } else {
-            // If register method not found, append binding at the end of register method
-            $search = 'public function register()' . PHP_EOL . '    {';
-            $replace = 'public function register()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $binding . PHP_EOL;
-            $newContent = str_replace($search, $replace, $content);
-            $this->files->put($providerPath, $newContent);
+                // Insert new use statements after the last one
+                $newUseStatements = $eol . $useInterface . $eol . $useImpl;
+                $content = substr($content, 0, $lastUseEnd) . $newUseStatements . substr($content, $lastUseEnd);
+            }
         }
+
+        // Find the register method and append the binding
+        // Use regex to handle various formats
+        $pattern = '/(public\s+function\s+register\s*\(\s*\)[\s\r\n]*\{[\s\r\n]*)/';
+        if (preg_match($pattern, $content, $matches)) {
+            $original = $matches[1];
+            $replacement = $original . '        ' . $binding . $eol;
+            $content = str_replace($original, $replacement, $content);
+        }
+
+        $this->files->put($providerPath, $content);
     }
 
     protected function getStubPath($type)
@@ -141,26 +165,48 @@ class MakeServiceCommand extends GeneratorCommand
 
     protected function registerServiceProvider()
     {
-        $configPath = config_path('app.php');
-        $configContent = $this->files->get($configPath);
+        $providersPath = base_path('bootstrap/providers.php');
 
-        $providerClass = "App\\Providers\\CustomServiceProvider::class,";
-
-        // Check if provider is already registered
-        if (Str::contains($configContent, $providerClass)) {
+        // Check if bootstrap/providers.php exists (Laravel 11+)
+        if (!$this->files->exists($providersPath)) {
+            $this->warn("Could not find bootstrap/providers.php. Please register App\\Providers\\CustomServiceProvider::class manually.");
             return;
         }
 
-        // Find the providers array in config/app.php
-        $search = "'providers' => [";
-        $replace = "'providers' => [\n        {$providerClass}";
+        $content = $this->files->get($providersPath);
+        $providerClass = "App\\Providers\\CustomServiceProvider::class";
 
-        if (Str::contains($configContent, $search)) {
-            $newContent = str_replace($search, $replace, $configContent);
-            $this->files->put($configPath, $newContent);
-            $this->info("CustomServiceProvider registered in config/app.php.");
+        // Check if provider is already registered
+        if (Str::contains($content, $providerClass)) {
+            return;
+        }
+
+        // Find the return array and add provider before the closing bracket
+        // Pattern: matches the return array structure
+        $pattern = '/return\s*\[\s*([\s\S]*?)\s*\];/';
+
+        if (preg_match($pattern, $content, $matches)) {
+            $existingProviders = trim($matches[1]);
+
+            // Build new providers list
+            if (!empty($existingProviders)) {
+                // Ensure existing providers end with comma
+                $existingProviders = rtrim($existingProviders, ',') . ',';
+                $newProviders = $existingProviders . "\n    " . $providerClass . ",";
+            } else {
+                $newProviders = $providerClass . ",";
+            }
+
+            $newContent = preg_replace(
+                $pattern,
+                "return [\n    " . $newProviders . "\n];",
+                $content
+            );
+
+            $this->files->put($providersPath, $newContent);
+            $this->info("CustomServiceProvider registered in bootstrap/providers.php.");
         } else {
-            $this->warn("Could not find 'providers' array in config/app.php. Please register {$providerClass} manually.");
+            $this->warn("Could not parse bootstrap/providers.php. Please register App\\Providers\\CustomServiceProvider::class manually.");
         }
     }
 }

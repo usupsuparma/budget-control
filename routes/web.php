@@ -1117,7 +1117,51 @@ Route::middleware('auth')->group(function () {
             Route::delete('/authorizer/delete/{id}', [ApprovalController::class, 'deleteAuthorizer'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.authorizer.delete');
+
+            // ========== NEW: Modules Management API ==========
+            Route::get('/modules/data', [ApprovalController::class, 'getModules'])
+                ->name('approval.modules.data');
+            Route::post('/modules/store', [ApprovalController::class, 'storeModule'])
+                ->middleware('permission:approval.create')
+                ->name('approval.modules.store');
+            Route::put('/modules/update/{id}', [ApprovalController::class, 'updateModule'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.modules.update');
+            Route::delete('/modules/delete/{id}', [ApprovalController::class, 'deleteModule'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.modules.delete');
+
+            // ========== NEW: Templates Management API ==========
+            Route::get('/templates/data', [ApprovalController::class, 'getTemplates'])
+                ->name('approval.templates.data');
+            Route::post('/templates/store', [ApprovalController::class, 'storeTemplate'])
+                ->middleware('permission:approval.create')
+                ->name('approval.templates.store');
+            Route::put('/templates/update/{id}', [ApprovalController::class, 'updateTemplate'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.templates.update');
+            Route::delete('/templates/delete/{id}', [ApprovalController::class, 'deleteTemplate'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.templates.delete');
+
+            // ========== NEW: Flow Details Management API ==========
+            Route::get('/flow-details/data/{templateId}', [ApprovalController::class, 'getFlowDetails'])
+                ->name('approval.flowdetails.data');
+            Route::post('/flow-details/store', [ApprovalController::class, 'storeFlowDetail'])
+                ->middleware('permission:approval.create')
+                ->name('approval.flowdetails.store');
+            Route::put('/flow-details/update/{id}', [ApprovalController::class, 'updateFlowDetail'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.flowdetails.update');
+            Route::delete('/flow-details/delete/{id}', [ApprovalController::class, 'deleteFlowDetail'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.flowdetails.delete');
+
+            // ========== NEW: Helper - Employments ==========
+            Route::get('/employments/data', [ApprovalController::class, 'getEmployments'])
+                ->name('approval.employments.data');
         });
+
 
     /* ========================
         SETTINGS

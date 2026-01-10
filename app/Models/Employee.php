@@ -8,11 +8,35 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Employee extends Authenticatable
 {
-    use Notifiable, HasRoles;
+    use HasRoles, Notifiable;
 
     protected $table = 'employee';
+
     protected $primaryKey = 'id';
+
     protected $guarded = [];
+
+    protected $fillable = [
+        'employee_id',
+        'email',
+        'password',
+        'remember_token',
+        'first_name',
+        'last_name',
+        'role_id',
+        'job_position_id',
+        'status',
+    ];
+
+    protected $appends = [
+        'name',
+    ];
+
+    // membuat agar name tampil hasil dari first_name dan last_name
+    public function getNameAttribute()
+    {
+        return $this->first_name.' '.$this->last_name;
+    }
 
     // tambahkan jika kamu punya kolom password
     protected $hidden = [

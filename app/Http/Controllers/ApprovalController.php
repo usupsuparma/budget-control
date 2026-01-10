@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApprovalFlowDetail;
+use App\Models\ApprovalFlowTemplate;
+use App\Models\ApprovalModule;
 use App\Models\Employee;
+use App\Models\Employment;
 use App\Models\Transaction;
 use App\Models\TransactionApproval;
 use App\Models\TransactionApprovalThreshold;
 use App\Models\TransactionAuthorizer;
+
 use App\Services\ApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -737,4 +742,519 @@ class ApprovalController extends Controller
             ], 500);
         }
     }
+
+    // ========== NEW: Approval Modules Management ==========
+
+    /**
+     * Get all approval modules
+     */
+    public function getModules()
+    {
+        try {
+            $modules = ApprovalModule::orderBy('module_name')->get();
+            return response()->json([
+                'success' => true,
+                'data' => $modules,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get modules failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get modules',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new approval module
+     */
+    public function storeModule(Request $request)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'module_name' => 'required|string|max:50|unique:approval_modules,module_name',
+            'table_name' => 'required|string|max:50',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $module = ApprovalModule::create([
+                'module_name' => $request->input('module_name'),
+                'table_name' => $request->input('table_name'),
+                'is_active' => $request->input('is_active', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Module created successfully',
+                'data' => $module,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Store module failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create module',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update approval module
+     */
+    public function updateModule(Request $request, $id)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'module_name' => 'required|string|max:50|unique:approval_modules,module_name,' . $id,
+            'table_name' => 'required|string|max:50',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $module = ApprovalModule::findOrFail($id);
+            $module->update([
+                'module_name' => $request->input('module_name'),
+                'table_name' => $request->input('table_name'),
+                'is_active' => $request->input('is_active', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Module updated successfully',
+                'data' => $module,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update module failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update module',
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete approval module
+     */
+    public function deleteModule($id)
+    {
+        try {
+            $module = ApprovalModule::findOrFail($id);
+            
+            // Cek apakah modul memiliki template yang terkait
+            if ($module->templates()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete module. It has associated templates.',
+                ], 400);
+            }
+            
+            $module->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Module deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete module failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete module',
+            ], 500);
+        }
+    }
+
+    // ========== NEW: Flow Templates Management ==========
+
+    /**
+     * Get all flow templates with module relation
+     */
+    public function getTemplates()
+    {
+        try {
+            $templates = ApprovalFlowTemplate::with('module')
+                ->orderBy('priority')
+                ->get();
+            return response()->json([
+                'success' => true,
+                'data' => $templates,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get templates failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get templates',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new flow template
+     */
+    public function storeTemplate(Request $request)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'use_uppline_chain' => filter_var($request->input('use_uppline_chain', false), FILTER_VALIDATE_BOOLEAN),
+            'use_threshold' => filter_var($request->input('use_threshold', false), FILTER_VALIDATE_BOOLEAN),
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'module_id' => 'required|exists:approval_modules,id',
+            'template_name' => 'required|string|max:100',
+            'use_uppline_chain' => 'boolean',
+            'use_threshold' => 'boolean',
+            'condition_field' => 'nullable|string|max:50',
+            'priority' => 'integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $template = ApprovalFlowTemplate::create([
+                'module_id' => $request->input('module_id'),
+                'template_name' => $request->input('template_name'),
+                'use_uppline_chain' => $request->input('use_uppline_chain', false),
+                'use_threshold' => $request->input('use_threshold', false),
+                'condition_field' => $request->input('condition_field'),
+                'priority' => $request->input('priority', 1),
+                'is_active' => $request->input('is_active', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template created successfully',
+                'data' => $template->load('module'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Store template failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create template',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update flow template
+     */
+    public function updateTemplate(Request $request, $id)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'use_uppline_chain' => filter_var($request->input('use_uppline_chain', false), FILTER_VALIDATE_BOOLEAN),
+            'use_threshold' => filter_var($request->input('use_threshold', false), FILTER_VALIDATE_BOOLEAN),
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'module_id' => 'required|exists:approval_modules,id',
+            'template_name' => 'required|string|max:100',
+            'use_uppline_chain' => 'boolean',
+            'use_threshold' => 'boolean',
+            'condition_field' => 'nullable|string|max:50',
+            'priority' => 'integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $template = ApprovalFlowTemplate::findOrFail($id);
+            $template->update([
+                'module_id' => $request->input('module_id'),
+                'template_name' => $request->input('template_name'),
+                'use_uppline_chain' => $request->input('use_uppline_chain', false),
+                'use_threshold' => $request->input('use_threshold', false),
+                'condition_field' => $request->input('condition_field'),
+                'priority' => $request->input('priority', 1),
+                'is_active' => $request->input('is_active', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template updated successfully',
+                'data' => $template->load('module'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update template failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update template',
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete flow template
+     */
+    public function deleteTemplate($id)
+    {
+        try {
+            $template = ApprovalFlowTemplate::findOrFail($id);
+            
+            // Cek apakah template memiliki details yang terkait
+            if ($template->details()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete template. It has associated flow details.',
+                ], 400);
+            }
+            
+            $template->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete template failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete template',
+            ], 500);
+        }
+    }
+
+    // ========== NEW: Flow Details Management ==========
+
+    /**
+     * Get flow details for a specific template
+     */
+    public function getFlowDetails($templateId)
+    {
+        try {
+            $details = ApprovalFlowDetail::with(['template', 'employment.employee'])
+                ->where('template_id', $templateId)
+                ->orderBy('level_sequence')
+                ->get();
+            return response()->json([
+                'success' => true,
+                'data' => $details,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get flow details failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get flow details',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new flow detail
+     */
+    public function storeFlowDetail(Request $request)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'template_id' => 'required|exists:approval_flow_templates,id',
+            'level_sequence' => 'required|integer|min:1',
+            'employment_id' => 'required|exists:employment,id',
+            'threshold_amount' => 'nullable|numeric|min:0',
+            'is_required' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $detail = ApprovalFlowDetail::create([
+                'template_id' => $request->input('template_id'),
+                'level_sequence' => $request->input('level_sequence'),
+                'employment_id' => $request->input('employment_id'),
+                'threshold_amount' => $request->input('threshold_amount'),
+                'is_required' => $request->input('is_required', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Flow detail created successfully',
+                'data' => $detail->load(['template', 'employment.employee']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Store flow detail failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create flow detail',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update flow detail
+     */
+    public function updateFlowDetail(Request $request, $id)
+    {
+        // Convert string booleans to actual booleans
+        $request->merge([
+            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN)
+        ]);
+        
+        $validator = Validator::make($request->all(), [
+            'template_id' => 'required|exists:approval_flow_templates,id',
+            'level_sequence' => 'required|integer|min:1',
+            'employment_id' => 'required|exists:employment,id',
+            'threshold_amount' => 'nullable|numeric|min:0',
+            'is_required' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $detail = ApprovalFlowDetail::findOrFail($id);
+            $detail->update([
+                'template_id' => $request->input('template_id'),
+                'level_sequence' => $request->input('level_sequence'),
+                'employment_id' => $request->input('employment_id'),
+                'threshold_amount' => $request->input('threshold_amount'),
+                'is_required' => $request->input('is_required', true),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Flow detail updated successfully',
+                'data' => $detail->load(['template', 'employment.employee']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update flow detail failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update flow detail',
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete flow detail
+     */
+    public function deleteFlowDetail($id)
+    {
+        try {
+            $detail = ApprovalFlowDetail::findOrFail($id);
+            $detail->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Flow detail deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete flow detail failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete flow detail',
+            ], 500);
+        }
+    }
+
+    // ========== NEW: Helper - Get Employments ==========
+
+    /**
+     * Get all employments for dropdown
+     */
+    public function getEmployments()
+    {
+        try {
+            // Debug: Log the total count first
+            $totalEmployments = Employment::count();
+            $employmentsWithEmployee = Employment::whereHas('employee')->count();
+            Log::info("Employment Stats - Total: {$totalEmployments}, With Employee: {$employmentsWithEmployee}");
+            
+            $employments = Employment::with('employee')
+                ->whereHas('employee')
+                ->get()
+                ->map(function ($employment) {
+                    $employee = $employment->employee;
+                    $employeeName = 'N/A';
+                    
+                    if ($employee) {
+                        // Try using name accessor first, fallback to manual concat
+                        $employeeName = $employee->name ?? 
+                            (($employee->first_name ?? '') . ' ' . ($employee->last_name ?? ''));
+                        $employeeName = trim($employeeName);
+                        
+                        // Add job position if available
+                        if (!empty($employment->job_position_name)) {
+                            $employeeName .= ' (' . $employment->job_position_name . ')';
+                        }
+                    }
+                    
+                    return [
+                        'id' => $employment->id,
+                        'employee_name' => $employeeName ?: 'Unknown Employee',
+                        'employee_id' => $employment->employee_id,
+                        'job_position' => $employment->job_position_name ?? null,
+                        'organization' => $employment->organization_name ?? null,
+                    ];
+                })
+                ->sortBy('employee_name')
+                ->values();
+            
+            Log::info("Returning " . count($employments) . " employments");
+                
+            return response()->json([
+                'success' => true,
+                'data' => $employments,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get employments failed: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get employments: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
+

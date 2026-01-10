@@ -14,7 +14,7 @@
 
 ### 1.1 Tujuan Sistem
 
-Sistem approval dinamis untuk mengelola proses persetujuan pada modul bisnis: **Transactions**, **Bookings**, **Invoices**.
+Sistem approval dinamis untuk mengelola proses persetujuan pada modul bisnis: **Transactions**, **Budget**, **LPJ Transactions**.
 
 ### 1.2 Fitur Utama
 
@@ -30,15 +30,15 @@ Sistem approval dinamis untuk mengelola proses persetujuan pada modul bisnis: **
 ### 1.3 Contoh Flow
 
 ```
-User A submit Invoice 90 juta:
+Employee A submit Invoice 90 juta:
 
 PHASE 1: UPPLINE CHAIN
-├─ User B (atasan langsung) → approve
-└─ User C (atasan User B)   → approve
+├─ Employee B (atasan langsung) → approve
+└─ Employee C (atasan Employee B)   → approve
 
 PHASE 2: MASTER FLOW (threshold-based)
-├─ User D (threshold 10jt)  → approve (90jt > 10jt)
-└─ User E (threshold 100jt) → approve (90jt ≤ 100jt) ✓ DONE
+├─ Employee D (threshold 10jt)  → approve (90jt > 10jt)
+└─ Employee E (threshold 100jt) → approve (90jt ≤ 100jt) ✓ DONE
 
 Total: 4 approvers
 ```
@@ -101,10 +101,10 @@ Semua level wajib approve, tanpa threshold filtering.
 │      Contoh: "Invoice pakai uppline + threshold"                            │
 │                                                                              │
 │   3. approval_flow_details    → Siapa saja approver master flow             │
-│      Contoh: User D (10jt), User E (100jt), User F (1M)                     │
+│      Contoh: Employee D (10jt), Employee E (100jt), Employee F (1M)                     │
 │                                                                              │
 │   4. users.uppline_id         → Struktur atasan setiap user                 │
-│      Contoh: User A → atasan User B → atasan User C                         │
+│      Contoh: Employee A → atasan Employee B → atasan Employee C                         │
 │                                                                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
@@ -137,16 +137,16 @@ Semua level wajib approve, tanpa threshold filtering.
 --                          MASTER TABLES (Setup 1x)
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Tabel user dengan struktur atasan
-CREATE TABLE users (
+-- Tabel employee dengan struktur atasan
+CREATE TABLE employee (
     id              INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     name            VARCHAR(100) NOT NULL,
     email           VARCHAR(100) NOT NULL UNIQUE,
-    uppline_id      INT UNSIGNED NULL,      -- FK ke users.id (atasan langsung)
+    uppline_id      INT UNSIGNED NULL,      -- FK ke employee.id (atasan langsung)
     is_active       TINYINT(1) DEFAULT 1,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (uppline_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (uppline_id) REFERENCES employee(id) ON DELETE SET NULL
 );
 
 -- Modul yang pakai approval
@@ -178,13 +178,13 @@ CREATE TABLE approval_flow_details (
     id                  INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     template_id         INT UNSIGNED NOT NULL,      -- FK ke approval_flow_templates
     level_sequence      INT NOT NULL,               -- urutan: 1, 2, 3...
-    user_id             INT UNSIGNED NOT NULL,      -- FK ke users (approver)
+    employee_id             INT UNSIGNED NOT NULL,      -- FK ke employee (approver)
     threshold_amount    DECIMAL(15,2) NULL,         -- batas nominal (jika threshold)
     is_required         TINYINT(1) DEFAULT 1,
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (template_id) REFERENCES approval_flow_templates(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (employee_id) REFERENCES employee(id)
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -210,7 +210,7 @@ CREATE TABLE approval_requests (
 
     FOREIGN KEY (module_id) REFERENCES approval_modules(id),
     FOREIGN KEY (template_id) REFERENCES approval_flow_templates(id),
-    FOREIGN KEY (requester_id) REFERENCES users(id)
+    FOREIGN KEY (requester_id) REFERENCES employee(id)
 );
 
 -- Detail approver per request (snapshot)
@@ -219,14 +219,14 @@ CREATE TABLE approval_request_details (
     request_id          INT UNSIGNED NOT NULL,      -- FK ke approval_requests
     phase               ENUM('uppline','master_flow') NOT NULL,
     level_sequence      INT NOT NULL,               -- urutan dalam phase
-    user_id             INT UNSIGNED NOT NULL,      -- FK ke users (approver)
+    employee_id             INT UNSIGNED NOT NULL,      -- FK ke users (approver)
     user_name           VARCHAR(100) NOT NULL,      -- snapshot nama
     status              ENUM('pending','approved','rejected') DEFAULT 'pending',
     approved_at         TIMESTAMP NULL,
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (request_id) REFERENCES approval_requests(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (employee_id) REFERENCES employee(id)
 );
 ```
 
@@ -234,7 +234,7 @@ CREATE TABLE approval_request_details (
 
 | Tabel                      | Kapan Dipakai | Isi                                                  |
 | -------------------------- | ------------- | ---------------------------------------------------- |
-| `users`                    | Setup awal    | Data user + siapa atasannya (`uppline_id`)           |
+| `employee`                 | Setup awal    | Data user + siapa atasannya (`uppline_id`)           |
 | `approval_modules`         | Setup awal    | Modul apa saja yang pakai approval                   |
 | `approval_flow_templates`  | Setup awal    | Aturan: pakai uppline? pakai threshold?              |
 | `approval_flow_details`    | Setup awal    | Daftar approver master flow + nominal threshold      |
@@ -301,13 +301,13 @@ current_phase='uppline' → current_phase='master_flow' → approved
 ### 5.1 Setup Struktur Organisasi (Uppline)
 
 ```sql
--- User A (staff) → atasan: User B
+-- Employee A (staff) → atasan: Employee B
 UPDATE users SET uppline_id = 102 WHERE id = 101;
 
--- User B (supervisor) → atasan: User C
+-- Employee B (supervisor) → atasan: Employee C
 UPDATE users SET uppline_id = 103 WHERE id = 102;
 
--- User C (manager) → tidak ada atasan (top)
+-- Employee C (manager) → tidak ada atasan (top)
 UPDATE users SET uppline_id = NULL WHERE id = 103;
 ```
 
@@ -322,16 +322,16 @@ VALUES
 
 -- Master Flow dengan threshold
 INSERT INTO approval_flow_details
-(template_id, level_sequence, user_id, threshold_amount, is_required) VALUES
-(1, 1, 104, 10000000, TRUE),   -- User D: sampai 10 juta
-(1, 2, 105, 100000000, TRUE),  -- User E: sampai 100 juta
-(1, 3, 106, 1000000000, TRUE); -- User F: sampai 1 miliar
+(template_id, level_sequence, employee_id, threshold_amount, is_required) VALUES
+(1, 1, 104, 10000000, TRUE),   -- Employee D: sampai 10 juta
+(1, 2, 105, 100000000, TRUE),  -- Employee E: sampai 100 juta
+(1, 3, 106, 1000000000, TRUE); -- Employee F: sampai 1 miliar
 ```
 
 **Hasil untuk pengajuan 90 juta:**
 
-- Uppline: User B → User C
-- Master: User D → User E (User F di-skip karena 90jt < 1M)
+-   Uppline: Employee B → Employee C
+-   Master: Employee D → Employee E (Employee F di-skip karena 90jt < 1M)
 
 ### 5.3 Konfigurasi Template tanpa Threshold (All-Levels)
 
@@ -344,16 +344,16 @@ VALUES
 
 -- Master Flow (semua wajib)
 INSERT INTO approval_flow_details
-(template_id, level_sequence, user_id, is_required) VALUES
-(2, 1, 107, TRUE),  -- User G
-(2, 2, 108, TRUE),  -- User H
-(2, 3, 109, TRUE);  -- User I
+(template_id, level_sequence, employee_id, is_required) VALUES
+(2, 1, 107, TRUE),  -- Employee G
+(2, 2, 108, TRUE),  -- Employee H
+(2, 3, 109, TRUE);  -- Employee I
 ```
 
 **Hasil:**
 
-- Uppline: User B → User C
-- Master: User G → User H → User I (semua wajib)
+-   Uppline: Employee B → Employee C
+-   Master: Employee G → Employee H → Employee I (semua wajib)
 
 ### 5.4 Konfigurasi Tanpa Uppline Chain
 
@@ -380,8 +380,8 @@ VALUES
 
 Sistem approval ini mendukung:
 
-- ✅ **Uppline Chain**: Approval dari atasan langsung secara otomatis
-- ✅ **Threshold-Based**: Filter approver berdasarkan nominal
-- ✅ **All-Levels**: Semua level wajib approve
-- ✅ **Configurable**: Kombinasi fleksibel per template
-- ✅ **Two-Phase**: Uppline dulu, baru Master Flow
+-   ✅ **Uppline Chain**: Approval dari atasan langsung secara otomatis
+-   ✅ **Threshold-Based**: Filter approver berdasarkan nominal
+-   ✅ **All-Levels**: Semua level wajib approve
+-   ✅ **Configurable**: Kombinasi fleksibel per template
+-   ✅ **Two-Phase**: Uppline dulu, baru Master Flow

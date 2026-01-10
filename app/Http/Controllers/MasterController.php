@@ -19,7 +19,7 @@ class MasterController extends Controller
     {
         $title = 'Master Data';
 
-        $employee = Employee::where('status', 'Active')->get();
+        $employees = Employee::where('status', 'Active')->get();
         $roles = Role::get();
         $jobPositions = JobPosition::where('status', 'Active')->get();
         $jobLevel = JobLevel::where('status', 'Active')->get();
@@ -31,7 +31,7 @@ class MasterController extends Controller
         // dd($employee);
 
 
-        return view('pages.settings.Settings', compact('title', 'employee', 'roles', 'jobPositions', 'jobLevel', 'director', 'division', 'department', 'section'));
+        return view('pages.settings.Settings', compact('title', 'employees', 'roles', 'jobPositions', 'jobLevel', 'director', 'division', 'department', 'section'));
     }
 
     public function index2()

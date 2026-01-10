@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use PowerComponents\LivewirePowerGrid\Concerns\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
 
 class Employee extends Authenticatable
 {
-    use Notifiable, HasRoles;
+    use Notifiable, HasRoles, SoftDeletes;
 
     protected $table = 'employee';
     protected $primaryKey = 'id';
@@ -19,6 +20,8 @@ class Employee extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected $dates = ['deleted_at'];
 
     public function role()
     {

@@ -77,6 +77,7 @@
                             </select>
                         </div>
 
+
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" required>
@@ -86,7 +87,19 @@
                             <label class="form-label">Password</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Uppline</label>
+                            <select class="form-select" name="uppline_id">
+                                <option value="" selected disabled>-- Select Uppline --</option>
+                                @foreach ($employees as $emp)
+                                <option value="{{ $emp->id }}">
+                                    {{ $emp->first_name }} {{ $emp->last_name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
 
+                        <input type="hidden" name="uppline_name" id="uppline_name">
                         <div class="col-md-6">
                             <label class="form-label">Role</label>
                             <select class="form-select" id="role_id" name="role_id" required>
@@ -96,7 +109,8 @@
                                 @endforeach
                             </select>
                         </div>
-
+                        <div class="col-md-6">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
@@ -488,4 +502,11 @@
         });
     });
 </script>
+<script>
+    $('select[name="uppline_id"]').on('change', function() {
+        let name = $(this).find('option:selected').text();
+        $('#uppline_name').val(name);
+    });
+</script>
+
 @endpush

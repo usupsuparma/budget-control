@@ -81,12 +81,13 @@ class EmployeeController extends Controller
         DB::transaction(function () use ($request) {
 
             // Ambil data relasi
-            $jobPosition = JobPosition::with('jobLevel', 'organization')
-                ->findOrFail($request->job_position_id);
+            $jobPosition = JobPosition::findOrFail($request->job_position_id);
 
             $role = Role::findOrFail($request->role_id);
 
             // 1️⃣ SIMPAN EMPLOYEE
+
+            //dd($request->all());
             $employee = Employee::create([
                 'employee_id'      => $request->employee_id,
                 'first_name'       => $request->first_name,
@@ -100,19 +101,19 @@ class EmployeeController extends Controller
 
             // 2️⃣ SIMPAN EMPLOYMENT
             Employment::create([
-                'employee_id'        => $employee->id,
+                'employee_id'        => $request->employee_id,
 
                 'organization_id'    => $jobPosition->organization->id ?? null,
                 'organization_name'  => $jobPosition->organization->organization_name ?? null,
 
-                'job_level_id'       => $jobPosition->jobLevel->id ?? null,
-                'job_level_name'     => $jobPosition->jobLevel->job_level_name ?? null,
+                'job_level_id'       => $jobPosition->job_level_id ?? null,
+                'job_level_name'     => $jobPosition->job_level_name ?? null,
 
                 'job_position_id'    => $jobPosition->id,
                 'job_position_name'  => $jobPosition->job_position_name,
 
-                'uppline_id'         => $request->uppline_id,
-                'uppline_id_name'    => $request->uppline_name,
+                'uppline_id'         => $request->uppline_id ?? null,
+                'uppline_id_name'    => $request->uppline_name ?? null,
 
                 'employment_status'  => 'Aktif',
                 'role_id'            => $role->id,
@@ -172,10 +173,20 @@ class EmployeeController extends Controller
 
     public function destroy($id)
     {
-        Employee::findOrFail($id)->delete();
+        DB::transaction(function () use ($id) {
+
+            $emp = Employee::findOrFail($id);
+
+            // Soft delete employment
+            Employment::where('employee_id', $emp->id)->delete();
+
+            // Soft delete employee
+            $emp->delete();
+        });
 
         return response()->json(['success' => true]);
     }
+
 
 
     public function show($id)

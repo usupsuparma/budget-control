@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-layout="vertical">
 
 <meta charset="utf-8" />
 <title>@yield('title', ' | FabKin Admin & Dashboards Template')</title>
@@ -18,7 +18,6 @@
 
     @include('include.header')
     @include('include.sidebar')
-    @include('include.horizontal')
 
     <main class="app-wrapper">
         <div class="container-fluid">

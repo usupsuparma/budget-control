@@ -3,9 +3,12 @@
 // Get HTML root element
 const htmlElement = document.documentElement;
 
-// List of all settings to check
+// Force vertical layout (sidebar) as default - not overridable by localStorage
+htmlElement.setAttribute("data-layout", "vertical");
+localStorage.setItem("data-layout", "vertical");
+
+// List of all settings to check (data-layout removed - always vertical)
 const settings = [
-    { attribute: "data-layout", defaultValue: "vertical" },
     { attribute: "data-bs-theme", defaultValue: "light" },
     { attribute: "data-content-width", defaultValue: "default" },
     { attribute: "dir", defaultValue: "ltr" },
@@ -23,8 +26,7 @@ settings.forEach((setting) => {
     // Apply to HTML element
     htmlElement.setAttribute(setting.attribute, valueToApply);
     if (setting.attribute === "dir") updateLayoutDir(valueToApply);
-    else if (setting.attribute === "data-bs-theme")
-        setTheme(valueToApply);
+    else if (setting.attribute === "data-bs-theme") setTheme(valueToApply);
 
     const radioSelector = `input[name="${setting.attribute}"][value="${valueToApply}"]`;
     const radioElement = document.querySelector(radioSelector);
@@ -36,7 +38,7 @@ settings.forEach((setting) => {
 updateSimpleBar(htmlElement.getAttribute("data-layout"));
 
 if (document.documentElement.getAttribute("data-layout") === "horizontal") {
-    removeHorizontalAttributes()
+    removeHorizontalAttributes();
 }
 
 function removeHorizontalAttributes() {
@@ -85,25 +87,34 @@ function updateLayoutDir(value) {
 
 function updateSimpleBar(value) {
     setTimeout(() => {
-        const sidebarSimpleBarMenu = document.getElementById('sidebar-simplebar');
+        const sidebarSimpleBarMenu =
+            document.getElementById("sidebar-simplebar");
         if (!sidebarSimpleBarMenu) return;
 
-        if ((value === "vertical" || value === "horizontal" || value === "semibox") && document.documentElement.getAttribute("data-sidebar") !== "icon") {
+        if (
+            (value === "vertical" ||
+                value === "horizontal" ||
+                value === "semibox") &&
+            document.documentElement.getAttribute("data-sidebar") !== "icon"
+        ) {
             // Check if SimpleBar is already initialized
-            const existingInstance = window.SimpleBar ? SimpleBar.instances.get(sidebarSimpleBarMenu) : null;
-            
+            const existingInstance = window.SimpleBar
+                ? SimpleBar.instances.get(sidebarSimpleBarMenu)
+                : null;
+
             if (!existingInstance && window.SimpleBar) {
                 // Only initialize if not already initialized
-                sidebarSimpleBarMenu.setAttribute('data-simplebar', '');
+                sidebarSimpleBarMenu.setAttribute("data-simplebar", "");
                 new SimpleBar(sidebarSimpleBarMenu);
             }
         } else {
             // Only unmount if there's an existing instance
             if (window.SimpleBar) {
-                const simpleBarInstance = SimpleBar.instances.get(sidebarSimpleBarMenu);
+                const simpleBarInstance =
+                    SimpleBar.instances.get(sidebarSimpleBarMenu);
                 if (simpleBarInstance) {
                     simpleBarInstance.unMount();
-                    sidebarSimpleBarMenu.removeAttribute('data-simplebar');
+                    sidebarSimpleBarMenu.removeAttribute("data-simplebar");
                 }
             }
         }
@@ -121,8 +132,7 @@ function handleRadioChange(event) {
             break;
         case "data-layout":
             setAndSaveAttribute("data-layout", value);
-            if(value === "horizontal")
-                removeHorizontalAttributes();
+            if (value === "horizontal") removeHorizontalAttributes();
             updateSimpleBar(value);
             break;
         case "data-content-width":
@@ -134,10 +144,15 @@ function handleRadioChange(event) {
             break;
         case "data-sidebar-size":
             setAndSaveAttribute("data-sidebar-size", value);
-            updateSimpleBar(document.documentElement.getAttribute("data-layout"));
+            updateSimpleBar(
+                document.documentElement.getAttribute("data-layout")
+            );
             break;
         case "data-sidebar":
-            if (document.documentElement.getAttribute("data-layout") !== "horizontal")
+            if (
+                document.documentElement.getAttribute("data-layout") !==
+                "horizontal"
+            )
                 setAndSaveAttribute("data-sidebar", value);
             break;
         case "data-sidebar-color":
@@ -152,11 +167,13 @@ function handleRadioChange(event) {
 }
 
 // Wait for DOM to be fully loaded before attaching event listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Attach event listeners to all radio buttons in the customizer
-    document.querySelectorAll('.layout-customizer input[type="radio"]').forEach((radio) => {
-        radio.addEventListener("change", handleRadioChange);
-    });
+    document
+        .querySelectorAll('.layout-customizer input[type="radio"]')
+        .forEach((radio) => {
+            radio.addEventListener("change", handleRadioChange);
+        });
 
     // dark light mode toggle
     const toggleMode = document.getElementById("toggleMode");
@@ -192,10 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function removeShowClassFromSidebar() {
-        const sidebarSimpleBarMenu = document.getElementById('sidebar-simplebar');
-        sidebarSimpleBarMenu?.querySelectorAll('.pe-slide-menu.collapse.show').forEach((element) => {
-            element.classList.remove('show');
-        });
+        const sidebarSimpleBarMenu =
+            document.getElementById("sidebar-simplebar");
+        sidebarSimpleBarMenu
+            ?.querySelectorAll(".pe-slide-menu.collapse.show")
+            .forEach((element) => {
+                element.classList.remove("show");
+            });
     }
 
     toggleButton?.addEventListener("click", () => {
@@ -204,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Toggle the data-vertical-layout value
             const sidebar = document.getElementById("sidebar");
             sidebar.classList.add("show");
-            removeHorizontalAttributes()
+            removeHorizontalAttributes();
         } else {
             // Toggle the data-vertical-layout value
             if (currentToggled === "icon") {

@@ -613,7 +613,7 @@ Route::middleware('auth')->group(function () {
 
             // Import
             Route::post('/import', [ProductionController::class, 'import'])
-            // ->middleware('permission:production.import')
+                // ->middleware('permission:production.import')
                 ->name('production.import');
 
             // Download template
@@ -925,7 +925,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/create', [EmployeeController::class, 'store'])
                 ->name('employee.store')
                 ->middleware('permission:employee.create');
-            Route::post('/delete/{id}', [EmployeeController::class, 'destroy'])
+            Route::delete('/delete/{id}', [EmployeeController::class, 'destroy'])
                 ->middleware('permission:employee.delete');
             Route::get('/{id}', [EmployeeController::class, 'show'])
                 ->name('employee.show');

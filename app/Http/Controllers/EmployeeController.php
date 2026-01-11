@@ -21,12 +21,21 @@ class EmployeeController extends Controller
             ->select(['id', 'first_name', 'last_name', 'email', 'role_id', 'job_position_id', 'status']);
 
         return DataTables::of($query)
-            ->addColumn('full_name', fn($row) => $row->first_name . ' ' . $row->last_name)
-            ->addColumn(
-                'email',
-                fn($row) =>
-                '<i class="bi bi-envelope me-2 text-muted"></i>' . e($row->email)
-            )
+            ->addColumn('full_name', function ($row) {
+                return
+                    e($row->first_name . ' ' . $row->last_name) .
+                    '<br>' .
+                    '<small class="text-muted"><i class="bi bi-envelope me-1"></i>' . e($row->email) . '</small>';
+            })
+
+            ->addColumn('job_info', function ($row) {
+                $jp = $row->jobPosition;
+
+                return
+                    e($jp->job_position_name ?? '-') .
+                    '<br>' .
+                    '<small class="text-muted">' . e($jp->job_level_name ?? '-') . '</small>';
+            })
             ->addColumn(
                 'roles',
                 fn($row) =>
@@ -59,10 +68,7 @@ class EmployeeController extends Controller
             <i class="bi bi-pencil-square"></i>
         </button>
 
-        <button class="btn btn-light-warning icon-btn-sm employee-resetpass-btn" 
-                data-id="' . $row->id . '">
-            <i class="bi bi-shield-lock"></i>
-        </button>
+ 
 
         <button class="btn btn-light-danger icon-btn-sm employee-delete-btn" 
                 data-id="' . $row->id . '">
@@ -71,7 +77,7 @@ class EmployeeController extends Controller
     ';
             })
 
-            ->rawColumns(['roles', 'email', 'status_badge', 'action'])
+            ->rawColumns(['full_name', 'job_info', 'roles', 'email', 'status_badge', 'action'])
             ->make(true);
     }
 
@@ -132,42 +138,60 @@ class EmployeeController extends Controller
 
     public function edit($id)
     {
-        $emp = Employee::findOrFail($id);
+
+        $emp = Employee::with('employment')->findOrFail($id);
 
         return response()->json($emp);
     }
 
+
+
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'employee_id' => 'required|string|max:50|unique:employee,employee_id,' . $id,
-            'email' => 'required|email|unique:employee,email,' . $id,
-            'job_position_id' => 'required|exists:job_position,id',
-            'role_id' => 'required|exists:roles,id',
-            'status' => 'required|in:Active,Inactive',
-        ]);
+        DB::transaction(function () use ($request, $id) {
 
-        $emp = Employee::findOrFail($id);
+            $emp = Employee::findOrFail($id);
+            $jobPosition = JobPosition::findOrFail($request->job_position_id);
+            $role = Role::findOrFail($request->role_id);
 
-        $emp->update([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'employee_id' => $request->employee_id,
-            'email' => $request->email,
-            'job_position_id' => $request->job_position_id,
-            'status' => $request->status,
-            'role_id' => $request->role_id, // jika disimpan di table employees
-        ]);
+            // Update Employee
+            $emp->update([
+                'first_name'      => $request->first_name,
+                'last_name'       => $request->last_name,
+                'employee_id'     => $request->employee_id,
+                'email'           => $request->email,
+                'job_position_id' => $jobPosition->id,
+                'role_id'         => $role->id,
+                'status'          => $request->status,
+            ]);
 
-        // Spatie Assign Role
-        $role = Roles::find($request->role_id);
-        $emp->syncRoles([$role->name]);
+            // Ambil employment yang sudah ada
+            $employment = Employment::where('employee_id', $emp->employee_id)->first();
 
-        return response()->json([
-            'success' => true
-        ]);
+            // Hanya update jika employment memang ada
+            if ($employment) {
+                $employment->update([
+                    'job_position_id'   => $jobPosition->id,
+                    'job_position_name' => $jobPosition->job_position_name,
+
+                    'organization_id'   => $jobPosition->organization_id ?? null,
+                    'organization_name' => $jobPosition->organization_name ?? null,
+
+                    'job_level_id'      => $jobPosition->job_level_id ?? null,
+                    'job_level_name'    => $jobPosition->job_level_name ?? null,
+
+                    'uppline_id'        => $request->uppline_id ?? null,
+                    'uppline_id_name'   => $request->uppline_name ?? null,
+
+                    'employment_status' => $request->status === 'Active' ? 'Aktif' : 'Unaktif',
+                    'role_id'           => $role->id,
+                    'role_name'         => $role->name,
+                    'status'            => $request->status,
+                ]);
+            }
+        });
+
+        return response()->json(['success' => true]);
     }
 
 
@@ -178,7 +202,7 @@ class EmployeeController extends Controller
             $emp = Employee::findOrFail($id);
 
             // Soft delete employment
-            Employment::where('employee_id', $emp->id)->delete();
+            Employment::where('employee_id', $emp->employee_id)->delete();
 
             // Soft delete employee
             $emp->delete();

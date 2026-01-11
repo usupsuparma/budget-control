@@ -17,8 +17,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
-                                <th>Full Names</th>
-                                <th>Email</th>
+                                <th>Names & Email</th>
+                                <th>Job Position</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th width="15%">Action</th>
@@ -247,7 +247,18 @@
                                 @endforeach
                             </select>
                         </div>
-
+                        <div class="col-md-6">
+                            <label class="form-label">Uppline</label>
+                            <select class="form-select" name="uppline_id">
+                                <option value="" selected disabled>-- Select Uppline --</option>
+                                @foreach ($employees as $emp)
+                                <option value="{{ $emp->id }}">
+                                    {{ $emp->first_name }} {{ $emp->last_name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <input type="hidden" name="uppline_name" id="edit_uppline_name">
                         <div class="col-md-6">
                             <label class="form-label">Status</label>
                             <select class="form-select" id="edit_status" name="status" required>
@@ -288,14 +299,13 @@
                     data: 'id',
                     name: 'id'
                 },
-
                 {
                     data: 'full_name',
                     name: 'full_name'
                 },
                 {
-                    data: 'email',
-                    name: 'email'
+                    data: 'job_info',
+                    name: 'job_position_id'
                 },
                 {
                     data: 'roles',
@@ -318,6 +328,7 @@
                 [0, 'desc']
             ]
         });
+
     });
 </script>
 <script>
@@ -380,9 +391,20 @@
             $("#edit_last_name").val(res.last_name);
             $("#edit_employee_id").val(res.employee_id);
             $("#edit_email").val(res.email);
+
             $("#edit_job_position_id").val(res.job_position_id);
             $("#edit_role_id").val(res.role_id);
             $("#edit_status").val(res.status);
+
+            // UPPLINE (dari employment)
+            if (res.employment) {
+                $('#editEmployeeModal select[name="uppline_id"]').val(res.employment.uppline_id);
+                $('#edit_uppline_name').val(res.employment.uppline_id_name);
+            } else {
+                $('#editEmployeeModal select[name="uppline_id"]').val('');
+                $('#edit_uppline_name').val('');
+            }
+
 
             $("#employeeEditForm").attr("action", "/employee/update/" + id);
             $("#editEmployeeModal").modal("show");
@@ -391,59 +413,40 @@
 </script>
 <script>
     $(document).on('click', '.employee-delete-btn', function() {
-
         let id = $(this).data('id');
 
         Swal.fire({
             title: "Delete employee?",
+            text: "Data employee & employment akan dihapus.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Delete"
+            confirmButtonText: "Delete",
+            cancelButtonText: "Cancel"
         }).then((result) => {
             if (result.isConfirmed) {
 
                 $.ajax({
                     url: "/employee/delete/" + id,
-                    method: "POST",
+                    type: "POST",
                     data: {
                         _token: "{{ csrf_token() }}",
                         _method: "DELETE"
                     },
-                    success: function() {
+                    success: function(res) {
                         $("#employeeTable").DataTable().ajax.reload(null, false);
-                        Swal.fire("Deleted!", "", "success");
+                        Swal.fire("Deleted!", "Employee berhasil dihapus.", "success");
+                    },
+                    error: function(xhr) {
+                        console.log(xhr.responseText);
+                        Swal.fire("Error", "Gagal menghapus employee.", "error");
                     }
                 });
 
             }
         });
-
     });
 </script>
 <script>
-    $(document).on('click', '.employee-edit-btn', function() {
-
-        let id = $(this).data('id');
-
-        $.get("/employee/" + id + "/edit", function(res) {
-
-            $("#edit_first_name").val(res.first_name);
-            $("#edit_last_name").val(res.last_name);
-            $("#edit_employee_id").val(res.employee_id);
-            $("#edit_email").val(res.email);
-
-            $("#edit_job_position_id").val(res.job_position_id);
-            $("#edit_role_id").val(res.role_id);
-
-            $("#edit_status").val(res.status);
-
-            $("#employeeEditForm").attr("action", "/employee/update/" + id);
-
-            $("#editEmployeeModal").modal("show");
-        });
-
-    });
-
     $("#btnUpdateEmployee").click(function(e) {
         e.preventDefault();
 
@@ -506,6 +509,11 @@
     $('select[name="uppline_id"]').on('change', function() {
         let name = $(this).find('option:selected').text();
         $('#uppline_name').val(name);
+    });
+
+    $('#editEmployeeModal select[name="uppline_id"]').on('change', function() {
+        let name = $(this).find('option:selected').text();
+        $('#edit_uppline_name').val(name);
     });
 </script>
 

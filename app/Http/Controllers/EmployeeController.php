@@ -154,6 +154,9 @@ class EmployeeController extends Controller
             $jobPosition = JobPosition::findOrFail($request->job_position_id);
             $role = Role::findOrFail($request->role_id);
 
+            // Simpan employee_id lama sebelum update
+            $oldEmployeeId = $emp->employee_id;
+
             // Update Employee
             $emp->update([
                 'first_name'      => $request->first_name,
@@ -165,12 +168,18 @@ class EmployeeController extends Controller
                 'status'          => $request->status,
             ]);
 
-            // Ambil employment yang sudah ada
-            $employment = Employment::where('employee_id', $emp->employee_id)->first();
+            // Ambil employment berdasarkan employee_id LAMA
+            $employment = Employment::where('employee_id', $oldEmployeeId)->first();
+
+            // Jika tidak ada, coba cari dengan employee_id baru (untuk kasus seeder baru)
+            if (!$employment) {
+                $employment = Employment::where('employee_id', $request->employee_id)->first();
+            }
 
             // Hanya update jika employment memang ada
             if ($employment) {
                 $employment->update([
+                    'employee_id'       => $request->employee_id, // Update ke employee_id baru
                     'job_position_id'   => $jobPosition->id,
                     'job_position_name' => $jobPosition->job_position_name,
 

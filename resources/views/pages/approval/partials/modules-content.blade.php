@@ -52,9 +52,10 @@
                     
                     <div class="mb-3">
                         <label for="table_name" class="form-label">Table Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="table_name" name="table_name" required
-                               placeholder="contoh: transactions, bookings">
-                        <small class="text-muted">Nama tabel database yang terkait</small>
+                        <select class="form-control" id="table_name" name="table_name" required>
+                            <option value="">-- Pilih Table --</option>
+                        </select>
+                        <small class="text-muted">Pilih tabel database yang akan menggunakan approval</small>
                     </div>
                     
                     <div class="mb-3">

@@ -36,5 +36,15 @@ class ApprovalRequest extends Model
     {
         return $this->belongsTo(ApprovalFlowTemplate::class, 'template_id');
     }
+
+    public function details()
+    {
+        return $this->hasMany(ApprovalRequestDetail::class, 'request_id');
+    }
+
+    public function requester()
+    {
+        return $this->belongsTo(Employee::class, 'requester_id');
+    }
     
 }

@@ -558,6 +558,118 @@
     </div>
 </div>
 
+{{-- Modal: Approval Timeline --}}
+<div class="modal fade" id="approvalTimelineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock-history me-2"></i>Approval Timeline
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Item Details</h6>
+                    <div id="approvalItemDetails" class="p-3 bg-light rounded"></div>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-3">Approval Progress</h6>
+                    <div id="approvalTimelineContent" class="timeline-container"></div>
+                </div>
+            </div>
+            <div class="modal-footer" id="approvalTimelineFooter">
+                {{-- Approve/Reject buttons will be added here if authorized --}}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal: Rejection Comments --}}
+<div class="modal fade" id="rejectCommentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Reject Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rejectDetailId">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Alasan Penolakan <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="rejectComments" rows="4" required placeholder="Masukkan alasan penolakan..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">
+                    <i class="bi bi-x-circle me-1"></i>Tolak
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline-container {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+        border-left: 2px solid #dee2e6;
+        padding-left: 20px;
+        margin-left: 10px;
+    }
+    .timeline-item:last-child {
+        border-left: none;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #dee2e6;
+    }
+    .timeline-item.completed::before {
+        background: #198754;
+        border-color: #198754;
+    }
+    .timeline-item.pending::before {
+        background: #ffc107;
+        border-color: #ffc107;
+    }
+    .timeline-item.rejected::before {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+    .timeline-item.skipped::before {
+        background: #6c757d;
+        border-color: #6c757d;
+    }
+    .timeline-item.current::before {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5); }
+        50% { box-shadow: 0 0 0 8px rgba(13, 110, 253, 0); }
+    }
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-radius: 8px;
+    }
+    .timeline-content.current {
+        background: #e7f1ff;
+        border: 1px solid #0d6efd;
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
 

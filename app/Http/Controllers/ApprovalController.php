@@ -766,6 +766,33 @@ class ApprovalController extends Controller
     }
 
     /**
+     * Get available tables for new module creation
+     */
+    public function getAvailableTables(Request $request)
+    {
+        try {
+            $excludeId = $request->input('exclude_id');
+            
+            if ($excludeId) {
+                $tables = ApprovalModule::getAvailableTablesForEdit((int) $excludeId);
+            } else {
+                $tables = ApprovalModule::getAvailableTables();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $tables,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get available tables failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get available tables',
+            ], 500);
+        }
+    }
+
+    /**
      * Store new approval module
      */
     public function storeModule(Request $request)
@@ -775,10 +802,15 @@ class ApprovalController extends Controller
             'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
         ]);
         
+        $allowedTables = array_keys(ApprovalModule::ALLOWED_TABLES);
+        
         $validator = Validator::make($request->all(), [
             'module_name' => 'required|string|max:50|unique:approval_modules,module_name',
-            'table_name' => 'required|string|max:50',
+            'table_name' => 'required|string|in:' . implode(',', $allowedTables) . '|unique:approval_modules,table_name',
             'is_active' => 'boolean',
+        ], [
+            'table_name.in' => 'Table yang dipilih tidak valid.',
+            'table_name.unique' => 'Module untuk table ini sudah ada.',
         ]);
 
         if ($validator->fails()) {
@@ -820,10 +852,15 @@ class ApprovalController extends Controller
             'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
         ]);
         
+        $allowedTables = array_keys(ApprovalModule::ALLOWED_TABLES);
+        
         $validator = Validator::make($request->all(), [
             'module_name' => 'required|string|max:50|unique:approval_modules,module_name,' . $id,
-            'table_name' => 'required|string|max:50',
+            'table_name' => 'required|string|in:' . implode(',', $allowedTables) . '|unique:approval_modules,table_name,' . $id,
             'is_active' => 'boolean',
+        ], [
+            'table_name.in' => 'Table yang dipilih tidak valid.',
+            'table_name.unique' => 'Module untuk table ini sudah ada.',
         ]);
 
         if ($validator->fails()) {

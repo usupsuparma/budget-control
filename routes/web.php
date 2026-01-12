@@ -45,6 +45,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SegmenController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\WorkplanBudgetItemApprovalController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -1121,6 +1122,8 @@ Route::middleware('auth')->group(function () {
             // ========== NEW: Modules Management API ==========
             Route::get('/modules/data', [ApprovalController::class, 'getModules'])
                 ->name('approval.modules.data');
+            Route::get('/modules/available-tables', [ApprovalController::class, 'getAvailableTables'])
+                ->name('approval.modules.tables');
             Route::post('/modules/store', [ApprovalController::class, 'storeModule'])
                 ->middleware('permission:approval.create')
                 ->name('approval.modules.store');
@@ -1160,6 +1163,26 @@ Route::middleware('auth')->group(function () {
             // ========== NEW: Helper - Employments ==========
             Route::get('/employments/data', [ApprovalController::class, 'getEmployments'])
                 ->name('approval.employments.data');
+        });
+
+    /* ========================
+        WORKPLAN BUDGET ITEM APPROVAL
+    ======================== */
+    Route::prefix('workplan-budget-item-approval')
+        ->middleware('auth')
+        ->group(function () {
+            Route::post('/{id}/submit', [WorkplanBudgetItemApprovalController::class, 'submitForApproval'])
+                ->name('wbi.approval.submit');
+            Route::post('/detail/{detailId}/approve', [WorkplanBudgetItemApprovalController::class, 'approve'])
+                ->name('wbi.approval.approve');
+            Route::post('/detail/{detailId}/reject', [WorkplanBudgetItemApprovalController::class, 'reject'])
+                ->name('wbi.approval.reject');
+            Route::get('/{id}/status', [WorkplanBudgetItemApprovalController::class, 'getApprovalStatus'])
+                ->name('wbi.approval.status');
+            Route::get('/pending', [WorkplanBudgetItemApprovalController::class, 'myPendingApprovals'])
+                ->name('wbi.approval.pending');
+            Route::post('/{id}/cancel', [WorkplanBudgetItemApprovalController::class, 'cancel'])
+                ->name('wbi.approval.cancel');
         });
 
 

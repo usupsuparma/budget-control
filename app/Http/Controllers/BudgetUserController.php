@@ -102,14 +102,28 @@ class BudgetUserController extends Controller
                 })
                 ->get();
 
-            // Get all budget items from these workplans
+            // Get all budget items from these workplans WITH approval data
             $workplanIds = $workplans->pluck('id')->toArray();
 
-            $items = WorkplanBudgetItem::with(['category', 'budgetCodeRelation', 'approver', 'workplan'])
+            $items = WorkplanBudgetItem::with([
+                    'category', 
+                    'budgetCodeRelation', 
+                    'approver', 
+                    'workplan',
+                    'approvalRequest.details.employment.employee'
+                ])
                 ->whereIn('kpi_workplan_id', $workplanIds)
                 ->orderBy('kpi_workplan_id')
                 ->orderBy('sort_order')
                 ->get();
+
+            // Get current user's employment_id for authorization check
+            // Note: Auth::user() returns Employee model (see config/auth.php)
+            $currentEmploymentId = null;
+            $employee = Auth::user();
+            if ($employee && $employee->employment) {
+                $currentEmploymentId = $employee->employment->id;
+            }
 
             // Get available budget codes
             $budgetCodes = BudgetCode::active()
@@ -122,7 +136,8 @@ class BudgetUserController extends Controller
                 'data' => $items,
                 'workplans' => $workplans,
                 'totalWorkplans' => $workplans->count(),
-                'budgetCodes' => $budgetCodes
+                'budgetCodes' => $budgetCodes,
+                'currentEmploymentId' => $currentEmploymentId
             ]);
         } catch (\Exception $e) {
             Log::error('Error loading all items: ' . $e->getMessage());

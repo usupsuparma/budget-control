@@ -263,12 +263,53 @@ function renderModulesTable(data) {
     });
 }
 
+function loadAvailableTables(excludeId = null, currentTableName = null) {
+    let url = '{{ route("approval.modules.tables") }}';
+    if (excludeId) {
+        url += `?exclude_id=${excludeId}`;
+    }
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = $('#table_name');
+                select.empty().append('<option value="">-- Pilih Table --</option>');
+                
+                // If editing and we have a current table, add it first as selected
+                if (currentTableName && response.data[currentTableName]) {
+                    select.append(`<option value="${currentTableName}" selected>${response.data[currentTableName]}</option>`);
+                    delete response.data[currentTableName];
+                } else if (currentTableName) {
+                    // Current table is already in the list, we'll select it below
+                }
+                
+                Object.entries(response.data).forEach(([key, label]) => {
+                    const isSelected = currentTableName === key ? 'selected' : '';
+                    select.append(`<option value="${key}" ${isSelected}>${label}</option>`);
+                });
+                
+                // Check if no tables available for new module
+                if (!excludeId && Object.keys(response.data).length === 0) {
+                    showAlert('Semua tabel sudah memiliki module. Tidak ada tabel yang tersedia untuk membuat module baru.', 'warning');
+                    $('#moduleModal').modal('hide');
+                }
+            }
+        },
+        error: function(xhr) {
+            showAlert('Gagal memuat daftar tabel', 'error');
+        }
+    });
+}
+
 function showAddModuleModal() {
     isEditMode = false;
     $('#moduleModalTitle').text('Tambah Module');
     $('#moduleForm')[0].reset();
     $('#module-id').val('');
     $('#module_is_active').prop('checked', true);
+    loadAvailableTables();
     $('#moduleModal').modal('show');
 }
 
@@ -284,8 +325,9 @@ function editModule(id) {
                     $('#moduleModalTitle').text('Edit Module');
                     $('#module-id').val(item.id);
                     $('#module_name').val(item.module_name);
-                    $('#table_name').val(item.table_name);
                     $('#module_is_active').prop('checked', item.is_active);
+                    // Load available tables + current table, then show modal
+                    loadAvailableTables(item.id, item.table_name);
                     $('#moduleModal').modal('show');
                 }
             }

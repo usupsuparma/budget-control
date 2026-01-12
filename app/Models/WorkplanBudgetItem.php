@@ -88,6 +88,12 @@ class WorkplanBudgetItem extends Model
         return $this->belongsTo(Employee::class, 'approved_by');
     }
 
+    public function approvalRequest()
+    {
+        return $this->hasOne(ApprovalRequest::class, 'reference_id')
+            ->whereHas('module', fn($q) => $q->where('table_name', 'workplan_budget_items'));
+    }
+
     // Scopes
     public function scopeByWorkplan($query, $workplanId)
     {

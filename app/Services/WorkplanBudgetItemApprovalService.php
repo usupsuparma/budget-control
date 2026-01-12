@@ -8,18 +8,15 @@ use App\Models\ApprovalModule;
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestDetail;
 use App\Models\WorkplanBudgetItem;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class WorkplanBudgetItemApprovalService
 {
     /**
      * Submit a workplan budget item for approval.
-     * 
-     * @param int $itemId
-     * @return array
      */
     public function submitForApproval(int $itemId): array
     {
@@ -28,7 +25,7 @@ class WorkplanBudgetItemApprovalService
 
             // Check if already has pending approval
             $existingRequest = ApprovalRequest::where('reference_id', $itemId)
-                ->whereHas('module', fn($q) => $q->where('table_name', 'workplan_budget_items'))
+                ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->first();
 
@@ -44,7 +41,7 @@ class WorkplanBudgetItemApprovalService
                 ->where('is_active', true)
                 ->first();
 
-            if (!$module) {
+            if (! $module) {
                 return [
                     'success' => false,
                     'message' => 'Approval module untuk workplan_budget_items belum dikonfigurasi.',
@@ -59,7 +56,7 @@ class WorkplanBudgetItemApprovalService
                 ->orderBy('priority')
                 ->first();
 
-            if (!$template) {
+            if (! $template) {
                 return [
                     'success' => false,
                     'message' => 'Approval template dengan threshold untuk field "total" belum dikonfigurasi.',
@@ -81,6 +78,7 @@ class WorkplanBudgetItemApprovalService
             // Get current user's employment_id
             // Note: Auth::user() returns Employee model (see config/auth.php)
             $employee = Auth::user();
+            Log::info($employee);
             $requesterId = null;
             if ($employee && $employee->employment) {
                 $requesterId = $employee->employment->id;
@@ -103,8 +101,8 @@ class WorkplanBudgetItemApprovalService
 
             // Create approval request details for each approver
             foreach ($flowDetails as $detail) {
-                $employeeName = $detail->employment?->employee 
-                    ? $detail->employment->employee->first_name . ' ' . ($detail->employment->employee->last_name ?? '')
+                $employeeName = $detail->employment?->employee
+                    ? $detail->employment->employee->first_name.' '.($detail->employment->employee->last_name ?? '')
                     : 'Unknown';
 
                 ApprovalRequestDetail::create([
@@ -133,23 +131,19 @@ class WorkplanBudgetItemApprovalService
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Submit for approval failed: ' . $e->getMessage());
-            
+            Log::error('Submit for approval failed: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal mengajukan approval: ' . $e->getMessage(),
+                'message' => 'Gagal mengajukan approval: '.$e->getMessage(),
             ];
         }
     }
 
     /**
      * Process an approval action (approve/reject).
-     * 
-     * @param int $requestDetailId
-     * @param string $action ('approve' or 'reject')
-     * @param int $approverId
-     * @param string|null $comments
-     * @return array
+     *
+     * @param  string  $action  ('approve' or 'reject')
      */
     public function processApproval(int $requestDetailId, string $action, int $approverId, ?string $comments = null): array
     {
@@ -204,11 +198,11 @@ class WorkplanBudgetItemApprovalService
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Process approval failed: ' . $e->getMessage());
-            
+            Log::error('Process approval failed: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal memproses approval: ' . $e->getMessage(),
+                'message' => 'Gagal memproses approval: '.$e->getMessage(),
             ];
         }
     }
@@ -309,16 +303,13 @@ class WorkplanBudgetItemApprovalService
 
     /**
      * Get approval status for an item.
-     * 
-     * @param int $itemId
-     * @return array
      */
     public function getApprovalStatus(int $itemId): array
     {
         $item = WorkplanBudgetItem::with('approvalRequest.details.employment.employee')
             ->find($itemId);
 
-        if (!$item) {
+        if (! $item) {
             return [
                 'success' => false,
                 'message' => 'Item tidak ditemukan.',
@@ -327,7 +318,7 @@ class WorkplanBudgetItemApprovalService
 
         $request = $item->approvalRequest;
 
-        if (!$request) {
+        if (! $request) {
             return [
                 'success' => true,
                 'data' => [
@@ -370,19 +361,16 @@ class WorkplanBudgetItemApprovalService
 
     /**
      * Get pending approvals for a user.
-     * 
-     * @param int $employmentId
-     * @return array
      */
     public function getPendingApprovalsForUser(int $employmentId): array
     {
         $pendingDetails = ApprovalRequestDetail::with([
-                'request.module', 
-                'employment.employee'
-            ])
+            'request.module',
+            'employment.employee',
+        ])
             ->where('employment_id', $employmentId)
             ->where('status', 'pending')
-            ->whereHas('request', fn($q) => $q->whereIn('status', ['pending', 'in_progress']))
+            ->whereHas('request', fn ($q) => $q->whereIn('status', ['pending', 'in_progress']))
             ->get()
             ->filter(function ($detail) {
                 // Only return if this is the next in sequence
@@ -423,19 +411,16 @@ class WorkplanBudgetItemApprovalService
 
     /**
      * Cancel an approval request.
-     * 
-     * @param int $itemId
-     * @return array
      */
     public function cancelApproval(int $itemId): array
     {
         try {
             $request = ApprovalRequest::where('reference_id', $itemId)
-                ->whereHas('module', fn($q) => $q->where('table_name', 'workplan_budget_items'))
+                ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->first();
 
-            if (!$request) {
+            if (! $request) {
                 return [
                     'success' => false,
                     'message' => 'Tidak ada approval request yang aktif untuk item ini.',
@@ -470,11 +455,11 @@ class WorkplanBudgetItemApprovalService
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Cancel approval failed: ' . $e->getMessage());
-            
+            Log::error('Cancel approval failed: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal membatalkan approval: ' . $e->getMessage(),
+                'message' => 'Gagal membatalkan approval: '.$e->getMessage(),
             ];
         }
     }
@@ -503,7 +488,7 @@ class WorkplanBudgetItemApprovalService
         $prefix = 'WBI-APR';
         $date = now()->format('Ymd');
         $sequence = ApprovalRequest::whereDate('created_at', now())->count() + 1;
-        
+
         return sprintf('%s-%s-%04d', $prefix, $date, $sequence);
     }
 }

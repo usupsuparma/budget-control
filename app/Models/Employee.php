@@ -36,7 +36,7 @@ class Employee extends Authenticatable
     // membuat agar name tampil hasil dari first_name dan last_name
     public function getNameAttribute()
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return $this->first_name.' '.$this->last_name;
     }
 
     // tambahkan jika kamu punya kolom password
@@ -59,6 +59,6 @@ class Employee extends Authenticatable
 
     public function employment()
     {
-        return $this->hasOne(Employment::class, 'employee_id', 'employee_id');
+        return $this->hasOne(Employment::class, 'employee_id', 'id');
     }
 }

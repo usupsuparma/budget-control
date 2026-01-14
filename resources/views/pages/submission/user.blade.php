@@ -253,9 +253,11 @@
                             </button>
                         </div>
                         <div class="col-md-3 d-flex align-items-end justify-content-end">
+                            @if (in_array($employment[0]->job_level_id, array(3,4)))
                             <button type="button" class="btn btn-success" id="btnAddData">
                                 <i class="ri-add-line"></i> Add Data
                             </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -425,44 +427,53 @@
                     <input type="hidden" id="submissionId" name="id">
                     <div class="modal-body">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">User</label>
                                 <input type="text" class="form-control" id="userName"
                                     value="{{ Auth::user()->first_name . ' ' . Auth::user()->last_name }}" disabled>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Date <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="transactionDate" name="transaction_date"
-                                    required>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Job Level <span class="text-danger">*</span></label>
-                                <select class="form-select" id="jobLevel" name="job_level_id" required>
-                                    <option value="">Select Job Level</option>
+                                <select class="form-select" disabled>
                                     @foreach ($jobLevels as $level)
-                                        <option value="{{ $level->id }}">{{ $level->job_level_name }}</option>
+                                        <option value="{{ $level->id }}"
+                                            {{ $employment[0]->job_level_id == $level->id ? 'selected' : '' }}>
+                                            {{ $level->job_level_name }}
+                                        </option>
                                     @endforeach
                                 </select>
+
+                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ $employment[0]->job_level_id }}">
+
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Job Position <span class="text-danger">*</span></label>
-                                <select class="form-select" id="jobPosition" name="job_position_id" required>
+                                <select class="form-select" disabled>
                                     <option value="">Select Job Position</option>
                                     @foreach ($jobPositions as $position)
-                                        <option value="{{ $position->id }}">{{ $position->job_position_name }}</option>
+                                        <option value="{{ $position->id }}" {{ $employment[0]->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
                                     @endforeach
                                 </select>
+
+                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ $employment[0]->job_position_id }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="transactionDate" name="transaction_date"
+                                    value="{{ date('Y-m-d') }}" required readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Program ID <span class="text-danger">*</span></label>
                                 <select class="form-select" id="programId" name="program_id" required>
                                     <option value="">Select Program</option>
                                     @foreach ($workplans as $workplan)
-                                        <option value="{{ $workplan->id }}">{{ $workplan->activity }}</option>
+                                        @if ($workplan->year==date("Y"))
+                                            <option value="{{ $workplan->id }}">{{ $workplan->activity }} - {{ $workplan->year }}</option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Purpose <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="purpose" name="purpose" required>
                             </div>
@@ -761,21 +772,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                        <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                            <i class="ri-edit-line"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                            <i class="ri-delete-bin-line"></i>
-                                        </button>
-                                    ` : ''}
+                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        ` : ''}
                             ${item.can_approve ? `
-                                        <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                            <i class="ri-check-line"></i> Approve
-                                        </button>
-                                        <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                            <i class="ri-close-line"></i> Reject
-                                        </button>
-                                    ` : ''}
+                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                <i class="ri-check-line"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                <i class="ri-close-line"></i> Reject
+                                            </button>
+                                        ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1364,7 +1375,7 @@
                                                                                 updateBudgetValue
                                                                                     ($(
                                                                                         this
-                                                                                        ));
+                                                                                    ));
                                                                             });
 
                                                                     $(`[data-row="${itemRowCounter}"] .qty-input, [data-row="${itemRowCounter}"] .price-input`)
@@ -1385,7 +1396,7 @@
                                                                                 formatPriceInput
                                                                                     ($(
                                                                                         this
-                                                                                        ));
+                                                                                    ));
                                                                             });
                                                                 });
 
@@ -1482,7 +1493,7 @@
 
             // Reset cascading dropdowns
             $('#jobPosition').html('<option value="">Select Job Position</option>').prop('disabled', false);
-            $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
+            // $('#programId').html('<option value="">Select Program</option>').prop('disabled', false);
         }
 
         // Helper functions

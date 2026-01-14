@@ -9,6 +9,7 @@ use App\Models\JobLevel;
 use App\Models\JobPosition;
 use App\Models\KPIWorkPlan;
 use App\Models\BudgetCode;
+use App\Models\Employment;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Services\ApprovalService;
@@ -33,6 +34,7 @@ class SubmissionController extends Controller
 
         // Get summary data
         $userId = Auth::id();
+        $employment = Employment::where('employee_id', $userId)->get();
         $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
         $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
         $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
@@ -78,7 +80,8 @@ class SubmissionController extends Controller
             'jobPositions',
             'workplans',
             'budgetCodes',
-            'units'
+            'units',
+            'employment'
         ));
     }
 

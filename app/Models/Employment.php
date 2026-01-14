@@ -12,10 +12,15 @@ class Employment extends Model
     protected $table = 'employment';
 
     protected $guarded = [];
-    protected $dates = ['deleted_at'];
+
+    protected $dates = ['deleted_at', 'join_date'];
+
+    protected $casts = [
+        'join_date' => 'date',
+    ];
 
     protected $fillable = [
-        'employee_id',
+        'employee_id', // ini NIP (Nomor Induk Pegawai)
         'organization_id',
         'organization_name',
         'job_level_id',
@@ -27,12 +32,28 @@ class Employment extends Model
         'employment_status',
         'role_id',
         'role_name',
+        'join_date',
         'status',
     ];
 
     public function employee()
     {
-        // employment.employee_id references employee.id (primary key)
-        return $this->belongsTo(Employee::class, 'employee_id', 'id');
+        // employment.employee_id references employee.employee_id (NIP)
+        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
+    }
+
+    public function jobLevel()
+    {
+        return $this->belongsTo(JobLevel::class, 'job_level_id', 'id');
+    }
+
+    public function jobPosition()
+    {
+        return $this->belongsTo(JobPosition::class, 'job_position_id', 'id');
+    }
+
+    public function uppline()
+    {
+        return $this->belongsTo(Employee::class, 'uppline_id', 'id');
     }
 }

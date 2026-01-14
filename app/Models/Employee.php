@@ -18,12 +18,14 @@ class Employee extends Authenticatable
     protected $guarded = [];
 
     protected $fillable = [
-        'employee_id',
+        'employee_id', // ini NIP (Nomor Induk Pegawai)
         'email',
         'password',
         'remember_token',
         'first_name',
         'last_name',
+        'birth_year',
+        'phone',
         'role_id',
         'job_position_id',
         'status',
@@ -59,6 +61,6 @@ class Employee extends Authenticatable
 
     public function employment()
     {
-        return $this->hasOne(Employment::class, 'employee_id', 'id');
+        return $this->hasOne(Employment::class, 'employee_id', 'employee_id');
     }
 }

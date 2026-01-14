@@ -206,28 +206,24 @@
         });
 
         // ADD NEW PERMISSION
-        $('#btnSavePermission').click(function() {
 
-            let name = $('#permission_name').val();
 
+        $('#btnSavePermission').on('click', function() {
             $.ajax({
                 url: "{{ route('authorization.permissions.store') }}",
                 type: "POST",
-                data: {
-                    name: name,
-                    _token: "{{ csrf_token() }}"
-                },
+                data: $('#formAddPermission').serialize(),
                 success: function(res) {
-                    if (res.success) {
-                        $('#permission_name').val('');
-                        $('#modalAddPermission').modal('hide');
-                        toastr.success("Permission added successfully");
-                        location.reload();
-                    }
+                    $('#modalAddPermission').modal('hide');
+                    location.reload();
+                },
+                error: function(err) {
+                    alert(err.responseJSON.message ?? 'Gagal menyimpan');
                 }
             });
-
         });
+
+
 
         // OPEN MANAGE PERMISSIONS MODAL
         $('.managePermission').click(function() {

@@ -142,9 +142,28 @@
             <div class="modal-body">
                 <form id="formAddPermission">
                     @csrf
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Modul / Menu</label>
+                        <select name="modul_menu" id="modul_menu" class="form-select" required>
+                            <option value="">-- Pilih Modul --</option>
+                            @foreach($moduls as $m)
+                            <option value="{{ $m->id }}">
+                                {{ $m->modul_name }} - {{ $m->menu_name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Permission Name</label>
-                        <input type="text" id="permission_name" class="form-control" placeholder="ex: asset.view" required>
+                        <input type="text" name="name" id="permission_name"
+                            class="form-control" placeholder="ex: asset.view" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Route</label>
+                        <input type="text" name="modul_menu_name" id="modul_menu_name"
+                            class="form-control" placeholder="ex: asset.view" required>
                     </div>
                 </form>
             </div>

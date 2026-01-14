@@ -11,7 +11,9 @@
         <table id="permissionTable" class="table table-bordered table-striped w-100">
             <thead>
                 <tr>
-                    <th>Permission</th>
+                    <th>ID</th>
+                    <th>Permission Name</th>
+                    <th>Route</th>
                     <th>Module</th>
                     <th width="20%">Actions</th>
                 </tr>
@@ -20,8 +22,12 @@
             <tbody>
                 @foreach($permissions as $p)
                 <tr>
+                    <td>{{ $p->id }}</td>
+                    <td>{{ $p->modul_menu_name }}</td>
                     <td>{{ $p->name }}</td>
-                    <td>{{ explode('.', $p->name)[0] }}</td>
+                    <td>{{ optional($p->modul)->modul_name ?? '-' }}<br>
+                        {{ optional($p->modul)->menu_name ?? '-' }}
+                    </td>
 
                     <td>
                         <!-- Edit -->

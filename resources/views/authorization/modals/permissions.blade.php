@@ -1,27 +1,45 @@
 <!-- ADD PERMISSION -->
-<div class="modal fade" id="modalAddPermission" tabindex="-1">
+<div class="modal fade" id="modalAddPermission" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Add Permission</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Add New Permission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <form id="permissionCreateForm">
+                <form id="formAddPermission">
                     @csrf
 
-                    <label class="form-label">Module Name</label>
-                    <input type="text" class="form-control" id="moduleName" placeholder="ex: employee">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Modul / Menu</label>
+                        <select name="modul_menu" id="modul_menu" class="form-select" required>
+                            <option value="">-- Pilih Modul --</option>
+                            @foreach($moduls as $m)
+                            <option value="{{ $m->id }}">
+                                {{ $m->modul_name }} - {{ $m->menu_name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                    <small class="text-muted">Generator akan membuat: module.view, module.create, module.edit, module.delete</small>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Permission Name</label>
+                        <input type="text" name="name" id="permission_name"
+                            class="form-control" placeholder="ex: Menu Create" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Route</label>
+                        <input type="text" name="modul_menu_name" id="modul_menu_name"
+                            class="form-control" placeholder="ex: asset.view" required>
+                    </div>
                 </form>
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" id="btnCreatePermission">Generate Permissions</button>
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success" id="btnSavePermission">Save</button>
             </div>
 
         </div>

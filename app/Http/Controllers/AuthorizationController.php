@@ -68,12 +68,33 @@ class AuthorizationController extends Controller
     public function permissionStore(Request $request)
     {
         try {
-            Log::info($request->all(), ['AuthorizationController', 'permissionStore']);
-            Permission::create(['name' => $request->module]);
-            return response()->json(['success' => true]);
+            $request->validate([
+                'name' => 'required|string|max:100|unique:permissions,name',
+                'modul_menu' => 'required|exists:modul_menus,id',
+                'modul_menu_name' => 'required|string|max:150',
+            ]);
+
+            Permission::create([
+                'name'             => $request->name,
+                'guard_name'       => 'web',
+                'modul_menu'       => $request->modul_menu,
+                'modul_menu_name'  => $request->modul_menu_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission berhasil ditambahkan'
+            ]);
         } catch (\Throwable $th) {
-            Log::error('Error creating permission: ' . $th->getMessage(), ['AuthorizationController', 'permissionStore']);
-            return response()->json(['success' => false, 'message' => 'Failed to create permission.'], 500);
+            Log::error('Error creating permission: ' . $th->getMessage(), [
+                'AuthorizationController',
+                'permissionStore'
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create permission.'
+            ], 500);
         }
     }
 

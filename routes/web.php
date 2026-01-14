@@ -1264,7 +1264,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('/roles/delete/{id}', [AuthorizationController::class, 'roleDelete'])->name('auth.roles.delete');
 
             Route::get('/permissions', [AuthorizationController::class, 'permissions'])->name('auth.permissions');
-            Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('authorization.permissions.store');
+            Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('authorization.permissions.create');
             Route::post('/permissions/update/{id}', [AuthorizationController::class, 'permissionUpdate'])->name('auth.permissions.update');
             Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
 

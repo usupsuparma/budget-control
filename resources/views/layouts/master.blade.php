@@ -36,6 +36,7 @@
     @stack('page-scripts')
     @yield('js')
 
+
 </body>
 
 </html>

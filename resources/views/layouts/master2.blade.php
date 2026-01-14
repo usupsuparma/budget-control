@@ -35,6 +35,8 @@
             @include('partials.vendor-scripts')
 
             @yield('js')
+            @stack('scripts')
+
 
 </body>
 

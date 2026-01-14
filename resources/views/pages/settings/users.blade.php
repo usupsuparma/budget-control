@@ -19,7 +19,7 @@
                             <a class="nav-link active" data-bs-toggle="tab" href="#user">Users</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#authorization">Roles</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#roles">Roles</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" data-bs-toggle="tab" href="#permission">Permissions</a>
@@ -32,11 +32,11 @@
                     <div class="tab-content pt-3">
 
                         <div class="tab-pane fade show active" id="user">
-                            @include('authorization.users')
+                            @include('authorization.assignUser')
                         </div>
 
-                        <div class="tab-pane fade" id="authorization">
-                            @include('authorization.index') <!-- ROLE PAGE -->
+                        <div class="tab-pane fade" id="roles">
+                            @include('authorization.role') <!-- ROLE PAGE -->
                         </div>
 
                         <div class="tab-pane fade" id="permission">
@@ -53,13 +53,3 @@
 </div>
 
 @endsection
-
-
-{{-- ========== FIX: MODAL DITARUH DI LUAR TAB-PANE ========== --}}
-@include('authorization.modals.permissions')
-@include('authorization.modals')
-@include('authorization.modals.assign')
-
-@push('scripts')
-@include('authorization.scripts.permissions')
-@endpush

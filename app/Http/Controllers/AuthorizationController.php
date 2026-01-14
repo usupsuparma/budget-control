@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\Employee;
+use App\Models\ModulMenu;
+use Dotenv\Validator;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator as FacadesValidator;
 
 class AuthorizationController extends Controller
 {
@@ -59,49 +63,104 @@ class AuthorizationController extends Controller
 
 
     // ====== PERMISSIONS ======
+    // ====== PERMISSIONS ======
     public function permissions()
     {
-        $permissions = Permission::all();
-        return response()->json($permissions);
+        $permissions = Permission::with('modul')->orderBy('id', 'desc')->get(); // Update eager load
+        $moduls = ModulMenu::all(); // Ini sudah benar!
+
+        return view('authorization.permissions', compact('permissions', 'moduls'));
     }
 
     public function permissionStore(Request $request)
     {
         try {
-            $request->validate([
-                'name' => 'required|string|max:100|unique:permissions,name',
-                'modul_menu' => 'required|exists:modul_menus,id',
-                'modul_menu_name' => 'required|string|max:150',
+            Log::info('Permission Store Request:', $request->all());
+
+            // Validasi dengan nama tabel yang benar: 'modul_menu' (bukan 'modul_menus')
+            $validator = FacadesValidator::make($request->all(), [
+                'modul_menu' => 'required|exists:modul_menu,id', // ← PERBAIKI DI SINI
+                'name' => 'required|string|unique:permissions,name',
+                'modul_menu_name' => 'required|string'
             ]);
 
-            Permission::create([
+            if ($validator->fails()) {
+                Log::error('Validation failed:', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Create permission
+            $permission = Permission::create([
+                'modul_menu'         => $request->modul_menu,
                 'name'             => $request->name,
-                'guard_name'       => 'web',
-                'modul_menu'       => $request->modul_menu,
                 'modul_menu_name'  => $request->modul_menu_name,
+                'guard_name'       => 'web'
             ]);
+
+            Log::info('Permission created successfully:', ['id' => $permission->id]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Permission berhasil ditambahkan'
+                'message' => 'Permission created successfully',
+                'permission' => $permission
             ]);
-        } catch (\Throwable $th) {
-            Log::error('Error creating permission: ' . $th->getMessage(), [
-                'AuthorizationController',
-                'permissionStore'
+        } catch (Exception $e) {
+            Log::error('Permission Store Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create permission.'
+                'message' => 'Server error: ' . $e->getMessage()
             ], 500);
         }
     }
 
+    public function permissionUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'modul_menu' => 'required|exists:moduls,id',
+            'name' => 'required|string|unique:permissions,name,' . $id,
+            'modul_menu_name' => 'required|string'
+        ]);
+
+        $permission = Permission::find($id);
+        $permission->update([
+            'modul_menu'         => $request->modul_menu,
+            'name'             => $request->name,
+            'modul_menu_name'  => $request->modul_menu_name,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permission updated successfully'
+        ]);
+    }
+
     public function permissionDelete($id)
     {
-        Permission::find($id)->delete();
-        return response()->json(['success' => true]);
+        $permission = Permission::find($id);
+
+        if ($permission) {
+            // Cek jika permission sedang digunakan
+            if ($permission->roles()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete permission. It is assigned to roles.'
+                ], 422);
+            }
+
+            $permission->delete();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
     }
 
 

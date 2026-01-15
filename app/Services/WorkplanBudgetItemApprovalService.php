@@ -26,7 +26,7 @@ class WorkplanBudgetItemApprovalService
             // Check if already has pending approval
             $existingRequest = ApprovalRequest::where('reference_id', $itemId)
                 ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
-                ->whereIn('status', ['pending', 'in_progress'])
+                ->where('status', 'pending')
                 ->first();
 
             if ($existingRequest) {
@@ -102,7 +102,7 @@ class WorkplanBudgetItemApprovalService
             // Create approval request details for each approver
             foreach ($flowDetails as $detail) {
                 $employeeName = $detail->employment?->employee
-                    ? $detail->employment->employee->first_name.' '.($detail->employment->employee->last_name ?? '')
+                    ? $detail->employment->employee->name
                     : 'Unknown';
 
                 ApprovalRequestDetail::create([
@@ -251,7 +251,7 @@ class WorkplanBudgetItemApprovalService
             // Update current level
             $request->update([
                 'current_level' => $detail->level_sequence + 1,
-                'status' => 'in_progress',
+                'status' => 'pending',
             ]);
 
             return [
@@ -370,7 +370,7 @@ class WorkplanBudgetItemApprovalService
         ])
             ->where('employment_id', $employmentId)
             ->where('status', 'pending')
-            ->whereHas('request', fn ($q) => $q->whereIn('status', ['pending', 'in_progress']))
+            ->whereHas('request', fn ($q) => $q->where('status', 'pending'))
             ->get()
             ->filter(function ($detail) {
                 // Only return if this is the next in sequence
@@ -417,7 +417,7 @@ class WorkplanBudgetItemApprovalService
         try {
             $request = ApprovalRequest::where('reference_id', $itemId)
                 ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
-                ->whereIn('status', ['pending', 'in_progress'])
+                ->where('status', 'pending')
                 ->first();
 
             if (! $request) {

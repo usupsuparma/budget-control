@@ -1005,12 +1005,15 @@ class ApprovalController extends Controller
         }
 
         try {
+            // Get condition_field from selected module
+            $module = ApprovalModule::findOrFail($request->input('module_id'));
+            
             $template = ApprovalFlowTemplate::create([
                 'module_id' => $request->input('module_id'),
                 'template_name' => $request->input('template_name'),
                 'use_uppline_chain' => $request->input('use_uppline_chain', false),
                 'use_threshold' => $request->input('use_threshold', false),
-                'condition_field' => $request->input('condition_field'),
+                'condition_field' => $module->condition_field,
                 'priority' => $request->input('priority', 1),
                 'is_active' => $request->input('is_active', true),
             ]);
@@ -1047,7 +1050,6 @@ class ApprovalController extends Controller
             'template_name' => 'required|string|max:100',
             'use_uppline_chain' => 'boolean',
             'use_threshold' => 'boolean',
-            'condition_field' => 'nullable|string|max:50',
             'priority' => 'integer|min:1',
             'is_active' => 'boolean',
         ]);
@@ -1061,13 +1063,16 @@ class ApprovalController extends Controller
         }
 
         try {
+            // Get condition_field from selected module
+            $module = ApprovalModule::findOrFail($request->input('module_id'));
+            
             $template = ApprovalFlowTemplate::findOrFail($id);
             $template->update([
                 'module_id' => $request->input('module_id'),
                 'template_name' => $request->input('template_name'),
                 'use_uppline_chain' => $request->input('use_uppline_chain', false),
                 'use_threshold' => $request->input('use_threshold', false),
-                'condition_field' => $request->input('condition_field'),
+                'condition_field' => $module->condition_field,
                 'priority' => $request->input('priority', 1),
                 'is_active' => $request->input('is_active', true),
             ]);

@@ -17,12 +17,14 @@ class ApprovalModule extends Model
         'marketing_plans' => 'Marketing Plans',
         'sales_plannings' => 'Sales Plannings',
         'workplan_budget_items' => 'Workplan Budget Items',
+        'kpi_workplans' => 'KPI Workplans',
     ];
 
     protected $table = "approval_modules";
     protected $fillable = [
         "module_name",
         "table_name",
+        "condition_field",
         "is_active",
     ];
 

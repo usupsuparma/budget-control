@@ -2,9 +2,10 @@
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="ri-apps-line me-2"></i>Approval Modules</h5>
-        <button class="btn btn-primary btn-sm" onclick="showAddModuleModal()">
+        {{-- Disbale action buttons for modules --}}
+        {{-- <button class="btn btn-primary btn-sm" onclick="showAddModuleModal()">
             <i class="ri-add-line me-1"></i> Tambah Module
-        </button>
+        </button> --}}
     </div>
     <div class="card-body">
         <p class="text-muted small mb-3">Daftar modul yang menggunakan sistem approval (contoh: transactions, bookings, invoices)</p>
@@ -15,6 +16,7 @@
                         <th width="5%">No</th>
                         <th>Module Name</th>
                         <th>Table Name</th>
+                        <th>Condition Field</th>
                         <th width="10%">Status</th>
                         <th width="15%">Aksi</th>
                     </tr>
@@ -56,6 +58,13 @@
                             <option value="">-- Pilih Table --</option>
                         </select>
                         <small class="text-muted">Pilih tabel database yang akan menggunakan approval</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="condition_field" class="form-label">Condition Field</label>
+                        <input type="text" class="form-control" id="condition_field" name="condition_field" 
+                               placeholder="contoh: amount, total, budget" readonly>
+                        <small class="text-muted">Field yang digunakan untuk threshold (opsional)</small>
                     </div>
                     
                     <div class="mb-3">

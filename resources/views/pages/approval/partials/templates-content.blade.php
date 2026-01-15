@@ -68,10 +68,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="condition_field" class="form-label">Condition Field</label>
-                                <input type="text" class="form-control" id="condition_field" name="condition_field"
-                                       placeholder="contoh: amount, total">
-                                <small class="text-muted">Field yang digunakan untuk threshold (jika aktif)</small>
+                                <label class="form-label">Condition Field</label>
+                                <div class="form-control bg-light" id="display_condition_field" style="cursor: not-allowed;">
+                                    <span class="text-muted">Pilih module terlebih dahulu</span>
+                                </div>
+                                <small class="text-muted">Field diambil dari module yang dipilih</small>
                             </div>
                         </div>
                         <div class="col-md-6">

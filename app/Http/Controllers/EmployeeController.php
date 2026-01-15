@@ -17,7 +17,8 @@ class EmployeeController extends Controller
 
     public function getData()
     {
-        $query = Employee::with(['role', 'jobPosition'])
+        // Use 'roles' (Spatie HasRoles trait) instead of 'role' to avoid conflict with scopeRole()
+        $query = Employee::with(['roles', 'jobPosition'])
             ->select(['id', 'first_name', 'last_name', 'email', 'role_id', 'job_position_id', 'status']);
 
         return DataTables::of($query)
@@ -39,7 +40,7 @@ class EmployeeController extends Controller
             ->addColumn(
                 'roles',
                 fn($row) =>
-                '<span class="badge border border-primary text-primary">' . $row->role->name . '</span>'
+                '<span class="badge border border-primary text-primary">' . ($row->roles->first()->name ?? '-') . '</span>'
             )
 
             ->addColumn(

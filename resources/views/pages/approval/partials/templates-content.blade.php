@@ -50,10 +50,16 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="template_module_id" class="form-label">Module <span class="text-danger">*</span></label>
+                                <label for="template_module_id" class="form-label">
+                                    Module <span class="text-danger">*</span>
+                                    <small class="text-muted d-block" style="font-weight: normal;">
+                                        <i class="ri-information-line"></i> Module tidak bisa diubah setelah template dibuat
+                                    </small>
+                                </label>
                                 <select class="form-select" id="template_module_id" name="module_id" required>
                                     <option value="">Pilih Module</option>
                                 </select>
+                                <small class="text-muted">Hanya module yang belum memiliki template yang ditampilkan</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -69,7 +75,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Condition Field</label>
-                                <div class="form-control bg-light" id="display_condition_field" style="cursor: not-allowed;">
+                                <div class="form-control" id="display_condition_field" style="background-color: #f8f9fa;">
                                     <span class="text-muted">Pilih module terlebih dahulu</span>
                                 </div>
                                 <small class="text-muted">Field diambil dari module yang dipilih</small>
@@ -129,6 +135,122 @@
                             <li>Uppline only: Uppline Chain → Master Flow (all levels)</li>
                             <li>Threshold only: Master Flow saja (threshold-filtered)</li>
                             <li>None: Master Flow saja (all levels)</li>
+                        </ul>
+                    </div>
+
+                    {{-- Uppline Chain Configuration Section --}}
+                    <div id="upplineConfigSection" style="display: none;">
+                        <hr class="my-4">
+                        <h6 class="mb-3">
+                            <i class="ri-link me-1"></i> Uppline Chain Configuration
+                            <small class="text-muted d-block mt-1" style="font-weight: normal;">
+                                Tentukan job level yang diperlukan untuk approval chain. Kosongkan Division untuk konfigurasi default (berlaku untuk semua divisi).
+                            </small>
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="showAddUpplineConfigModal()">
+                                <i class="ri-add-line me-1"></i> Add Level Configuration
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">Step</th>
+                                        <th width="30%">Division</th>
+                                        <th width="45%">Job Level Name</th>
+                                        <th width="20%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="upplineConfigsTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            <small>No configurations yet. Click "Add Level Configuration" to start.</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-warning small mt-2">
+                            <i class="ri-information-line me-1"></i>
+                            <strong>Catatan:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Step sequence menentukan urutan approval (1 = pertama)</li>
+                                <li>Jika Division kosong = konfigurasi default (berlaku untuk semua divisi yang tidak memiliki konfigurasi khusus)</li>
+                                <li>Jika Division terisi = konfigurasi khusus untuk divisi tersebut (override default)</li>
+                                <li>Job Level: <strong>Section → Department → Division → Director</strong> (dari bawah ke atas)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-save-line me-1"></i> Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Uppline Config Modal --}}
+<div class="modal fade" id="upplineConfigModal" tabindex="-1" aria-labelledby="upplineConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="upplineConfigModalTitle">Add Level Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="upplineConfigForm">
+                <div class="modal-body">
+                    <input type="hidden" id="upplineconfig-id">
+                    <input type="hidden" id="upplineconfig-template-id">
+                    
+                    <div class="mb-3">
+                        <label for="upplineconfig_division_id" class="form-label">
+                            Division
+                            <small class="text-muted">(Optional - Leave empty for default)</small>
+                        </label>
+                        <select class="form-select" id="upplineconfig_division_id" name="division_id">
+                            <option value="">Default (All Divisions)</option>
+                        </select>
+                        <small class="text-muted">Pilih divisi spesifik atau kosongkan untuk konfigurasi default</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="upplineconfig_step_sequence" class="form-label">
+                            Step Sequence <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="upplineconfig_step_sequence" 
+                               name="step_sequence" required min="1" value="1">
+                        <small class="text-muted">Urutan approval (1 = pertama, 2 = kedua, dst.)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="upplineconfig_job_level_name" class="form-label">
+                            Job Level Name <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="upplineconfig_job_level_name" 
+                                name="job_level_name" required>
+                            <option value="">Pilih Job Level</option>
+                            <option value="Director">Director</option>
+                            <option value="Division">Division</option>
+                            <option value="Department">Department</option>
+                            <option value="Section">Section</option>
+                        </select>
+                        <small class="text-muted">Pilih level jabatan yang diperlukan untuk approval</small>
+                    </div>
+
+                    <div class="alert alert-info small">
+                        <i class="ri-lightbulb-line me-1"></i>
+                        <strong>Contoh Konfigurasi:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><strong>IT Division (khusus):</strong> Step 1: Section, Step 2: Department, Step 3: Division, Step 4: Director</li>
+                            <li><strong>Default (umum):</strong> Step 1: Section, Step 2: Department, Step 3: Division</li>
                         </ul>
                     </div>
                 </div>

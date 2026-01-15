@@ -388,7 +388,8 @@
 
             if (isEditMode && moduleId) {
                 url = `{{ url('approval/modules/update') }}/${moduleId}`;
-                method = 'PUT';
+                method = 'POST';
+                data._method = 'PUT';
             }
 
             $.ajax({
@@ -436,9 +437,10 @@
                 if (result.isConfirmed) {
                     $.ajax({
                         url: `{{ url('approval/modules/delete') }}/${id}`,
-                        type: 'DELETE',
+                        type: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}'
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE'
                         },
                         success: function(response) {
                             if (response.success) {
@@ -464,15 +466,20 @@
 
         // ========== TEMPLATES FUNCTIONS ==========
 
-        function loadModulesForDropdown() {
+        function loadModulesForDropdown(callback) {
+            const excludeTemplateId = isEditMode ? $('#template-id').val() : null;
+            
             $.ajax({
-                url: '{{ route('approval.modules.data') }}',
+                url: '{{ route('approval.templates.modules') }}',
                 type: 'GET',
+                data: {
+                    exclude_template_id: excludeTemplateId
+                },
                 success: function(response) {
                     if (response.success) {
                         const select = $('#template_module_id');
                         select.empty().append('<option value="">Pilih Module</option>');
-                        response.data.filter(m => m.is_active).forEach(item => {
+                        response.data.forEach(item => {
                             select.append(`<option value="${item.id}" data-condition-field="${item.condition_field || ''}">${item.module_name}</option>`);
                         });
                         
@@ -488,6 +495,11 @@
                                 displayField.html('<span class="text-muted">Tidak ada condition field</span>');
                             }
                         });
+                        
+                        // Execute callback if provided
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
                     }
                 }
             });
@@ -567,6 +579,21 @@
             $('#use_threshold').prop('checked', false);
             $('#template_is_active').prop('checked', true);
             $('#template_priority').val(1);
+            
+            // Enable module select for new template
+            $('#template_module_id').prop('disabled', false);
+            $('#display_condition_field').html('<span class="text-muted">Pilih module terlebih dahulu</span>');
+            
+            // Hide uppline config section for new template
+            $('#upplineConfigSection').hide();
+            $('#upplineConfigsTableBody').html(`
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        <small>No configurations yet. Click "Add Level Configuration" to start.</small>
+                    </td>
+                </tr>
+            `);
+            
             loadModulesForDropdown();
             $('#templateModal').modal('show');
         }
@@ -580,18 +607,50 @@
                         const item = response.data.find(t => t.id === id);
                         if (item) {
                             isEditMode = true;
-                            loadModulesForDropdown();
-                            setTimeout(() => {
-                                $('#templateModalTitle').text('Edit Template');
-                                $('#template-id').val(item.id);
-                                $('#template_module_id').val(item.module_id).trigger('change');
-                                $('#template_name').val(item.template_name);
-                                $('#template_priority').val(item.priority);
-                                $('#use_uppline_chain').prop('checked', item.use_uppline_chain);
-                                $('#use_threshold').prop('checked', item.use_threshold);
-                                $('#template_is_active').prop('checked', item.is_active);
+                            
+                            // Populate form first
+                            $('#templateModalTitle').text('Edit Template');
+                            $('#template-id').val(item.id);
+                            $('#template_name').val(item.template_name);
+                            $('#template_priority').val(item.priority);
+                            $('#use_uppline_chain').prop('checked', item.use_uppline_chain);
+                            $('#use_threshold').prop('checked', item.use_threshold);
+                            $('#template_is_active').prop('checked', item.is_active);
+                            
+                            // Show/hide uppline config section and load configs if needed
+                            if (item.use_uppline_chain) {
+                                $('#upplineConfigSection').show();
+                                currentEditingTemplateId = item.id;
+                                loadUpplineConfigs(item.id);
+                            } else {
+                                $('#upplineConfigSection').hide();
+                            }
+                            
+                            // Load modules dropdown, then set selected module
+                            loadModulesForDropdown(() => {
+                                const select = $('#template_module_id');
+                                
+                                // If module not in dropdown (because already used), add it manually
+                                if (select.find(`option[value="${item.module_id}"]`).length === 0) {
+                                    select.append(`<option value="${item.module_id}" data-condition-field="${item.condition_field || ''}">${item.module ? item.module.module_name : 'Module'}</option>`);
+                                }
+                                
+                                // Set selected value
+                                select.val(item.module_id).trigger('change');
+                                
+                                // Display condition field
+                                const displayField = $('#display_condition_field');
+                                if (item.condition_field) {
+                                    displayField.html(`<code>${item.condition_field}</code>`);
+                                } else {
+                                    displayField.html('<span class="text-muted">Tidak ada condition field</span>');
+                                }
+                                
+                                // Disable module select in edit mode (after setting value)
+                                select.prop('disabled', true);
+                                
                                 $('#templateModal').modal('show');
-                            }, 200);
+                            });
                         }
                     }
                 }
@@ -599,6 +658,11 @@
         }
 
         function saveTemplate() {
+            // Re-enable module select temporarily to submit the value (only for edit mode)
+            if (isEditMode) {
+                $('#template_module_id').prop('disabled', false);
+            }
+            
             const data = {
                 _token: '{{ csrf_token() }}',
                 module_id: $('#template_module_id').val(),
@@ -615,7 +679,9 @@
 
             if (isEditMode && templateId) {
                 url = `{{ url('approval/templates/update') }}/${templateId}`;
-                method = 'PUT';
+                method = 'POST'; // Changed to POST since jQuery AJAX doesn't support PUT directly
+                data._method = 'PUT'; // Laravel method spoofing
+                // For edit mode, module_id will be ignored by backend
             }
 
             $.ajax({
@@ -645,6 +711,12 @@
                     } else {
                         showAlert(xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
                     }
+                },
+                complete: function() {
+                    // Re-disable module select after submission if in edit mode
+                    if (isEditMode) {
+                        $('#template_module_id').prop('disabled', true);
+                    }
                 }
             });
         }
@@ -663,9 +735,10 @@
                 if (result.isConfirmed) {
                     $.ajax({
                         url: `{{ url('approval/templates/delete') }}/${id}`,
-                        type: 'DELETE',
+                        type: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}'
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE'
                         },
                         success: function(response) {
                             if (response.success) {
@@ -845,7 +918,8 @@
 
             if (isEditMode && detailId) {
                 url = `{{ url('approval/flow-details/update') }}/${detailId}`;
-                method = 'PUT';
+                method = 'POST';
+                data._method = 'PUT';
             }
 
             $.ajax({
@@ -893,9 +967,10 @@
                 if (result.isConfirmed) {
                     $.ajax({
                         url: `{{ url('approval/flow-details/delete') }}/${id}`,
-                        type: 'DELETE',
+                        type: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}'
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE'
                         },
                         success: function(response) {
                             if (response.success) {
@@ -909,6 +984,259 @@
                                 loadFlowDetails(selectedTemplateId);
                             } else {
                                 showAlert(response.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            showAlert(xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // ========== UPPLINE CONFIGS FUNCTIONS ==========
+
+        let divisionsData = [];
+        let currentEditingTemplateId = null;
+
+        // Toggle uppline config section based on checkbox
+        $('#use_uppline_chain').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#upplineConfigSection').slideDown();
+                
+                // Load uppline configs if editing existing template
+                const templateId = $('#template-id').val();
+                if (templateId) {
+                    currentEditingTemplateId = templateId;
+                    loadUpplineConfigs(templateId);
+                }
+            } else {
+                $('#upplineConfigSection').slideUp();
+                $('#upplineConfigsTableBody').html(`
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <small>No configurations yet. Click "Add Level Configuration" to start.</small>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+
+        // Handle uppline config form submission
+        $('#upplineConfigForm').on('submit', function(e) {
+            e.preventDefault();
+            saveUpplineConfig();
+        });
+
+        function loadDivisions() {
+            $.ajax({
+                url: '{{ route('approval.divisions.data') }}',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        divisionsData = response.data;
+                        populateDivisionDropdown();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load divisions:', xhr);
+                }
+            });
+        }
+
+        function populateDivisionDropdown() {
+            const select = $('#upplineconfig_division_id');
+            select.find('option:not(:first)').remove(); // Keep "Default" option
+            
+            divisionsData.forEach(division => {
+                select.append(`<option value="${division.id}">${division.division_name}</option>`);
+            });
+        }
+
+        function loadUpplineConfigs(templateId) {
+            $.ajax({
+                url: `{{ url('approval/uppline-configs/data') }}/${templateId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        renderUpplineConfigsTable(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Failed to load uppline configs', 'error');
+                }
+            });
+        }
+
+        function renderUpplineConfigsTable(data) {
+            const tbody = $('#upplineConfigsTableBody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <small>No configurations yet. Click "Add Level Configuration" to start.</small>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            data.forEach(config => {
+                const divisionBadge = config.division_id 
+                    ? `<span class="badge bg-primary">${config.division_name}</span>`
+                    : `<span class="badge bg-secondary">Default (All Divisions)</span>`;
+
+                tbody.append(`
+                    <tr>
+                        <td class="text-center">
+                            <span class="badge bg-info">${config.step_sequence}</span>
+                        </td>
+                        <td>${divisionBadge}</td>
+                        <td><strong>${config.job_level_name}</strong></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editUpplineConfig(${config.id})">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUpplineConfig(${config.id})">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        function showAddUpplineConfigModal() {
+            const templateId = $('#template-id').val();
+            
+            if (!templateId) {
+                showAlert('Please save the template first before adding uppline configs', 'warning');
+                return;
+            }
+
+            isEditMode = false;
+            $('#upplineConfigModalTitle').text('Add Level Configuration');
+            $('#upplineConfigForm')[0].reset();
+            $('#upplineconfig-id').val('');
+            $('#upplineconfig-template-id').val(templateId);
+            $('#upplineconfig_step_sequence').val(1);
+            
+            loadDivisions();
+            $('#upplineConfigModal').modal('show');
+        }
+
+        function editUpplineConfig(id) {
+            const templateId = $('#template-id').val();
+            
+            $.ajax({
+                url: `{{ url('approval/uppline-configs/data') }}/${templateId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const config = response.data.find(c => c.id === id);
+                        if (config) {
+                            isEditMode = true;
+                            $('#upplineConfigModalTitle').text('Edit Level Configuration');
+                            $('#upplineconfig-id').val(config.id);
+                            $('#upplineconfig-template-id').val(config.template_id);
+                            $('#upplineconfig_division_id').val(config.division_id || '');
+                            $('#upplineconfig_step_sequence').val(config.step_sequence);
+                            $('#upplineconfig_job_level_name').val(config.job_level_name);
+                            
+                            loadDivisions();
+                            
+                            setTimeout(() => {
+                                $('#upplineconfig_division_id').val(config.division_id || '');
+                                $('#upplineConfigModal').modal('show');
+                            }, 200);
+                        }
+                    }
+                }
+            });
+        }
+
+        function saveUpplineConfig() {
+            const data = {
+                _token: '{{ csrf_token() }}',
+                template_id: $('#upplineconfig-template-id').val(),
+                division_id: $('#upplineconfig_division_id').val() || null,
+                step_sequence: $('#upplineconfig_step_sequence').val(),
+                job_level_name: $('#upplineconfig_job_level_name').val(),
+            };
+
+            const configId = $('#upplineconfig-id').val();
+            let url = '{{ route('approval.upplineconfigs.store') }}';
+            let method = 'POST';
+
+            if (isEditMode && configId) {
+                url = `{{ url('approval/uppline-configs/update') }}/${configId}`;
+                method = 'POST'; // Use POST with _method for Laravel
+                data._method = 'PUT'; // Laravel method spoofing
+            }
+
+            $.ajax({
+                url: url,
+                type: method,
+                data: data,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: response.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#upplineConfigModal').modal('hide');
+                        loadUpplineConfigs(data.template_id);
+                    } else {
+                        showAlert(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON?.errors;
+                    if (errors) {
+                        const errorMessages = Object.values(errors).flat().join('\n');
+                        showAlert(errorMessages, 'error');
+                    } else {
+                        showAlert(xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
+                    }
+                }
+            });
+        }
+
+        function deleteUpplineConfig(id) {
+            Swal.fire({
+                title: 'Hapus Konfigurasi?',
+                text: 'Level konfigurasi ini akan dihapus',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `{{ url('approval/uppline-configs/delete') }}/${id}`,
+                        type: 'POST', // Use POST with _method for Laravel
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE' // Laravel method spoofing
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terhapus!',
+                                    text: response.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                const templateId = $('#template-id').val();
+                                loadUpplineConfigs(templateId);
                             }
                         },
                         error: function(xhr) {

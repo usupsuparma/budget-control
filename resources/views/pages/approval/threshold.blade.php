@@ -343,7 +343,8 @@ function saveThreshold() {
     
     if (isEditMode && thresholdId) {
         url = `{{ url("approval/threshold/update") }}/${thresholdId}`;
-        method = 'PUT';
+        method = 'POST';
+        data._method = 'PUT';
     }
     
     $.ajax({
@@ -392,8 +393,11 @@ function deleteThreshold(id) {
         if (result.isConfirmed) {
             $.ajax({
                 url: `{{ url("approval/threshold/delete") }}/${id}`,
-                type: 'DELETE',
-                data: { _token: '{{ csrf_token() }}' },
+                type: 'POST',
+                data: { 
+                    _token: '{{ csrf_token() }}',
+                    _method: 'DELETE'
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire({

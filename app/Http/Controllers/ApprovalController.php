@@ -814,6 +814,45 @@ class ApprovalController extends Controller
     }
 
     /**
+     * Get modules for dropdown (filter out modules already used in templates)
+     */
+    public function getModulesForDropdown(Request $request)
+    {
+        try {
+            $excludeTemplateId = $request->input('exclude_template_id');
+            
+            // Get all active modules
+            $allModules = ApprovalModule::where('is_active', true)
+                ->orderBy('module_name')
+                ->get();
+            
+            // Get module IDs that are already used in templates
+            $usedModuleIds = ApprovalFlowTemplate::when($excludeTemplateId, function($query) use ($excludeTemplateId) {
+                    return $query->where('id', '!=', $excludeTemplateId);
+                })
+                ->pluck('module_id')
+                ->toArray();
+            
+            // Filter out used modules
+            $availableModules = $allModules->filter(function($module) use ($usedModuleIds) {
+                return !in_array($module->id, $usedModuleIds);
+            })->values();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $availableModules,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get modules for dropdown failed: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get modules for dropdown',
+            ], 500);
+        }
+    }
+
+    /**
      * Store new approval module
      */
     public function storeModule(Request $request)
@@ -987,13 +1026,18 @@ class ApprovalController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:approval_modules,id',
+            'module_id' => 'required|exists:approval_modules,id|unique:approval_flow_templates,module_id',
             'template_name' => 'required|string|max:100',
             'use_uppline_chain' => 'boolean',
             'use_threshold' => 'boolean',
             'condition_field' => 'nullable|string|max:50',
             'priority' => 'integer|min:1',
             'is_active' => 'boolean',
+        ], [
+            'module_id.required' => 'Module harus dipilih.',
+            'module_id.exists' => 'Module tidak valid.',
+            'module_id.unique' => 'Module sudah memiliki template approval. Setiap module hanya boleh memiliki satu template.',
+            'template_name.required' => 'Template name harus diisi.',
         ]);
 
         if ($validator->fails()) {
@@ -1045,13 +1089,15 @@ class ApprovalController extends Controller
             'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
         ]);
 
+        // NOTE: module_id is NOT included - cannot be changed on update
         $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:approval_modules,id',
             'template_name' => 'required|string|max:100',
             'use_uppline_chain' => 'boolean',
             'use_threshold' => 'boolean',
             'priority' => 'integer|min:1',
             'is_active' => 'boolean',
+        ], [
+            'template_name.required' => 'Template name harus diisi.',
         ]);
 
         if ($validator->fails()) {
@@ -1063,12 +1109,13 @@ class ApprovalController extends Controller
         }
 
         try {
-            // Get condition_field from selected module
-            $module = ApprovalModule::findOrFail($request->input('module_id'));
-            
             $template = ApprovalFlowTemplate::findOrFail($id);
+            
+            // Get condition_field from existing module (module cannot be changed)
+            $module = ApprovalModule::findOrFail($template->module_id);
+            
+            // Update template - module_id is NOT updated
             $template->update([
-                'module_id' => $request->input('module_id'),
                 'template_name' => $request->input('template_name'),
                 'use_uppline_chain' => $request->input('use_uppline_chain', false),
                 'use_threshold' => $request->input('use_threshold', false),
@@ -1332,6 +1379,236 @@ class ApprovalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get employments: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ========== NEW: Uppline Configs Management ==========
+
+    /**
+     * Get uppline configs for a template
+     */
+    public function getUpplineConfigs($templateId)
+    {
+        try {
+            $configs = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $templateId)
+                ->orderBy('step_sequence', 'asc')
+                ->get()
+                ->map(function ($config) {
+                    return [
+                        'id' => $config->id,
+                        'template_id' => $config->template_id,
+                        'division_id' => $config->division_id,
+                        'division_name' => $config->division_id 
+                            ? optional(\App\Models\Division::find($config->division_id))->name 
+                            : 'Default (All Division)',
+                        'step_sequence' => $config->step_sequence,
+                        'job_level_name' => $config->job_level_name,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $configs,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get uppline configs failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get uppline configs',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new uppline config
+     */
+    public function storeUpplineConfig(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'template_id' => 'required|exists:approval_flow_templates,id',
+            'division_id' => 'nullable|exists:division,id',
+            'step_sequence' => 'required|integer|min:1',
+            'job_level_name' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            // Check for duplicate step_sequence in same template+division
+            $existing = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $request->template_id)
+                ->where('step_sequence', $request->step_sequence)
+                ->where(function($query) use ($request) {
+                    if ($request->division_id) {
+                        $query->where('division_id', $request->division_id);
+                    } else {
+                        $query->whereNull('division_id');
+                    }
+                })
+                ->exists();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Step sequence already exists for this template and division',
+                ], 422);
+            }
+
+            $config = \App\Models\ApprovalFlowUpplineConfigs::create([
+                'template_id' => $request->template_id,
+                'division_id' => $request->division_id,
+                'step_sequence' => $request->step_sequence,
+                'job_level_name' => $request->job_level_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config created successfully',
+                'data' => $config,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Store uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update uppline config
+     */
+    public function updateUpplineConfig(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'division_id' => 'nullable|exists:division,id',
+            'step_sequence' => 'required|integer|min:1',
+            'job_level_name' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $config = \App\Models\ApprovalFlowUpplineConfigs::findOrFail($id);
+
+            // Check for duplicate step_sequence (excluding current record)
+            $existing = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $config->template_id)
+                ->where('step_sequence', $request->step_sequence)
+                ->where('id', '!=', $id)
+                ->where(function($query) use ($request) {
+                    if ($request->division_id) {
+                        $query->where('division_id', $request->division_id);
+                    } else {
+                        $query->whereNull('division_id');
+                    }
+                })
+                ->exists();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Step sequence already exists for this template and division',
+                ], 422);
+            }
+
+            $config->update([
+                'division_id' => $request->division_id,
+                'step_sequence' => $request->step_sequence,
+                'job_level_name' => $request->job_level_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config updated successfully',
+                'data' => $config,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete uppline config
+     */
+    public function deleteUpplineConfig($id)
+    {
+        try {
+            $config = \App\Models\ApprovalFlowUpplineConfigs::findOrFail($id);
+            $config->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get divisions for dropdown
+     */
+    public function getDivisions()
+    {
+        try {
+            $divisions = \App\Models\Division::select('id', 'name as division_name')
+                ->where('status', 'active')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $divisions,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get divisions failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get divisions',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get job levels for dropdown
+     */
+    public function getJobLevels()
+    {
+        try {
+            $jobLevels = \App\Models\JobLevel::select('id', 'job_level_name')
+                ->where('status', 'active')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $jobLevels,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get job levels failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get job levels',
             ], 500);
         }
     }

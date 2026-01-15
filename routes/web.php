@@ -1137,6 +1137,8 @@ Route::middleware('auth')->group(function () {
             // ========== NEW: Templates Management API ==========
             Route::get('/templates/data', [ApprovalController::class, 'getTemplates'])
                 ->name('approval.templates.data');
+            Route::get('/templates/modules-dropdown', [ApprovalController::class, 'getModulesForDropdown'])
+                ->name('approval.templates.modules');
             Route::post('/templates/store', [ApprovalController::class, 'storeTemplate'])
                 ->middleware('permission:approval.create')
                 ->name('approval.templates.store');
@@ -1163,6 +1165,25 @@ Route::middleware('auth')->group(function () {
             // ========== NEW: Helper - Employments ==========
             Route::get('/employments/data', [ApprovalController::class, 'getEmployments'])
                 ->name('approval.employments.data');
+
+            // ========== NEW: Uppline Configs Management API ==========
+            Route::get('/uppline-configs/data/{templateId}', [ApprovalController::class, 'getUpplineConfigs'])
+                ->name('approval.upplineconfigs.data');
+            Route::post('/uppline-configs/store', [ApprovalController::class, 'storeUpplineConfig'])
+                ->middleware('permission:approval.create')
+                ->name('approval.upplineconfigs.store');
+            Route::put('/uppline-configs/update/{id}', [ApprovalController::class, 'updateUpplineConfig'])
+                ->middleware('permission:approval.edit')
+                ->name('approval.upplineconfigs.update');
+            Route::delete('/uppline-configs/delete/{id}', [ApprovalController::class, 'deleteUpplineConfig'])
+                ->middleware('permission:approval.delete')
+                ->name('approval.upplineconfigs.delete');
+
+            // ========== NEW: Helper - Divisions & Job Levels ==========
+            Route::get('/divisions/data', [ApprovalController::class, 'getDivisions'])
+                ->name('approval.divisions.data');
+            Route::get('/joblevels/data', [ApprovalController::class, 'getJobLevels'])
+                ->name('approval.joblevels.data');
         });
 
     /* ========================

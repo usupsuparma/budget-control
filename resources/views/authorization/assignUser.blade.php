@@ -6,6 +6,9 @@
                 <h5 class="mb-0"><i class="bi bi-people me-2"></i>User Role Management</h5>
 
                 <div>
+                    <button class="btn btn-success btn-sm me-1" data-bs-toggle="modal" data-bs-target="#modalAddRole">
+                        <i class="bi bi-plus-circle me-1"></i> Add Role
+                    </button>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAssignRole">
                         <i class="bi bi-person-check me-1"></i> Assign Role to User
                     </button>

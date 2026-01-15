@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use PowerComponents\LivewirePowerGrid\Concerns\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
 
 class Employee extends Authenticatable
@@ -26,7 +26,7 @@ class Employee extends Authenticatable
         'last_name',
         'birth_year',
         'phone',
-        'role_id',
+        'role_id', // Legacy field - gunakan Spatie HasRoles untuk role management
         'job_position_id',
         'status',
     ];
@@ -49,7 +49,14 @@ class Employee extends Authenticatable
 
     protected $dates = ['deleted_at'];
 
-    public function role()
+    /**
+     * Legacy relationship to custom Roles table
+     * DEPRECATED: Gunakan Spatie HasRoles trait methods seperti:
+     * - $employee->roles (get all roles)
+     * - $employee->hasRole('admin')
+     * - $employee->assignRole('editor')
+     */
+    public function legacyRole()
     {
         return $this->belongsTo(Roles::class, 'role_id', 'id');
     }

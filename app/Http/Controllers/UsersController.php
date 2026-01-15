@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\ModulMenu;
+use App\Models\Permission;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
@@ -12,9 +13,11 @@ class UsersController extends Controller
     public function index()
     {
         $title = "Users Data";
-        $roles = Role::all();
-        $permissions = Permission::with('modul')->OrderBy('id', 'DESC')->get();
+        $roles = Role::with('users')->get();
+        $permissions = Permission::with('modul')->orderBy('id', 'DESC')->get();
         $moduls = ModulMenu::orderBy('modul_name')->orderBy('menu_name')->get();
-        return view('pages.settings.users', compact('title', 'roles', 'permissions', 'moduls'));
+        $employees = Employee::orderBy('first_name')->get();
+        
+        return view('pages.settings.users', compact('title', 'roles', 'permissions', 'moduls', 'employees'));
     }
 }

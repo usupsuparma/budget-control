@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 
 class PermissionHelper
 {

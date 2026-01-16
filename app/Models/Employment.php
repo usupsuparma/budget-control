@@ -30,11 +30,25 @@ class Employment extends Model
         'uppline_id',
         'uppline_id_name',
         'employment_status',
-        'role_id',
-        'role_name',
         'join_date',
         'status',
     ];
+
+    /**
+     * Get role name from associated Employee (via Spatie)
+     */
+    public function getRoleName(): string
+    {
+        return $this->employee?->roles->first()?->name ?? 'No Role';
+    }
+
+    /**
+     * Get role attribute accessor
+     */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->getRoleName();
+    }
 
     public function employee()
     {

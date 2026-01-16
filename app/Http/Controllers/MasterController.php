@@ -44,7 +44,7 @@ class MasterController extends Controller
     public function data(Request $request)
     {
         if ($request->ajax()) {
-            $query = Employee::select(['id', 'email', 'first_name', 'last_name', 'role_id', 'status']);
+            $query = Employee::with('roles')->select(['id', 'email', 'first_name', 'last_name', 'status']);
 
             return DataTables::of($query)
                 ->addColumn('fullname', fn($row) => $row->first_name . ' ' . $row->last_name)

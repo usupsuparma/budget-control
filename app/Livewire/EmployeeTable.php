@@ -29,7 +29,6 @@ final class EmployeeTable extends PowerGridComponent
             Column::make('Email', 'email'),
             Column::make('First Name', 'first_name'),
             Column::make('Last Name', 'last_name'),
-            Column::make('Role ID', 'role_id'),
             Column::make('Status', 'status'),
         ];
     }

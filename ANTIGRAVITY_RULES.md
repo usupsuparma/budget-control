@@ -6,6 +6,7 @@
 ---
 
 ## 📋 Daftar Isi
+
 1. [Project Identity](#-project-identity)
 2. [Tech Stack](#-tech-stack)
 3. [Architecture Rules](#-architecture-rules)
@@ -20,39 +21,42 @@
 
 ## 🎯 Project Identity
 
-| Key | Value |
-|-----|-------|
-| **Nama** | Budget Control |
-| **Tujuan** | Sistem manajemen anggaran, KPI, dan approval workflow |
-| **Domain** | Finance / Enterprise Resource Planning |
-| **Bahasa Kode** | English |
-| **Bahasa Komentar** | English preferred, Indonesia allowed |
+| Key                 | Value                                                 |
+| ------------------- | ----------------------------------------------------- |
+| **Nama**            | Budget Control                                        |
+| **Tujuan**          | Sistem manajemen anggaran, KPI, dan approval workflow |
+| **Domain**          | Finance / Enterprise Resource Planning                |
+| **Bahasa Kode**     | English                                               |
+| **Bahasa Komentar** | English preferred, Indonesia allowed                  |
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Core
-- **Framework**: Laravel 12.x
-- **PHP**: ^8.2
-- **Frontend**: Blade + Livewire 3.x
-- **Database**: MySQL/MariaDB
+
+-   **Framework**: Laravel 12.x
+-   **PHP**: ^8.2
+-   **Frontend**: Blade + Livewire 3.x
+-   **Database**: MySQL/MariaDB
 
 ### Key Packages (JANGAN GANTI tanpa approval)
-| Package | Versi | Fungsi |
-|---------|-------|--------|
-| `spatie/laravel-permission` | ^6.23 | RBAC |
-| `yajra/laravel-datatables-oracle` | ^12.6 | Server-side DataTables |
-| `maatwebsite/excel` | ^3.1 | Excel import/export |
-| `barryvdh/laravel-dompdf` | ^3.1 | PDF generation |
-| `livewire/livewire` | ^3.6 | Reactive components |
-| `power-components/livewire-powergrid` | ^6.6 | DataGrid |
+
+| Package                               | Versi | Fungsi                 |
+| ------------------------------------- | ----- | ---------------------- |
+| `spatie/laravel-permission`           | ^6.23 | RBAC                   |
+| `yajra/laravel-datatables-oracle`     | ^12.6 | Server-side DataTables |
+| `maatwebsite/excel`                   | ^3.1  | Excel import/export    |
+| `barryvdh/laravel-dompdf`             | ^3.1  | PDF generation         |
+| `livewire/livewire`                   | ^3.6  | Reactive components    |
+| `power-components/livewire-powergrid` | ^6.6  | DataGrid               |
 
 ---
 
 ## 🏗️ Architecture Rules
 
 ### Directory Structure
+
 ```
 app/
 ├── Exports/          # Maatwebsite export classes
@@ -93,37 +97,37 @@ class ExampleController extends Controller
     public function __construct(
         private readonly ExampleService $exampleService
     ) {}
-    
+
     // 1. View methods (return view)
     public function index() { }
     public function create() { }
     public function edit($id) { }
-    
+
     // 2. API/Data methods (return JSON)
     public function getData(Request $request) { }  // untuk DataTables
     public function data() { }                     // alternatif naming
-    
+
     // 3. CRUD methods - delegate ke service
-    public function store(Request $request) 
+    public function store(Request $request)
     {
         $validated = $request->validated();
         $result = $this->exampleService->create($validated);
         return response()->json(['success' => true, 'data' => $result]);
     }
-    
+
     public function update(Request $request, $id)
     {
         $validated = $request->validated();
         $result = $this->exampleService->update($id, $validated);
         return response()->json(['success' => true, 'data' => $result]);
     }
-    
+
     public function destroy($id)
     {
         $this->exampleService->delete($id);
         return response()->json(['success' => true]);
     }
-    
+
     // 4. Action methods - delegate ke service
     public function approve($id)
     {
@@ -139,11 +143,13 @@ class ExampleController extends Controller
 
 > [!IMPORTANT]
 > Ini adalah **WAJIB** pattern untuk semua fitur baru. Generate service menggunakan:
+>
 > ```bash
 > php artisan make:service {ServiceName}
 > ```
 
 ##### Directory Structure
+
 ```
 app/Services/
 ├── ExampleService/
@@ -156,6 +162,7 @@ app/Services/
 ```
 
 ##### Interface (Kontrak)
+
 ```php
 <?php
 
@@ -163,7 +170,7 @@ namespace App\Services\ExampleService;
 
 /**
  * Service interface for Example operations.
- * 
+ *
  * Kontrak ini mendefinisikan semua method yang HARUS diimplementasikan.
  * Controller akan depend pada interface ini, bukan implementasi langsung.
  */
@@ -213,6 +220,7 @@ interface ExampleService
 ```
 
 ##### Implementation (Logika Bisnis)
+
 ```php
 <?php
 
@@ -261,12 +269,12 @@ class ExampleServiceImpl implements ExampleService
     public function getAll(array $filters = []): Collection
     {
         $query = $this->model->query();
-        
+
         // Apply filters
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
-        
+
         return $query->get();
     }
 }
@@ -292,7 +300,7 @@ class CustomServiceProvider extends ServiceProvider
             \App\Services\ExampleService\ExampleService::class,
             \App\Services\ExampleService\ExampleServiceImpl::class
         );
-        
+
         // Tambahkan binding lain di sini
     }
 
@@ -305,38 +313,39 @@ class CustomServiceProvider extends ServiceProvider
 
 ##### Service Guidelines
 
-| Rule | Deskripsi |
-|------|-----------|
-| **Single Responsibility** | Satu service = satu domain/aggregate |
-| **Interface First** | Selalu definisikan interface sebelum implementation |
-| **Dependency Injection** | Inject via constructor, jangan pakai `app()` helper |
-| **Transaction Safety** | Gunakan `DB::transaction()` untuk operasi multi-step |
-| **Exception Handling** | Throw custom exception untuk error bisnis |
-| **Return Types** | Selalu definisikan return type di interface |
-| **No Direct Model Access in Controller** | Controller tidak boleh query model langsung |
+| Rule                                     | Deskripsi                                            |
+| ---------------------------------------- | ---------------------------------------------------- |
+| **Single Responsibility**                | Satu service = satu domain/aggregate                 |
+| **Interface First**                      | Selalu definisikan interface sebelum implementation  |
+| **Dependency Injection**                 | Inject via constructor, jangan pakai `app()` helper  |
+| **Transaction Safety**                   | Gunakan `DB::transaction()` untuk operasi multi-step |
+| **Exception Handling**                   | Throw custom exception untuk error bisnis            |
+| **Return Types**                         | Selalu definisikan return type di interface          |
+| **No Direct Model Access in Controller** | Controller tidak boleh query model langsung          |
 
 #### 3. Model Pattern
+
 ```php
 class Example extends Model
 {
     use SoftDeletes;  // WAJIB untuk data penting
-    
+
     protected $fillable = [...];
     protected $casts = [...];
-    
+
     // 1. Constants untuk status/enum
     const STATUS_PENDING = 0;
     const STATUS_APPROVED = 1;
-    
+
     // 2. Relationships
     public function parent() { }
     public function children() { }
-    
+
     // 3. Scopes
     public function scopePending($query) { }
     public function scopeByYear($query, $year) { }
-    
-    // 4. Helper methods  
+
+    // 4. Helper methods
     public function isPending() { }
     public function getStatusLabel() { }
     public function getStatusBadgeClass() { }
@@ -344,6 +353,7 @@ class Example extends Model
 ```
 
 #### 4. Response Pattern (untuk AJAX)
+
 ```php
 // Success
 return response()->json([
@@ -366,19 +376,20 @@ return response()->json([
 
 ### Naming Conventions
 
-| Item | Convention | Contoh |
-|------|------------|--------|
-| **Model** | PascalCase, Singular | `Transaction`, `KPIWorkPlan` |
-| **Controller** | PascalCase + Controller | `TransactionController` |
-| **Table** | snake_case, Plural | `transactions`, `kpi_workplans` |
-| **Column** | snake_case | `created_at`, `user_id` |
-| **Migration** | snake_case, descriptive | `create_transactions_table` |
-| **Route name** | kebab-case dengan dot | `transaction.store`, `budget.user.index` |
-| **View folder** | kebab-case | `resources/views/pages/work-plan/` |
-| **Variable** | camelCase | `$totalAmount`, `$pendingApprovals` |
-| **Constant** | UPPER_SNAKE_CASE | `STATUS_PENDING` |
+| Item            | Convention              | Contoh                                   |
+| --------------- | ----------------------- | ---------------------------------------- |
+| **Model**       | PascalCase, Singular    | `Transaction`, `KPIWorkPlan`             |
+| **Controller**  | PascalCase + Controller | `TransactionController`                  |
+| **Table**       | snake_case, Plural      | `transactions`, `kpi_workplans`          |
+| **Column**      | snake_case              | `created_at`, `user_id`                  |
+| **Migration**   | snake_case, descriptive | `create_transactions_table`              |
+| **Route name**  | kebab-case dengan dot   | `transaction.store`, `budget.user.index` |
+| **View folder** | kebab-case              | `resources/views/pages/work-plan/`       |
+| **Variable**    | camelCase               | `$totalAmount`, `$pendingApprovals`      |
+| **Constant**    | UPPER_SNAKE_CASE        | `STATUS_PENDING`                         |
 
 ### Route Naming Convention
+
 ```php
 // Pattern: {module}.{action} atau {module}.{sub}.{action}
 Route::get('/', [Controller::class, 'index'])->name('transaction.index');
@@ -388,11 +399,12 @@ Route::post('/{id}/approve', [Controller::class, 'approve'])->name('transaction.
 ```
 
 ### Comments
+
 ```php
 // WAJIB: DocBlock untuk method kompleks
 /**
  * Calculate approval chain based on amount threshold
- * 
+ *
  * @param int $transactionId
  * @return array
  */
@@ -409,12 +421,14 @@ public function createApprovalChain($transactionId) { }
 ## 💾 Database Conventions
 
 ### Migration Rules
+
 1. **Prefix Timestamp**: Ikuti format Laravel `YYYY_MM_DD_HHMMSS`
 2. **Naming**: `{action}_{columns}_to_{table}_table.php`
 3. **Reversible**: Selalu implementasi `down()` method
 4. **Nullable**: Default NULL untuk optional fields
 
 ### Foreign Key Naming
+
 ```php
 // Pattern: {table}_{column}_foreign
 $table->foreign('user_id')
@@ -424,9 +438,11 @@ $table->foreign('user_id')
 ```
 
 ### Soft Deletes
+
 **WAJIB** untuk tabel: `transactions`, `approvals`, `workplans`, `budget_items`, dan semua tabel yang butuh audit trail.
 
 ### Index Naming
+
 ```php
 // Pattern: {table}_{columns}_index
 $table->index(['status', 'created_at'], 'transactions_status_created_index');
@@ -437,11 +453,13 @@ $table->index(['status', 'created_at'], 'transactions_status_created_index');
 ## 🎨 Frontend Conventions
 
 ### Blade Views
+
 1. **Layout**: Extend dari `layouts/app.blade.php`
 2. **Partials**: `@include('include.component')` untuk reusable parts
 3. **Stack**: Gunakan `@push('scripts')` untuk page-specific JS
 
 ### DataTables Pattern
+
 ```javascript
 // Gunakan Yajra DataTables dengan server-side processing
 $('#dataTable').DataTable({
@@ -458,6 +476,7 @@ $('#dataTable').DataTable({
 ```
 
 ### Modal Pattern
+
 ```html
 <!-- Modal wrapper di setiap page yang butuh -->
 <div class="modal fade" id="modalForm" tabindex="-1">
@@ -469,12 +488,13 @@ $('#dataTable').DataTable({
 ```
 
 ### Currency Formatting
+
 ```javascript
 // Gunakan pattern ini untuk format currency
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR'
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
     }).format(amount);
 }
 ```
@@ -483,7 +503,40 @@ function formatCurrency(amount) {
 
 ## 🔐 Security Rules
 
+### Role & Permission Management
+
+> [!IMPORTANT]
+> Budget Control menggunakan **Spatie Laravel Permission** sebagai **satu-satunya** sistem untuk role & permission management.
+
+#### Best Practices
+
+**✅ GUNAKAN Spatie untuk semua role & permission:**
+
+```php
+// Permission checking
+if ($employee->can('transaction.create')) { }
+
+// Role checking
+if ($employee->hasRole('admin')) { }
+
+// Middleware
+Route::middleware('role:admin')->group(function () { });
+Route::middleware('permission:transaction.view')->group(function () { });
+
+// Assign role
+$employee->assignRole('editor');
+
+// Sync roles (replace all)
+$employee->syncRoles(['editor', 'writer']);
+
+// Get role name untuk display
+$roleName = $employee->getPrimaryRoleName(); // helper method
+// atau
+$roleName = $employee->roles->first()?->name ?? 'No Role';
+```
+
 ### Permission Middleware
+
 ```php
 // WAJIB pada setiap route yang butuh akses kontrol
 Route::prefix('transaction')
@@ -494,7 +547,9 @@ Route::prefix('transaction')
 ```
 
 ### Permission Naming
+
 Pattern: `{module}.{action}`
+
 ```
 transaction.view
 transaction.create
@@ -504,6 +559,7 @@ transaction.approve
 ```
 
 ### Input Validation
+
 ```php
 // WAJIB validasi di controller
 $validator = Validator::make($request->all(), [
@@ -520,14 +576,16 @@ if ($validator->fails()) {
 ```
 
 ### XSS Prevention
-- Blade: Gunakan `{{ }}` bukan `{!! !!}` kecuali terpaksa
-- Jika harus raw HTML: Sanitize dengan `strip_tags()` atau HTMLPurifier
+
+-   Blade: Gunakan `{{ }}` bukan `{!! !!}` kecuali terpaksa
+-   Jika harus raw HTML: Sanitize dengan `strip_tags()` atau HTMLPurifier
 
 ---
 
 ## 🧪 Testing Guidelines
 
 ### Test Location
+
 ```
 tests/
 ├── Feature/    # Integration tests
@@ -535,6 +593,7 @@ tests/
 ```
 
 ### Running Tests
+
 ```bash
 # Semua test
 php artisan test
@@ -547,6 +606,7 @@ php artisan test --filter=ApprovalServiceTest
 ```
 
 ### Test Naming
+
 ```php
 // Pattern: test_{action}_{condition}
 public function test_create_transaction_with_valid_data()
@@ -558,6 +618,7 @@ public function test_approval_fails_without_permission()
 ## 📦 Git & Deployment
 
 ### Commit Message Format
+
 ```
 {type}: {description}
 
@@ -576,6 +637,7 @@ fix: correct budget calculation for Q4
 ```
 
 ### Branch Naming
+
 ```
 feature/{issue-number}-{short-description}
 bugfix/{issue-number}-{short-description}
@@ -587,11 +649,12 @@ bugfix/456-incorrect-budget-total
 ```
 
 ### Pre-Deployment Checklist
-- [ ] `composer install --no-dev`
-- [ ] `php artisan config:cache`
-- [ ] `php artisan route:cache`
-- [ ] `php artisan view:cache`
-- [ ] `php artisan migrate --force`
+
+-   [ ] `composer install --no-dev`
+-   [ ] `php artisan config:cache`
+-   [ ] `php artisan route:cache`
+-   [ ] `php artisan view:cache`
+-   [ ] `php artisan migrate --force`
 
 ---
 
@@ -614,6 +677,7 @@ bugfix/456-incorrect-budget-total
 ## 📌 Quick Reference
 
 ### Common Commands
+
 ```bash
 # Development
 composer dev                    # Start all services (server, queue, logs, vite)
@@ -633,6 +697,7 @@ php artisan test                # Run all tests
 ```
 
 ### Useful Artisan
+
 ```bash
 php artisan make:controller NameController
 php artisan make:model Name -m       # with migration

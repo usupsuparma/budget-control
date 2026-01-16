@@ -26,7 +26,6 @@ class Employee extends Authenticatable
         'last_name',
         'birth_year',
         'phone',
-        'role_id', // Legacy field - gunakan Spatie HasRoles untuk role management
         'job_position_id',
         'status',
     ];
@@ -50,15 +49,20 @@ class Employee extends Authenticatable
     protected $dates = ['deleted_at'];
 
     /**
-     * Legacy relationship to custom Roles table
-     * DEPRECATED: Gunakan Spatie HasRoles trait methods seperti:
-     * - $employee->roles (get all roles)
-     * - $employee->hasRole('admin')
-     * - $employee->assignRole('editor')
+     * Get primary role name for display
+     * Uses Spatie Laravel Permission
      */
-    public function legacyRole()
+    public function getPrimaryRoleName(): string
     {
-        return $this->belongsTo(Roles::class, 'role_id', 'id');
+        return $this->roles->first()?->name ?? 'No Role';
+    }
+
+    /**
+     * Get primary role ID (from Spatie)
+     */
+    public function getPrimaryRoleId(): ?int
+    {
+        return $this->roles->first()?->id;
     }
 
     public function jobPosition()

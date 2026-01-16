@@ -53,22 +53,22 @@
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label class="form-label">First Name</label>
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="first_name" name="first_name" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Last Name</label>
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="last_name" name="last_name" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Employee ID</label>
+                            <label class="form-label">Employee ID (NIP) <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="employee_id" name="employee_id" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Job Position</label>
+                            <label class="form-label">Job Position <span class="text-danger">*</span></label>
                             <select class="form-select" id="job_position_id" name="job_position_id" required>
                                 <option value="" selected disabled>-- Select Job Position --</option>
                                 @foreach ($jobPositions as $jp)
@@ -79,12 +79,12 @@
 
 
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
                             <input type="email" class="form-control" id="email" name="email" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Password</label>
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
                         <div class="col-md-6">
@@ -101,11 +101,11 @@
 
                         <input type="hidden" name="uppline_name" id="uppline_name">
                         <div class="col-md-6">
-                            <label class="form-label">Role</label>
-                            <select class="form-select" id="role_id" name="role_id" required>
+                            <label class="form-label">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role_name" name="role_name" required>
                                 <option value="" selected disabled>-- Select Role --</option>
                                 @foreach ($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                <option value="{{ $role->name }}">{{ $role->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -209,22 +209,22 @@
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label class="form-label">First Name</label>
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
                             <input type="text" id="edit_first_name" name="first_name" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Last Name</label>
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
                             <input type="text" id="edit_last_name" name="last_name" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Employee ID</label>
+                            <label class="form-label">Employee ID (NIP) <span class="text-danger">*</span></label>
                             <input type="text" id="edit_employee_id" name="employee_id" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Job Position</label>
+                            <label class="form-label">Job Position <span class="text-danger">*</span></label>
                             <select class="form-select" name="job_position_id" id="edit_job_position_id" required>
                                 <option value="" disabled selected>-- Select Job Position --</option>
                                 @foreach ($jobPositions as $jp)
@@ -234,16 +234,16 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
                             <input type="email" id="edit_email" name="email" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Role</label>
-                            <select class="form-select" name="role_id" id="edit_role_id" required>
+                            <label class="form-label">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" name="role_name" id="edit_role_name" required>
                                 <option value="" disabled selected>-- Select Role --</option>
                                 @foreach ($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                <option value="{{ $role->name }}">{{ $role->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -260,7 +260,7 @@
                         </div>
                         <input type="hidden" name="uppline_name" id="edit_uppline_name">
                         <div class="col-md-6">
-                            <label class="form-label">Status</label>
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
                             <select class="form-select" id="edit_status" name="status" required>
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
@@ -347,15 +347,18 @@
             $("#detailEmail").text(data.email);
             $("#detailEmployeeId").text(data.employee_id ?? '-');
             $("#detailJobPosition").text(data.job_position?.job_position_name ?? '-');
-            $("#detailOrganization").text(data.organization?.organization_name ?? "-");
-            $("#detailJobLevel").text(data.job_level?.job_level_name ?? "-");
-            $("#detailRole").text(data.role?.role_name ?? "-");
+            $("#detailOrganization").text(data.job_position?.structure_name ?? "-");
+            $("#detailJobLevel").text(data.job_position?.job_level_name ?? "-");
+            $("#detailRole").text(data.roles && data.roles.length > 0 ? data.roles[0].name : '-');
 
             let status = data.status === "Active" ?
                 `<span class="badge bg-success">Active</span>` :
                 `<span class="badge bg-secondary">Inactive</span>`;
             $("#detailStatus").html(status);
 
+            // Store employee ID for reset password button
+            $("#employeeDetailModal").data('employee-id', data.id);
+            
             $("#employeeDetailModal").modal("show");
         });
     });
@@ -370,15 +373,43 @@
             method: "POST",
             data: $(this).serialize(),
             success: function(res) {
-
                 $("#createEmployee").modal("hide");
+                $("#employeeCreateForm")[0].reset(); // Reset form
                 $("#employeeTable").DataTable().ajax.reload(null, false);
 
                 Swal.fire("Success", "Employee created successfully!", "success");
             },
             error: function(xhr) {
                 console.log(xhr.responseText);
-                Swal.fire("Error", "Failed to save employee!", "error");
+                
+                // Tangani ValidationError (422) dan ServerError (500)
+                if (xhr.status === 422) {
+                    // Validation Error - tampilkan semua pesan error
+                    let errors = xhr.responseJSON.errors;
+                    let errorMessages = '';
+                    
+                    for (let field in errors) {
+                        errorMessages += '• ' + errors[field][0] + '\n';
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validasi Gagal',
+                        html: '<div style="text-align:left;">' + 
+                              errorMessages.replace(/\n/g, '<br>') + 
+                              '</div>',
+                    });
+                } else if (xhr.status === 500) {
+                    // Server Error
+                    let response = xhr.responseJSON;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Menyimpan',
+                        text: response?.message || 'Terjadi kesalahan server. Silakan coba lagi.',
+                    });
+                } else {
+                    Swal.fire("Error", "Gagal menyimpan employee!", "error");
+                }
             }
         });
     });
@@ -397,7 +428,7 @@
             $("#edit_email").val(res.email);
 
             $("#edit_job_position_id").val(res.job_position_id);
-            $("#edit_role_id").val(res.role_id);
+            $("#edit_role_name").val(res.roles && res.roles.length > 0 ? res.roles[0].name : '');
             $("#edit_status").val(res.status);
 
             // UPPLINE (dari employment)
@@ -478,16 +509,49 @@
                 });
             },
             error: function(xhr) {
-                Swal.fire("Error", "Failed to update employee!", "error");
                 console.log(xhr.responseText);
+                
+                // Tangani ValidationError (422) dan ServerError (500)
+                if (xhr.status === 422) {
+                    // Validation Error - tampilkan semua pesan error
+                    let errors = xhr.responseJSON.errors;
+                    let errorMessages = '';
+                    
+                    for (let field in errors) {
+                        errorMessages += '• ' + errors[field][0] + '\n';
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validasi Gagal',
+                        html: '<div style="text-align:left;">' + 
+                              errorMessages.replace(/\n/g, '<br>') + 
+                              '</div>',
+                    });
+                } else if (xhr.status === 500) {
+                    // Server Error
+                    let response = xhr.responseJSON;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Menyimpan',
+                        text: response?.message || 'Terjadi kesalahan server. Silakan coba lagi.',
+                    });
+                } else {
+                    Swal.fire("Error", "Gagal update employee!", "error");
+                }
             }
         });
     });
 </script>
 <script>
-    $(document).on('click', '.employee-resetpass-btn', function() {
-
-        let id = $(this).data('id');
+    $(document).on('click', '.employee-resetpass-btn, .resetPasswordBtn', function() {
+        // Get ID from button data or from parent modal data
+        let id = $(this).data('id') || $("#employeeDetailModal").data('employee-id');
+        
+        if (!id) {
+            Swal.fire("Error", "Employee ID not found", "error");
+            return;
+        }
 
         Swal.fire({
             title: "Reset password?",
@@ -503,6 +567,9 @@
                     password: result.value
                 }, function() {
                     Swal.fire("Success!", "Password reset successfully.", "success");
+                }).fail(function(xhr) {
+                    console.log(xhr.responseText);
+                    Swal.fire("Error", "Failed to reset password", "error");
                 });
 
             }

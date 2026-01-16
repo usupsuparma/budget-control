@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Employment;
 use App\Models\JobPosition;
-use App\Models\Roles;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\DataTables;
 
@@ -19,7 +19,7 @@ class EmployeeController extends Controller
     {
         // Use 'roles' (Spatie HasRoles trait) instead of 'role' to avoid conflict with scopeRole()
         $query = Employee::with(['roles', 'jobPosition'])
-            ->select(['id', 'first_name', 'last_name', 'email', 'role_id', 'job_position_id', 'status']);
+            ->select(['id', 'first_name', 'last_name', 'email', 'job_position_id', 'status']);
 
         return DataTables::of($query)
             ->addColumn('full_name', function ($row) {
@@ -79,22 +79,22 @@ class EmployeeController extends Controller
             })
 
             // Custom filter for full_name column (search in first_name, last_name, and email)
-            ->filterColumn('full_name', function($query, $keyword) {
+            ->filterColumn('full_name', function ($query, $keyword) {
                 $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$keyword}%"])
-                      ->orWhere('email', 'LIKE', "%{$keyword}%");
+                    ->orWhere('email', 'LIKE', "%{$keyword}%");
             })
 
             // Custom filter for job_info column (search in job_position relationship)
-            ->filterColumn('job_info', function($query, $keyword) {
-                $query->whereHas('jobPosition', function($q) use ($keyword) {
+            ->filterColumn('job_info', function ($query, $keyword) {
+                $query->whereHas('jobPosition', function ($q) use ($keyword) {
                     $q->where('job_position_name', 'LIKE', "%{$keyword}%")
-                      ->orWhere('job_level_name', 'LIKE', "%{$keyword}%");
+                        ->orWhere('job_level_name', 'LIKE', "%{$keyword}%");
                 });
             })
 
             // Custom filter for roles column (search in Spatie roles relationship)
-            ->filterColumn('roles', function($query, $keyword) {
-                $query->whereHas('roles', function($q) use ($keyword) {
+            ->filterColumn('roles', function ($query, $keyword) {
+                $query->whereHas('roles', function ($q) use ($keyword) {
                     $q->where('name', 'LIKE', "%{$keyword}%");
                 });
             })
@@ -106,62 +106,99 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
-        DB::transaction(function () use ($request) {
-
-            // Ambil data relasi
-            $jobPosition = JobPosition::findOrFail($request->job_position_id);
-
-            $role = Role::findOrFail($request->role_id);
-
-            // 1️⃣ SIMPAN EMPLOYEE
-
-            //dd($request->all());
-            $employee = Employee::create([
-                'employee_id'      => $request->employee_id,
-                'first_name'       => $request->first_name,
-                'last_name'        => $request->last_name,
-                'email'            => $request->email,
-                'password'         => bcrypt($request->password),
-                'job_position_id'  => $jobPosition->id,
-                'role_id'          => $role->id,
-                'status'           => 'Active',
-            ]);
-
-            // 2️⃣ SIMPAN EMPLOYMENT
-            Employment::create([
-                'employee_id'        => $request->employee_id,
-
-                'organization_id'    => $jobPosition->organization->id ?? null,
-                'organization_name'  => $jobPosition->organization->organization_name ?? null,
-
-                'job_level_id'       => $jobPosition->job_level_id ?? null,
-                'job_level_name'     => $jobPosition->job_level_name ?? null,
-
-                'job_position_id'    => $jobPosition->id,
-                'job_position_name'  => $jobPosition->job_position_name,
-
-                'uppline_id'         => $request->uppline_id ?? null,
-                'uppline_id_name'    => $request->uppline_name ?? null,
-
-                'employment_status'  => 'Aktif',
-                'role_id'            => $role->id,
-                'role_name'          => $role->name,
-
-                'status'             => 'Active',
-            ]);
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Employee & Employment created successfully'
+        // Validasi dengan pesan error yang jelas
+        $validated = $request->validate([
+            'first_name'      => 'required|string|max:100',
+            'last_name'       => 'required|string|max:100',
+            'employee_id'     => 'required|string|max:50|unique:employee,employee_id',
+            'email'           => 'required|email|max:150|unique:employee,email',
+            'password'        => 'required|string|min:6',
+            'job_position_id' => 'required|exists:job_position,id',
+            'role_name'       => 'required|string|exists:roles,name',
+        ], [
+            // Pesan error dalam Bahasa Indonesia
+            'first_name.required'      => 'Nama depan wajib diisi',
+            'first_name.max'           => 'Nama depan maksimal 100 karakter',
+            'last_name.required'       => 'Nama belakang wajib diisi',
+            'last_name.max'            => 'Nama belakang maksimal 100 karakter',
+            'employee_id.required'     => 'Nomor Induk Pegawai (NIP) wajib diisi',
+            'employee_id.unique'       => 'Nomor Induk Pegawai (NIP) sudah terdaftar',
+            'employee_id.max'          => 'NIP maksimal 50 karakter',
+            'email.required'           => 'Email wajib diisi',
+            'email.email'              => 'Format email tidak valid',
+            'email.unique'             => 'Email sudah terdaftar, gunakan email lain',
+            'email.max'                => 'Email maksimal 150 karakter',
+            'password.required'        => 'Password wajib diisi',
+            'password.min'             => 'Password minimal 6 karakter',
+            'job_position_id.required' => 'Job Position wajib dipilih',
+            'job_position_id.exists'   => 'Job Position tidak valid',
+            'role_name.required'       => 'Role wajib dipilih',
+            'role_name.exists'         => 'Role tidak valid',
         ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+
+                // Ambil data relasi
+                $jobPosition = JobPosition::findOrFail($request->job_position_id);
+
+                // Get role by name (from Spatie)
+                $role = Role::where('name', $request->role_name)->firstOrFail();
+
+                // 1️⃣ SIMPAN EMPLOYEE
+                $employee = Employee::create([
+                    'employee_id'      => $request->employee_id,
+                    'first_name'       => $request->first_name,
+                    'last_name'        => $request->last_name,
+                    'email'            => $request->email,
+                    'password'         => bcrypt($request->password),
+                    'job_position_id'  => $jobPosition->id,
+                    'status'           => 'Active',
+                ]);
+
+                // Assign role via Spatie
+                $employee->assignRole($role->name);
+
+                // 2️⃣ SIMPAN EMPLOYMENT
+                Employment::create([
+                    'employee_id'        => $request->employee_id,
+
+                    'organization_id'    => $jobPosition->organization->id ?? null,
+                    'organization_name'  => $jobPosition->organization->organization_name ?? null,
+
+                    'job_level_id'       => $jobPosition->job_level_id ?? null,
+                    'job_level_name'     => $jobPosition->job_level_name ?? null,
+
+                    'job_position_id'    => $jobPosition->id,
+                    'job_position_name'  => $jobPosition->job_position_name,
+
+                    'uppline_id'         => $request->uppline_id ?? null,
+                    'uppline_id_name'    => $request->uppline_name ?? null,
+
+                    'employment_status'  => 'Aktif',
+                    'status'             => 'Active',
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee & Employment created successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('EmployeeController@store: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data employee. Silakan coba lagi.',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
 
     public function edit($id)
     {
-
-        $emp = Employee::with('employment')->findOrFail($id);
+        // Eager load roles for Spatie
+        $emp = Employee::with(['employment', 'roles'])->findOrFail($id);
 
         return response()->json($emp);
     }
@@ -170,59 +207,100 @@ class EmployeeController extends Controller
 
     public function update(Request $request, $id)
     {
-        DB::transaction(function () use ($request, $id) {
+        // Validasi dengan pesan error yang jelas
+        $validated = $request->validate([
+            'first_name'      => 'required|string|max:100',
+            'last_name'       => 'required|string|max:100',
+            'employee_id'     => 'required|string|max:50|unique:employee,employee_id,' . $id,
+            'email'           => 'required|email|max:150|unique:employee,email,' . $id,
+            'job_position_id' => 'required|exists:job_position,id',
+            'role_name'       => 'required|string|exists:roles,name',
+            'status'          => 'required|in:Active,Inactive',
+        ], [
+            // Pesan error dalam Bahasa Indonesia
+            'first_name.required'      => 'Nama depan wajib diisi',
+            'first_name.max'           => 'Nama depan maksimal 100 karakter',
+            'last_name.required'       => 'Nama belakang wajib diisi',
+            'last_name.max'            => 'Nama belakang maksimal 100 karakter',
+            'employee_id.required'     => 'Nomor Induk Pegawai (NIP) wajib diisi',
+            'employee_id.unique'       => 'Nomor Induk Pegawai (NIP) sudah digunakan oleh employee lain',
+            'employee_id.max'          => 'NIP maksimal 50 karakter',
+            'email.required'           => 'Email wajib diisi',
+            'email.email'              => 'Format email tidak valid',
+            'email.unique'             => 'Email sudah digunakan oleh employee lain',
+            'email.max'                => 'Email maksimal 150 karakter',
+            'job_position_id.required' => 'Job Position wajib dipilih',
+            'job_position_id.exists'   => 'Job Position tidak valid',
+            'role_name.required'       => 'Role wajib dipilih',
+            'role_name.exists'         => 'Role tidak valid',
+            'status.required'          => 'Status wajib dipilih',
+            'status.in'                => 'Status harus Active atau Inactive',
+        ]);
 
-            $emp = Employee::findOrFail($id);
-            $jobPosition = JobPosition::findOrFail($request->job_position_id);
-            $role = Role::findOrFail($request->role_id);
+        try {
+            DB::transaction(function () use ($request, $id) {
 
-            // Simpan employee_id lama sebelum update
-            $oldEmployeeId = $emp->employee_id;
+                $emp = Employee::findOrFail($id);
+                $jobPosition = JobPosition::findOrFail($request->job_position_id);
 
-            // Update Employee
-            $emp->update([
-                'first_name'      => $request->first_name,
-                'last_name'       => $request->last_name,
-                'employee_id'     => $request->employee_id,
-                'email'           => $request->email,
-                'job_position_id' => $jobPosition->id,
-                'role_id'         => $role->id,
-                'status'          => $request->status,
-            ]);
+                // Get role by name (from Spatie)
+                $role = Role::where('name', $request->role_name)->firstOrFail();
 
-            // Ambil employment berdasarkan employee_id LAMA
-            $employment = Employment::where('employee_id', $oldEmployeeId)->first();
+                // Simpan employee_id lama sebelum update
+                $oldEmployeeId = $emp->employee_id;
 
-            // Jika tidak ada, coba cari dengan employee_id baru (untuk kasus seeder baru)
-            if (!$employment) {
-                $employment = Employment::where('employee_id', $request->employee_id)->first();
-            }
-
-            // Hanya update jika employment memang ada
-            if ($employment) {
-                $employment->update([
-                    'employee_id'       => $request->employee_id, // Update ke employee_id baru
-                    'job_position_id'   => $jobPosition->id,
-                    'job_position_name' => $jobPosition->job_position_name,
-
-                    'organization_id'   => $jobPosition->organization_id ?? null,
-                    'organization_name' => $jobPosition->organization_name ?? null,
-
-                    'job_level_id'      => $jobPosition->job_level_id ?? null,
-                    'job_level_name'    => $jobPosition->job_level_name ?? null,
-
-                    'uppline_id'        => $request->uppline_id ?? null,
-                    'uppline_id_name'   => $request->uppline_name ?? null,
-
-                    'employment_status' => $request->status === 'Active' ? 'Aktif' : 'Unaktif',
-                    'role_id'           => $role->id,
-                    'role_name'         => $role->name,
-                    'status'            => $request->status,
+                // Update Employee
+                $emp->update([
+                    'first_name'      => $request->first_name,
+                    'last_name'       => $request->last_name,
+                    'employee_id'     => $request->employee_id,
+                    'email'           => $request->email,
+                    'job_position_id' => $jobPosition->id,
+                    'status'          => $request->status,
                 ]);
-            }
-        });
 
-        return response()->json(['success' => true]);
+                // Sync role via Spatie (replaces all existing roles)
+                $emp->syncRoles([$role->name]);
+
+                // Ambil employment berdasarkan employee_id LAMA
+                $employment = Employment::where('employee_id', $oldEmployeeId)->first();
+
+                // Jika tidak ada, coba cari dengan employee_id baru (untuk kasus seeder baru)
+                if (!$employment) {
+                    $employment = Employment::where('employee_id', $request->employee_id)->first();
+                }
+
+                // Hanya update jika employment memang ada
+                if ($employment) {
+                    $employment->update([
+                        'employee_id'       => $request->employee_id, // Update ke employee_id baru
+                        'job_position_id'   => $jobPosition->id,
+                        'job_position_name' => $jobPosition->job_position_name,
+
+                        'organization_id'   => $jobPosition->organization_id ?? null,
+                        'organization_name' => $jobPosition->organization_name ?? null,
+
+                        'job_level_id'      => $jobPosition->job_level_id ?? null,
+                        'job_level_name'    => $jobPosition->job_level_name ?? null,
+
+                        'uppline_id'        => $request->uppline_id ?? null,
+                        'uppline_id_name'   => $request->uppline_name ?? null,
+
+                        'employment_status' => $request->status === 'Active' ? 'Aktif' : 'Unaktif',
+                        'status'            => $request->status,
+                    ]);
+                }
+            });
+
+            return response()->json(['success' => true, 'message' => 'Employee updated successfully']);
+        } catch (\Exception $e) {
+            Log::error('EmployeeController@update: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate data employee. Silakan coba lagi.',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
 
@@ -246,12 +324,20 @@ class EmployeeController extends Controller
 
     public function show($id)
     {
-        $employee = Employee::with([
-            'jobPosition',
-            'role',
-        ])->findOrFail($id);
+        try {
+            $employee = Employee::with([
+                'jobPosition',
+                'roles',
+            ])->findOrFail($id);
 
-        return response()->json($employee);
+            return response()->json($employee);
+        } catch (\Throwable $th) {
+            Log::error("EmployeeController@show: ", [
+                'error' => $th->getMessage(),
+                'id' => $id
+            ]);
+            return response()->json(['error' => 'Employee not found'], 404);
+        }
     }
 
     public function resetPassword(Request $request, $id)

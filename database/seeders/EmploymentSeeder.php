@@ -82,8 +82,6 @@ class EmploymentSeeder extends Seeder
                         'uppline_id' => null, // Akan diisi di pass 2
                         'uppline_id_name' => null,
                         'employment_status' => 'Permanent',
-                        'role_id' => $employee->role_id,
-                        'role_name' => $employee->role?->name ?? null,
                         'status' => 'Aktif',
                         'join_date' => $currentDate->copy()->subYears(rand(1, 10))->format('Y-m-d'),
                     ]);

@@ -253,7 +253,7 @@
                             </button>
                         </div>
                         <div class="col-md-3 d-flex align-items-end justify-content-end">
-                            @if (in_array($employment[0]->job_level_id, array(3,4)))
+                            @if (isset($employment[0]->job_level_id) && in_array($employment[0]->job_level_id, array(3,4)))
                             <button type="button" class="btn btn-success" id="btnAddData">
                                 <i class="ri-add-line"></i> Add Data
                             </button>
@@ -437,13 +437,13 @@
                                 <select class="form-select" disabled>
                                     @foreach ($jobLevels as $level)
                                         <option value="{{ $level->id }}"
-                                            {{ $employment[0]->job_level_id == $level->id ? 'selected' : '' }}>
+                                            {{ optional($employment[0] ?? null)->job_level_id == $level->id ? 'selected' : '' }}>
                                             {{ $level->job_level_name }}
                                         </option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ $employment[0]->job_level_id }}">
+                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ optional($employment[0] ?? null)->job_level_id }}">
 
                             </div>
                             <div class="col-md-4">
@@ -451,11 +451,11 @@
                                 <select class="form-select" disabled>
                                     <option value="">Select Job Position</option>
                                     @foreach ($jobPositions as $position)
-                                        <option value="{{ $position->id }}" {{ $employment[0]->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
+                                        <option value="{{ $position->id }}" {{ optional($employment[0] ?? null)->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ $employment[0]->job_position_id }}">
+                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ optional($employment[0] ?? null)->job_position_id }}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Date <span class="text-danger">*</span></label>

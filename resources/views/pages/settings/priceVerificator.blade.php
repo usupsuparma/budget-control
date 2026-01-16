@@ -29,7 +29,7 @@
                             <th width="15%">Verificator</th>
                             <th width="25%">Description</th>
                             <th width="25%">Users Verificator</th>
-                            <th width="25%">Remarks & Code</th>
+                            <th width="25%">Remarks & Incharge Code</th>
                             <th width="5%">Actions</th>
                         </tr>
                     </thead>
@@ -61,15 +61,33 @@
                             </td>
 
 
-                            {{-- Code Group --}}
+                            {{-- Code List --}}
                             <td>
                                 @if($price->codes->isEmpty())
                                 <span class="text-muted small fst-italic">No code assigned</span>
                                 @else
-                                @foreach($price->codes->groupBy('remarks') as $remark => $items)
-                                <b>{{ $remark ?? '-' }}</b><br>
-                                {{ $items->pluck('inchargecode')->implode(', ') }}
-                                <hr class="my-1">
+                                @foreach($price->codes as $code)
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                    <div>
+                                        <span class="badge bg-secondary">{{ $code->remarks }}</span>
+                                        <strong>{{ $code->inchargecode }}</strong>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary btn-sm editCode"
+                                            data-id="{{ $code->id }}"
+                                            data-verificator-id="{{ $code->price_verification_id }}"
+                                            data-remarks="{{ $code->remarks }}"
+                                            data-inchargecode="{{ $code->inchargecode }}"
+                                            title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm deleteCode"
+                                            data-id="{{ $code->id }}"
+                                            title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 @endforeach
                                 @endif
                             </td>
@@ -79,7 +97,8 @@
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-primary editVerificator"
                                         data-id="{{ $price->id }}"
-                                        data-name="{{ $price->verificator }}">
+                                        data-name="{{ $price->verificator }}"
+                                        data-description="{{ $price->description }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
 
@@ -111,20 +130,21 @@
 
             <form id="formAddVerificator">
                 @csrf
+                <input type="hidden" name="verificator_id" id="verificatorId">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label>Verificator</label>
-                        <input type="text" name="verificator" class="form-control" required>
+                        <input type="text" name="verificator" id="verificatorName" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label>Description</label>
-                        <textarea name="description" class="form-control"></textarea>
+                        <textarea name="description" id="verificatorDescription" class="form-control"></textarea>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-success" id="btnSaveVerificator">Save</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success" id="btnSaveVerificator">Save</button>
                 </div>
             </form>
         </div>
@@ -141,10 +161,11 @@
 
             <form id="formAssignCode">
                 @csrf
+                <input type="hidden" name="code_id" id="codeId">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label>Verificator</label>
-                        <select name="price_verification_id" class="form-select">
+                        <select name="price_verification_id" id="selectVerificatorForCode" class="form-select" required>
                             <option value="" disabled selected>Select Verificator</option>
                             @foreach($priceVerificators as $pv)
                             <option value="{{ $pv->id }}">{{ $pv->verificator }}</option>
@@ -154,7 +175,7 @@
 
                     <div class="mb-3">
                         <label>Remarks</label>
-                        <select name="remarks" class="form-select">
+                        <select name="remarks" id="selectRemarks" class="form-select" required>
                             <option value="" disabled selected>Select Remarks</option>
                             <option value="Consumption">Consumption</option>
                             <option value="Financial">Financial</option>
@@ -165,14 +186,17 @@
                     </div>
 
                     <div class="mb-3">
-                        <label>Budget Code</label>
-                        <input type="text" class="form-control" name="inchargecode">
+                        <label>Incharge Code <span class="text-muted small">(filtered by remarks)</span></label>
+                        <select name="inchargecode" id="selectInchargeCode" class="form-select" required>
+                            <option value="">Select Incharge Code</option>
+                        </select>
+                        <small class="text-muted">Select Remarks first to filter options</small>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary" id="btnSaveAssignCode">Save</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveAssignCode">Save</button>
                 </div>
             </form>
         </div>
@@ -225,6 +249,51 @@
 <script>
     $(function() {
 
+        // Initialize Choices.js for Incharge Code select
+        let inchargeCodeChoices;
+        let allBudgetCodes = @json($budgetCodes);
+        
+        function initChoices(filteredCodes = null) {
+            if (inchargeCodeChoices) {
+                inchargeCodeChoices.destroy();
+            }
+            
+            const codesToUse = filteredCodes || allBudgetCodes;
+            const choices = codesToUse.map(bc => ({
+                value: bc.inchargecode,
+                label: `${bc.inchargecode} - ${bc.remarks}`,
+                customProperties: {
+                    remarks: bc.remarks,
+                    name: bc.name
+                }
+            }));
+            
+            inchargeCodeChoices = new Choices('#selectInchargeCode', {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Search incharge code...',
+                itemSelectText: 'Click to select',
+                removeItemButton: false,
+                choices: choices,
+                shouldSort: false
+            });
+        }
+        
+        initChoices();
+        
+        // Filter Incharge Code when Remarks is selected
+        $('#selectRemarks').on('change', function() {
+            const selectedRemarks = $(this).val();
+            
+            if (selectedRemarks) {
+                // Filter budget codes by remarks
+                const filteredCodes = allBudgetCodes.filter(bc => bc.remarks === selectedRemarks);
+                initChoices(filteredCodes);
+            } else {
+                // Show all codes if no remarks selected
+                initChoices();
+            }
+        });
+
         function showSuccess(message) {
             Swal.fire({
                 icon: 'success',
@@ -237,46 +306,211 @@
             });
         }
 
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message
+            });
+        }
+
+        // Reset modal when opening for add new
+        $('#modalAddVerificator').on('show.bs.modal', function() {
+            $('#verificatorId').val('');
+            $('#verificatorName').val('');
+            $('#verificatorDescription').val('');
+            $('#modalAddVerificator .modal-title').text('Add Verificator');
+        });
+
+        $('#modalAssignCode').on('show.bs.modal', function() {
+            $('#codeId').val('');
+            $('#selectVerificatorForCode').val('').trigger('change');
+            $('#selectRemarks').val('').trigger('change');
+            
+            // Reset to show all codes when modal opens
+            initChoices();
+            
+            $('#modalAssignCode .modal-title').text('Assign Budget Type');
+        });
+
+        // VERIFICATOR CRUD
         $('#formAddVerificator').on('submit', function(e) {
             e.preventDefault();
+            const id = $('#verificatorId').val();
+            const url = id ? "{{ url('setting-price-verificator/verificator') }}/" + id : "{{ route('settingPriceVerificator.storeVerificator') }}";
+            const method = id ? 'PUT' : 'POST';
 
-            $.post("{{ route('settingPriceVerificator.storeVerificator') }}", $(this).serialize())
-                .done(function() {
+            $.ajax({
+                url: url,
+                method: method,
+                data: $(this).serialize(),
+                success: function(response) {
                     $('#modalAddVerificator').modal('hide');
-                    showSuccess('Verificator berhasil ditambahkan');
-                })
-                .fail(function(err) {
-                    Swal.fire('Error', 'Gagal menyimpan verificator', 'error');
-                    console.error(err);
-                });
+                    showSuccess(response.message || 'Verificator berhasil disimpan');
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Gagal menyimpan verificator';
+                    showError(message);
+                }
+            });
         });
 
+        $(document).on('click', '.editVerificator', function() {
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            const description = $(this).data('description') || '';
+            
+            $('#verificatorId').val(id);
+            $('#verificatorName').val(name);
+            $('#verificatorDescription').val(description);
+            $('#modalAddVerificator .modal-title').text('Edit Verificator');
+            $('#modalAddVerificator').modal('show');
+        });
+
+        $(document).on('click', '.deleteVerificator', function() {
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            
+            Swal.fire({
+                title: 'Hapus Verificator?',
+                text: `Yakin ingin menghapus verificator "${name}"? Semua code dan user yang terkait juga akan dihapus.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('setting-price-verificator/verificator') }}/" + id,
+                        method: 'DELETE',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function(response) {
+                            showSuccess(response.message || 'Verificator berhasil dihapus');
+                        },
+                        error: function(xhr) {
+                            showError(xhr.responseJSON?.message || 'Gagal menghapus verificator');
+                        }
+                    });
+                }
+            });
+        });
+
+        // CODE CRUD
         $('#formAssignCode').on('submit', function(e) {
             e.preventDefault();
+            const id = $('#codeId').val();
+            const url = id ? "{{ url('setting-price-verificator/code') }}/" + id : "{{ route('settingPriceVerificator.assignCode') }}";
+            const method = id ? 'PUT' : 'POST';
 
-            $.post("{{ route('settingPriceVerificator.assignCode') }}", $(this).serialize())
-                .done(function() {
+            $.ajax({
+                url: url,
+                method: method,
+                data: $(this).serialize(),
+                success: function(response) {
                     $('#modalAssignCode').modal('hide');
-                    showSuccess('Budget code berhasil di-assign');
-                })
-                .fail(function(err) {
-                    Swal.fire('Error', 'Gagal assign code', 'error');
-                    console.error(err);
-                });
+                    showSuccess(response.message || 'Budget code berhasil disimpan');
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Gagal menyimpan code';
+                    showError(message);
+                }
+            });
         });
 
+        $(document).on('click', '.editCode', function() {
+            const id = $(this).data('id');
+            const verificatorId = $(this).data('verificator-id');
+            const remarks = $(this).data('remarks');
+            const inchargecode = $(this).data('inchargecode');
+            
+            $('#codeId').val(id);
+            $('#selectVerificatorForCode').val(verificatorId).trigger('change');
+            $('#selectRemarks').val(remarks).trigger('change');
+            
+            // Filter codes based on remarks, then set value
+            setTimeout(() => {
+                if (inchargeCodeChoices) {
+                    inchargeCodeChoices.setChoiceByValue(inchargecode);
+                }
+            }, 100);
+            
+            $('#modalAssignCode .modal-title').text('Edit Budget Type');
+            $('#modalAssignCode').modal('show');
+        });
+
+        $(document).on('click', '.deleteCode', function() {
+            const id = $(this).data('id');
+            
+            Swal.fire({
+                title: 'Hapus Code?',
+                text: 'Yakin ingin menghapus code ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('setting-price-verificator/code') }}/" + id,
+                        method: 'DELETE',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function(response) {
+                            showSuccess(response.message || 'Code berhasil dihapus');
+                        },
+                        error: function(xhr) {
+                            showError(xhr.responseJSON?.message || 'Gagal menghapus code');
+                        }
+                    });
+                }
+            });
+        });
+
+        // USER CRUD
         $('#formAssignUser').on('submit', function(e) {
             e.preventDefault();
 
             $.post("{{ route('settingPriceVerificator.assignUser') }}", $(this).serialize())
-                .done(function() {
+                .done(function(response) {
                     $('#modalAssignUser').modal('hide');
-                    showSuccess('User berhasil di-assign');
+                    showSuccess(response.message || 'User berhasil di-assign');
                 })
-                .fail(function(err) {
-                    Swal.fire('Error', 'Gagal assign user', 'error');
-                    console.error(err);
+                .fail(function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Gagal assign user';
+                    showError(message);
                 });
+        });
+
+        $(document).on('click', '.removeUserFromVerificator', function() {
+            const id = $(this).data('id');
+            
+            Swal.fire({
+                title: 'Hapus User?',
+                text: 'Yakin ingin menghapus user dari verificator ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('setting-price-verificator/user') }}/" + id,
+                        method: 'DELETE',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function(response) {
+                            showSuccess(response.message || 'User berhasil dihapus');
+                        },
+                        error: function(xhr) {
+                            showError(xhr.responseJSON?.message || 'Gagal menghapus user');
+                        }
+                    });
+                }
+            });
         });
 
     });

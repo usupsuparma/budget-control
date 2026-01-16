@@ -1280,21 +1280,34 @@ Route::middleware('auth')->group(function () {
         });
 
 
-    Route::prefix('settingPriceVerificator')
+    Route::prefix('setting-price-verificator')
         ->middleware('permission:setting.price.view')
         ->group(function () {
 
             Route::get('/', [SettingPriceController::class, 'index'])
                 ->name('settingPriceVerificator.index');
 
+            // Verificator CRUD
             Route::post('/store-verificator', [SettingPriceController::class, 'storeVerificator'])
                 ->name('settingPriceVerificator.storeVerificator');
+            Route::put('/verificator/{id}', [SettingPriceController::class, 'updateVerificator'])
+                ->name('settingPriceVerificator.updateVerificator');
+            Route::delete('/verificator/{id}', [SettingPriceController::class, 'deleteVerificator'])
+                ->name('settingPriceVerificator.deleteVerificator');
 
+            // Code CRUD
             Route::post('/assign-code', [SettingPriceController::class, 'assignCode'])
                 ->name('settingPriceVerificator.assignCode');
+            Route::put('/code/{id}', [SettingPriceController::class, 'updateCode'])
+                ->name('settingPriceVerificator.updateCode');
+            Route::delete('/code/{id}', [SettingPriceController::class, 'deleteCode'])
+                ->name('settingPriceVerificator.deleteCode');
 
+            // User CRUD
             Route::post('/assign-user', [SettingPriceController::class, 'assignUser'])
                 ->name('settingPriceVerificator.assignUser');
+            Route::delete('/user/{id}', [SettingPriceController::class, 'deleteUser'])
+                ->name('settingPriceVerificator.deleteUser');
         });
 
 

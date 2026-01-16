@@ -4,6 +4,10 @@
 @section('title-sub', 'Master')
 @section('pagetitle', 'Setting')
 
+@section('css')
+<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+@endsection
+
 @section('content')
 
 <div class="col-12 col-lg-12">
@@ -50,3 +54,8 @@
 </div>
 
 @endsection
+
+@push('scripts')
+    
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+@endpush

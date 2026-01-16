@@ -41,7 +41,7 @@
                         </span>
                         <div class="d-none d-lg-block pe-2">
                             <span class="d-block mb-0 fs-13 fw-semibold">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</span>
-                            <span class="d-block mb-0 fs-12 text-muted">Admin</span>
+                            <span class="d-block mb-0 fs-12 text-muted">{{ Auth::user()->employment->job_level_name }}</span>
                         </div>
                     </button>
                     <div class="dropdown-menu dropdown-mega-sm header-dropdown-menu p-3">
@@ -50,8 +50,9 @@
                             <div>
                                 <a href="javascript:void(0)">
                                     <h6 class="mb-0 lh-base">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</h6>
-                                </a>
-                                <p class="mb-0 fs-13 text-muted">{{ Auth::user()->email }}</p>
+                                </a><br>
+                                <p class="mb-0 fs-13 text-muted">{{ Auth::user()->email }}</p><br>
+                                <p class="mb-0 fs-13">{{ Auth::user()->employment->job_position_name }}</p>
                             </div>
                         </div>
                         <ul class="list-unstyled mb-1 border-bottom pb-1">

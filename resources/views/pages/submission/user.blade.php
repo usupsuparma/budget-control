@@ -1,9 +1,9 @@
 @extends('layouts.master')
 
-@section('title', 'Pengajuan Anggaran | Budget Control')
+@section('title', 'User Submission | Budget Control')
 
-@section('title-sub', 'Budget Control')
-@section('pagetitle', 'Daftar Pengajuan Anggaran')
+@section('title-sub', 'Transactions')
+@section('pagetitle', 'User Submission')
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
@@ -85,7 +85,7 @@
     <div id="layout-wrapper">
         <div class="container-fluid">
             {{-- === PAGE TITLE & BREADCRUMB === --}}
-            <div class="d-flex align-items-center mt-2 mb-2">
+            {{-- <div class="d-flex align-items-center mt-2 mb-2">
                 <h6 class="mb-0 flex-grow-1">List Pengajuan</h6>
                 <div class="flex-shrink-0">
                     <nav aria-label="breadcrumb">
@@ -95,7 +95,7 @@
                         </ol>
                     </nav>
                 </div>
-            </div>
+            </div> --}}
 
             {{-- === SUMMARY CARD === --}}
             <style>
@@ -140,7 +140,7 @@
             </style>
 
 
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3" style="display: none;">
 
                 {{-- New Submission --}}
                 <div class="col">
@@ -148,7 +148,7 @@
                         <div class="card-body d-flex align-items-center justify-content-between">
                             <div>
                                 <div class="text-muted stat-title">New Submission</div>
-                                <div class="h3 mb-0 stat-value" id="newSubmissionCount">
+                                <div class="h3 mb-0 stat-value" id="newSubmissionCount2">
                                     <span class="spinner-border spinner-border-sm" role="status"
                                         aria-label="Loading"></span>
                                 </div>
@@ -164,7 +164,7 @@
                         <div class="card-body d-flex align-items-center justify-content-between">
                             <div>
                                 <div class="text-muted stat-title">Progress</div>
-                                <div class="h3 mb-0 stat-value" id="progressCount">
+                                <div class="h3 mb-0 stat-value" id="progressCount2">
                                     <span class="spinner-border spinner-border-sm" role="status"
                                         aria-label="Loading"></span>
                                 </div>
@@ -196,7 +196,7 @@
                         <div class="card-body d-flex align-items-center justify-content-between">
                             <div>
                                 <div class="text-muted stat-title">Completion</div>
-                                <div class="h3 mb-0 stat-value" id="completionCount">
+                                <div class="h3 mb-0 stat-value" id="completionCount2">
                                     <span class="spinner-border spinner-border-sm" role="status"
                                         aria-label="Loading"></span>
                                 </div>
@@ -238,7 +238,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <label class="form-label">Status</label>
                             <select id="filterStatus" class="form-select">
                                 <option value="all">Semua Status</option>
@@ -252,8 +252,8 @@
                                 <i class="ri-filter-line"></i> Filter
                             </button>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end justify-content-end">
-                            @if (in_array($employment[0]->job_level_id, array(3,4)))
+                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                            @if (isset($employment[0]->job_level_id) && in_array($employment[0]->job_level_id, array(3,4)))
                             <button type="button" class="btn btn-success" id="btnAddData">
                                 <i class="ri-add-line"></i> Add Data
                             </button>
@@ -264,47 +264,209 @@
             </div>
 
             {{-- === MAIN TABLE === --}}
-            <div class="card">
+            <div class="col-12">
+                <div class="card card-h-100">
+                    <div class="card-header p-0">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-pills nav-primary nav-justified" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab" aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;" class="ri-file-add-line stat-icon text-secondary"></i></span>
+                                    <span>Request</span>
+                                    <span class="badge bg-light text-dark" id="newSubmissionCount">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                        aria-label="Loading"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab" aria-selected="true">
+                                    <span><i style="font-size: 1rem !important;" class="ri-time-line stat-icon text-warning"></i></span>
+                                    <span>Disbursed</span>
+                                    <span class="badge bg-light text-dark" id="progressCount">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                        aria-label="Loading"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_messages" role="tab" aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;" class="ri-checkbox-circle-line stat-icon text-success"></i></span>
+                                    <span>Completed</span>
+                                    <span class="badge bg-light text-dark" id="completionCount">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                        aria-label="Loading"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_settings" role="tab" aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;" class="ri-file-forbid-line stat-icon text-danger"></i></span>
+                                    <span>Rejected</span>
+                                    <span class="badge bg-light text-dark" id="rejectedCount">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                        aria-label="Loading"></span>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div class="tab-pane active show" id="demo-tab-5_home" role="tabpanel">
+                                <div class="table-box table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Date</th>
+                                                <th>User Submitter</th>
+                                                <th>Purpose</th>
+                                                <th>Estimated Value</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tableBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Loading data...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {{-- Pagination --}}
+                                <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0" id="paginationInfo">Showing 0 to 0 of 0 entries</p>
+                                    </div>
+                                    <div id="paginationLinks"></div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="demo-tab-5_profile" role="tabpanel">
+                                <div class="table-box table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Date</th>
+                                                <th>User Submitter</th>
+                                                <th>Purpose</th>
+                                                <th>Estimated Value</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tableBody2">
+                                            <tr>
+                                                <td colspan="7" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Loading data...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {{-- Pagination --}}
+                                <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0" id="paginationInfo2">Showing 0 to 0 of 0 entries</p>
+                                    </div>
+                                    <div id="paginationLinks2"></div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="demo-tab-5_messages" role="tabpanel">
+                                <div class="table-box table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Date</th>
+                                                <th>User Submitter</th>
+                                                <th>Purpose</th>
+                                                <th>Estimated Value</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tableBody3">
+                                            <tr>
+                                                <td colspan="7" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Loading data...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {{-- Pagination --}}
+                                <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0" id="paginationInfo3">Showing 0 to 0 of 0 entries</p>
+                                    </div>
+                                    <div id="paginationLinks3"></div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="demo-tab-5_settings" role="tabpanel">
+                                <div class="table-box table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Date</th>
+                                                <th>User Submitter</th>
+                                                <th>Purpose</th>
+                                                <th>Estimated Value</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tableBody4">
+                                            <tr>
+                                                <td colspan="7" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Loading data...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {{-- Pagination --}}
+                                <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0" id="paginationInfo4">Showing 0 to 0 of 0 entries</p>
+                                    </div>
+                                    <div id="paginationLinks4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="card-title mb-0 fw-semibold">Daftar Pengajuan Anggaran</h6>
                 </div>
 
                 <div class="card-body p-0">
-                    <div class="table-box table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Date</th>
-                                    <th>User Submitter</th>
-                                    <th>Purpose</th>
-                                    <th>Estimated Value</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">
-                                        <div class="spinner-border spinner-border-sm" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        Loading data...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Pagination --}}
-                    <div class="d-flex flex-wrap gap-4 align-items-center m-4">
-                        <div class="flex-grow-1">
-                            <p class="mb-0" id="paginationInfo">Showing 0 to 0 of 0 entries</p>
-                        </div>
-                        <div id="paginationLinks"></div>
-                    </div>
+                    
                 </div>
-            </div>
+            </div> --}}
 
         </div>
     </div>
@@ -437,13 +599,13 @@
                                 <select class="form-select" disabled>
                                     @foreach ($jobLevels as $level)
                                         <option value="{{ $level->id }}"
-                                            {{ $employment[0]->job_level_id == $level->id ? 'selected' : '' }}>
+                                            {{ optional($employment[0] ?? null)->job_level_id == $level->id ? 'selected' : '' }}>
                                             {{ $level->job_level_name }}
                                         </option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ $employment[0]->job_level_id }}">
+                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ optional($employment[0] ?? null)->job_level_id }}">
 
                             </div>
                             <div class="col-md-4">
@@ -451,11 +613,11 @@
                                 <select class="form-select" disabled>
                                     <option value="">Select Job Position</option>
                                     @foreach ($jobPositions as $position)
-                                        <option value="{{ $position->id }}" {{ $employment[0]->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
+                                        <option value="{{ $position->id }}" {{ optional($employment[0] ?? null)->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ $employment[0]->job_position_id }}">
+                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ optional($employment[0] ?? null)->job_position_id }}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Date <span class="text-danger">*</span></label>
@@ -682,15 +844,20 @@
 
         // Load summary data function
         function loadSummary() {
+            const year = $('#filterYear').val();
             $.ajax({
                 url: '{{ route('userSubmission.summary') }}',
                 type: 'GET',
+                data: {
+                    year: year
+                },
                 success: function(response) {
                     if (response.success) {
                         $('#newSubmissionCount').text(response.data.newSubmission);
                         $('#progressCount').text(response.data.progress);
                         $('#paidCount').text(response.data.paid);
                         $('#completionCount').text(response.data.completion);
+                        $("#rejectedCount").text(response.data.rejected);
                         $('#totalSubmissionCount').text(response.data.totalSubmission);
                     }
                 },
@@ -700,6 +867,7 @@
                     $('#progressCount').text('0');
                     $('#paidCount').text('0');
                     $('#completionCount').text('0');
+                    $('#rejectedCount').text('0');
                     $('#totalSubmissionCount').text('0');
                 }
             });
@@ -732,7 +900,7 @@
                 type: 'GET',
                 data: {
                     year: year,
-                    status: status,
+                    status: 'dis',
                     page: currentPage
                 },
                 success: function(response) {
@@ -741,6 +909,69 @@
                     if (response.success) {
                         renderTable(response.data);
                         renderPagination(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Error loading data', 'danger');
+                }
+            });
+
+            $.ajax({
+                url: '{{ route('userSubmission.data') }}',
+                type: 'GET',
+                data: {
+                    year: year,
+                    status: 7,
+                    page: currentPage
+                },
+                success: function(response) {
+                    console.log(response);
+
+                    if (response.success) {
+                        renderTable2(response.data);
+                        renderPagination2(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Error loading data', 'danger');
+                }
+            });
+
+            $.ajax({
+                url: '{{ route('userSubmission.data') }}',
+                type: 'GET',
+                data: {
+                    year: year,
+                    status: 8,
+                    page: currentPage
+                },
+                success: function(response) {
+                    console.log(response);
+
+                    if (response.success) {
+                        renderTable3(response.data);
+                        renderPagination3(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Error loading data', 'danger');
+                }
+            });
+
+            $.ajax({
+                url: '{{ route('userSubmission.data') }}',
+                type: 'GET',
+                data: {
+                    year: year,
+                    status: '6',
+                    page: currentPage
+                },
+                success: function(response) {
+                    console.log(response);
+
+                    if (response.success) {
+                        renderTable4(response.data);
+                        renderPagination4(response.data);
                     }
                 },
                 error: function(xhr) {
@@ -807,7 +1038,7 @@
             // Previous button
             paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
         </li>
     `;
 
@@ -823,12 +1054,255 @@
             // Next button
             paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
         </li>
     `;
 
             paginationHtml += '</ul>';
             $('#paginationLinks').html(paginationHtml);
+        }
+
+        function renderTable2(data) {
+            let html = '';
+
+            if (data.data.length === 0) {
+                html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+            } else {
+                data.data.forEach((item, index) => {
+                    const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                    html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            ${item.status == 0 ? `
+                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        ` : ''}
+                            ${item.can_approve ? `
+                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                <i class="ri-check-line"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                <i class="ri-close-line"></i> Reject
+                                            </button>
+                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+                });
+            }
+
+            $('#tableBody2').html(html);
+        }
+
+        // Render pagination
+        function renderPagination2(data) {
+            let paginationInfo2 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+            $('#paginationInfo2').text(paginationInfo2);
+
+            let paginationHtml = '<ul class="pagination mb-0">';
+
+            // Previous button
+            paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+            // Page numbers
+            for (let i = 1; i <= data.last_page; i++) {
+                paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+            }
+
+            // Next button
+            paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+            paginationHtml += '</ul>';
+            $('#paginationLinks2').html(paginationHtml);
+        }
+
+        function renderTable3(data) {
+            let html = '';
+
+            if (data.data.length === 0) {
+                html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+            } else {
+                data.data.forEach((item, index) => {
+                    const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                    html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            ${item.status == 0 ? `
+                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        ` : ''}
+                            ${item.can_approve ? `
+                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                <i class="ri-check-line"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                <i class="ri-close-line"></i> Reject
+                                            </button>
+                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+                });
+            }
+
+            $('#tableBody3').html(html);
+        }
+
+        // Render pagination
+        function renderPagination3(data) {
+            let paginationInfo3 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+            $('#paginationInfo3').text(paginationInfo3);
+
+            let paginationHtml = '<ul class="pagination mb-0">';
+
+            // Previous button
+            paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+            // Page numbers
+            for (let i = 1; i <= data.last_page; i++) {
+                paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+            }
+
+            // Next button
+            paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+            paginationHtml += '</ul>';
+            $('#paginationLinks3').html(paginationHtml);
+        }
+
+        function renderTable4(data) {
+            let html = '';
+
+            if (data.data.length === 0) {
+                html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+            } else {
+                data.data.forEach((item, index) => {
+                    const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                    html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            ${item.status == 0 ? `
+                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        ` : ''}
+                            ${item.can_approve ? `
+                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                <i class="ri-check-line"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                <i class="ri-close-line"></i> Reject
+                                            </button>
+                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+                });
+            }
+
+            $('#tableBody4').html(html);
+        }
+
+        // Render pagination
+        function renderPagination4(data) {
+            let paginationInfo4 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+            $('#paginationInfo4').text(paginationInfo4);
+
+            let paginationHtml = '<ul class="pagination mb-0">';
+
+            // Previous button
+            paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+            // Page numbers
+            for (let i = 1; i <= data.last_page; i++) {
+                paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+            }
+
+            // Next button
+            paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+            paginationHtml += '</ul>';
+            $('#paginationLinks4').html(paginationHtml);
         }
 
         // Change page function

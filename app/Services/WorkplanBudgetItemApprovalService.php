@@ -88,14 +88,16 @@ class WorkplanBudgetItemApprovalService
                 ];
             }
 
-            Log::info('Built approval chain', [
+            Log::info('Final approval chain ready for submission', [
                 'item_id' => $itemId,
                 'template_id' => $template->id,
+                'template_name' => $template->template_name,
                 'use_uppline_chain' => $template->use_uppline_chain,
                 'use_threshold' => $template->use_threshold,
                 'division_id' => $divisionId,
+                'amount' => $item->total,
                 'chain_count' => count($approvalChain),
-                'chain' => $approvalChain,
+                'chain_details' => $approvalChain,
             ]);
 
             DB::beginTransaction();
@@ -116,11 +118,11 @@ class WorkplanBudgetItemApprovalService
             ]);
 
             // Create approval request details for each approver in chain
-            foreach ($approvalChain as $index => $approver) {
+            foreach ($approvalChain as $approver) {
                 ApprovalRequestDetail::create([
                     'request_id' => $request->id,
                     'phase' => $approver['phase'],
-                    'level_sequence' => $index + 1, // Sequential from 1
+                    'level_sequence' => $approver['level_sequence'], // Use pre-calculated sequence
                     'employment_id' => $approver['employment_id'],
                     'employment_name' => $approver['employment_name'],
                     'status' => 'pending',
@@ -143,7 +145,7 @@ class WorkplanBudgetItemApprovalService
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Submit for approval failed: '.$e->getMessage(), [
+            Log::error('WorkplanBudgetItemApprovalService.submitForApproval', [
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -159,6 +161,7 @@ class WorkplanBudgetItemApprovalService
      * 
      * 1. If use_uppline_chain=true: resolve uppline chain first
      * 2. Then add master flow details (threshold-based or all-levels)
+     * 3. Ensure level_sequence is sequential across both phases
      * 
      * @param ApprovalFlowTemplate $template
      * @param Employment $requesterEmployment
@@ -173,20 +176,44 @@ class WorkplanBudgetItemApprovalService
         mixed $amount
     ): array {
         $chain = [];
+        $levelSequence = 1;
 
         // Phase 1: Uppline Chain (if enabled)
         if ($template->use_uppline_chain) {
             $upplineApprovers = $this->resolveUplineApprovers($template->id, $requesterEmployment, $divisionId);
+            
+            Log::info('Phase 1: Uppline Chain', [
+                'count' => count($upplineApprovers),
+                'approvers' => $upplineApprovers,
+            ]);
+            
             foreach ($upplineApprovers as $approver) {
-                $chain[] = array_merge($approver, ['phase' => 'uppline']);
+                $chain[] = array_merge($approver, [
+                    'phase' => 'uppline',
+                    'level_sequence' => $levelSequence++,
+                ]);
             }
         }
 
         // Phase 2: Master Flow Details
         $masterFlowApprovers = $this->getMasterFlowApprovers($template, $amount);
+        
+        Log::info('Phase 2: Master Flow', [
+            'count' => count($masterFlowApprovers),
+            'approvers' => $masterFlowApprovers,
+        ]);
+        
         foreach ($masterFlowApprovers as $approver) {
-            $chain[] = array_merge($approver, ['phase' => 'master_flow']);
+            $chain[] = array_merge($approver, [
+                'phase' => 'master_flow',
+                'level_sequence' => $levelSequence++,
+            ]);
         }
+
+        Log::info('Final approval chain built', [
+            'total_levels' => count($chain),
+            'chain' => $chain,
+        ]);
 
         return $chain;
     }
@@ -373,11 +400,30 @@ class WorkplanBudgetItemApprovalService
 
         $flowDetails = $query->orderBy('level_sequence')->get();
 
+        Log::info('Master flow details query result', [
+            'template_id' => $template->id,
+            'use_threshold' => $template->use_threshold,
+            'amount' => $amount,
+            'found_count' => $flowDetails->count(),
+            'details' => $flowDetails->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'employment_id' => $d->employment_id,
+                    'level_sequence' => $d->level_sequence,
+                    'threshold_amount' => $d->threshold_amount,
+                ];
+            }),
+        ]);
+
         return $flowDetails->map(function ($detail) {
+            $employee = $detail->employment?->employee;
+            $employmentName = $employee ? $employee->name : 'Unknown';
+            
             return [
                 'employment_id' => $detail->employment_id,
-                'employment_name' => $detail->employment?->employee?->name ?? 'Unknown',
+                'employment_name' => $employmentName,
                 'threshold_amount' => $detail->threshold_amount,
+                'job_level_name' => $detail->employment?->job_level_name,
             ];
         })->toArray();
     }

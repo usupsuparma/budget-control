@@ -90,10 +90,33 @@ class SubmissionController extends Controller
         try {
             $userId = Auth::id();
             
-            $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
-            $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
-            $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
-            $completion = Transaction::where('user_id', $userId)->where('status', 8)->count();
+            $yearFilter = $request->filled('year') && $request->year !== 'all';
+
+            $newSubmission = Transaction::where('user_id', $userId)
+                ->whereIn('status', [0, 1, 2, 3, 4, 5])
+                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->count();
+
+            $progress = Transaction::where('user_id', $userId)
+                ->where('status', 7)
+                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->count();
+
+            $paid = Transaction::where('user_id', $userId)
+                ->where('status', 7)
+                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->count();
+
+            $completion = Transaction::where('user_id', $userId)
+                ->where('status', 8)
+                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->count();
+
+            $rejected = Transaction::where('user_id', $userId)
+                ->where('status', 6)
+                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->count();
+
             $totalSubmission = Transaction::where('user_id', $userId)->count();
 
             return response()->json([
@@ -103,6 +126,7 @@ class SubmissionController extends Controller
                     'progress' => $progress,
                     'paid' => $paid,
                     'completion' => $completion,
+                    'rejected' => $rejected, 
                     'totalSubmission' => $totalSubmission
                 ]
             ]);
@@ -120,6 +144,7 @@ class SubmissionController extends Controller
         try {
             $userId = Auth::id();
             $query = Transaction::query();
+            $query->where('user_id', $userId);
             $query->with(['details', 'approvals' => function($q) use ($userId) {
                 $q->where('approver_id', $userId)
                   ->where('status', 0); // pending
@@ -131,7 +156,9 @@ class SubmissionController extends Controller
             }
 
             // Filter by status
-            if ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
+            if($request->has('status') && $request->status == 'dis'){
+                $query->whereIn('status', array(0,1,2,3,4,5));
+            } elseif ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }
 

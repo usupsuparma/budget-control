@@ -919,11 +919,6 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/data', [EmployeeController::class, 'getData'])
                 ->name('employee.data');
-            Route::post('/{id}/reset-password', [EmployeeController::class, 'resetPassword'])
-                ->middleware('permission:employee.edit');
-            Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
-                ->name('employee.edit')
-                ->middleware('permission:employee.edit');
             Route::post('/create', [EmployeeController::class, 'store'])
                 ->name('employee.store')
                 ->middleware('permission:employee.create');
@@ -931,6 +926,11 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:employee.delete');
             Route::post('/update/{id}', [EmployeeController::class, 'update'])
                 ->name('employee.update');
+            Route::post('/{id}/reset-password', [EmployeeController::class, 'resetPassword'])
+                ->middleware('permission:employee.edit');
+            Route::get('/{id}/edit', [EmployeeController::class, 'edit'])
+                ->name('employee.edit')
+                ->middleware('permission:employee.edit');
             Route::get('/{id}', [EmployeeController::class, 'show'])
                 ->name('employee.show');
         });

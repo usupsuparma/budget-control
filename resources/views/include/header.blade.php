@@ -56,7 +56,7 @@
                             </div>
                         </div>
                         <ul class="list-unstyled mb-1 border-bottom pb-1">
-                            <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-person me-1"></i> View Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="bi bi-person me-1"></i> View Profile</a></li>
                             {{-- <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-gear me-1"></i> Settings</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-award me-1"></i> Subscription</a></li> --}}
                         </ul>

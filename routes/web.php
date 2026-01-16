@@ -72,6 +72,13 @@ Route::middleware('auth')->group(function () {
         return redirect('/');
     })->name('logout');
 
+    /* PROFILE */
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+        Route::post('/update', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
+    });
+
 
     /* ========================
         DASHBOARD

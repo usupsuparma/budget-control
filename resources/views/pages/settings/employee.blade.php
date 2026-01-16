@@ -553,12 +553,29 @@
             return;
         }
 
+        // Close Bootstrap modal first to avoid focus conflict with SweetAlert
+        let detailModal = bootstrap.Modal.getInstance(document.getElementById('employeeDetailModal'));
+        if (detailModal) {
+            detailModal.hide();
+        }
+        
+        // Remove modal backdrop if it still exists
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+
         Swal.fire({
             title: "Reset password?",
             input: "password",
             inputPlaceholder: "Enter new password",
             showCancelButton: true,
-            confirmButtonText: "Reset"
+            confirmButtonText: "Reset",
+            didOpen: () => {
+                // Ensure SweetAlert input gets focus
+                const input = Swal.getInput();
+                if (input) {
+                    input.focus();
+                }
+            }
         }).then((result) => {
             if (result.value) {
 

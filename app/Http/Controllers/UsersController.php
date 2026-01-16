@@ -14,8 +14,11 @@ class UsersController extends Controller
     {
         $title = "Users Data";
         $roles = Role::all();
+        $employees = Employee::select('id', 'first_name', 'email')
+            ->orderBy('first_name')
+            ->get();
         $permissions = Permission::with('modul')->OrderBy('id', 'DESC')->get();
         $moduls = ModulMenu::orderBy('modul_name')->orderBy('menu_name')->get();
-        return view('pages.settings.users', compact('title', 'roles', 'permissions', 'moduls'));
+        return view('pages.settings.users', compact('employees', 'title', 'roles', 'permissions', 'moduls'));
     }
 }

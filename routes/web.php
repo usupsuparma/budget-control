@@ -43,6 +43,7 @@ use App\Http\Controllers\SettingProductionController;
 use App\Http\Controllers\BudgetUserController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SegmenController;
+use App\Http\Controllers\SettingPriceController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\WorkplanBudgetItemApprovalController;
@@ -1222,6 +1223,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.code.view')
         ->get('/code', [SettingCodeController::class, 'index'])
         ->name('code.index');
+
     Route::middleware('permission:setting.production.view')
         ->get('/setting.production', [SettingProductionController::class, 'index'])
         ->name('setting.production.index');
@@ -1270,6 +1272,23 @@ Route::middleware('auth')->group(function () {
                 ->name('budgetCode.destroy');
         });
 
+
+    Route::prefix('settingPriceVerificator')
+        ->middleware('permission:setting.price.view')
+        ->group(function () {
+
+            Route::get('/', [SettingPriceController::class, 'index'])
+                ->name('settingPriceVerificator.index');
+
+            Route::post('/store-verificator', [SettingPriceController::class, 'storeVerificator'])
+                ->name('settingPriceVerificator.storeVerificator');
+
+            Route::post('/assign-code', [SettingPriceController::class, 'assignCode'])
+                ->name('settingPriceVerificator.assignCode');
+
+            Route::post('/assign-user', [SettingPriceController::class, 'assignUser'])
+                ->name('settingPriceVerificator.assignUser');
+        });
 
 
     /* ========================

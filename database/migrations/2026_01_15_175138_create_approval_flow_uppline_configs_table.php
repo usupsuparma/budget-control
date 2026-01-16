@@ -21,15 +21,15 @@ return new class extends Migration
             $table->softDeletes();
 
             // Foreign keys
-            $table->foreign('template_id')
-                ->references('id')
-                ->on('approval_flow_templates')
-                ->onDelete('cascade');
+            // $table->foreign('template_id')
+            //     ->references('id')
+            //     ->on('approval_flow_templates')
+            //     ->onDelete('cascade');
 
-            $table->foreign('division_id')
-                ->references('id')
-                ->on('division')
-                ->onDelete('cascade');
+            // $table->foreign('division_id')
+            //     ->references('id')
+            //     ->on('division')
+            //     ->onDelete('cascade');
 
             // Indexes for query performance
             $table->index(['template_id', 'division_id', 'step_sequence'], 'uppline_config_lookup');

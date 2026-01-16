@@ -306,13 +306,14 @@
         'setting.master.view',
         'setting.users.view',
         'setting.code.view',
+        'setting.price.view',
         'setting.production.view',
         'approval.view',
         'setting.history.view'
         ])
         <li class="pe-slide pe-has-sub">
             <a href="#collapseSetting"
-                class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('setting.production*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'active' : '' }}"
+                class="pe-nav-link {{ Request::is('master*') || Request::is('user*') || Request::is('code*') || Request::is('setting.production*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') || Request::is('price*') ? 'active' : '' }}"
                 data-bs-toggle="collapse">
 
                 <i class="bi bi-gear pe-nav-icon"></i>
@@ -320,7 +321,7 @@
                 <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
             </a>
 
-            <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('setting.production*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') ? 'show' : '' }}" id="collapseSetting">
+            <ul class="pe-slide-menu collapse {{ Request::is('master*') || Request::is('code*') || Request::is('setting.production*') || Request::is('user*') || Request::is('approval*') || Request::is('auth.roles*') || Request::is('history*') || Request::is('price*') ? 'show' : '' }}" id="collapseSetting">
 
                 @can('setting.master.view')
                 <li class="pe-slide-item">
@@ -333,6 +334,12 @@
                 @can('setting.code.view')
                 <a href="{{ route('code.index') }}" class="pe-nav-link {{ Request::is('code*') ? 'active' : '' }}">
                     Code
+                </a>
+                @endcan
+
+                @can('setting.price.view')
+                <a href="{{ route('settingPriceVerificator.index') }}" class="pe-nav-link {{ Request::is('price*') ? 'active' : '' }}">
+                    Price
                 </a>
                 @endcan
 

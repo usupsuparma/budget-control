@@ -373,7 +373,8 @@
     `);
 
         $.get("{{ url('authorization/roles') }}/" + roleId + "/permissions", function(res) {
-            if (!res.permissions) {
+            git add.
+            if(!res.permissions) {
                 $('#permissionList').html(`<div class="alert alert-danger">Invalid data</div>`);
                 return;
             }

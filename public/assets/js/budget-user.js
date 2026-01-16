@@ -1497,6 +1497,7 @@ function submitForApproval(itemId) {
     }).then((result) => {
         if (result.isConfirmed) {
             showLoading();
+
             $.ajax({
                 url: `/workplan-budget-item-approval/${itemId}/submit`,
                 method: "POST",

@@ -297,25 +297,29 @@
             ajax: "{{ route('employee.data') }}",
             columns: [{
                     data: 'id',
-                    name: 'id'
+                    name: 'id',
+                    searchable: true
                 },
                 {
                     data: 'full_name',
-                    name: 'full_name'
+                    name: 'full_name',
+                    searchable: true  // Search in first_name, last_name, and email
                 },
                 {
                     data: 'job_info',
-                    name: 'job_position_id'
+                    name: 'job_info',
+                    searchable: true  // Search in job position and job level
                 },
                 {
                     data: 'roles',
-                    name: 'role_id'
+                    name: 'roles',
+                    searchable: true  // Search in role name
                 },
                 {
                     data: 'status_badge',
                     name: 'status',
                     orderable: false,
-                    searchable: false
+                    searchable: true  // Search by status (Active/Inactive)
                 },
                 {
                     data: 'action',

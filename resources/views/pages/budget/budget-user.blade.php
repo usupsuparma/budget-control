@@ -215,6 +215,66 @@
             color: white;
         }
     </style>
+    
+<style>
+    .timeline-container {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+        border-left: 2px solid #dee2e6;
+        padding-left: 20px;
+        margin-left: 10px;
+    }
+    .timeline-item:last-child {
+        border-left: none;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #dee2e6;
+    }
+    .timeline-item.completed::before {
+        background: #198754;
+        border-color: #198754;
+    }
+    .timeline-item.pending::before {
+        background: #ffc107;
+        border-color: #ffc107;
+    }
+    .timeline-item.rejected::before {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+    .timeline-item.skipped::before {
+        background: #6c757d;
+        border-color: #6c757d;
+    }
+    .timeline-item.current::before {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5); }
+        50% { box-shadow: 0 0 0 8px rgba(13, 110, 253, 0); }
+    }
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-radius: 8px;
+    }
+    .timeline-content.current {
+        background: #e7f1ff;
+        border: 1px solid #0d6efd;
+    }
+</style>
 @endsection
 
 @section('content')
@@ -610,65 +670,6 @@
     </div>
 </div>
 
-<style>
-    .timeline-container {
-        position: relative;
-        padding-left: 30px;
-    }
-    .timeline-item {
-        position: relative;
-        padding-bottom: 20px;
-        border-left: 2px solid #dee2e6;
-        padding-left: 20px;
-        margin-left: 10px;
-    }
-    .timeline-item:last-child {
-        border-left: none;
-    }
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -12px;
-        top: 0;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid #dee2e6;
-    }
-    .timeline-item.completed::before {
-        background: #198754;
-        border-color: #198754;
-    }
-    .timeline-item.pending::before {
-        background: #ffc107;
-        border-color: #ffc107;
-    }
-    .timeline-item.rejected::before {
-        background: #dc3545;
-        border-color: #dc3545;
-    }
-    .timeline-item.skipped::before {
-        background: #6c757d;
-        border-color: #6c757d;
-    }
-    .timeline-item.current::before {
-        animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5); }
-        50% { box-shadow: 0 0 0 8px rgba(13, 110, 253, 0); }
-    }
-    .timeline-content {
-        background: #f8f9fa;
-        padding: 12px 15px;
-        border-radius: 8px;
-    }
-    .timeline-content.current {
-        background: #e7f1ff;
-        border: 1px solid #0d6efd;
-    }
-</style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

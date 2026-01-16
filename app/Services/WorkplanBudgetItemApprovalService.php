@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\ApprovalFlowDetail;
 use App\Models\ApprovalFlowTemplate;
+use App\Models\ApprovalFlowUpplineConfigs;
 use App\Models\ApprovalModule;
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestDetail;
+use App\Models\Employment;
 use App\Models\WorkplanBudgetItem;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -21,12 +23,12 @@ class WorkplanBudgetItemApprovalService
     public function submitForApproval(int $itemId): array
     {
         try {
-            $item = WorkplanBudgetItem::findOrFail($itemId);
+            $item = WorkplanBudgetItem::with('workplan')->findOrFail($itemId);
 
             // Check if already has pending approval
             $existingRequest = ApprovalRequest::where('reference_id', $itemId)
                 ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
-                ->whereIn('status', ['pending', 'in_progress'])
+                ->where('status', 'pending')
                 ->first();
 
             if ($existingRequest) {
@@ -48,41 +50,55 @@ class WorkplanBudgetItemApprovalService
                 ];
             }
 
-            // Find template with threshold
+            // Find active template for this module
             $template = ApprovalFlowTemplate::where('module_id', $module->id)
                 ->where('is_active', true)
-                ->where('use_threshold', true)
-                ->where('condition_field', 'total')
                 ->orderBy('priority')
                 ->first();
 
             if (! $template) {
                 return [
                     'success' => false,
-                    'message' => 'Approval template dengan threshold untuk field "total" belum dikonfigurasi.',
+                    'message' => 'Approval template belum dikonfigurasi untuk module ini.',
                 ];
             }
 
-            // Get applicable flow details based on item's total
-            $flowDetails = $this->getApplicableFlowDetails($template->id, $item->total);
+            // Get current user's employment
+            $employee = Auth::user();
+            $requesterEmployment = $employee ? $employee->employment : null;
+            $requesterId = $requesterEmployment ? $requesterEmployment->id : null;
 
-            if ($flowDetails->isEmpty()) {
+            if (! $requesterEmployment) {
                 return [
                     'success' => false,
-                    'message' => 'Tidak ada approver yang sesuai untuk nominal ini.',
+                    'message' => 'Data employment Anda tidak ditemukan.',
                 ];
             }
 
-            DB::beginTransaction();
+            // Get division from the workplan budget item
+            $divisionId = $item->getDivisionId();
 
-            // Get current user's employment_id
-            // Note: Auth::user() returns Employee model (see config/auth.php)
-            $employee = Auth::user();
-            Log::info($employee);
-            $requesterId = null;
-            if ($employee && $employee->employment) {
-                $requesterId = $employee->employment->id;
+            // Build approval chain based on template configuration
+            $approvalChain = $this->buildApprovalChain($template, $requesterEmployment, $divisionId, $item->total);
+
+            if (empty($approvalChain)) {
+                return [
+                    'success' => false,
+                    'message' => 'Tidak ada approver yang sesuai untuk request ini.',
+                ];
             }
+
+            Log::info('Built approval chain', [
+                'item_id' => $itemId,
+                'template_id' => $template->id,
+                'use_uppline_chain' => $template->use_uppline_chain,
+                'use_threshold' => $template->use_threshold,
+                'division_id' => $divisionId,
+                'chain_count' => count($approvalChain),
+                'chain' => $approvalChain,
+            ]);
+
+            DB::beginTransaction();
 
             // Create approval request
             $request = ApprovalRequest::create([
@@ -90,27 +106,23 @@ class WorkplanBudgetItemApprovalService
                 'reference_id' => $itemId,
                 'reference_number' => $this->generateReferenceNumber($item),
                 'template_id' => $template->id,
-                'template_snapshot' => json_encode($flowDetails->toArray()),
+                'template_snapshot' => json_encode($approvalChain),
                 'status' => 'pending',
-                'current_phase' => 1,
+                'current_phase' => $approvalChain[0]['phase'] ?? 'uppline',
                 'current_level' => 1,
-                'total_levels' => $flowDetails->count(),
+                'total_levels' => count($approvalChain),
                 'requester_id' => $requesterId,
                 'requested_at' => now(),
             ]);
 
-            // Create approval request details for each approver
-            foreach ($flowDetails as $detail) {
-                $employeeName = $detail->employment?->employee
-                    ? $detail->employment->employee->first_name.' '.($detail->employment->employee->last_name ?? '')
-                    : 'Unknown';
-
+            // Create approval request details for each approver in chain
+            foreach ($approvalChain as $index => $approver) {
                 ApprovalRequestDetail::create([
                     'request_id' => $request->id,
-                    'phase' => 1,
-                    'level_sequence' => $detail->level_sequence,
-                    'employment_id' => $detail->employment_id,
-                    'employment_name' => $employeeName,
+                    'phase' => $approver['phase'],
+                    'level_sequence' => $index + 1, // Sequential from 1
+                    'employment_id' => $approver['employment_id'],
+                    'employment_name' => $approver['employment_name'],
                     'status' => 'pending',
                 ]);
             }
@@ -125,19 +137,249 @@ class WorkplanBudgetItemApprovalService
                 'message' => 'Item berhasil diajukan untuk approval.',
                 'data' => [
                     'request_id' => $request->id,
-                    'total_approvers' => $flowDetails->count(),
+                    'total_approvers' => count($approvalChain),
                 ],
             ];
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Submit for approval failed: '.$e->getMessage());
+            Log::error('Submit for approval failed: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return [
                 'success' => false,
                 'message' => 'Gagal mengajukan approval: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Build approval chain based on template configuration.
+     * 
+     * 1. If use_uppline_chain=true: resolve uppline chain first
+     * 2. Then add master flow details (threshold-based or all-levels)
+     * 
+     * @param ApprovalFlowTemplate $template
+     * @param Employment $requesterEmployment
+     * @param int|null $divisionId
+     * @param mixed $amount
+     * @return array
+     */
+    protected function buildApprovalChain(
+        ApprovalFlowTemplate $template,
+        Employment $requesterEmployment,
+        ?int $divisionId,
+        mixed $amount
+    ): array {
+        $chain = [];
+
+        // Phase 1: Uppline Chain (if enabled)
+        if ($template->use_uppline_chain) {
+            $upplineApprovers = $this->resolveUplineApprovers($template->id, $requesterEmployment, $divisionId);
+            foreach ($upplineApprovers as $approver) {
+                $chain[] = array_merge($approver, ['phase' => 'uppline']);
+            }
+        }
+
+        // Phase 2: Master Flow Details
+        $masterFlowApprovers = $this->getMasterFlowApprovers($template, $amount);
+        foreach ($masterFlowApprovers as $approver) {
+            $chain[] = array_merge($approver, ['phase' => 'master_flow']);
+        }
+
+        return $chain;
+    }
+
+    /**
+     * Resolve uppline chain approvers based on ApprovalFlowUpplineConfigs.
+     * 
+     * Logic:
+     * 1. Get uppline config for specific division first, if not found use default (division_id = NULL)
+     * 2. Build recursive uppline chain from requester
+     * 3. Filter chain by job_level_name defined in config
+     * 4. Skip if uppline in chain is missing, but keep sequence sequential
+     * 
+     * @param int $templateId
+     * @param Employment $requesterEmployment
+     * @param int|null $divisionId
+     * @return array
+     */
+    protected function resolveUplineApprovers(int $templateId, Employment $requesterEmployment, ?int $divisionId): array
+    {
+        // Step 1: Get uppline config (specific division first, then default)
+        $upplineConfigs = $this->getUpplineConfigs($templateId, $divisionId);
+
+        if ($upplineConfigs->isEmpty()) {
+            Log::info('No uppline config found', [
+                'template_id' => $templateId,
+                'division_id' => $divisionId,
+            ]);
+            return [];
+        }
+
+        // Extract required job level names from config (ordered by step_sequence)
+        $requiredJobLevels = $upplineConfigs->pluck('job_level_name')->toArray();
+
+        Log::info('Required job levels from config', [
+            'job_levels' => $requiredJobLevels,
+            'division_id' => $divisionId,
+        ]);
+
+        // Step 2: Build recursive uppline chain from requester
+        $upplineChain = $this->buildRecursiveUpplineChain($requesterEmployment);
+
+        Log::info('Built uppline chain', [
+            'chain' => $upplineChain,
+        ]);
+
+        // Step 3: Match uppline chain with required job levels
+        $approvers = [];
+        foreach ($requiredJobLevels as $jobLevelName) {
+            // Find uppline with matching job_level_name
+            $matchedUppline = collect($upplineChain)->first(function ($uppline) use ($jobLevelName) {
+                return strtolower($uppline['job_level_name']) === strtolower($jobLevelName);
+            });
+
+            if ($matchedUppline) {
+                $approvers[] = [
+                    'employment_id' => $matchedUppline['employment_id'],
+                    'employment_name' => $matchedUppline['employment_name'],
+                    'job_level_name' => $matchedUppline['job_level_name'],
+                ];
+                Log::info('Matched uppline approver', [
+                    'job_level' => $jobLevelName,
+                    'approver' => $matchedUppline,
+                ]);
+            } else {
+                Log::info('No uppline found for job level, skipping', [
+                    'job_level' => $jobLevelName,
+                ]);
+                // Skip this level if no matching uppline found (as per requirement)
+            }
+        }
+
+        return $approvers;
+    }
+
+    /**
+     * Get uppline configuration for template.
+     * Priority: Specific division first, then default (division_id = NULL)
+     * 
+     * @param int $templateId
+     * @param int|null $divisionId
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getUpplineConfigs(int $templateId, ?int $divisionId)
+    {
+        // Try specific division first
+        if ($divisionId) {
+            $specificConfig = ApprovalFlowUpplineConfigs::where('template_id', $templateId)
+                ->where('division_id', $divisionId)
+                ->orderBy('step_sequence')
+                ->get();
+
+            if ($specificConfig->isNotEmpty()) {
+                Log::info('Using specific division config', [
+                    'template_id' => $templateId,
+                    'division_id' => $divisionId,
+                ]);
+                return $specificConfig;
+            }
+        }
+
+        // Fall back to default config (division_id = NULL)
+        $defaultConfig = ApprovalFlowUpplineConfigs::where('template_id', $templateId)
+            ->whereNull('division_id')
+            ->orderBy('step_sequence')
+            ->get();
+
+        Log::info('Using default config', [
+            'template_id' => $templateId,
+            'config_count' => $defaultConfig->count(),
+        ]);
+
+        return $defaultConfig;
+    }
+
+    /**
+     * Build recursive uppline chain from requester employment.
+     * 
+     * @param Employment $employment
+     * @return array
+     */
+    protected function buildRecursiveUpplineChain(Employment $employment): array
+    {
+        $chain = [];
+        $currentEmployment = $employment;
+        $visitedIds = [$employment->id]; // Prevent infinite loop
+
+        while ($currentEmployment && $currentEmployment->uppline_id) {
+            // Get uppline's employee
+            $upplineEmployee = \App\Models\Employee::find($currentEmployment->uppline_id);
+
+            if (! $upplineEmployee || ! $upplineEmployee->employment) {
+                Log::info('Uppline employee or employment not found', [
+                    'uppline_id' => $currentEmployment->uppline_id,
+                ]);
+                break;
+            }
+
+            $upplineEmployment = $upplineEmployee->employment;
+
+            // Check for circular reference
+            if (in_array($upplineEmployment->id, $visitedIds)) {
+                Log::warning('Circular uppline reference detected', [
+                    'employment_id' => $upplineEmployment->id,
+                ]);
+                break;
+            }
+
+            $visitedIds[] = $upplineEmployment->id;
+
+            $chain[] = [
+                'employment_id' => $upplineEmployment->id,
+                'employment_name' => $upplineEmployee->name,
+                'job_level_name' => $upplineEmployment->job_level_name,
+                'job_level_id' => $upplineEmployment->job_level_id,
+            ];
+
+            $currentEmployment = $upplineEmployment;
+        }
+
+        return $chain;
+    }
+
+    /**
+     * Get master flow approvers from ApprovalFlowDetails.
+     * 
+     * @param ApprovalFlowTemplate $template
+     * @param mixed $amount
+     * @return array
+     */
+    protected function getMasterFlowApprovers(ApprovalFlowTemplate $template, mixed $amount): array
+    {
+        $query = ApprovalFlowDetail::with('employment.employee')
+            ->where('template_id', $template->id)
+            ->where('is_required', true);
+
+        // Apply threshold filter if enabled
+        if ($template->use_threshold) {
+            $query->where(function ($q) use ($amount) {
+                $q->whereNull('threshold_amount')
+                    ->orWhere('threshold_amount', '>=', $amount);
+            });
+        }
+
+        $flowDetails = $query->orderBy('level_sequence')->get();
+
+        return $flowDetails->map(function ($detail) {
+            return [
+                'employment_id' => $detail->employment_id,
+                'employment_name' => $detail->employment?->employee?->name ?? 'Unknown',
+                'threshold_amount' => $detail->threshold_amount,
+            ];
+        })->toArray();
     }
 
     /**
@@ -251,7 +493,7 @@ class WorkplanBudgetItemApprovalService
             // Update current level
             $request->update([
                 'current_level' => $detail->level_sequence + 1,
-                'status' => 'in_progress',
+                'status' => 'pending',
             ]);
 
             return [
@@ -332,6 +574,7 @@ class WorkplanBudgetItemApprovalService
         $details = $request->details->map(function ($detail) {
             return [
                 'id' => $detail->id,
+                'phase' => $detail->phase,
                 'level' => $detail->level_sequence,
                 'approver_name' => $detail->employment_name,
                 'status' => $detail->status,
@@ -349,6 +592,7 @@ class WorkplanBudgetItemApprovalService
                     'id' => $request->id,
                     'reference_number' => $request->reference_number,
                     'status' => $request->status,
+                    'current_phase' => $request->current_phase,
                     'current_level' => $request->current_level,
                     'total_levels' => $request->total_levels,
                     'requested_at' => $request->requested_at?->format('Y-m-d H:i:s'),
@@ -370,7 +614,7 @@ class WorkplanBudgetItemApprovalService
         ])
             ->where('employment_id', $employmentId)
             ->where('status', 'pending')
-            ->whereHas('request', fn ($q) => $q->whereIn('status', ['pending', 'in_progress']))
+            ->whereHas('request', fn ($q) => $q->where('status', 'pending'))
             ->get()
             ->filter(function ($detail) {
                 // Only return if this is the next in sequence
@@ -417,7 +661,7 @@ class WorkplanBudgetItemApprovalService
         try {
             $request = ApprovalRequest::where('reference_id', $itemId)
                 ->whereHas('module', fn ($q) => $q->where('table_name', 'workplan_budget_items'))
-                ->whereIn('status', ['pending', 'in_progress'])
+                ->where('status', 'pending')
                 ->first();
 
             if (! $request) {

@@ -17,7 +17,8 @@ class EmployeeController extends Controller
 
     public function getData()
     {
-        $query = Employee::with(['role', 'jobPosition'])
+        // Use 'roles' (Spatie HasRoles trait) instead of 'role' to avoid conflict with scopeRole()
+        $query = Employee::with(['roles', 'jobPosition'])
             ->select(['id', 'first_name', 'last_name', 'email', 'role_id', 'job_position_id', 'status']);
 
         return DataTables::of($query)
@@ -39,7 +40,7 @@ class EmployeeController extends Controller
             ->addColumn(
                 'roles',
                 fn($row) =>
-                '<span class="badge border border-primary text-primary">' . $row->role->name . '</span>'
+                '<span class="badge border border-primary text-primary">' . ($row->roles->first()->name ?? '-') . '</span>'
             )
 
             ->addColumn(
@@ -75,6 +76,27 @@ class EmployeeController extends Controller
             <i class="ri-delete-bin-line"></i>
         </button>
     ';
+            })
+
+            // Custom filter for full_name column (search in first_name, last_name, and email)
+            ->filterColumn('full_name', function($query, $keyword) {
+                $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$keyword}%"])
+                      ->orWhere('email', 'LIKE', "%{$keyword}%");
+            })
+
+            // Custom filter for job_info column (search in job_position relationship)
+            ->filterColumn('job_info', function($query, $keyword) {
+                $query->whereHas('jobPosition', function($q) use ($keyword) {
+                    $q->where('job_position_name', 'LIKE', "%{$keyword}%")
+                      ->orWhere('job_level_name', 'LIKE', "%{$keyword}%");
+                });
+            })
+
+            // Custom filter for roles column (search in Spatie roles relationship)
+            ->filterColumn('roles', function($query, $keyword) {
+                $query->whereHas('roles', function($q) use ($keyword) {
+                    $q->where('name', 'LIKE', "%{$keyword}%");
+                });
             })
 
             ->rawColumns(['full_name', 'job_info', 'roles', 'email', 'status_badge', 'action'])

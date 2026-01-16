@@ -56,4 +56,20 @@ class Employment extends Model
     {
         return $this->belongsTo(Employee::class, 'uppline_id', 'id');
     }
+
+    /**
+     * Get uppline's employment (for recursive uppline chain)
+     * Note: uppline_id references Employee.id
+     */
+    public function upplineEmployment()
+    {
+        return $this->hasOneThrough(
+            Employment::class,      // Final model
+            Employee::class,        // Intermediate model
+            'id',                   // FK on Employee (employee.id)
+            'employee_id',          // FK on Employment (employment.employee_id)
+            'uppline_id',           // Local key on this Employment (uppline_id points to Employee.id)
+            'employee_id'           // Local key on Employee (employee.employee_id)
+        );
+    }
 }

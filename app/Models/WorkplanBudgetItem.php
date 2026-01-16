@@ -201,4 +201,33 @@ class WorkplanBudgetItem extends Model
     {
         return $this->status === 'pending';
     }
+
+    /**
+     * Get the division_id associated with this budget item.
+     * 
+     * Path: WorkplanBudgetItem -> KpiWorkplan -> KpiDepartment/KpiSection -> KpiDivision -> Division
+     * 
+     * @return int|null
+     */
+    public function getDivisionId(): ?int
+    {
+        $workplan = $this->workplan;
+        if (!$workplan) {
+            return null;
+        }
+
+        if ($workplan->kpi_type === 'department') {
+            $kpiDepartment = $workplan->kpiDepartment;
+            if ($kpiDepartment && $kpiDepartment->kpiDivision && $kpiDepartment->kpiDivision->division) {
+                return $kpiDepartment->kpiDivision->division_id;
+            }
+        } elseif ($workplan->kpi_type === 'section') {
+            $kpiSection = $workplan->kpiSection;
+            if ($kpiSection && $kpiSection->kpiDepartment && $kpiSection->kpiDepartment->kpiDivision && $kpiSection->kpiDepartment->kpiDivision->division) {
+                return $kpiSection->kpiDepartment->kpiDivision->division_id;
+            }
+        }
+
+        return null;
+    }
 }

@@ -357,7 +357,8 @@ function saveAuthorizer() {
     
     if (isEditMode && authorizerId) {
         url = `{{ url("approval/authorizer/update") }}/${authorizerId}`;
-        method = 'PUT';
+        method = 'POST';
+        data._method = 'PUT';
     }
     
     $.ajax({
@@ -406,8 +407,11 @@ function deleteAuthorizer(id) {
         if (result.isConfirmed) {
             $.ajax({
                 url: `{{ url("approval/authorizer/delete") }}/${id}`,
-                type: 'DELETE',
-                data: { _token: '{{ csrf_token() }}' },
+                type: 'POST',
+                data: { 
+                    _token: '{{ csrf_token() }}',
+                    _method: 'DELETE'
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire({

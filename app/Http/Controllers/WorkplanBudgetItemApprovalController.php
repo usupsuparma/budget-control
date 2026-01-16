@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\WorkplanBudgetItemApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class WorkplanBudgetItemApprovalController extends Controller
 {
@@ -30,27 +31,49 @@ class WorkplanBudgetItemApprovalController extends Controller
      */
     public function approve(Request $request, int $detailId)
     {
-        $request->validate([
-            'comments' => 'nullable|string|max:1000',
-        ]);
+        try {
+            $request->validate([
+                'comments' => 'nullable|string|max:1000',
+            ]);
 
-        $employmentId = $this->getEmploymentIdForCurrentUser();
+            $employmentId = $this->getEmploymentIdForCurrentUser();
 
-        if (!$employmentId) {
+            if (! $employmentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak memiliki employment yang valid.',
+                ], 403);
+            }
+
+            Log::info('WorkplanBudgetItemApprovalController.approve', [
+                'detailId' => $detailId,
+                'employmentId' => $employmentId,
+                'comments' => $request->input('comments'),
+            ]);
+
+            $result = $this->approvalService->processApproval(
+                $detailId,
+                'approve',
+                $employmentId,
+                $request->input('comments')
+            );
+
+            Log::info('Approval berhasil', [
+                'WorkplanBudgetItemApprovalController' => $result,
+            ]);
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Throwable $th) {
+            Log::error('WorkplanBudgetItemApprovalController.approve', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'User tidak memiliki employment yang valid.',
-            ], 403);
+                'message' => 'Terjadi kesalahan saat memproses approval.',
+            ], 500);
         }
-
-        $result = $this->approvalService->processApproval(
-            $detailId,
-            'approve',
-            $employmentId,
-            $request->input('comments')
-        );
-
-        return response()->json($result, $result['success'] ? 200 : 400);
     }
 
     /**
@@ -64,7 +87,7 @@ class WorkplanBudgetItemApprovalController extends Controller
 
         $employmentId = $this->getEmploymentIdForCurrentUser();
 
-        if (!$employmentId) {
+        if (! $employmentId) {
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak memiliki employment yang valid.',
@@ -98,7 +121,7 @@ class WorkplanBudgetItemApprovalController extends Controller
     {
         $employmentId = $this->getEmploymentIdForCurrentUser();
 
-        if (!$employmentId) {
+        if (! $employmentId) {
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak memiliki employment yang valid.',
@@ -127,8 +150,8 @@ class WorkplanBudgetItemApprovalController extends Controller
     protected function getEmploymentIdForCurrentUser(): ?int
     {
         $employee = Auth::user();
-        
-        if (!$employee) {
+
+        if (! $employee) {
             return null;
         }
 

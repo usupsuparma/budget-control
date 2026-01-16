@@ -11,7 +11,6 @@ use App\Models\Transaction;
 use App\Models\TransactionApproval;
 use App\Models\TransactionApprovalThreshold;
 use App\Models\TransactionAuthorizer;
-
 use App\Services\ApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,13 +33,13 @@ class ApprovalController extends Controller
     {
         $title = 'Approval Management';
         $user = Auth::user();
-        
+
         // Get statistics
         $stats = $this->approvalService->getApprovalStatistics($user->id);
-        
+
         // Get pending approvals for current user
         $pendingApprovals = $this->approvalService->getPendingApprovalsForUser($user->id);
-        
+
         return view('pages.approval.main', compact('title', 'stats', 'pendingApprovals'));
     }
 
@@ -73,7 +72,8 @@ class ApprovalController extends Controller
                 'data' => $data->values(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Get pending approvals failed: ' . $e->getMessage());
+            Log::error('Get pending approvals failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get pending approvals',
@@ -113,7 +113,8 @@ class ApprovalController extends Controller
                 'data' => $transactions,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get all transactions failed: ' . $e->getMessage());
+            Log::error('Get all transactions failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get transactions',
@@ -130,7 +131,7 @@ class ApprovalController extends Controller
             $approval = TransactionApproval::with([
                 'transaction.approvals',
                 'transaction.threshold',
-                'logs'
+                'logs',
             ])->findOrFail($id);
 
             $history = $this->approvalService->getApprovalHistory($approval->transaction_id);
@@ -145,7 +146,8 @@ class ApprovalController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Get approval detail failed: ' . $e->getMessage());
+            Log::error('Get approval detail failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get approval detail',
@@ -164,7 +166,7 @@ class ApprovalController extends Controller
                     $query->orderBy('sequence_order');
                 },
                 'threshold',
-                'logs'
+                'logs',
             ])->findOrFail($transactionId);
 
             return response()->json([
@@ -172,7 +174,8 @@ class ApprovalController extends Controller
                 'data' => $transaction,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get transaction detail failed: ' . $e->getMessage());
+            Log::error('Get transaction detail failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get transaction detail',
@@ -199,12 +202,12 @@ class ApprovalController extends Controller
 
         try {
             $user = Auth::user();
-            
+
             $result = $this->approvalService->processApproval(
                 $id,
                 TransactionApproval::STATUS_APPROVED,
                 $user->id,
-                $user->first_name . ' ' . ($user->last_name ?? ''),
+                $user->first_name.' '.($user->last_name ?? ''),
                 $request->input('comments'),
                 $request->ip()
             );
@@ -226,7 +229,8 @@ class ApprovalController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
-            Log::error('Approve failed: ' . $e->getMessage());
+            Log::error('Approve failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process approval',
@@ -253,12 +257,12 @@ class ApprovalController extends Controller
 
         try {
             $user = Auth::user();
-            
+
             $result = $this->approvalService->processApproval(
                 $id,
                 TransactionApproval::STATUS_REJECTED,
                 $user->id,
-                $user->first_name . ' ' . ($user->last_name ?? ''),
+                $user->first_name.' '.($user->last_name ?? ''),
                 $request->input('comments'),
                 $request->ip()
             );
@@ -280,7 +284,8 @@ class ApprovalController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
-            Log::error('Reject failed: ' . $e->getMessage());
+            Log::error('Reject failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process rejection',
@@ -307,11 +312,11 @@ class ApprovalController extends Controller
 
         try {
             $user = Auth::user();
-            
+
             $result = $this->approvalService->cancelTransaction(
                 $transactionId,
                 $user->id,
-                $user->first_name . ' ' . ($user->last_name ?? ''),
+                $user->first_name.' '.($user->last_name ?? ''),
                 $request->input('reason')
             );
 
@@ -329,7 +334,8 @@ class ApprovalController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
-            Log::error('Cancel transaction failed: ' . $e->getMessage());
+            Log::error('Cancel transaction failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to cancel transaction',
@@ -374,7 +380,8 @@ class ApprovalController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Check threshold failed: ' . $e->getMessage());
+            Log::error('Check threshold failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to check threshold',
@@ -396,7 +403,8 @@ class ApprovalController extends Controller
                 'data' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get statistics failed: ' . $e->getMessage());
+            Log::error('Get statistics failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get statistics',
@@ -421,7 +429,8 @@ class ApprovalController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Get history failed: ' . $e->getMessage());
+            Log::error('Get history failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get approval history',
@@ -438,6 +447,7 @@ class ApprovalController extends Controller
     {
         $title = 'Approval Thresholds';
         $thresholds = TransactionApprovalThreshold::orderBy('min_amount')->get();
+
         return view('pages.approval.threshold', compact('title', 'thresholds'));
     }
 
@@ -448,6 +458,7 @@ class ApprovalController extends Controller
     {
         try {
             $thresholds = TransactionApprovalThreshold::orderBy('min_amount')->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $thresholds,
@@ -499,7 +510,8 @@ class ApprovalController extends Controller
                 'data' => $threshold,
             ]);
         } catch (\Exception $e) {
-            Log::error('Store threshold failed: ' . $e->getMessage());
+            Log::error('Store threshold failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create threshold',
@@ -547,7 +559,8 @@ class ApprovalController extends Controller
                 'data' => $threshold,
             ]);
         } catch (\Exception $e) {
-            Log::error('Update threshold failed: ' . $e->getMessage());
+            Log::error('Update threshold failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update threshold',
@@ -569,7 +582,8 @@ class ApprovalController extends Controller
                 'message' => 'Threshold deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Delete threshold failed: ' . $e->getMessage());
+            Log::error('Delete threshold failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete threshold',
@@ -587,6 +601,7 @@ class ApprovalController extends Controller
         $title = 'Approval Authorizers';
         $authorizers = TransactionAuthorizer::with('employee')->orderBy('approval_level')->orderBy('priority_order')->get();
         $employees = Employee::orderBy('first_name')->get();
+
         return view('pages.approval.authorizer', compact('title', 'authorizers', 'employees'));
     }
 
@@ -600,7 +615,7 @@ class ApprovalController extends Controller
                 ->orderBy('approval_level')
                 ->orderBy('priority_order')
                 ->get();
-                
+
             return response()->json([
                 'success' => true,
                 'data' => $authorizers,
@@ -658,7 +673,8 @@ class ApprovalController extends Controller
                 'data' => $authorizer,
             ]);
         } catch (\Exception $e) {
-            Log::error('Store authorizer failed: ' . $e->getMessage());
+            Log::error('Store authorizer failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create authorizer',
@@ -713,7 +729,8 @@ class ApprovalController extends Controller
                 'data' => $authorizer,
             ]);
         } catch (\Exception $e) {
-            Log::error('Update authorizer failed: ' . $e->getMessage());
+            Log::error('Update authorizer failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update authorizer',
@@ -735,7 +752,8 @@ class ApprovalController extends Controller
                 'message' => 'Authorizer deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Delete authorizer failed: ' . $e->getMessage());
+            Log::error('Delete authorizer failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete authorizer',
@@ -752,12 +770,14 @@ class ApprovalController extends Controller
     {
         try {
             $modules = ApprovalModule::orderBy('module_name')->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $modules,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get modules failed: ' . $e->getMessage());
+            Log::error('Get modules failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get modules',
@@ -772,22 +792,62 @@ class ApprovalController extends Controller
     {
         try {
             $excludeId = $request->input('exclude_id');
-            
+
             if ($excludeId) {
                 $tables = ApprovalModule::getAvailableTablesForEdit((int) $excludeId);
             } else {
                 $tables = ApprovalModule::getAvailableTables();
             }
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $tables,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get available tables failed: ' . $e->getMessage());
+            Log::error('Get available tables failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get available tables',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get modules for dropdown (filter out modules already used in templates)
+     */
+    public function getModulesForDropdown(Request $request)
+    {
+        try {
+            $excludeTemplateId = $request->input('exclude_template_id');
+            
+            // Get all active modules
+            $allModules = ApprovalModule::where('is_active', true)
+                ->orderBy('module_name')
+                ->get();
+            
+            // Get module IDs that are already used in templates
+            $usedModuleIds = ApprovalFlowTemplate::when($excludeTemplateId, function($query) use ($excludeTemplateId) {
+                    return $query->where('id', '!=', $excludeTemplateId);
+                })
+                ->pluck('module_id')
+                ->toArray();
+            
+            // Filter out used modules
+            $availableModules = $allModules->filter(function($module) use ($usedModuleIds) {
+                return !in_array($module->id, $usedModuleIds);
+            })->values();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $availableModules,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get modules for dropdown failed: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get modules for dropdown',
             ], 500);
         }
     }
@@ -799,14 +859,14 @@ class ApprovalController extends Controller
     {
         // Convert string booleans to actual booleans
         $request->merge([
-            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
         $allowedTables = array_keys(ApprovalModule::ALLOWED_TABLES);
-        
+
         $validator = Validator::make($request->all(), [
             'module_name' => 'required|string|max:50|unique:approval_modules,module_name',
-            'table_name' => 'required|string|in:' . implode(',', $allowedTables) . '|unique:approval_modules,table_name',
+            'table_name' => 'required|string|in:'.implode(',', $allowedTables).'|unique:approval_modules,table_name',
             'is_active' => 'boolean',
         ], [
             'table_name.in' => 'Table yang dipilih tidak valid.',
@@ -834,7 +894,8 @@ class ApprovalController extends Controller
                 'data' => $module,
             ]);
         } catch (\Exception $e) {
-            Log::error('Store module failed: ' . $e->getMessage());
+            Log::error('Store module failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create module',
@@ -849,14 +910,14 @@ class ApprovalController extends Controller
     {
         // Convert string booleans to actual booleans
         $request->merge([
-            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
         $allowedTables = array_keys(ApprovalModule::ALLOWED_TABLES);
-        
+
         $validator = Validator::make($request->all(), [
-            'module_name' => 'required|string|max:50|unique:approval_modules,module_name,' . $id,
-            'table_name' => 'required|string|in:' . implode(',', $allowedTables) . '|unique:approval_modules,table_name,' . $id,
+            'module_name' => 'required|string|max:50|unique:approval_modules,module_name,'.$id,
+            'table_name' => 'required|string|in:'.implode(',', $allowedTables).'|unique:approval_modules,table_name,'.$id,
             'is_active' => 'boolean',
         ], [
             'table_name.in' => 'Table yang dipilih tidak valid.',
@@ -885,7 +946,8 @@ class ApprovalController extends Controller
                 'data' => $module,
             ]);
         } catch (\Exception $e) {
-            Log::error('Update module failed: ' . $e->getMessage());
+            Log::error('Update module failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update module',
@@ -900,7 +962,7 @@ class ApprovalController extends Controller
     {
         try {
             $module = ApprovalModule::findOrFail($id);
-            
+
             // Cek apakah modul memiliki template yang terkait
             if ($module->templates()->count() > 0) {
                 return response()->json([
@@ -908,7 +970,7 @@ class ApprovalController extends Controller
                     'message' => 'Cannot delete module. It has associated templates.',
                 ], 400);
             }
-            
+
             $module->delete();
 
             return response()->json([
@@ -916,7 +978,8 @@ class ApprovalController extends Controller
                 'message' => 'Module deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Delete module failed: ' . $e->getMessage());
+            Log::error('Delete module failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete module',
@@ -935,12 +998,14 @@ class ApprovalController extends Controller
             $templates = ApprovalFlowTemplate::with('module')
                 ->orderBy('priority')
                 ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $templates,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get templates failed: ' . $e->getMessage());
+            Log::error('Get templates failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get templates',
@@ -957,17 +1022,22 @@ class ApprovalController extends Controller
         $request->merge([
             'use_uppline_chain' => filter_var($request->input('use_uppline_chain', false), FILTER_VALIDATE_BOOLEAN),
             'use_threshold' => filter_var($request->input('use_threshold', false), FILTER_VALIDATE_BOOLEAN),
-            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
         $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:approval_modules,id',
+            'module_id' => 'required|exists:approval_modules,id|unique:approval_flow_templates,module_id',
             'template_name' => 'required|string|max:100',
             'use_uppline_chain' => 'boolean',
             'use_threshold' => 'boolean',
             'condition_field' => 'nullable|string|max:50',
             'priority' => 'integer|min:1',
             'is_active' => 'boolean',
+        ], [
+            'module_id.required' => 'Module harus dipilih.',
+            'module_id.exists' => 'Module tidak valid.',
+            'module_id.unique' => 'Module sudah memiliki template approval. Setiap module hanya boleh memiliki satu template.',
+            'template_name.required' => 'Template name harus diisi.',
         ]);
 
         if ($validator->fails()) {
@@ -979,12 +1049,15 @@ class ApprovalController extends Controller
         }
 
         try {
+            // Get condition_field from selected module
+            $module = ApprovalModule::findOrFail($request->input('module_id'));
+            
             $template = ApprovalFlowTemplate::create([
                 'module_id' => $request->input('module_id'),
                 'template_name' => $request->input('template_name'),
                 'use_uppline_chain' => $request->input('use_uppline_chain', false),
                 'use_threshold' => $request->input('use_threshold', false),
-                'condition_field' => $request->input('condition_field'),
+                'condition_field' => $module->condition_field,
                 'priority' => $request->input('priority', 1),
                 'is_active' => $request->input('is_active', true),
             ]);
@@ -995,7 +1068,8 @@ class ApprovalController extends Controller
                 'data' => $template->load('module'),
             ]);
         } catch (\Exception $e) {
-            Log::error('Store template failed: ' . $e->getMessage());
+            Log::error('Store template failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create template',
@@ -1012,17 +1086,18 @@ class ApprovalController extends Controller
         $request->merge([
             'use_uppline_chain' => filter_var($request->input('use_uppline_chain', false), FILTER_VALIDATE_BOOLEAN),
             'use_threshold' => filter_var($request->input('use_threshold', false), FILTER_VALIDATE_BOOLEAN),
-            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN)
+            'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
+        // NOTE: module_id is NOT included - cannot be changed on update
         $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:approval_modules,id',
             'template_name' => 'required|string|max:100',
             'use_uppline_chain' => 'boolean',
             'use_threshold' => 'boolean',
-            'condition_field' => 'nullable|string|max:50',
             'priority' => 'integer|min:1',
             'is_active' => 'boolean',
+        ], [
+            'template_name.required' => 'Template name harus diisi.',
         ]);
 
         if ($validator->fails()) {
@@ -1035,12 +1110,16 @@ class ApprovalController extends Controller
 
         try {
             $template = ApprovalFlowTemplate::findOrFail($id);
+            
+            // Get condition_field from existing module (module cannot be changed)
+            $module = ApprovalModule::findOrFail($template->module_id);
+            
+            // Update template - module_id is NOT updated
             $template->update([
-                'module_id' => $request->input('module_id'),
                 'template_name' => $request->input('template_name'),
                 'use_uppline_chain' => $request->input('use_uppline_chain', false),
                 'use_threshold' => $request->input('use_threshold', false),
-                'condition_field' => $request->input('condition_field'),
+                'condition_field' => $module->condition_field,
                 'priority' => $request->input('priority', 1),
                 'is_active' => $request->input('is_active', true),
             ]);
@@ -1051,7 +1130,8 @@ class ApprovalController extends Controller
                 'data' => $template->load('module'),
             ]);
         } catch (\Exception $e) {
-            Log::error('Update template failed: ' . $e->getMessage());
+            Log::error('Update template failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update template',
@@ -1066,7 +1146,7 @@ class ApprovalController extends Controller
     {
         try {
             $template = ApprovalFlowTemplate::findOrFail($id);
-            
+
             // Cek apakah template memiliki details yang terkait
             if ($template->details()->count() > 0) {
                 return response()->json([
@@ -1074,7 +1154,7 @@ class ApprovalController extends Controller
                     'message' => 'Cannot delete template. It has associated flow details.',
                 ], 400);
             }
-            
+
             $template->delete();
 
             return response()->json([
@@ -1082,7 +1162,8 @@ class ApprovalController extends Controller
                 'message' => 'Template deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Delete template failed: ' . $e->getMessage());
+            Log::error('Delete template failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete template',
@@ -1102,12 +1183,14 @@ class ApprovalController extends Controller
                 ->where('template_id', $templateId)
                 ->orderBy('level_sequence')
                 ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $details,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get flow details failed: ' . $e->getMessage());
+            Log::error('Get flow details failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get flow details',
@@ -1122,9 +1205,9 @@ class ApprovalController extends Controller
     {
         // Convert string booleans to actual booleans
         $request->merge([
-            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN)
+            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
         $validator = Validator::make($request->all(), [
             'template_id' => 'required|exists:approval_flow_templates,id',
             'level_sequence' => 'required|integer|min:1',
@@ -1156,7 +1239,8 @@ class ApprovalController extends Controller
                 'data' => $detail->load(['template', 'employment.employee']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Store flow detail failed: ' . $e->getMessage());
+            Log::error('Store flow detail failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create flow detail',
@@ -1171,9 +1255,9 @@ class ApprovalController extends Controller
     {
         // Convert string booleans to actual booleans
         $request->merge([
-            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN)
+            'is_required' => filter_var($request->input('is_required', true), FILTER_VALIDATE_BOOLEAN),
         ]);
-        
+
         $validator = Validator::make($request->all(), [
             'template_id' => 'required|exists:approval_flow_templates,id',
             'level_sequence' => 'required|integer|min:1',
@@ -1192,6 +1276,8 @@ class ApprovalController extends Controller
 
         try {
             $detail = ApprovalFlowDetail::findOrFail($id);
+            $employment = Employment::findOrFail($request->input('employment_id'));
+            $name = $employment->employee->name;
             $detail->update([
                 'template_id' => $request->input('template_id'),
                 'level_sequence' => $request->input('level_sequence'),
@@ -1206,7 +1292,8 @@ class ApprovalController extends Controller
                 'data' => $detail->load(['template', 'employment.employee']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Update flow detail failed: ' . $e->getMessage());
+            Log::error('Update flow detail failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update flow detail',
@@ -1228,7 +1315,8 @@ class ApprovalController extends Controller
                 'message' => 'Flow detail deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Delete flow detail failed: ' . $e->getMessage());
+            Log::error('Delete flow detail failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete flow detail',
@@ -1248,26 +1336,26 @@ class ApprovalController extends Controller
             $totalEmployments = Employment::count();
             $employmentsWithEmployee = Employment::whereHas('employee')->count();
             Log::info("Employment Stats - Total: {$totalEmployments}, With Employee: {$employmentsWithEmployee}");
-            
+
             $employments = Employment::with('employee')
                 ->whereHas('employee')
                 ->get()
                 ->map(function ($employment) {
                     $employee = $employment->employee;
                     $employeeName = 'N/A';
-                    
+
                     if ($employee) {
                         // Try using name accessor first, fallback to manual concat
-                        $employeeName = $employee->name ?? 
-                            (($employee->first_name ?? '') . ' ' . ($employee->last_name ?? ''));
+                        $employeeName = $employee->name ??
+                            (($employee->first_name ?? '').' '.($employee->last_name ?? ''));
                         $employeeName = trim($employeeName);
-                        
+
                         // Add job position if available
-                        if (!empty($employment->job_position_name)) {
-                            $employeeName .= ' (' . $employment->job_position_name . ')';
+                        if (! empty($employment->job_position_name)) {
+                            $employeeName .= ' ('.$employment->job_position_name.')';
                         }
                     }
-                    
+
                     return [
                         'id' => $employment->id,
                         'employee_name' => $employeeName ?: 'Unknown Employee',
@@ -1278,20 +1366,250 @@ class ApprovalController extends Controller
                 })
                 ->sortBy('employee_name')
                 ->values();
-            
-            Log::info("Returning " . count($employments) . " employments");
-                
+
+            Log::info('Returning '.count($employments).' employments');
+
             return response()->json([
                 'success' => true,
                 'data' => $employments,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get employments failed: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+            Log::error('Get employments failed: '.$e->getMessage().' | Trace: '.$e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get employments: ' . $e->getMessage(),
+                'message' => 'Failed to get employments: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ========== NEW: Uppline Configs Management ==========
+
+    /**
+     * Get uppline configs for a template
+     */
+    public function getUpplineConfigs($templateId)
+    {
+        try {
+            $configs = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $templateId)
+                ->orderBy('step_sequence', 'asc')
+                ->get()
+                ->map(function ($config) {
+                    return [
+                        'id' => $config->id,
+                        'template_id' => $config->template_id,
+                        'division_id' => $config->division_id,
+                        'division_name' => $config->division_id 
+                            ? optional(\App\Models\Division::find($config->division_id))->name 
+                            : 'Default (All Division)',
+                        'step_sequence' => $config->step_sequence,
+                        'job_level_name' => $config->job_level_name,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $configs,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get uppline configs failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get uppline configs',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store new uppline config
+     */
+    public function storeUpplineConfig(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'template_id' => 'required|exists:approval_flow_templates,id',
+            'division_id' => 'nullable|exists:division,id',
+            'step_sequence' => 'required|integer|min:1',
+            'job_level_name' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            // Check for duplicate step_sequence in same template+division
+            $existing = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $request->template_id)
+                ->where('step_sequence', $request->step_sequence)
+                ->where(function($query) use ($request) {
+                    if ($request->division_id) {
+                        $query->where('division_id', $request->division_id);
+                    } else {
+                        $query->whereNull('division_id');
+                    }
+                })
+                ->exists();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Step sequence already exists for this template and division',
+                ], 422);
+            }
+
+            $config = \App\Models\ApprovalFlowUpplineConfigs::create([
+                'template_id' => $request->template_id,
+                'division_id' => $request->division_id,
+                'step_sequence' => $request->step_sequence,
+                'job_level_name' => $request->job_level_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config created successfully',
+                'data' => $config,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Store uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update uppline config
+     */
+    public function updateUpplineConfig(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'division_id' => 'nullable|exists:division,id',
+            'step_sequence' => 'required|integer|min:1',
+            'job_level_name' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $config = \App\Models\ApprovalFlowUpplineConfigs::findOrFail($id);
+
+            // Check for duplicate step_sequence (excluding current record)
+            $existing = \App\Models\ApprovalFlowUpplineConfigs::where('template_id', $config->template_id)
+                ->where('step_sequence', $request->step_sequence)
+                ->where('id', '!=', $id)
+                ->where(function($query) use ($request) {
+                    if ($request->division_id) {
+                        $query->where('division_id', $request->division_id);
+                    } else {
+                        $query->whereNull('division_id');
+                    }
+                })
+                ->exists();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Step sequence already exists for this template and division',
+                ], 422);
+            }
+
+            $config->update([
+                'division_id' => $request->division_id,
+                'step_sequence' => $request->step_sequence,
+                'job_level_name' => $request->job_level_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config updated successfully',
+                'data' => $config,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete uppline config
+     */
+    public function deleteUpplineConfig($id)
+    {
+        try {
+            $config = \App\Models\ApprovalFlowUpplineConfigs::findOrFail($id);
+            $config->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Uppline config deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete uppline config failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete uppline config',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get divisions for dropdown
+     */
+    public function getDivisions()
+    {
+        try {
+            $divisions = \App\Models\Division::select('id', 'name as division_name')
+                ->where('status', 'active')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $divisions,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get divisions failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get divisions',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get job levels for dropdown
+     */
+    public function getJobLevels()
+    {
+        try {
+            $jobLevels = \App\Models\JobLevel::select('id', 'job_level_name')
+                ->where('status', 'active')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $jobLevels,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get job levels failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get job levels',
             ], 500);
         }
     }
 }
-

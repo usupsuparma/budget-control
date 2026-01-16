@@ -178,13 +178,13 @@
                     </li>
                     @endcan
 
-                    {{-- @can('transaction.admin.view')
+                    @can('transaction.admin.view')
                     <li class="pe-slide-item">
                         <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
-                    Admin Submission
-                    </a>
-            </li>
-            @endcan --}}
+                            Approval Submission
+                        </a>
+                    </li>
+                    @endcan
 
         </ul>
         </li>

@@ -1038,7 +1038,7 @@
             // Previous button
             paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
         </li>
     `;
 
@@ -1054,7 +1054,7 @@
             // Next button
             paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
         </li>
     `;
 
@@ -1119,7 +1119,7 @@
             // Previous button
             paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
         </li>
     `;
 
@@ -1135,7 +1135,7 @@
             // Next button
             paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
         </li>
     `;
 
@@ -1200,7 +1200,7 @@
             // Previous button
             paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
         </li>
     `;
 
@@ -1216,7 +1216,7 @@
             // Next button
             paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
         </li>
     `;
 
@@ -1281,7 +1281,7 @@
             // Previous button
             paginationHtml += `
         <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">Previous</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
         </li>
     `;
 
@@ -1297,7 +1297,7 @@
             // Next button
             paginationHtml += `
         <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">Next</a>
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
         </li>
     `;
 

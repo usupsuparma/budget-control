@@ -12,9 +12,7 @@
                         <i class="bi bi-plus-circle me-1"></i> Add Role
                     </button>
 
-                    <button class="btn btn-secondary btn-sm ms-1" data-bs-toggle="modal" data-bs-target="#modalAssignRole">
-                        <i class="bi bi-person-check me-1"></i> Assign Role to User
-                    </button>
+
                 </div>
             </div>
 
@@ -32,58 +30,25 @@
                     <tbody>
                         @foreach($roles as $role)
                         <tr>
-                            <td>{{ $role->id }}</td>
-
+                            <td>{{ $loop->iteration }}</td>
+                            <td><span class="fw-semibold">{{ $role->name }}</span></td>
                             <td>
-                                <span class="fw-semibold">{{ $role->name }}</span>
+                                <button class="btn btn-secondary btn-sm managePermission"
+                                    data-id="{{ $role->id }}">
+                                    <i class="bi bi-person-check me-1"></i> Assign Menus to Role
+                                </button>
                             </td>
-
                             <td>
-                                @php
-                                $perms = $role->permissions->pluck('name')->toArray();
-                                @endphp
-
-                                @if(count($perms) == 0)
-                                <span class="badge bg-light text-muted">No Permission</span>
-                                @else
-                                @foreach($perms as $p)
-                                <span class="badge bg-primary-subtle text-primary border">{{ $p }}</span>
-                                @endforeach
-                                @endif
-                            </td>
-
-                            <td>
-                                <div class="btn-group">
-
-                                    <!-- Manage Permission -->
-                                    <button
-                                        class="btn btn-sm btn-light-secondary managePermission"
-                                        data-id="{{ $role->id }}">
-                                        <i class="bi bi-list-check"></i>
-                                    </button>
-
-                                    <!-- Edit Role -->
-                                    <button
-                                        class="btn btn-sm btn-light-primary editRole"
-                                        data-id="{{ $role->id }}"
-                                        data-name="{{ $role->name }}">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <!-- Delete -->
-                                    @if($role->name != 'Super Admin')
-                                    <button
-                                        class="btn btn-sm btn-light-danger deleteRole"
-                                        data-id="{{ $role->id }}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                    @endif
-
-                                </div>
+                                <button class="btn btn-sm btn-light-primary editRole"
+                                    data-id="{{ $role->id }}"
+                                    data-name="{{ $role->name }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
+
 
                 </table>
             </div>
@@ -156,7 +121,7 @@
 <!-- ============================================================
      MODAL 2 — MANAGE PERMISSIONS (ASSIGN PERMISSIONS TO ROLE)
 =============================================================== -->
-<div class="modal fade" id="modalPermissions" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalPermissions" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
 
@@ -167,29 +132,27 @@
 
             <div class="modal-body">
 
-                <div class="alert alert-info py-2 px-3 mb-3">
-                    <strong>Role:</strong> <span id="perm_role_name" class="fw-bold text-primary"></span>
+                <div class="alert alert-info">
+                    <strong>Role:</strong> <span id="perm_role_name"></span>
                 </div>
 
-                <form id="formPermissions">
-                    @csrf
-                    <input type="hidden" id="perm_role_id">
+                <input type="hidden" id="perm_role_id">
 
-                    <div class="row" id="permissionList">
-                        <!-- List permission akan di-load via AJAX -->
-                    </div>
-                </form>
+                <div id="permissionList"></div>
 
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" id="btnSavePermissions">Save Permissions</button>
+                <button class="btn btn-primary" id="btnSavePermissions">
+                    Save Permissions
+                </button>
             </div>
 
         </div>
     </div>
 </div>
+
 
 @push('scripts')
 <script>
@@ -352,142 +315,6 @@
             });
         });
 
-        // ==============================
-        // 5. MANAGE PERMISSIONS (OPEN)
-        // ==============================
-        $(document).on('click', '.managePermission', function() {
-            let roleId = $(this).data('id');
-            let roleName = $(this).closest('tr').find('.fw-semibold').text();
-
-            // Set role info
-            $('#perm_role_id').val(roleId);
-            $('#perm_role_name').text(roleName);
-
-            // Show loading
-            $('#permissionList').html(`
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading permissions...</p>
-                </div>
-            `);
-
-            // Show modal
-            $('#modalPermissions').modal('show');
-
-            // Load permissions
-            $.ajax({
-                url: "{{ url('authorization/roles') }}/" + roleId + "/permissions",
-                type: "GET",
-                success: function(response) {
-                    if (response.success) {
-                        buildPermissionList(response.permissions, response.selected);
-                    } else {
-                        $('#permissionList').html(`
-                            <div class="alert alert-danger">
-                                Failed to load permissions
-                            </div>
-                        `);
-                    }
-                },
-                error: function(xhr) {
-                    $('#permissionList').html(`
-                        <div class="alert alert-danger">
-                            Error loading permissions
-                        </div>
-                    `);
-                }
-            });
-        });
-
-        // Function to build permission list
-        function buildPermissionList(permissions, selected) {
-            let html = '';
-
-            // Group by module if possible
-            let grouped = {};
-
-            permissions.forEach(permission => {
-                let module = permission.modul_menu_name || 'General';
-                if (!grouped[module]) {
-                    grouped[module] = [];
-                }
-                grouped[module].push(permission);
-            });
-
-            // Create checkboxes
-            for (let module in grouped) {
-                html += `<div class="col-12 mb-3">`;
-                html += `<h6 class="mb-2 text-primary">${module}</h6>`;
-                html += `<div class="row">`;
-
-                grouped[module].forEach(permission => {
-                    let isChecked = selected.includes(permission.name) ? 'checked' : '';
-
-                    html += `
-                    <div class="col-md-6 mb-2">
-                        <div class="form-check">
-                            <input type="checkbox" 
-                                   class="form-check-input permission-checkbox" 
-                                   id="perm_${permission.id}"
-                                   value="${permission.name}" 
-                                   ${isChecked}>
-                            <label class="form-check-label" for="perm_${permission.id}">
-                                <code class="small">${permission.name}</code>
-                                ${permission.modul_menu_name ? `<br><small class="text-muted">${permission.modul_menu_name}</small>` : ''}
-                            </label>
-                        </div>
-                    </div>
-                    `;
-                });
-
-                html += `</div></div>`;
-            }
-
-            $('#permissionList').html(html);
-        }
-
-        // ==============================
-        // 6. SAVE PERMISSION UPDATE
-        // ==============================
-        $('#btnSavePermissions').on('click', function() {
-            let roleId = $('#perm_role_id').val();
-
-            // Collect selected permissions
-            let selected = [];
-            $('.permission-checkbox:checked').each(function() {
-                selected.push($(this).val());
-            });
-
-            $.ajax({
-                url: "{{ url('authorization/roles') }}/" + roleId + "/permissions/update",
-                type: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    permissions: selected
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: "success",
-                            title: "Success!",
-                            text: "Permissions updated successfully",
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                        $('#modalPermissions').modal('hide');
-                        location.reload();
-                    } else {
-                        Swal.fire('Error', response.message || 'Failed to update permissions', 'error');
-                    }
-                },
-                error: function(xhr) {
-                    Swal.fire('Error', 'Failed to update permissions', 'error');
-                }
-            });
-        });
-
     });
 
     // Update button for edit role
@@ -528,4 +355,118 @@
         });
     });
 </script>
+<script>
+    $(document).on('click', '.managePermission', function() {
+
+        let roleId = $(this).data('id');
+        let roleName = $(this).closest('tr').find('.fw-semibold').text();
+
+        $('#perm_role_id').val(roleId);
+        $('#perm_role_name').text(roleName);
+        $('#modalPermissions').modal('show');
+
+        $('#permissionList').html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+            <p>Loading permissions...</p>
+        </div>
+    `);
+
+        $.get("{{ url('authorization/roles') }}/" + roleId + "/permissions", function(res) {
+            if (!res.permissions) {
+                $('#permissionList').html(`<div class="alert alert-danger">Invalid data</div>`);
+                return;
+            }
+            buildTree(res.permissions, res.selected ?? []);
+        });
+    });
+
+    function buildTree(permissions, selected) {
+
+        let tree = {};
+
+        permissions.forEach(p => {
+            tree[p.parent ?? 0] = tree[p.parent ?? 0] || [];
+            tree[p.parent ?? 0].push(p);
+        });
+
+        let html = '<ul class="list-unstyled">';
+
+        function render(parentId) {
+            let out = '<ul class="ms-3">';
+            (tree[parentId] || []).forEach(p => {
+
+                let checked = selected.includes(p.name) ? 'checked' : '';
+
+                out += `
+                <li>
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input permission parent-${parentId}"
+                               data-id="${p.id}"
+                               data-parent="${parentId}"
+                               value="${p.name}"
+                               ${checked}>
+                        <label class="form-check-label fw-semibold">
+                            ${p.name}
+                        </label>
+                    </div>
+                    ${tree[p.id] ? render(p.id) : ''}
+                </li>
+            `;
+            });
+            return out + '</ul>';
+        }
+
+        html += render(0);
+        html += '</ul>';
+
+        $('#permissionList').html(html);
+    }
+
+    /* =========================
+       TREE CHECKBOX BEHAVIOR
+    ========================= */
+
+    // parent → child
+    $(document).on('change', '.permission', function() {
+        let id = $(this).data('id');
+        $('.parent-' + id).prop('checked', this.checked);
+    });
+
+    // child → parent
+    $(document).on('change', '.permission', function() {
+        let parent = $(this).data('parent');
+        if (!parent) return;
+
+        let siblings = $('.parent-' + parent);
+        let allChecked = siblings.length === siblings.filter(':checked').length;
+
+        $(`.permission[data-id="${parent}"]`).prop('checked', allChecked);
+    });
+
+    /* =========================
+       SAVE PERMISSIONS
+    ========================= */
+    $('#btnSavePermissions').on('click', function() {
+
+        let roleId = $('#perm_role_id').val();
+        let permissions = $('.permission:checked').map(function() {
+            return this.value;
+        }).get();
+
+        $.post("{{ url('authorization/roles') }}/" + roleId + "/permissions/update", {
+                _token: "{{ csrf_token() }}",
+                permissions: permissions
+            })
+            .done(() => {
+                Swal.fire('Success', 'Permissions updated', 'success');
+                $('#modalPermissions').modal('hide');
+            })
+            .fail(() => {
+                Swal.fire('Error', 'Failed to save permissions', 'error');
+            });
+    });
+</script>
+
 @endpush

@@ -12,7 +12,7 @@ class UsersController extends Controller
     public function index()
     {
         $title = "Users Data";
-        $roles = Role::all();
+        $roles = Role::orderBy('id', 'desc')->get();
         $permissions = Permission::with('modul')->OrderBy('id', 'DESC')->get();
         $moduls = ModulMenu::orderBy('modul_name')->orderBy('menu_name')->get();
         return view('pages.settings.users', compact('title', 'roles', 'permissions', 'moduls'));

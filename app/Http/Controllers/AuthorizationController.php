@@ -37,7 +37,7 @@ class AuthorizationController extends Controller
     // ====== ROLE PAGE ======
     public function roles()
     {
-        $roles = Role::all();
+        $roles = Role::orderBy('id', 'desc')->get();
         return view('authorization.index', compact('roles'));
     }
 

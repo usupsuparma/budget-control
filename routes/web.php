@@ -929,10 +929,10 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:employee.create');
             Route::delete('/delete/{id}', [EmployeeController::class, 'destroy'])
                 ->middleware('permission:employee.delete');
-            Route::get('/{id}', [EmployeeController::class, 'show'])
-                ->name('employee.show');
             Route::post('/update/{id}', [EmployeeController::class, 'update'])
                 ->name('employee.update');
+            Route::get('/{id}', [EmployeeController::class, 'show'])
+                ->name('employee.show');
         });
 
 

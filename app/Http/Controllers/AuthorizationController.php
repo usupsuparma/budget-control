@@ -28,6 +28,14 @@ class AuthorizationController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->remember)) {
+            // Check if user is active
+            if (Auth::user()->status === 'Inactive') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->with('error', 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.');
+            }
+
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }

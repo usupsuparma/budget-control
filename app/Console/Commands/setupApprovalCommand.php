@@ -12,7 +12,7 @@ class setupApprovalCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'app:setup-approval-command';
+    protected $signature = 'app:setup-approval';
 
     /**
      * The console command description.

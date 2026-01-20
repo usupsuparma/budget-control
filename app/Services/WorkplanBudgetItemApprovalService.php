@@ -50,11 +50,20 @@ class WorkplanBudgetItemApprovalService
                 ];
             }
 
+            Log::info('WorkplanBudgetItemApprovalService: Module found', [
+                'module_id' => $module->id,
+                'module_name' => $module->module_name,
+            ]);
+
             // Find active template for this module
             $template = ApprovalFlowTemplate::where('module_id', $module->id)
                 ->where('is_active', true)
                 ->orderBy('priority')
                 ->first();
+            Log::info('WorkplanBudgetItemApprovalService: Template found', [
+                'template_id' => $template ? $template->id : null,
+                'template_name' => $template ? $template->template_name : null,
+            ]);
 
             if (! $template) {
                 return [
@@ -66,7 +75,17 @@ class WorkplanBudgetItemApprovalService
             // Get current user's employment
             $employee = Auth::user();
             $requesterEmployment = $employee ? $employee->employment : null;
+            Log::info('WorkplanBudgetItemApprovalService: Requester employment', [
+                'employee_id' => $employee ? $employee->id : null,
+                'employment_id' => $requesterEmployment ? $requesterEmployment->id : null,
+            ]);
             $requesterId = $requesterEmployment ? $requesterEmployment->id : null;
+            Log::info('Submitting WorkplanBudgetItem for approval', [
+                'item_id' => $itemId,
+                'item_description' => $item->description,
+                'item_total' => $item->total,
+                'requester_employment_id' => $requesterId,
+            ]);
 
             if (! $requesterEmployment) {
                 return [
@@ -380,6 +399,16 @@ class WorkplanBudgetItemApprovalService
     /**
      * Get master flow approvers from ApprovalFlowDetails.
      * 
+     * Logic untuk threshold-based approval:
+     * - Ambil semua level dengan threshold < amount (mereka harus approve karena perlu escalate)
+     * - Ambil level pertama dengan threshold >= amount (ini final level yang cukup)
+     * 
+     * Contoh: Amount 120jt
+     * - Threshold 10jt: INCLUDE (120jt > 10jt, perlu approve)
+     * - Threshold 100jt: INCLUDE (120jt > 100jt, perlu approve)  
+     * - Threshold 200jt: INCLUDE (120jt <= 200jt, final level)
+     * - Threshold 1M: SKIP (tidak perlu level setinggi ini)
+     * 
      * @param ApprovalFlowTemplate $template
      * @param mixed $amount
      * @return array
@@ -388,17 +417,60 @@ class WorkplanBudgetItemApprovalService
     {
         $query = ApprovalFlowDetail::with('employment.employee')
             ->where('template_id', $template->id)
-            ->where('is_required', true);
+            ->where('is_required', true)
+            ->orderBy('level_sequence');
 
         // Apply threshold filter if enabled
-        if ($template->use_threshold) {
-            $query->where(function ($q) use ($amount) {
-                $q->whereNull('threshold_amount')
-                    ->orWhere('threshold_amount', '>=', $amount);
-            });
+        if ($template->use_threshold && $amount > 0) {
+            // Get all flow details first
+            $allDetails = $query->get();
+            
+            if ($allDetails->isEmpty()) {
+                Log::warning('No approval flow details found', [
+                    'template_id' => $template->id,
+                ]);
+                return [];
+            }
+            
+            // Filter based on threshold logic
+            $filteredDetails = collect();
+            $finalLevelFound = false;
+            
+            foreach ($allDetails as $detail) {
+                // If no threshold set, include this level
+                if (is_null($detail->threshold_amount)) {
+                    $filteredDetails->push($detail);
+                    continue;
+                }
+                
+                // If amount > threshold, this level must approve (needs escalation)
+                if ($amount > $detail->threshold_amount) {
+                    $filteredDetails->push($detail);
+                    continue;
+                }
+                
+                // If amount <= threshold and we haven't found final level yet
+                // This is the final sufficient level
+                if (!$finalLevelFound && $amount <= $detail->threshold_amount) {
+                    $filteredDetails->push($detail);
+                    $finalLevelFound = true;
+                    break; // Stop here, higher levels not needed
+                }
+            }
+            
+            // If no final level found (amount > all thresholds), include all levels
+            if (!$finalLevelFound && $filteredDetails->count() === $allDetails->count()) {
+                Log::info('Amount exceeds all thresholds, using all levels', [
+                    'amount' => $amount,
+                    'max_threshold' => $allDetails->max('threshold_amount'),
+                ]);
+            }
+            
+            $flowDetails = $filteredDetails;
+        } else {
+            // No threshold filtering, get all details
+            $flowDetails = $query->get();
         }
-
-        $flowDetails = $query->orderBy('level_sequence')->get();
 
         Log::info('Master flow details query result', [
             'template_id' => $template->id,
@@ -411,6 +483,7 @@ class WorkplanBudgetItemApprovalService
                     'employment_id' => $d->employment_id,
                     'level_sequence' => $d->level_sequence,
                     'threshold_amount' => $d->threshold_amount,
+                    'employee_name' => $d->employment->employee->name ?? 'N/A',
                 ];
             }),
         ]);

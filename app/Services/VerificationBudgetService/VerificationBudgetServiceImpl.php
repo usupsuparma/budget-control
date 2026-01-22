@@ -454,8 +454,15 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     public function getVerifiersByCostCenter(string $costCenter): array
     {
         try {
+            Log::info('Getting verifiers for cost_center', [
+                'cost_center' => $costCenter,
+            ]);
             // 1. Find price_verification_id from code mapping
             $verificationCode = PriceVerificationCode::where('inchargecode', $costCenter)->first();
+            Log::info('Found verification code', [
+                'cost_center' => $costCenter,
+                'verification_code' => $verificationCode,
+            ]);
 
             if (!$verificationCode) {
                 Log::warning('No verification code found for cost_center', [
@@ -465,6 +472,10 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             }
 
             $priceVerificationId = $verificationCode->price_verification_id;
+            Log::info('Found price_verification_id', [
+                'cost_center' => $costCenter,
+                'price_verification_id' => $priceVerificationId,
+            ]);
 
             // 2. Get job_position_ids that can verify this cost_center
             $priceVerification = PriceVerification::with('users.jobPosition')

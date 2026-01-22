@@ -8,6 +8,8 @@ use App\Services\TransactionService\TransactionServiceImpl;
 
 use App\Services\ApprovalService\ApprovalService;
 use App\Services\ApprovalService\ApprovalServiceImpl;
+use App\Services\VerificationBudgetService\VerificationBudgetService;
+use App\Services\VerificationBudgetService\VerificationBudgetServiceImpl;
 class CustomServiceProvider extends ServiceProvider
 {
     /**
@@ -17,7 +19,8 @@ class CustomServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind(ApprovalService::class, ApprovalServiceImpl::class);
+                $this->app->bind(VerificationBudgetService::class, VerificationBudgetServiceImpl::class);
+$this->app->bind(ApprovalService::class, ApprovalServiceImpl::class);
         $this->app->bind(TransactionService::class, TransactionServiceImpl::class);
     }
 

@@ -8,6 +8,10 @@ class PriceVerification extends Model
 {
     protected $table = 'price_verification';
     protected $guarded = [];
+    protected $fillable = [
+        'verificator',
+        'description'
+    ];
 
     public function codes()
     {

@@ -8,6 +8,13 @@ class PriceVerificationCode extends Model
 {
     protected $table = 'price_verification_code';
     protected $guarded = [];
+    protected $fillable = [
+        'price_verification_id',
+        'remarks',
+        'inchargecode'
+    ];
+
+    
 
     public function verificator()
     {

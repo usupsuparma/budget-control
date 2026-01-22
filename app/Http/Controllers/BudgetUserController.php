@@ -110,7 +110,10 @@ class BudgetUserController extends Controller
                     'budgetCodeRelation', 
                     'approver', 
                     'workplan',
-                    'approvalRequest.details.employment.employee'
+                    'approvalRequest.details.employment.employee',
+                    'verificationCandidates.verifier',
+                    'verifications',
+                    'executor.verifier'
                 ])
                 ->whereIn('kpi_workplan_id', $workplanIds)
                 ->orderBy('kpi_workplan_id')

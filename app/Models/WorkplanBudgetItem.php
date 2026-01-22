@@ -47,6 +47,8 @@ class WorkplanBudgetItem extends Model
         'category_type', // Enum ['Routine', 'Carry Over', 'Turn Around', 'Multi Year']
         'price_estimation',
         'price_estimation_description',
+        'verification_status', // Enum ['unverified', 'pending', 'verified', 'rejected']
+
     ];
 
     protected $casts = [
@@ -92,6 +94,31 @@ class WorkplanBudgetItem extends Model
     {
         return $this->hasOne(ApprovalRequest::class, 'reference_id')
             ->whereHas('module', fn($q) => $q->where('table_name', 'workplan_budget_items'));
+    }
+
+    /**
+     * Get verification candidates (snapshot of who can verify this item)
+     */
+    public function verificationCandidates()
+    {
+        return $this->hasMany(WorkplanBudgetApprover::class, 'workplan_budget_item_id');
+    }
+
+    /**
+     * Get verification history/audit trail
+     */
+    public function verifications()
+    {
+        return $this->hasMany(WorkplanBudgetVerification::class, 'workplan_budget_item_id');
+    }
+
+    /**
+     * Get the executor (verifier who actually verified this item)
+     */
+    public function executor()
+    {
+        return $this->hasOne(WorkplanBudgetApprover::class, 'workplan_budget_item_id')
+            ->where('is_executor', true);
     }
 
     // Scopes

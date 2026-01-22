@@ -46,6 +46,7 @@ use App\Http\Controllers\SegmenController;
 use App\Http\Controllers\SettingPriceController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkplanBudgetItemApprovalController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
@@ -1212,6 +1213,41 @@ Route::middleware('auth')->group(function () {
                 ->name('wbi.approval.pending');
             Route::post('/{id}/cancel', [WorkplanBudgetItemApprovalController::class, 'cancel'])
                 ->name('wbi.approval.cancel');
+        });
+
+    /* ========================
+        BUDGET VERIFICATION
+    ======================== */
+    Route::prefix('budget-verification')
+        ->middleware('auth')
+        ->group(function () {
+            // Dashboard for verifiers
+            Route::get('/', [VerificationBudgetController::class, 'index'])
+                ->name('verification.budget.index');
+            
+            // Get pending verifications for current user
+            Route::get('/pending', [VerificationBudgetController::class, 'myPendingVerifications'])
+                ->name('verification.budget.pending');
+            
+            // Submit item for verification (from budget-user)
+            Route::post('/{itemId}/submit', [VerificationBudgetController::class, 'submitForVerification'])
+                ->name('verification.budget.submit');
+            
+            // Verify item (approve and set fix price)
+            Route::post('/{itemId}/verify', [VerificationBudgetController::class, 'verify'])
+                ->name('verification.budget.verify');
+            
+            // Reject verification
+            Route::post('/{itemId}/reject', [VerificationBudgetController::class, 'reject'])
+                ->name('verification.budget.reject');
+            
+            // Get verification status for an item
+            Route::get('/{itemId}/status', [VerificationBudgetController::class, 'getStatus'])
+                ->name('verification.budget.status');
+            
+            // Check if current user can verify
+            Route::get('/{itemId}/can-verify', [VerificationBudgetController::class, 'canVerify'])
+                ->name('verification.budget.canVerify');
         });
 
 

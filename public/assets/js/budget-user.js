@@ -273,6 +273,9 @@ function renderItemRowForTable(item) {
     html += renderActionButtons(item);
     html += `</td>`;
 
+    // Status column - combined verification & approval status
+    html += `<td class="text-center">${renderStatusBadges(item)}</td>`;
+
     // Category
     html += `<td><span class="badge ${categoryColor}">${
         item.category_type || "-"
@@ -1272,13 +1275,70 @@ function parseFormattedNumber(value) {
 // ==================== APPROVAL FUNCTIONS ====================
 
 /**
- * Render action buttons based on item status and approval request
+ * Render action buttons based on item status, verification status, and approval request
  */
 function renderActionButtons(item) {
     const status = item.status || "draft";
+    const verificationStatus = item.verification_status || "unverified";
     const approvalRequest = item.approval_request;
     let html = "";
 
+    // Handle verification status first (for draft items)
+    if (status === "draft") {
+        switch (verificationStatus) {
+            case "pending":
+                // Waiting for verification
+                html = `
+                    <span class="badge bg-info"><i class="bi bi-hourglass-split me-1"></i>Waiting Verification</span>
+                    <button type="button" class="btn btn-sm btn-secondary btn-action-item ms-1" onclick="showVerificationStatus(${item.id})" title="View Verification Status">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                `;
+                return html;
+
+            case "rejected":
+                // Verification rejected - can edit and re-submit
+                html = `
+                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Verification Rejected</span>
+                    <button type="button" class="btn btn-sm btn-primary btn-action-item ms-1" onclick="editItem(${item.id})" title="Edit & Re-submit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary btn-action-item ms-1" onclick="showVerificationStatus(${item.id})" title="View Rejection Reason">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                `;
+                return html;
+
+            case "verified":
+                // This shouldn't happen normally because after verification, auto-submit should change status to pending
+                // But handle it just in case
+                html = `
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Verified</span>
+                    <button type="button" class="btn btn-sm btn-warning btn-action-item ms-1" onclick="submitForApproval(${item.id})" title="Submit for Approval">
+                        <i class="bi bi-send"></i>
+                    </button>
+                `;
+                return html;
+
+            case "unverified":
+            default:
+                // Draft & unverified - show edit, delete, submit for verification
+                html = `
+                    <button type="button" class="btn btn-sm btn-primary btn-action-item" onclick="editItem(${item.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger btn-action-item" onclick="deleteItem(${item.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning btn-action-item" onclick="submitForVerification(${item.id})" title="Submit for Verification">
+                        <i class="bi bi-clipboard-check"></i>
+                    </button>
+                `;
+                return html;
+        }
+    }
+
+    // Handle other statuses (pending approval, approved, rejected)
     switch (status) {
         case "approved":
             html = `
@@ -1337,17 +1397,11 @@ function renderActionButtons(item) {
             }
             break;
 
-        case "draft":
         default:
+            // Fallback for any other status
             html = `
                 <button type="button" class="btn btn-sm btn-primary btn-action-item" onclick="editItem(${item.id})" title="Edit">
                     <i class="bi bi-pencil"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-danger btn-action-item" onclick="deleteItem(${item.id})" title="Delete">
-                    <i class="bi bi-trash"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-warning btn-action-item" onclick="submitForApproval(${item.id})" title="Submit for Approval">
-                    <i class="bi bi-send"></i>
                 </button>
             `;
             break;
@@ -1664,3 +1718,207 @@ function formatDate(dateStr) {
         minute: "2-digit",
     });
 }
+
+// ==================== VERIFICATION FUNCTIONS ====================
+
+/**
+ * Submit item for verification
+ */
+function submitForVerification(itemId) {
+    const item = allItemsData.find((i) => i.id === itemId);
+    
+    if (!item) {
+        showToast("Item not found", "error");
+        return;
+    }
+
+    // Check if cost_center is filled
+    if (!item.cost_center) {
+        showToast("Cost center is required for verification. Please edit the item first.", "warning");
+        return;
+    }
+
+    Swal.fire({
+        title: "Submit for Verification?",
+        html: `
+            <p>This item will be submitted for price verification.</p>
+            <p class="text-muted">Verifier will validate the price estimation before approval process.</p>
+            <hr>
+            <small><strong>Cost Center:</strong> ${item.cost_center}</small><br>
+            <small><strong>Price Estimation:</strong> ${formatCurrency(item.price_estimation || 0)}</small>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#ffc107",
+        confirmButtonText: "Yes, Submit for Verification",
+        cancelButtonText: "Cancel",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+
+            $.ajax({
+                url: `/budget-verification/${itemId}/submit`,
+                method: "POST",
+                data: { _token: CSRF_TOKEN },
+                success: function (response) {
+                    hideLoading();
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Submitted!',
+                            html: `
+                                <p>${response.message}</p>
+                                <p class="text-muted">Verifier count: ${response.data?.verifier_count || 0}</p>
+                            `,
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                        loadAllBudgetItems(); // Refresh data
+                    } else {
+                        showToast(response.message || "Failed to submit for verification", "error");
+                    }
+                },
+                error: function (xhr) {
+                    hideLoading();
+                    const msg = xhr.responseJSON?.message || "Error submitting for verification";
+                    showToast(msg, "error");
+                },
+            });
+        }
+    });
+}
+
+/**
+ * Show verification status modal
+ */
+function showVerificationStatus(itemId) {
+    showLoading();
+
+    $.ajax({
+        url: `/budget-verification/${itemId}/status`,
+        method: "GET",
+        success: function (response) {
+            hideLoading();
+            
+            if (response.success) {
+                const data = response.data;
+                
+                let candidatesHtml = '';
+                if (data.candidates && data.candidates.length > 0) {
+                    candidatesHtml = data.candidates.map(c => `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <span>${c.verifier_name || c.verifier_id}</span>
+                            ${c.is_executor ? '<span class="badge bg-success">Executor</span>' : '<span class="badge bg-secondary">Candidate</span>'}
+                        </div>
+                    `).join('');
+                } else {
+                    candidatesHtml = '<p class="text-muted">No candidates found</p>';
+                }
+
+                let historyHtml = '';
+                if (data.history && data.history.length > 0) {
+                    historyHtml = data.history.map(h => `
+                        <div class="border-bottom py-2">
+                            <div class="d-flex justify-content-between">
+                                <strong>${h.verifier_name || h.verifier_id}</strong>
+                                <small class="text-muted">${formatDate(h.created_at)}</small>
+                            </div>
+                            <div class="small">
+                                <span class="text-muted">Submitted:</span> ${formatCurrency(h.submitted_price)}<br>
+                                <span class="text-muted">Verified:</span> ${formatCurrency(h.verified_price)}
+                            </div>
+                            ${h.notes ? `<div class="small mt-1"><span class="text-muted">Notes:</span> ${h.notes}</div>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    historyHtml = '<p class="text-muted">No verification history</p>';
+                }
+
+                const statusBadge = getVerificationStatusBadge(data.verification_status);
+
+                Swal.fire({
+                    title: 'Verification Status',
+                    html: `
+                        <div class="text-start">
+                            <div class="mb-3">
+                                <strong>Status:</strong> ${statusBadge}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Price Estimation:</strong> ${formatCurrency(data.price_estimation || 0)}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Verified Price:</strong> ${formatCurrency(data.total || 0)}
+                            </div>
+                            <hr>
+                            <h6>Verification Candidates</h6>
+                            <div class="mb-3">${candidatesHtml}</div>
+                            <hr>
+                            <h6>Verification History</h6>
+                            <div>${historyHtml}</div>
+                        </div>
+                    `,
+                    width: '600px',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Close'
+                });
+            } else {
+                showToast(response.message || "Failed to load verification status", "error");
+            }
+        },
+        error: function (xhr) {
+            hideLoading();
+            const msg = xhr.responseJSON?.message || "Error loading verification status";
+            showToast(msg, "error");
+        },
+    });
+}
+
+/**
+ * Get verification status badge HTML
+ */
+function getVerificationStatusBadge(status) {
+    const badges = {
+        'unverified': '<span class="badge bg-secondary">Unverified</span>',
+        'pending': '<span class="badge bg-warning text-dark">Pending Verification</span>',
+        'verified': '<span class="badge bg-success">Verified</span>',
+        'rejected': '<span class="badge bg-danger">Rejected</span>',
+    };
+    return badges[status] || badges['unverified'];
+}
+
+/**
+ * Render status badges for table (verification + approval status)
+ */
+function renderStatusBadges(item) {
+    const status = item.status || "draft";
+    const verificationStatus = item.verification_status || "unverified";
+    let html = '';
+
+    // Verification status badge
+    const verificationBadges = {
+        'unverified': '<span class="badge bg-light text-dark" style="font-size:10px;">Unverified</span>',
+        'pending': '<span class="badge bg-info" style="font-size:10px;">Verifying</span>',
+        'verified': '<span class="badge bg-success" style="font-size:10px;">Verified</span>',
+        'rejected': '<span class="badge bg-danger" style="font-size:10px;">V.Rejected</span>',
+    };
+
+    // Approval status badge
+    const statusBadges = {
+        'draft': '<span class="badge bg-secondary" style="font-size:10px;">Draft</span>',
+        'pending': '<span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>',
+        'in_progress': '<span class="badge bg-info" style="font-size:10px;">In Progress</span>',
+        'approved': '<span class="badge bg-success" style="font-size:10px;">Approved</span>',
+        'rejected': '<span class="badge bg-danger" style="font-size:10px;">Rejected</span>',
+    };
+
+    // Show verification badge first if not verified yet (only for draft items)
+    if (status === 'draft' && verificationStatus !== 'verified') {
+        html += verificationBadges[verificationStatus] || verificationBadges['unverified'];
+    } else {
+        // Show approval status
+        html += statusBadges[status] || statusBadges['draft'];
+    }
+
+    return html;
+}
+

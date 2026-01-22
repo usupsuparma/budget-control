@@ -345,6 +345,7 @@
                             <thead>
                                 <tr>
                                     <th rowspan="2" class="text-center">Action</th>
+                                    <th rowspan="2">Status</th>
                                     <th rowspan="2">Category</th>
                                     <th rowspan="2">Description</th>
                                     <th rowspan="2">Program ID</th>

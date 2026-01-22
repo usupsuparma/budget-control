@@ -8,6 +8,10 @@ class PriceVerificationUser extends Model
 {
     protected $table = 'price_verification_user';
     protected $guarded = [];
+    protected $fillable = [
+        'price_verification_id',
+        'job_position_id',
+    ];
 
 
     public function verificator()

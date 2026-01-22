@@ -313,7 +313,7 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
                             <th rowspan="2" style="width: 80px;">Action</th>
                             <th rowspan="2" style="width: 200px;">Activities</th>
                             <th rowspan="2" style="width: 80px;">Duration<br>(Days)</th>
-                            <th colspan="13" style="background: #0d6efd;">Activities</th>
+                            <th colspan="13" style="">Activities</th>
                             <th rowspan="2" style="width: 120px;">Budget</th>
                         </tr>
                         <tr>

@@ -17,10 +17,13 @@ class VerificationBudgetController extends Controller
 
     /**
      * Display verification dashboard for verifiers
+     * Note: Verification is now integrated in budget-user page as Tab 2
+     * This route can redirect to budget-user with verification tab active
      */
     public function index()
     {
-        return view('pages.budget.verification-budget');
+        // Redirect to budget-user page - verification is now a tab
+        return redirect()->route('budget-user.index', ['tab' => 'verification']);
     }
 
     /**

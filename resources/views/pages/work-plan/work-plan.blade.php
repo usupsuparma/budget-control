@@ -180,7 +180,7 @@
     .expand-btn {
         cursor: pointer;
         padding: 5px 10px;
-        background: #28a745;
+        background: #0099d6;
         color: white;
         border: none;
         border-radius: 4px;
@@ -313,6 +313,41 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 </style>
+<style>
+    /* ===== Workplan Action Buttons ===== */
+    .btn-action {
+        padding: 2px 6px;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .btn-action i {
+        font-size: 12px;
+    }
+
+    /* WAJIB pakai selector gabungan */
+    .btn.btn-workplan {
+        background-color: #00B0F0;
+        border-color: #00B0F0;
+        color: #fff;
+    }
+
+    .btn.btn-workplan:hover {
+        background-color: #0099d6;
+        border-color: #0099d6;
+        color: #fff;
+    }
+
+    .btn.btn-workplan:focus,
+    .btn.btn-workplan:active {
+        background-color: #008cc2;
+        border-color: #008cc2;
+        color: #fff;
+        box-shadow: 0 0 0 0.15rem rgba(0, 176, 240, 0.4);
+    }
+</style>
+
+
 @endsection
 
 @section('content')

@@ -302,7 +302,7 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
                 <div>
                     <strong>${goalsLabel}:</strong> ${goalsValue || 'N/A'}
                 </div>
-                <button class="btn btn-success btn-sm btn-add-workplan" data-kpi-type="${kpiType}" data-kpi-id="${kpiId}">
+                <button class="btn btn-sm btn-workplan btn-add-workplan" data-kpi-type="${kpiType}" data-kpi-id="${kpiId}">
                     <i class="bi bi-plus-circle"></i> Add Work Plan
                 </button>
             </div>
@@ -388,14 +388,14 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
         `;
     } else {
         html += `
-                <button class="btn btn-primary btn-action btn-edit-workplan" title="Edit Work Plan">
+                <button class="btn btn-primary btn-sm btn-action btn-edit-workplan" title="Edit Work Plan">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-danger btn-action btn-delete-workplan" title="Hapus Work Plan">
+                <button class="btn btn-danger btn-sm btn-action btn-delete-workplan" title="Hapus Work Plan">
                     <i class="bi bi-trash"></i>
                 </button>
                 ${workplan.status === 'draft' ? `
-                <button class="btn btn-success btn-action btn-approve-workplan" data-id="${workplan.id}" title="Setujui Work Plan">
+                <button class="btn btn-success btn-sm btn-action btn-approve-workplan" data-id="${workplan.id}" title="Setujui Work Plan">
                     <i class="bi bi-check"></i>
                 </button>
                 ` : ''}

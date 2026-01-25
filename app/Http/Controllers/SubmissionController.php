@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
+use App\Models\TransactionApproval;
 use App\Models\Employee;
 use App\Models\JobLevel;
 use App\Models\JobPosition;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SubmissionController extends Controller
 {
@@ -273,6 +275,130 @@ class SubmissionController extends Controller
                 ]);
             }
 
+            $maxLevel = null;
+            if ($estimatedAmount > 50000000) {
+                $maxLevel = 1;
+            } elseif ($estimatedAmount > 5000000 && $estimatedAmount <= 50000000) {
+                $maxLevel = 2;
+            } elseif ($estimatedAmount <= 5000000) {
+                $maxLevel = 3;
+            }
+
+            $uplines_top_down = session('uplines_top_down');
+            $utd = collect($uplines_top_down)
+                    ->where('level', '>=', $maxLevel)
+                    ->sortByDesc('level')
+                    ->values()
+                    ->toArray();
+
+            $threshold_level = array("","50000000","50000000","5000000");
+            
+            $i=0;
+            foreach($utd as $buff){
+                TransactionApproval::create([
+                    'transaction_id' => $transaction->id, 
+                    'approver_id' => $buff['id'], 
+                    'approver_name' => $buff['fname']." ".$buff['lname'], 
+                    'approval_level' => $buff['level'], 
+                    'threshold_id' => $threshold_level[(int) $buff['level']], 
+                    'is_required' => 1, 
+                    'status' => 0, 
+                    // 'approved_at' => 0, 
+                    'comments' => 0, 
+                    'sequence_order' => $i, 
+                    // 'notified_at' => date("Y-m-d H:i:s"), 
+                    'reminder_count' => 1, 
+                    'reminder_last_sent' => date("Y-m-d H:i:s"), 
+                    'approval_method' => 0, 
+                    'ip_address' => 0
+                ]);
+                $i++;
+            }
+
+            $budgetcontrol_level = array(
+                [
+                    "id" => 190,
+                    "fname" => "Ryan",
+                    "lname" => "Candra Purnama",
+                    "type" => "budget_control_staff",
+                    "level" => "-1",
+                    "threshold_level" => 0
+                ],
+                [
+                    "id" => 181,
+                    "fname" => "A Dadan",
+                    "lname" => "Hadiana",
+                    "type" => "finance_division",
+                    "level" => "-2",
+                    "threshold_level" => 50000000
+                ],
+                [
+                    "id" => 39,
+                    "fname" => "Yara",
+                    "lname" => "Budhi Widowati",
+                    "type" => "finance_director",
+                    "level" => "-3",
+                    "threshold_level" => 50000000
+                ],
+                [
+                    "id" => 42,
+                    "fname" => "Yasuhiko",
+                    "lname" => "Takaizumi",
+                    "type" => "president_director",
+                    "level" => "-4",
+                    "threshold_level" => 50000000
+                ],
+            );
+
+            $maxApproverTypes = [];
+
+            if ($estimatedAmount < 50000000) {
+                // sampai finance_division (A Dadan)
+                $maxApproverTypes = [
+                    'budget_control_staff',
+                    'finance_division',
+                ];
+            } else {
+                // sampai finance_director & president_director
+                $maxApproverTypes = [
+                    'budget_control_staff',
+                    'finance_division',
+                    'finance_director',
+                    'president_director',
+                ];
+            }
+
+            foreach($budgetcontrol_level as $buff){
+                // skip jika approver tidak termasuk flow
+                if (!in_array($buff['type'], $maxApproverTypes, true)) {
+                    continue;
+                }
+                TransactionApproval::create([
+                    'transaction_id' => $transaction->id, 
+                    'approver_id' => $buff['id'], 
+                    'approver_name' => $buff['fname']." ".$buff['lname'], 
+                    'approval_level' => $buff['level'], 
+                    'threshold_id' => $buff['threshold_level'], 
+                    'is_required' => 1, 
+                    'status' => 0, 
+                    // 'approved_at' => 0, 
+                    'comments' => 0, 
+                    'sequence_order' => $i, 
+                    // 'notified_at' => date("Y-m-d H:i:s"), 
+                    'reminder_count' => 1, 
+                    'reminder_last_sent' => date("Y-m-d H:i:s"), 
+                    'approval_method' => 0, 
+                    'ip_address' => 0
+                ]);
+                $i++;
+            }
+
+            $transaction = Transaction::findOrFail($transaction->id);
+            $transaction->update([
+                'current_approval_level' => $utd[0]['level'],
+                'required_approval_levels' => count($utd)+count($maxApproverTypes)
+            ]);
+
             DB::commit();
 
             // Create approval chain after transaction is committed
@@ -521,7 +647,58 @@ class SubmissionController extends Controller
     public function admin()
     {
         $title = 'Submission Admin';
-        return view('pages.submission.admin', compact('title'));
+        $userId = Auth::user()->employee_id;
+
+        // Get summary data
+        $employment = Employment::where('employee_id', $userId)->get();
+        $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
+        $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
+        $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
+        $completion = Transaction::where('user_id', $userId)->where('status', 8)->count();
+        $totalSubmission = Transaction::where('user_id', $userId)->count();
+
+        // Get filter data
+        $years = Transaction::selectRaw('YEAR(transaction_date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        $statuses = [
+            ['value' => 0, 'label' => 'Submission'],
+            ['value' => 1, 'label' => 'Approved Parent'],
+            ['value' => 2, 'label' => 'Approved Finance'],
+            ['value' => 3, 'label' => 'Approved Division'],
+            ['value' => 4, 'label' => 'Approved Finance Director'],
+            ['value' => 5, 'label' => 'Approved President Director'],
+            ['value' => 6, 'label' => 'Rejected'],
+            ['value' => 7, 'label' => 'Paid'],
+            ['value' => 8, 'label' => 'Complete'],
+            ['value' => -1, 'label' => 'Cancelled'],
+        ];
+
+        // Get dropdown data for modal
+        $jobLevels = JobLevel::all();
+        $jobPositions = JobPosition::all();
+        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
+        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
+        $units = Unit::all();
+
+        return view('pages.submission.admin', compact(
+            'title',
+            'newSubmission',
+            'progress',
+            'paid',
+            'completion',
+            'totalSubmission',
+            'years',
+            'statuses',
+            'jobLevels',
+            'jobPositions',
+            'workplans',
+            'budgetCodes',
+            'units',
+            'employment'
+        ));
     }
 
     /**
@@ -786,4 +963,128 @@ class SubmissionController extends Controller
             ], 500);
         }
     }
+
+    public function getBadgeInfo($id)
+    {
+        try {
+            $transaction = Transaction::where('id', $id)->get();
+            $transactionApproval = TransactionApproval::where('transaction_id', $id)->orderBy('sequence_order', 'asc')->get();
+
+            $data = array();
+            foreach($transaction as $buff){
+                $data[] = '<div class="tt-item">
+                    <div class="tt-icon bg-warning">
+                    <!-- icon (optional) -->
+                    <span class="tt-dot"></span>
+                    </div>
+
+                    <div class="tt-content">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="fw-semibold">'.date("d M Y H:i:s",strtotime($buff->created_at)).'</div>
+                        <span class="badge rounded-pill bg-warning text-dark">Submission</span>
+                    </div>
+                    <div class="small mt-1">Submission by <span class="fw-semibold">'.$buff->user_name.'</span></div>
+                    </div>
+                </div>';
+            }
+
+            foreach($transactionApproval as $buff2){
+                if($buff2->status==0){
+                    $approvalStatuses = [
+                        3  => ['label' => 'Department',          'class' => 'bg-info'],
+                        2  => ['label' => 'Division',            'class' => 'bg-info'],
+                        1  => ['label' => 'Director',            'class' => 'bg-info'],
+                        -1  => ['label' => 'Budget Control',     'class' => 'bg-info'],
+                        -2  => ['label' => 'Finance Division',   'class' => 'bg-info'],
+                        -3  => ['label' => 'Finance Director',   'class' => 'bg-info'],
+                        -4  => ['label' => 'President Director', 'class' => 'bg-success'],
+                    ];
+
+                    $level = (int) $buff2->approval_level;
+
+                    $status = $approvalStatuses[$level] ?? [
+                        'label' => 'Unknown',
+                        'class' => 'bg-secondary'
+                    ];
+
+                    $data[] = '<div class="tt-item">
+                        <div class="tt-icon bg-light">
+                        <!-- icon (optional) -->
+                        <span class="tt-dot"></span>
+                        </div>
+
+                        <div class="tt-content">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="fw-semibold"></div>
+                            <span class="badge rounded-pill bg-light text-muted">Pending</span>
+                        </div>
+                        <div class="small mt-1 text-muted">'.$status['label'].' by <span class="fw-semibold">'.$buff2->approver_name.'</span></div>
+                        </div>
+                    </div>';
+                } else {
+                    $approvalStatuses = [
+                        3  => ['label' => 'Approved Department',          'class' => 'bg-info'],
+                        2  => ['label' => 'Approved Division',            'class' => 'bg-info'],
+                        1  => ['label' => 'Approved Director',            'class' => 'bg-info'],
+                        -1  => ['label' => 'Approved Budget Control',     'class' => 'bg-info'],
+                        -2  => ['label' => 'Approved Finance Division',   'class' => 'bg-info'],
+                        -3  => ['label' => 'Approved Finance Director',   'class' => 'bg-info'],
+                        -4  => ['label' => 'Approved President Director', 'class' => 'bg-success'],
+                    ];
+
+                    $level = (int) $buff2->approval_level;
+
+                    // fallback kalau level tidak dikenal
+                    $status = $approvalStatuses[$level] ?? [
+                        'label' => 'Unknown',
+                        'class' => 'bg-secondary'
+                    ];
+                    $data[] = '<div class="tt-item">
+                        <div class="tt-icon '.$status['class'].'">
+                        <!-- icon (optional) -->
+                        <span class="tt-dot"></span>
+                        </div>
+
+                        <div class="tt-content">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="fw-semibold">'.date("d M Y H:i:s",strtotime($buff2->updated_at)).'</div>
+                            <span class="badge rounded-pill '.$status['class'].' text-white">'.$status['label'].'</span>
+                        </div>
+                        <div class="small mt-1">'.$status['label'].' by <span class="fw-semibold">'.$buff2->approver_name.'</span></div>
+                        </div>
+                    </div>';
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => implode("",$data)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Budget not found'
+            ], 404);
+        }
+    }
+
+    public function viewPdf($id)
+    {
+        // $pdf = Pdf::loadView('pages.submission.pdf', [
+        //     'title' => 'Budget'
+        // ]);
+
+        // return $pdf->download('budget-proposal.pdf');
+
+        $data = [
+            // ambil data sesuai kebutuhan
+        ];
+        $pdf = Pdf::loadView('pages.submission.pdf', $data)
+                  ->setPaper('a4', 'portrait');
+
+        // STREAM = preview di browser
+        return $pdf->stream('budget-proposal-preview.pdf');
+        // return view('pages.submission.pdf');         
+    }
+
 }

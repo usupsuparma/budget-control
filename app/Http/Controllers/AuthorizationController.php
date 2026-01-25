@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Spatie\Permission\Models\Role;
 use App\Models\Permission;
 use App\Models\Employee;
+use App\Models\Employment;
 use App\Models\ModulMenu;
 use Dotenv\Validator;
 use Exception;
@@ -35,6 +36,24 @@ class AuthorizationController extends Controller
                 $request->session()->regenerateToken();
                 return back()->with('error', 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.');
             }
+
+            $userId = Auth::user()->employee_id;
+
+            $employment2 = Employment::where('employee_id', $userId)->firstOrFail(); // employee_id (NIP) :contentReference[oaicite:6]{index=6}
+
+            $uplinesTopDown = $employment2->uplineEmployeesTopDown([1,2,3,4]);
+
+            $dam = array();
+            foreach ($uplinesTopDown as $upline) {
+                $dam[] = array(
+                    "id" =>  $upline->id, 
+                    "employee_id" =>  $upline->employee_id, 
+                    "level" => $upline->upline_job_level_id, 
+                    "fname" => $upline->first_name, 
+                    "lname" => $upline->last_name
+                );
+            }
+            session()->put('uplines_top_down', $dam);
 
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');

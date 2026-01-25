@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 class Employment extends Model
 {
@@ -85,5 +86,40 @@ class Employment extends Model
             'uppline_id',           // Local key on this Employment (uppline_id points to Employee.id)
             'employee_id'           // Local key on Employee (employee.employee_id)
         );
+    }
+
+    public function uplineEmployeesTopDown(array $levels = [1,2,3,4]): Collection
+    {
+        $employees = collect();
+
+        $current = $this;
+
+        while ($current && $current->uppline_id) { // uppline_id -> employee.id :contentReference[oaicite:3]{index=3}
+            // Ambil employment milik uplinenya (1 step up)
+            $uplineEmployment = $current->upplineEmployment()
+                ->with('employee') // relasi employee() :contentReference[oaicite:4]{index=4}
+                ->first();
+
+            if (!$uplineEmployment || !$uplineEmployment->employee) {
+                break;
+            }
+
+            $lvl = (int) $uplineEmployment->job_level_id; // :contentReference[oaicite:5]{index=5}
+
+            if (in_array($lvl, $levels, true)) {
+                // push Employee; sisipkan info level di object (opsional, biar enak dipakai)
+                $emp = $uplineEmployment->employee;
+                $emp->setAttribute('upline_job_level_id', $lvl);
+                $employees->push($emp);
+            }
+
+            $current = $uplineEmployment; // lanjut naik
+        }
+
+        // Top-down: level 1 paling atas
+        return $employees
+            ->unique('id')
+            ->sortBy(fn ($e) => (int) $e->upline_job_level_id)
+            ->values();
     }
 }

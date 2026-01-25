@@ -690,6 +690,95 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Timeline wrapper */
+        .tracking-timeline{
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 6px 4px;
+        }
+
+        /* Each item */
+        .tt-item{
+            position: relative;
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+
+        /* Vertical line */
+        .tt-item::before{
+            content:"";
+            position: absolute;
+            left: 22px;            /* center of icon col */
+            top: 44px;             /* below icon */
+            bottom: -18px;         /* extend to next item */
+            width: 2px;
+            background: rgba(0,0,0,.12);
+        }
+        .tt-item:last-child::before{
+            display:none;
+        }
+
+        /* Icon circle */
+        .tt-icon{
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(0,0,0,.08);
+            position: relative;
+        }
+
+        /* Dot inside icon (simple) */
+        .tt-dot{
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.92);
+            display: inline-block;
+        }
+
+        /* Content card feel */
+        .tt-content{
+            background: #fff;
+            border: 1px solid rgba(0,0,0,.08);
+            border-radius: 12px;
+            padding: 12px 12px;
+        }
+
+        .sts{
+            cursor: pointer;
+        }
+    </style>
+    <div class="modal fade" id="trackingModal" tabindex="-1" aria-labelledby="trackingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trackingModalLabel">Status Tracking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Timeline -->
+                <div class="tracking-timeline" id="timeline"></div>
+                <!-- /Timeline -->
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('js')
@@ -996,7 +1085,7 @@
                     <td>${item.user_name}</td>
                     <td>${item.purpose}</td>
                     <td>${formatCurrency(item.estimated_amount)}</td>
-                    <td>${getStatusBadge(item.status)}</td>
+                    <td>${getStatusBadge(item.status, item.id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
@@ -1018,6 +1107,9 @@
                                                 <i class="ri-close-line"></i> Reject
                                             </button>
                                         ` : ''}
+                            <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})">
+                                <i class="ri-file-pdf-2-line"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -1077,7 +1169,7 @@
                     <td>${item.user_name}</td>
                     <td>${item.purpose}</td>
                     <td>${formatCurrency(item.estimated_amount)}</td>
-                    <td>${getStatusBadge(item.status)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
@@ -1158,7 +1250,7 @@
                     <td>${item.user_name}</td>
                     <td>${item.purpose}</td>
                     <td>${formatCurrency(item.estimated_amount)}</td>
-                    <td>${getStatusBadge(item.status)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
@@ -1239,7 +1331,7 @@
                     <td>${item.user_name}</td>
                     <td>${item.purpose}</td>
                     <td>${formatCurrency(item.estimated_amount)}</td>
-                    <td>${getStatusBadge(item.status)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
@@ -1578,7 +1670,7 @@
                         $('#view_purpose').text(data.purpose || '-');
                         $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) +
                             '</strong>');
-                        $('#view_status').html(getStatusBadge(data.status));
+                        $('#view_status').html(getStatusBadge(data.status, data.transaction_id));
                         $('#view_urgency').text(data.urgency || '-');
 
                         // Populate items
@@ -1992,7 +2084,7 @@
             return new Intl.NumberFormat('id-ID').format(number);
         }
 
-        function getStatusBadge(status) {
+        function getStatusBadge(status, transaction_id) {
             const statusMap = {
                 0: {
                     label: 'Submission',
@@ -2040,7 +2132,28 @@
                 label: 'Unknown',
                 class: 'bg-secondary'
             };
-            return `<span class="badge ${statusInfo.class} badge-status">${statusInfo.label}</span>`;
+            
+            return `<span data-bs-toggle="modal" data-bs-target="#trackingModal" onclick="getbadgeinfo(${transaction_id})" class="badge ${statusInfo.class} badge-status sts">${statusInfo.label}</span>`;
+        }
+
+        function getbadgeinfo(id) {
+            let url = "{{ route('userSubmission.badgeinfo', ':id') }}".replace(':id', id);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    $("#timeline").html(response.data);
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert(response.message || 'Error get data badge info', 'error');
+                }
+            });
+        }
+
+        function viewPdf(id) {
+            let url = "{{ route('userSubmission.viewPdf', ':id') }}".replace(':id', id);
+            window.open(url);
         }
 
         function showAlert(message, type) {

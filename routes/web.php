@@ -730,6 +730,11 @@ Route::middleware('auth')->group(function () {
                         ->name('userSubmission.reject');
                 });
 
+                Route::get('/badgeinfo/{id}', [SubmissionController::class, 'getBadgeInfo'])
+                    ->name('userSubmission.badgeinfo');
+                Route::get('/viewpdf/{id}', [SubmissionController::class, 'viewPdf'])
+                    ->name('userSubmission.viewPdf');
+
                 // Cascading dropdown routes
                 Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
                     ->name('userSubmission.jobPositions');

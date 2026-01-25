@@ -1,0 +1,47 @@
+/* ===================================================
+   Compact Table (Reusable for any Blade)
+   =================================================== */
+
+/* Cell padding & height */
+.table-compact tbody td {
+    padding: 6px 8px;
+    vertical-align: middle;
+    line-height: 1.2;
+}
+
+.table-compact thead th {
+    padding: 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Compact buttons inside table */
+.table-compact .btn {
+    padding: 4px 6px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Icon size inside buttons */
+.table-compact .btn i {
+    font-size: 14px;
+}
+
+/* Compact link button (PDF, etc) */
+.table-compact .btn-link {
+    padding: 0;
+    font-size: 13px;
+}
+
+/* Optional: prevent column from being too tall */
+.table-compact td,
+.table-compact th {
+    height: auto;
+}
+
+/* Optional: tighter DataTables filter & length */
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    padding: 4px 6px;
+    font-size: 13px;
+}

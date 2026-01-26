@@ -315,6 +315,12 @@ function renderItemRowForTable(item) {
     };
     const categoryColor = categoryColors[item.category_type] || "bg-secondary";
 
+    // Determine which price to use and calculate total
+    const isVerified = item.verification_status === 'verified' && item.price_final && parseFloat(item.price_final) > 0;
+    const unitPrice = isVerified ? parseFloat(item.price_final) : parseFloat(item.price_estimation || 0);
+    const totalQty = months.reduce((sum, m) => sum + (parseInt(item[`activity_${m}`]) || 0), 0);
+    const totalBudget = unitPrice * totalQty;
+
     let html = `<tr data-item-id="${item.id}">`;
 
     // Action column - based on status
@@ -351,26 +357,52 @@ function renderItemRowForTable(item) {
         html += `<td class="text-center ${qtyClass}" style="font-size: 10px;">${qty}</td>`;
     });
 
-    // Price estimation
-    html += `
-        <td class="text-end" style="font-size: 10px;">${
-            item.price_estimation ? formatCurrency(item.price_estimation) : "-"
-        }</td>
-        <td style="font-size: 10px;">${
-            item.price_estimation_description || "-"
-        }</td>
-    `;
 
-    // Calculate total = sum of months × price estimation
-    const sumMonths = months.reduce(
-        (sum, month) => sum + (item[`activity_${month}`] || 0),
-        0
-    );
-    const priceEstimation = parseFloat(item.price_estimation) || 0;
-    const total = sumMonths * priceEstimation;
-    html += `<td class="text-end" style="font-size: 10px;"><strong>${formatCurrency(
-        total
-    )}</strong></td>`;
+    // Unit Price - show verified or estimated with indicator
+    html += `<td class="text-end" style="font-size: 10px;">`;
+    html += `<div class="d-flex flex-column align-items-end">`;
+    html += `<span class="fw-bold">${formatCurrency(unitPrice)}</span>`;
+    if (isVerified) {
+        html += `<small class="text-success"><i class="bi bi-check-circle-fill"></i> Verified</small>`;
+    } else {
+        html += `<small class="text-muted"><i class="bi bi-hourglass-split"></i> Estimated</small>`;
+    }
+    html += `</div>`;
+    html += `</td>`;
+
+    // Price Status - detailed verification info
+    html += `<td style="font-size: 10px;">`;
+    if (isVerified) {
+        html += `<span class="badge bg-success">Verified</span>`;
+        if (item.price_estimation && parseFloat(item.price_estimation) !== unitPrice) {
+            const diff = unitPrice - parseFloat(item.price_estimation);
+            const diffPercent = ((diff / parseFloat(item.price_estimation)) * 100).toFixed(1);
+            const diffClass = diff > 0 ? 'text-danger' : 'text-success';
+            html += `<br><small class="${diffClass}">${ diff > 0 ? '+' : ''}${formatCurrency(diff)}</small>`;
+            html += `<br><small class="${diffClass}">(${diff > 0 ? '+' : ''}${diffPercent}%)</small>`;
+        }
+    } else if (item.verification_status === 'pending') {
+        html += `<span class="badge bg-warning text-dark">Pending Verification</span>`;
+        html += `<br><small class="text-muted">Est: ${formatCurrency(item.price_estimation || 0)}</small>`;
+    } else if (item.verification_status === 'rejected') {
+        html += `<span class="badge bg-danger">Rejected</span>`;
+        html += `<br><small class="text-muted">Est: ${formatCurrency(item.price_estimation || 0)}</small>`;
+    } else {
+        html += `<span class="badge bg-secondary">Not Verified</span>`;
+        html += `<br><small class="text-muted">Using estimation</small>`;
+    }
+    if (item.price_estimation_description) {
+        html += `<br><small class="text-muted fst-italic">${item.price_estimation_description}</small>`;
+    }
+    html += `</td>`;
+
+    // Total Budget - calculated from current price × qty
+    html += `<td class="text-end" style="font-size: 10px;">`;
+    html += `<div class="d-flex flex-column align-items-end">`;
+    html += `<span class="fw-bold fs-6">${formatCurrency(totalBudget)}</span>`;
+    html += `<small class="text-muted">${totalQty} × ${formatCurrency(unitPrice)}</small>`;
+    html += `</div>`;
+    html += `</td>`;
     html += `</tr>`;
 
     return html;

@@ -330,6 +330,22 @@
             font-size: 4rem;
             margin-bottom: 1rem;
         }
+        
+        /* Price verification indicators */
+        .price-verified {
+            color: #198754;
+            font-weight: 600;
+        }
+        .price-estimated {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .price-diff-positive {
+            color: #dc3545;
+        }
+        .price-diff-negative {
+            color: #198754;
+        }
     </style>
     
 <style>
@@ -495,9 +511,9 @@
                                                         <th rowspan="2">Cons Rate</th>
                                                         <th rowspan="2">Unit</th>
                                                         <th colspan="12" class="month-header text-center">Qty</th>
-                                                        <th rowspan="2">Price Estimation</th>
-                                                        <th rowspan="2">Price Estimation Description</th>
-                                                        <th rowspan="2">Total</th>
+                                                        <th rowspan="2">Unit Price</th>
+                                                        <th rowspan="2">Price Status</th>
+                                                        <th rowspan="2">Total Budget</th>
                                                     </tr>
                                                     <tr>
                                                         <th class="month-header">Jan</th>

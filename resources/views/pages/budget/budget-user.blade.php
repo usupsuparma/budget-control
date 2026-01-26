@@ -71,6 +71,17 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
+        .workplan-info .btn-outline-light {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+        }
+
+        .workplan-info .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: white;
+            color: white;
+        }
+
         .category-tabs .nav-link {
             font-size: 13px;
             padding: 10px 15px;
@@ -451,6 +462,9 @@
                                             </p>
                                         </div>
                                         <div class="text-end">
+                                            <button type="button" class="btn btn-outline-light me-2" id="refreshBudgetItemsBtn" onclick="refreshBudgetItems()">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                            </button>
                                             <button type="button" class="btn btn-success" id="addDataBtn">
                                                 <i class="bi bi-plus-circle me-2"></i>Add Data
                                             </button>

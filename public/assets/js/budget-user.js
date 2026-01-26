@@ -155,6 +155,55 @@ function checkFilterValues() {
 }
 
 /**
+ * Refresh budget items with current selected division and year
+ */
+function refreshBudgetItems() {
+    if (!selectedDivisionId || !selectedYear) {
+        showToast("Please select Division and Year first", "warning");
+        return;
+    }
+
+    showLoading();
+
+    $.ajax({
+        url: "/budget-user/items/all",
+        method: "GET",
+        data: {
+            division_id: selectedDivisionId,
+            year: selectedYear,
+        },
+        success: function (response) {
+            hideLoading();
+            if (response.success) {
+                allWorkplans = response.workplans || [];
+                budgetCodesData = response.budgetCodes || [];
+                allItemsData = response.data || [];
+                currentEmploymentId = response.currentEmploymentId;
+
+                // Update counts
+                $("#totalWorkplans").text(response.totalWorkplans || 0);
+                $("#totalItems").text(response.data.length);
+
+                // Render items
+                renderAllItems(response.data);
+
+                showToast("Budget items refreshed successfully", "success");
+            } else {
+                showToast(
+                    response.message || "Failed to refresh budget items",
+                    "error"
+                );
+            }
+        },
+        error: function (xhr) {
+            hideLoading();
+            showToast("Error refreshing budget items", "error");
+            console.error("Error:", xhr.responseText);
+        },
+    });
+}
+
+/**
  * Load all budget items based on division and year
  */
 function loadAllBudgetItems() {

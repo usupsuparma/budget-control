@@ -399,7 +399,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-bs-toggle="tab" href="#verification" role="tab">
-                        <i class="ri-checkbox-circle-line me-2"></i> Verification
+                        <i class="ri-checkbox-circle-line me-2"></i>Price Verification
                         <span class="badge bg-warning ms-2" id="verificationBadge" style="display: none;">0</span>
                     </a>
                 </li>

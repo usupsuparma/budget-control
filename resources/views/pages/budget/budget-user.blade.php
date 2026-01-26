@@ -7,6 +7,44 @@
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <style>
+        /* Horizontal Tab Styles for Budget Management */
+        .nav-tabs-custom {
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .nav-tabs-custom .nav-item {
+            margin-bottom: -2px;
+        }
+        
+        .nav-tabs-custom .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+        
+        .nav-tabs-custom .nav-link:hover {
+            border-color: transparent;
+            border-bottom-color: #dee2e6;
+            color: #495057;
+            background: #f8f9fa;
+        }
+        
+        .nav-tabs-custom .nav-link.active {
+            border-color: transparent;
+            border-bottom-color: #f97316;
+            color: #f97316;
+            background: transparent;
+            font-weight: 600;
+        }
+        
+        .nav-tabs-custom .nav-link i {
+            font-size: 16px;
+        }
+
         .filter-section {
             background: white;
             padding: 20px;
@@ -349,30 +387,26 @@
     <!-- CARD PEMBUNGKUS UTAMA -->
     <div class="card card-h-100 shadow-sm border">
         <div class="card-body">
-            <div class="row">
-                <!-- LEFT SIDEBAR (Tab) -->
-                <div class="col-md-2 border-end">
-                    <div class="mb-3">
-                        <h6 class="text-muted text-uppercase small">Budget Management</h6>
-                    </div>
-                    <ul class="nav nav-pills flex-column" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#budgetItems" role="tab">
-                                <i class="ri-file-list-3-line me-2"></i> Budget Items
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#verification" role="tab">
-                                <i class="ri-checkbox-circle-line me-2"></i> Verification
-                                <span class="badge bg-warning ms-2" id="verificationBadge" style="display: none;">0</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <!-- HORIZONTAL TAB NAVIGATION -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-muted text-uppercase small mb-0">Budget Management</h6>
+            </div>
+            <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#budgetItems" role="tab">
+                        <i class="ri-file-list-3-line me-2"></i> Budget Items
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#verification" role="tab">
+                        <i class="ri-checkbox-circle-line me-2"></i> Verification
+                        <span class="badge bg-warning ms-2" id="verificationBadge" style="display: none;">0</span>
+                    </a>
+                </li>
+            </ul>
 
-                <!-- RIGHT CONTENT -->
-                <div class="col-md-10">
-                    <div class="tab-content pt-3">
+            <!-- TAB CONTENT -->
+            <div class="tab-content">
                         <!-- TAB 1: Budget Items -->
                         <div class="tab-pane fade show active" id="budgetItems">
                             {{-- Filter Section --}}
@@ -502,8 +536,6 @@
                         </div>
                         <!-- END TAB 2: Verification -->
                     </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

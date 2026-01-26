@@ -852,21 +852,51 @@
                 
                 <hr>
                 
+                <!-- Qty Information -->
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-calculator me-1"></i>Total Quantity:</strong>
+                            <span id="verifyTotalQty" class="ms-2 fs-5">0</span> units
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">Sum of all monthly activities</small>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="row">
                     <div class="col-md-6">
                         <label class="form-label">
-                            <strong>Price Estimation (User Input)</strong>
+                            <strong>Price Estimation per Unit (User Input)</strong>
                         </label>
                         <div id="verifyPriceEstimation" class="badge bg-secondary badge-estimation">-</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" for="verifyFixPrice">
-                            <strong>Verified Price (Fix Price) <span class="text-danger">*</span></strong>
+                            <strong>Verified Price per Unit <span class="text-danger">*</span></strong>
                         </label>
                         <div class="input-group price-input-group">
                             <span class="input-group-text">Rp</span>
                             <input type="text" class="form-control" id="verifyFixPrice" 
-                                   placeholder="Enter verified price" required>
+                                   placeholder="Enter verified price per unit" required>
+                        </div>
+                        <small class="text-muted">Enter price per unit (not total)</small>
+                    </div>
+                </div>
+                
+                <!-- Total Calculation -->
+                <div class="alert alert-success mt-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-cash-stack me-1"></i>Estimated Total:</strong>
+                            <div id="verifyEstimatedTotal" class="fs-4 fw-bold text-success">Rp 0</div>
+                            <small class="text-muted">(Total Qty × Price Estimation per Unit)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-check-circle me-1"></i>Verified Total:</strong>
+                            <div id="verifyVerifiedTotal" class="fs-4 fw-bold text-primary">Rp 0</div>
+                            <small class="text-muted">(Total Qty × Verified Price per Unit)</small>
                         </div>
                     </div>
                 </div>
@@ -950,11 +980,13 @@
         // Load pending count on page load
         loadVerificationBadgeCount();
 
-        // Format price input
+        // Format price input and recalculate verified total
         $('#verifyFixPrice').on('input', function() {
             let value = $(this).val().replace(/[^0-9]/g, '');
             if (value) {
                 $(this).val(formatNumberVerify(parseInt(value)));
+                // Recalculate verified total
+                updateVerifiedTotal();
             }
         });
 
@@ -1098,6 +1130,12 @@
             return;
         }
 
+        // Calculate total qty from all months
+        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        const totalQty = months.reduce((sum, month) => {
+            return sum + (parseInt(currentVerifyItemData[`activity_${month}`]) || 0);
+        }, 0);
+
         // Populate item details
         $('#verifyItemDetails').html(`
             <dl class="row mb-0">
@@ -1115,11 +1153,46 @@
             </dl>
         `);
 
-        $('#verifyPriceEstimation').text(formatCurrency(currentVerifyItemData.price_estimation || 0));
-        $('#verifyFixPrice').val(formatNumberVerify(currentVerifyItemData.price_estimation || 0));
+        // Display total qty
+        $('#verifyTotalQty').text(totalQty);
+
+        // Display price estimation and calculated total
+        const priceEstimation = parseFloat(currentVerifyItemData.price_estimation) || 0;
+        $('#verifyPriceEstimation').text(formatCurrency(priceEstimation));
+        
+        // Calculate and display estimated total
+        const estimatedTotal = totalQty * priceEstimation;
+        $('#verifyEstimatedTotal').text(formatCurrency(estimatedTotal));
+        
+        // Set initial verified price and calculate verified total
+        $('#verifyFixPrice').val(formatNumberVerify(priceEstimation));
+        const verifiedTotal = totalQty * priceEstimation;
+        $('#verifyVerifiedTotal').text(formatCurrency(verifiedTotal));
+        
         $('#verifyNotes').val('');
 
         $('#verifyModal').modal('show');
+    }
+    
+    /**
+     * Update verified total when verified price changes
+     */
+    function updateVerifiedTotal() {
+        if (!currentVerifyItemData) return;
+        
+        // Calculate total qty
+        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        const totalQty = months.reduce((sum, month) => {
+            return sum + (parseInt(currentVerifyItemData[`activity_${month}`]) || 0);
+        }, 0);
+        
+        // Get verified price
+        const verifiedPriceStr = $('#verifyFixPrice').val().replace(/[^0-9]/g, '');
+        const verifiedPrice = parseFloat(verifiedPriceStr) || 0;
+        
+        // Calculate verified total
+        const verifiedTotal = totalQty * verifiedPrice;
+        $('#verifyVerifiedTotal').text(formatCurrency(verifiedTotal));
     }
 
     /**

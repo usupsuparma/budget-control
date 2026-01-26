@@ -48,6 +48,7 @@ class WorkplanBudgetItem extends Model
         'price_estimation',
         'price_estimation_description',
         'verification_status', // Enum ['unverified', 'pending', 'verified', 'rejected']
+        'price_final',
 
     ];
 

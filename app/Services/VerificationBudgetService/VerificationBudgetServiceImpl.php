@@ -170,18 +170,29 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             DB::beginTransaction();
 
+            // Calculate total quantity from all months
+            $totalQty = 0;
+            $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            foreach ($months as $month) {
+                $totalQty += (int) ($item->{"activity_$month"} ?? 0);
+            }
+
+            // Calculate total = price_final × total_qty
+            $calculatedTotal = $fixPrice * $totalQty;
+
             // 1. Create audit log
             WorkplanBudgetVerification::create([
                 'workplan_budget_item_id' => $itemId,
                 'verifier_id' => $verifierId,
                 'submitted_price_estimation' => $item->price_estimation ?? 0,
-                'verified_price_total' => $fixPrice,
+                'verified_price_total' => $calculatedTotal,
                 'notes' => $notes,
             ]);
 
-            // 2. Update item with verified price
+            // 2. Update item with verified price and calculated total
             $item->update([
-                'total' => $fixPrice,
+                'price_final' => $fixPrice,
+                'total' => $calculatedTotal,
                 'verification_status' => 'verified',
             ]);
 
@@ -196,7 +207,9 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 'item_id' => $itemId,
                 'verifier_id' => $verifierId,
                 'old_price' => $item->price_estimation,
-                'new_price' => $fixPrice,
+                'verified_price_final' => $fixPrice,
+                'total_qty' => $totalQty,
+                'calculated_total' => $calculatedTotal,
             ]);
 
             // 4. Auto-submit for approval after verification
@@ -213,7 +226,9 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                     'message' => 'Verifikasi berhasil, tetapi auto-submit approval gagal: ' . $approvalResult['message'],
                     'data' => [
                         'item_id' => $itemId,
-                        'verified_price' => $fixPrice,
+                        'price_final' => $fixPrice,
+                        'total_qty' => $totalQty,
+                        'calculated_total' => $calculatedTotal,
                         'approval_submitted' => false,
                     ],
                 ];
@@ -224,7 +239,9 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 'message' => 'Verifikasi berhasil dan item telah diajukan untuk approval.',
                 'data' => [
                     'item_id' => $itemId,
-                    'verified_price' => $fixPrice,
+                    'price_final' => $fixPrice,
+                    'total_qty' => $totalQty,
+                    'calculated_total' => $calculatedTotal,
                     'approval_submitted' => true,
                     'approval_data' => $approvalResult['data'] ?? null,
                 ],

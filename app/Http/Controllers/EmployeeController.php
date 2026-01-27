@@ -18,8 +18,9 @@ class EmployeeController extends Controller
     public function getData()
     {
         // Use 'roles' (Spatie HasRoles trait) instead of 'role' to avoid conflict with scopeRole()
-        $query = Employee::with(['roles', 'jobPosition'])
-            ->select(['id', 'first_name', 'last_name', 'email', 'job_position_id', 'status']);
+        // Load employment and job position via employment
+        $query = Employee::with(['roles', 'employment.jobPosition', 'employment.jobLevel'])
+            ->select(['id', 'first_name', 'last_name', 'email', 'employee_code', 'status']);
 
         return DataTables::of($query)
             ->addColumn('full_name', function ($row) {
@@ -29,13 +30,19 @@ class EmployeeController extends Controller
                     '<small class="text-muted"><i class="bi bi-envelope me-1"></i>' . e($row->email) . '</small>';
             })
 
+            ->addColumn('employee_code', function ($row) {
+                return '<span class="badge bg-info">' . e($row->employee_code ?? '-') . '</span>';
+            })
+
             ->addColumn('job_info', function ($row) {
-                $jp = $row->jobPosition;
+                $employment = $row->employment;
+                $jp = $employment?->jobPosition;
+                $jl = $employment?->jobLevel;
 
                 return
-                    e($jp->job_position_name ?? '-') .
+                    e($jp?->job_position_name ?? '-') .
                     '<br>' .
-                    '<small class="text-muted">' . e($jp->job_level_name ?? '-') . '</small>';
+                    '<small class="text-muted">' . e($jl?->job_level_name ?? '-') . '</small>';
             })
             ->addColumn(
                 'roles',
@@ -46,7 +53,7 @@ class EmployeeController extends Controller
             ->addColumn(
                 'job_position',
                 fn($row) =>
-                $row->jobPosition->job_position_name ?? '-'
+                $row->employment?->jobPosition?->job_position_name ?? '-'
             )
 
             ->addColumn(
@@ -84,11 +91,12 @@ class EmployeeController extends Controller
                     ->orWhere('email', 'LIKE', "%{$keyword}%");
             })
 
-            // Custom filter for job_info column (search in job_position relationship)
+            // Custom filter for job_info column (search via employment)
             ->filterColumn('job_info', function ($query, $keyword) {
-                $query->whereHas('jobPosition', function ($q) use ($keyword) {
-                    $q->where('job_position_name', 'LIKE', "%{$keyword}%")
-                        ->orWhere('job_level_name', 'LIKE', "%{$keyword}%");
+                $query->whereHas('employment.jobPosition', function ($q) use ($keyword) {
+                    $q->where('job_position_name', 'LIKE', "%{$keyword}%");
+                })->orWhereHas('employment.jobLevel', function ($q) use ($keyword) {
+                    $q->where('job_level_name', 'LIKE', "%{$keyword}%");
                 });
             })
 
@@ -99,7 +107,7 @@ class EmployeeController extends Controller
                 });
             })
 
-            ->rawColumns(['full_name', 'job_info', 'roles', 'email', 'status_badge', 'action'])
+            ->rawColumns(['full_name', 'employee_code', 'job_info', 'roles', 'email', 'status_badge', 'action'])
             ->make(true);
     }
 
@@ -110,7 +118,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'first_name'      => 'required|string|max:100',
             'last_name'       => 'required|string|max:100',
-            'employee_id'     => 'required|string|max:50|unique:employee,employee_id',
+            'employee_code'   => 'required|string|max:50|unique:employee,employee_code',
             'email'           => 'required|email|max:150|unique:employee,email',
             'password'        => 'required|string|min:6',
             'job_position_id' => 'required|exists:job_position,id',
@@ -121,9 +129,9 @@ class EmployeeController extends Controller
             'first_name.max'           => 'Nama depan maksimal 100 karakter',
             'last_name.required'       => 'Nama belakang wajib diisi',
             'last_name.max'            => 'Nama belakang maksimal 100 karakter',
-            'employee_id.required'     => 'Nomor Induk Pegawai (NIP) wajib diisi',
-            'employee_id.unique'       => 'Nomor Induk Pegawai (NIP) sudah terdaftar',
-            'employee_id.max'          => 'NIP maksimal 50 karakter',
+            'employee_code.required'   => 'Nomor Induk Pegawai (NIP) wajib diisi',
+            'employee_code.unique'     => 'Nomor Induk Pegawai (NIP) sudah terdaftar',
+            'employee_code.max'        => 'NIP maksimal 50 karakter',
             'email.required'           => 'Email wajib diisi',
             'email.email'              => 'Format email tidak valid',
             'email.unique'             => 'Email sudah terdaftar, gunakan email lain',
@@ -147,7 +155,7 @@ class EmployeeController extends Controller
 
                 // 1️⃣ SIMPAN EMPLOYEE
                 $employee = Employee::create([
-                    'employee_id'      => $request->employee_id,
+                    'employee_code'    => $request->employee_code, // NIP
                     'first_name'       => $request->first_name,
                     'last_name'        => $request->last_name,
                     'email'            => $request->email,
@@ -159,9 +167,9 @@ class EmployeeController extends Controller
                 // Assign role via Spatie
                 $employee->assignRole($role->name);
 
-                // 2️⃣ SIMPAN EMPLOYMENT
+                // 2️⃣ SIMPAN EMPLOYMENT (employee_id = FK ke employee.id)
                 Employment::create([
-                    'employee_id'        => $request->employee_id,
+                    'employee_id'        => $employee->id, // FK ke employee.id
 
                     'organization_id'    => $jobPosition->organization->id ?? null,
                     'organization_name'  => $jobPosition->organization->organization_name ?? null,
@@ -211,7 +219,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'first_name'      => 'required|string|max:100',
             'last_name'       => 'required|string|max:100',
-            'employee_id'     => 'required|string|max:50|unique:employee,employee_id,' . $id,
+            'employee_code'   => 'required|string|max:50|unique:employee,employee_code,' . $id,
             'email'           => 'required|email|max:150|unique:employee,email,' . $id,
             'job_position_id' => 'required|exists:job_position,id',
             'role_name'       => 'required|string|exists:roles,name',
@@ -222,9 +230,9 @@ class EmployeeController extends Controller
             'first_name.max'           => 'Nama depan maksimal 100 karakter',
             'last_name.required'       => 'Nama belakang wajib diisi',
             'last_name.max'            => 'Nama belakang maksimal 100 karakter',
-            'employee_id.required'     => 'Nomor Induk Pegawai (NIP) wajib diisi',
-            'employee_id.unique'       => 'Nomor Induk Pegawai (NIP) sudah digunakan oleh employee lain',
-            'employee_id.max'          => 'NIP maksimal 50 karakter',
+            'employee_code.required'   => 'Nomor Induk Pegawai (NIP) wajib diisi',
+            'employee_code.unique'     => 'Nomor Induk Pegawai (NIP) sudah digunakan oleh employee lain',
+            'employee_code.max'        => 'NIP maksimal 50 karakter',
             'email.required'           => 'Email wajib diisi',
             'email.email'              => 'Format email tidak valid',
             'email.unique'             => 'Email sudah digunakan oleh employee lain',
@@ -246,34 +254,24 @@ class EmployeeController extends Controller
                 // Get role by name (from Spatie)
                 $role = Role::where('name', $request->role_name)->firstOrFail();
 
-                // Simpan employee_id lama sebelum update
-                $oldEmployeeId = $emp->employee_id;
-
                 // Update Employee
                 $emp->update([
                     'first_name'      => $request->first_name,
                     'last_name'       => $request->last_name,
-                    'employee_id'     => $request->employee_id,
+                    'employee_code'   => $request->employee_code, // NIP
                     'email'           => $request->email,
-                    'job_position_id' => $jobPosition->id,
                     'status'          => $request->status,
                 ]);
 
                 // Sync role via Spatie (replaces all existing roles)
                 $emp->syncRoles([$role->name]);
 
-                // Ambil employment berdasarkan employee_id LAMA
-                $employment = Employment::where('employee_id', $oldEmployeeId)->first();
-
-                // Jika tidak ada, coba cari dengan employee_id baru (untuk kasus seeder baru)
-                if (!$employment) {
-                    $employment = Employment::where('employee_id', $request->employee_id)->first();
-                }
+                // Ambil employment berdasarkan employee.id (FK)
+                $employment = Employment::where('employee_id', $emp->id)->first();
 
                 // Hanya update jika employment memang ada
                 if ($employment) {
                     $employment->update([
-                        'employee_id'       => $request->employee_id, // Update ke employee_id baru
                         'job_position_id'   => $jobPosition->id,
                         'job_position_name' => $jobPosition->job_position_name,
 
@@ -310,8 +308,8 @@ class EmployeeController extends Controller
 
             $emp = Employee::findOrFail($id);
 
-            // Soft delete employment
-            Employment::where('employee_id', $emp->employee_id)->delete();
+            // Soft delete employment (FK = employee.id)
+            Employment::where('employee_id', $emp->id)->delete();
 
             // Soft delete employee
             $emp->delete();
@@ -326,7 +324,8 @@ class EmployeeController extends Controller
     {
         try {
             $employee = Employee::with([
-                'jobPosition',
+                'employment.jobPosition',
+                'employment.jobLevel',
                 'roles',
             ])->findOrFail($id);
 

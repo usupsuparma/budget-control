@@ -53,26 +53,26 @@ class EmploymentSeeder extends Seeder
                 $birthYear = $employee->birth_year ?? rand(1980, 2000);
                 $birthYearShort = substr($birthYear, -2); // Ambil 2 digit terakhir
                 
-                // Generate NIP: YYMM + YY (birth) + NNNN (urutan)
+                // Generate NIP (employee_code): YYMM + YY (birth) + NNNN (urutan)
                 $nip = sprintf('%s%s%04d', $yearMonth, $birthYearShort, $counter);
                 
-                // Update employee dengan NIP dan birth_year
+                // Update employee dengan employee_code (NIP) dan birth_year
                 $employee->update([
-                    'employee_id' => $nip,
+                    'employee_code' => $nip, // NIP (Nomor Induk Pegawai)
                     'birth_year' => $birthYear,
                 ]);
                 
-                // Cek apakah sudah punya employment record
-                $hasEmployment = Employment::where('employee_id', $nip)->exists();
+                // Cek apakah sudah punya employment record (FK = employee.id)
+                $hasEmployment = Employment::where('employee_id', $employee->id)->exists();
                 
                 if (!$hasEmployment) {
                     // Ambil random job level dan position
                     $randomJobLevel = $jobLevels->random();
                     $randomJobPosition = $jobPositions->random();
                     
-                    // Buat employment record (uppline akan diisi di pass 2)
+                    // Buat employment record (employee_id = FK ke employee.id)
                     Employment::create([
-                        'employee_id' => $nip,
+                        'employee_id' => $employee->id, // FK ke employee.id
                         'organization_id' => null,
                         'organization_name' => null,
                         'job_level_id' => $randomJobLevel->id,

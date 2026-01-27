@@ -131,12 +131,12 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
         try {
             $item = WorkplanBudgetItem::lockForUpdate()->findOrFail($itemId);
             $employee = Auth::user();
-            $verifierId = $employee?->employee_id;
+            $verifierId = $employee?->id; // Employee.id (PK)
 
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee ID tidak ditemukan.',
+                    'message' => 'Employee tidak ditemukan.',
                 ];
             }
 
@@ -269,12 +269,12 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
         try {
             $item = WorkplanBudgetItem::lockForUpdate()->findOrFail($itemId);
             $employee = Auth::user();
-            $verifierId = $employee?->employee_id;
+            $verifierId = $employee?->id; // Employee.id (PK)
 
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee ID tidak ditemukan.',
+                    'message' => 'Employee tidak ditemukan.',
                 ];
             }
 
@@ -364,12 +364,12 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     {
         try {
             $employee = Auth::user();
-            $verifierId = $employee?->employee_id;
+            $verifierId = $employee?->id; // Employee.id (PK)
 
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee ID tidak ditemukan.',
+                    'message' => 'Employee tidak ditemukan.',
                     'data' => [],
                 ];
             }
@@ -508,10 +508,11 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             $jobPositionIds = $priceVerification->users->pluck('job_position_id')->toArray();
 
             // 3. Find all active employees with those job positions
+            // employment.employee_id is now FK to employee.id
             $verifierIds = Employment::whereIn('job_position_id', $jobPositionIds)
                 ->where('status', 'active')
                 ->whereNotNull('employee_id')
-                ->pluck('employee_id')
+                ->pluck('employee_id') // This is employee.id (integer FK)
                 ->toArray();
 
             Log::info('Found verifiers for cost_center', [
@@ -538,7 +539,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     {
         try {
             $employee = Auth::user();
-            $verifierId = $employee?->employee_id;
+            $verifierId = $employee?->id; // Employee.id (PK)
 
             if (!$verifierId) {
                 return false;

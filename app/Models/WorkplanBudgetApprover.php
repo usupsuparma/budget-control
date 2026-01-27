@@ -25,18 +25,26 @@ class WorkplanBudgetApprover extends Model
     }
 
     /**
-     * Get verifier employee through employee_id
+     * Get verifier employee (verifier_id = FK to employee.id)
      */
     public function verifier()
     {
-        return $this->belongsTo(Employee::class, 'verifier_id', 'employee_id');
+        return $this->belongsTo(Employee::class, 'verifier_id', 'id');
     }
 
     /**
-     * Get verifier employment (for job position info)
+     * Get verifier employment through Employee
+     * verifier_id -> Employee.id -> Employment.employee_id
      */
     public function verifierEmployment()
     {
-        return $this->belongsTo(Employment::class, 'verifier_id', 'employee_id');
+        return $this->hasOneThrough(
+            Employment::class,
+            Employee::class,
+            'id',           // FK on Employee (employee.id)
+            'employee_id',  // FK on Employment (employment.employee_id -> employee.id)
+            'verifier_id',  // Local key on WorkplanBudgetApprover
+            'id'            // Local key on Employee (employee.id)
+        );
     }
 }

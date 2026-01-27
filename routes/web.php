@@ -59,7 +59,7 @@ Route::get('/', function () {
 });
 
 Route::get('/login', [AuthorizationController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthorizationController::class, 'login']);
+Route::post('/login', [AuthorizationController::class, 'login'])->name('login.post');
 
 // Route::get('/', Login::class)->name('login');
 
@@ -1260,7 +1260,7 @@ Route::middleware('auth')->group(function () {
         SETTINGS
     ======================== */
     Route::middleware('permission:setting.master.view')
-        ->get('/master', [MasterController::class, 'index'])
+        ->get('/master-data', [MasterController::class, 'index'])
         ->name('master');
     Route::middleware('permission:setting.users.view')
         ->get('/user', [UsersController::class, 'index'])

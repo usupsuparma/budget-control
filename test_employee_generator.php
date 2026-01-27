@@ -7,7 +7,7 @@ $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\Employee;
 
-echo "=== Test Employee ID Generator ===\n\n";
+echo "=== Test Employee Code Generator ===\n\n";
 
 // Test 1: Buat employee baru
 echo "Test 1: Membuat employee baru...\n";
@@ -21,7 +21,7 @@ $employee = Employee::create([
 
 echo "✓ Employee berhasil dibuat!\n";
 echo "  - ID: {$employee->id}\n";
-echo "  - Employee ID: {$employee->employee_id}\n";
+echo "  - Employee Code (NIP): {$employee->employee_code}\n";
 echo "  - Name: {$employee->name}\n";
 echo "  - Email: {$employee->email}\n\n";
 
@@ -33,7 +33,7 @@ $employment = $employee->employment()->first();
 if ($employment) {
     echo "✓ Employment berhasil dibuat otomatis!\n";
     echo "  - Employment ID: {$employment->id}\n";
-    echo "  - Employee ID: {$employment->employee_id}\n";
+    echo "  - Employee ID (FK): {$employment->employee_id} (references employee.id)\n";
     echo "  - Status: {$employment->status}\n\n";
 } else {
     echo "✗ Employment tidak dibuat otomatis!\n\n";
@@ -51,17 +51,17 @@ $employee2 = Employee::create([
 
 echo "✓ Employee kedua berhasil dibuat!\n";
 echo "  - ID: {$employee2->id}\n";
-echo "  - Employee ID: {$employee2->employee_id}\n";
+echo "  - Employee Code (NIP): {$employee2->employee_code}\n";
 echo "  - Name: {$employee2->name}\n\n";
 
-// Test 4: Verifikasi employee_id berbeda
+// Test 4: Verifikasi employee_code berbeda
 echo "Test 4: Verifikasi uniqueness...\n";
-if ($employee->employee_id !== $employee2->employee_id) {
-    echo "✓ Employee ID berbeda dan unique!\n";
-    echo "  - Employee 1: {$employee->employee_id}\n";
-    echo "  - Employee 2: {$employee2->employee_id}\n\n";
+if ($employee->employee_code !== $employee2->employee_code) {
+    echo "✓ Employee Code berbeda dan unique!\n";
+    echo "  - Employee 1: {$employee->employee_code}\n";
+    echo "  - Employee 2: {$employee2->employee_code}\n\n";
 } else {
-    echo "✗ Employee ID sama! Ada masalah dengan generator.\n\n";
+    echo "✗ Employee Code sama! Ada masalah dengan generator.\n\n";
 }
 
 // Cleanup - hapus data test

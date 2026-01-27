@@ -54,7 +54,7 @@
                 @endif
 
                 <!-- FORM LOGIN -->
-                <form method="POST" action="/login">
+                <form method="POST" action="{{ route('login.post') }}">
                     @csrf
 
                     <div class="mb-3">

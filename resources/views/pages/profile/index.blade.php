@@ -55,8 +55,8 @@
                         <table class="table table-sm table-borderless mb-0">
                             <tbody>
                                 <tr>
-                                    <td class="fw-medium text-muted" style="width: 40%;">Employee ID</td>
-                                    <td>{{ $user->employee_id ?? '-' }}</td>
+                                    <td class="fw-medium text-muted" style="width: 40%;">Employee Code (NIP)</td>
+                                    <td>{{ $user->employee_code ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-medium text-muted">Full Name</td>

@@ -34,8 +34,8 @@ class SubmissionController extends Controller
     {
         $title = 'Submission Users';
 
-        // Get summary data
-        $userId = Auth::user()->employee_id;
+        // Get summary data (user_id = employee.id)
+        $userId = Auth::user()->id;
         $employment = Employment::where('employee_id', $userId)->get();
         $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
         $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
@@ -647,9 +647,9 @@ class SubmissionController extends Controller
     public function admin()
     {
         $title = 'Submission Admin';
-        $userId = Auth::user()->employee_id;
+        $userId = Auth::user()->id; // employee.id
 
-        // Get summary data
+        // Get summary data (employment.employee_id = employee.id)
         $employment = Employment::where('employee_id', $userId)->get();
         $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
         $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();

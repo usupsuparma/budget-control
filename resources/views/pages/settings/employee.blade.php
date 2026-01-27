@@ -17,6 +17,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
+                                <th>NIP</th>
                                 <th>Names & Email</th>
                                 <th>Job Position</th>
                                 <th>Role</th>
@@ -63,8 +64,8 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Employee ID (NIP) <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="employee_id" name="employee_id" required>
+                            <label class="form-label">Employee Code (NIP) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="employee_code" name="employee_code" required>
                         </div>
 
                         <div class="col-md-6">
@@ -219,8 +220,8 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Employee ID (NIP) <span class="text-danger">*</span></label>
-                            <input type="text" id="edit_employee_id" name="employee_id" class="form-control" required>
+                            <label class="form-label">Employee Code (NIP) <span class="text-danger">*</span></label>
+                            <input type="text" id="edit_employee_code" name="employee_code" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
@@ -301,6 +302,11 @@
                     searchable: true
                 },
                 {
+                    data: 'employee_code',
+                    name: 'employee_code',
+                    searchable: true  // Search by NIP
+                },
+                {
                     data: 'full_name',
                     name: 'full_name',
                     searchable: true  // Search in first_name, last_name, and email
@@ -345,10 +351,16 @@
             $("#detailPhoto").attr("src", data.photo_url ?? "/assets/images/avatar/15.jpg");
             $("#detailName").text(data.first_name + " " + data.last_name);
             $("#detailEmail").text(data.email);
-            $("#detailEmployeeId").text(data.employee_id ?? '-');
-            $("#detailJobPosition").text(data.job_position?.job_position_name ?? '-');
-            $("#detailOrganization").text(data.job_position?.structure_name ?? "-");
-            $("#detailJobLevel").text(data.job_position?.job_level_name ?? "-");
+            $("#detailEmployeeId").text(data.employee_code ?? '-');
+            
+            // Get job info from employment relationship
+            let jobPosition = data.employment?.job_position?.job_position_name ?? '-';
+            let organization = data.employment?.job_position?.structure_name ?? '-';
+            let jobLevel = data.employment?.job_level?.job_level_name ?? '-';
+            
+            $("#detailJobPosition").text(jobPosition);
+            $("#detailOrganization").text(organization);
+            $("#detailJobLevel").text(jobLevel);
             $("#detailRole").text(data.roles && data.roles.length > 0 ? data.roles[0].name : '-');
 
             let status = data.status === "Active" ?
@@ -424,10 +436,11 @@
 
             $("#edit_first_name").val(res.first_name);
             $("#edit_last_name").val(res.last_name);
-            $("#edit_employee_id").val(res.employee_id);
+            $("#edit_employee_code").val(res.employee_code);
             $("#edit_email").val(res.email);
 
-            $("#edit_job_position_id").val(res.job_position_id);
+            // Get job_position_id from employment
+            $("#edit_job_position_id").val(res.employment?.job_position_id ?? '');
             $("#edit_role_name").val(res.roles && res.roles.length > 0 ? res.roles[0].name : '');
             $("#edit_status").val(res.status);
 

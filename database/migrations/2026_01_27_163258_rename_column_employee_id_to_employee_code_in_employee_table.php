@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('employment', function (Blueprint $table) {
-            // Ubah kolom employee_id menjadi string untuk match dengan employee.employee_id
-            $table->string('employee_id', 50)->nullable()->change();
+        Schema::table('employee', function (Blueprint $table) {
+            $table->renameColumn('employee_id', 'employee_code');
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('employment', function (Blueprint $table) {
-            $table->integer('employee_id')->nullable()->change();
+        Schema::table('employee', function (Blueprint $table) {
+            $table->renameColumn('employee_code', 'employee_id');
         });
     }
 };

@@ -21,7 +21,7 @@ class Employment extends Model
     ];
 
     protected $fillable = [
-        'employee_id', // ini NIP (Nomor Induk Pegawai)
+        'employee_id', // FK to employee.id (integer, bukan NIP)
         'organization_id',
         'organization_name',
         'job_level_id',
@@ -51,10 +51,13 @@ class Employment extends Model
         return $this->getRoleName();
     }
 
+    /**
+     * Get the employee that owns this employment.
+     * employment.employee_id (FK) references employee.id (PK)
+     */
     public function employee()
     {
-        // employment.employee_id references employee.employee_id (NIP)
-        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
+        return $this->belongsTo(Employee::class, 'employee_id', 'id');
     }
 
     public function jobLevel()
@@ -82,9 +85,9 @@ class Employment extends Model
             Employment::class,      // Final model
             Employee::class,        // Intermediate model
             'id',                   // FK on Employee (employee.id)
-            'employee_id',          // FK on Employment (employment.employee_id)
+            'employee_id',          // FK on Employment (employment.employee_id -> employee.id)
             'uppline_id',           // Local key on this Employment (uppline_id points to Employee.id)
-            'employee_id'           // Local key on Employee (employee.employee_id)
+            'id'                    // Local key on Employee (employee.id)
         );
     }
 

@@ -18,15 +18,15 @@ class Employee extends Authenticatable
     protected $guarded = [];
 
     protected $fillable = [
-        'employee_id', // ini NIP (Nomor Induk Pegawai)
+        'employee_code', // NIP (Nomor Induk Pegawai) - format: EMP-YYYYMMDD-XXXX
         'email',
         'password',
         'remember_token',
         'first_name',
         'last_name',
         'birth_year',
+        'birth_date',
         'phone',
-        'job_position_id',
         'status',
     ];
 
@@ -65,13 +65,28 @@ class Employee extends Authenticatable
         return $this->roles->first()?->id;
     }
 
+    /**
+     * Get job position via employment relationship.
+     * Since job_position_id is stored in employment table, not employee table.
+     */
     public function jobPosition()
     {
-        return $this->belongsTo(JobPosition::class, 'job_position_id', 'id');
+        return $this->hasOneThrough(
+            JobPosition::class,
+            Employment::class,
+            'employee_id',      // FK on employment table
+            'id',               // PK on job_position table
+            'id',               // PK on employee table
+            'job_position_id'   // FK on employment table
+        );
     }
 
+    /**
+     * Get employee's employment record.
+     * employment.employee_id (FK) references employee.id (PK)
+     */
     public function employment()
     {
-        return $this->hasOne(Employment::class, 'employee_id', 'employee_id');
+        return $this->hasOne(Employment::class, 'employee_id', 'id');
     }
 }

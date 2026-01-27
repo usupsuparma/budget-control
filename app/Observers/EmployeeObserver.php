@@ -9,46 +9,47 @@ class EmployeeObserver
 {
     /**
      * Handle the Employee "creating" event.
-     * Generate employee_id sebelum disimpan ke database
+     * Generate employee_code (NIP) sebelum disimpan ke database
      */
     public function creating(Employee $employee): void
     {
-        if (empty($employee->employee_id)) {
-            $employee->employee_id = $this->generateEmployeeId();
+        if (empty($employee->employee_code)) {
+            $employee->employee_code = $this->generateEmployeeCode();
         }
     }
 
     /**
      * Handle the Employee "created" event.
-     * Buat record Employment dengan employee_id yang sama
+     * Buat record Employment dengan employee_id = employee.id (FK)
      */
     public function created(Employee $employee): void
     {
         // Buat record Employment otomatis jika belum ada
+        // employment.employee_id references employee.id (integer FK)
         if (!$employee->employment) {
             Employment::create([
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->id, // FK ke employee.id
                 'status' => 'active',
             ]);
         }
     }
 
     /**
-     * Generate employee_id unik dengan format EMP-YYYYMMDD-XXXX
+     * Generate employee_code (NIP) unik dengan format EMP-YYYYMMDD-XXXX
      */
-    private function generateEmployeeId(): string
+    private function generateEmployeeCode(): string
     {
         $date = date('Ymd');
         $prefix = 'EMP-' . $date . '-';
         
-        // Cari employee_id terakhir dengan prefix yang sama
-        $lastEmployee = Employee::where('employee_id', 'like', $prefix . '%')
-            ->orderBy('employee_id', 'desc')
+        // Cari employee_code terakhir dengan prefix yang sama
+        $lastEmployee = Employee::where('employee_code', 'like', $prefix . '%')
+            ->orderBy('employee_code', 'desc')
             ->first();
         
         if ($lastEmployee) {
             // Ambil nomor urut terakhir dan tambah 1
-            $lastNumber = (int) substr($lastEmployee->employee_id, -4);
+            $lastNumber = (int) substr($lastEmployee->employee_code, -4);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
@@ -63,12 +64,8 @@ class EmployeeObserver
      */
     public function updated(Employee $employee): void
     {
-        // Sync employee_id ke employment jika berubah
-        if ($employee->isDirty('employee_id') && $employee->employment) {
-            $employee->employment->update([
-                'employee_id' => $employee->employee_id
-            ]);
-        }
+        // Employment FK sekarang menggunakan employee.id yang tidak berubah
+        // Tidak perlu sync employee_code ke employment karena FK pakai id
     }
 
     /**
@@ -86,8 +83,9 @@ class EmployeeObserver
     public function restored(Employee $employee): void
     {
         // Restore employment jika ada dan di soft delete
+        // Employment sekarang terhubung via employee_id = employee.id
         Employment::withTrashed()
-            ->where('employee_id', $employee->employee_id)
+            ->where('employee_id', $employee->id)
             ->restore();
     }
 
@@ -98,7 +96,7 @@ class EmployeeObserver
     {
         // Force delete employment jika ada
         Employment::withTrashed()
-            ->where('employee_id', $employee->employee_id)
+            ->where('employee_id', $employee->id)
             ->forceDelete();
     }
 }

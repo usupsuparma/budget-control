@@ -658,14 +658,9 @@
         }
 
         function saveTemplate() {
-            // Re-enable module select temporarily to submit the value (only for edit mode)
-            if (isEditMode) {
-                $('#template_module_id').prop('disabled', false);
-            }
-            
+            const templateId = $('#template-id').val();
             const data = {
                 _token: '{{ csrf_token() }}',
-                module_id: $('#template_module_id').val(),
                 template_name: $('#template_name').val(),
                 use_uppline_chain: $('#use_uppline_chain').is(':checked'),
                 use_threshold: $('#use_threshold').is(':checked'),
@@ -673,15 +668,17 @@
                 is_active: $('#template_is_active').is(':checked')
             };
 
-            const templateId = $('#template-id').val();
             let url = '{{ route('approval.templates.store') }}';
             let method = 'POST';
 
             if (isEditMode && templateId) {
+                // EDIT MODE: Don't send module_id (module cannot be changed)
                 url = `{{ url('approval/templates/update') }}/${templateId}`;
-                method = 'POST'; // Changed to POST since jQuery AJAX doesn't support PUT directly
+                method = 'POST';
                 data._method = 'PUT'; // Laravel method spoofing
-                // For edit mode, module_id will be ignored by backend
+            } else {
+                // CREATE MODE: Send module_id
+                data.module_id = $('#template_module_id').val();
             }
 
             $.ajax({
@@ -710,12 +707,6 @@
                         showAlert(errorMessages, 'error');
                     } else {
                         showAlert(xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
-                    }
-                },
-                complete: function() {
-                    // Re-disable module select after submission if in edit mode
-                    if (isEditMode) {
-                        $('#template_module_id').prop('disabled', true);
                     }
                 }
             });

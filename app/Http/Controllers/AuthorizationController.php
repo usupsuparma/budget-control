@@ -39,21 +39,21 @@ class AuthorizationController extends Controller
 
             $userId = Auth::user()->id; // employee.id (PK)
 
-            // $employment2 = Employment::where('employee_id', $userId)->firstOrFail(); // employee_id is now FK to employee.id
+            $employment2 = Employment::where('employee_id', $userId)->firstOrFail(); // employee_id is now FK to employee.id
 
-            // $uplinesTopDown = $employment2->uplineEmployeesTopDown([1,2,3,4]);
+            $uplinesTopDown = $employment2->uplineEmployeesTopDown([1,2,3,4]);
 
-            // $dam = array();
-            // foreach ($uplinesTopDown as $upline) {
-            //     $dam[] = array(
-            //         "id" =>  $upline->id, 
-            //         "employee_id" =>  $upline->employee_id, 
-            //         "level" => $upline->upline_job_level_id, 
-            //         "fname" => $upline->first_name, 
-            //         "lname" => $upline->last_name
-            //     );
-            // }
-            // session()->put('uplines_top_down', $dam);
+            $dam = array();
+            foreach ($uplinesTopDown as $upline) {
+                $dam[] = array(
+                    "id" =>  $upline->id, 
+                    "employee_id" =>  $upline->employee_id, 
+                    "level" => $upline->upline_job_level_id, 
+                    "fname" => $upline->first_name, 
+                    "lname" => $upline->last_name
+                );
+            }
+            session()->put('uplines_top_down', $dam);
 
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');

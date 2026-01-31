@@ -755,9 +755,29 @@ Route::middleware('auth')->group(function () {
             });
 
         // Admin Submission Routes
-        Route::get('/admin', [SubmissionController::class, 'admin'])
+        Route::prefix('admin')
             ->middleware('permission:transaction.admin.view')
-            ->name('adminSubmission.index');
+            ->group(function () {
+                Route::get('/', [SubmissionController::class, 'admin'])
+                    ->name('adminSubmission.index');
+                
+                // Pending approvals route
+                Route::get('/pending-approvals', [SubmissionController::class, 'getPendingApprovals'])
+                    ->name('adminSubmission.pendingApprovals');
+                
+                // Show transaction detail
+                Route::get('/{id}', [SubmissionController::class, 'show'])
+                    ->name('adminSubmission.show');
+                
+                // Approval actions
+                Route::post('/{id}/approve', [SubmissionController::class, 'approve'])
+                    ->middleware('permission:transaction.admin.approve')
+                    ->name('adminSubmission.approve');
+                
+                Route::post('/{id}/reject', [SubmissionController::class, 'reject'])
+                    ->middleware('permission:transaction.admin.approve')
+                    ->name('adminSubmission.reject');
+            });
     });
 
 

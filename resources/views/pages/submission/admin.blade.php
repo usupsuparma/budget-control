@@ -78,6 +78,42 @@
             font-weight: 600;
             color: #495057;
         }
+
+        /* Approval Queue Tab Styles */
+        .nav-link .badge.bg-danger {
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+        .approval-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .approval-card:hover {
+            box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1);
+            border-color: #0d6efd;
+        }
+
+        .approval-status-badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
     </style>
 @endsection
 
@@ -262,10 +298,30 @@
             {{-- === MAIN TABLE === --}}
             <div class="col-12">
                 <div class="card card-h-100">
+                    <div class="card-header p-0">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-pills nav-primary nav-justified" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#tab-all-transactions" role="tab" aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;" class="ri-file-list-3-line stat-icon text-secondary"></i></span>
+                                    <span>All Transactions</span>
+                                    <span class="badge bg-light text-dark" id="allTransactionCount">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#tab-approval-queue" role="tab" aria-selected="true" id="approvalQueueTab">
+                                    <span><i style="font-size: 1rem !important;" class="ri-shield-check-line stat-icon text-info"></i></span>
+                                    <span>Approval Queue</span>
+                                    <span class="badge bg-danger" id="pendingApprovalCount" style="display: none;">0</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="card-body">
                         <!-- Tab panes -->
                         <div class="tab-content">
-                            <div class="tab-pane active show" id="demo-tab-5_home" role="tabpanel">
+                            {{-- TAB: All Transactions --}}
+                            <div class="tab-pane" id="tab-all-transactions" role="tabpanel">
                                 <div class="table-box table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="table-light">
@@ -276,12 +332,13 @@
                                                 <th>Purpose</th>
                                                 <th>Estimated Value</th>
                                                 <th>Status</th>
+                                                <th>Approval Status</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tableBody">
                                             <tr>
-                                                <td colspan="7" class="text-center">
+                                                <td colspan="8" class="text-center">
                                                     <div class="spinner-border spinner-border-sm" role="status">
                                                         <span class="visually-hidden">Loading...</span>
                                                     </div>
@@ -298,6 +355,30 @@
                                         <p class="mb-0" id="paginationInfo">Showing 0 to 0 of 0 entries</p>
                                     </div>
                                     <div id="paginationLinks"></div>
+                                </div>
+                            </div>
+
+                            {{-- TAB: Approval Queue --}}
+                            <div class="tab-pane active show" id="tab-approval-queue" role="tabpanel">
+                                <div class="card border-0">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">
+                                            <i class="ri-shield-check-line me-2 text-info"></i>Pending Transaction Approvals
+                                        </h6>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadPendingApprovals()">
+                                            <i class="ri-refresh-line me-1"></i>Refresh
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="approvalQueueContainer">
+                                            <div class="text-center py-5">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading pending approvals...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -536,6 +617,141 @@
             </div>
         </div>
     </div>
+
+    {{-- === APPROVAL REJECTION MODAL === --}}
+    <div class="modal fade" id="rejectApprovalModal" tabindex="-1" aria-labelledby="rejectApprovalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectApprovalModalLabel">
+                        <i class="ri-close-circle-line me-2"></i>Reject Transaction
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectTransactionId">
+                    <div class="alert alert-warning">
+                        <i class="ri-error-warning-line me-2"></i>
+                        You are about to reject this transaction. Please provide a reason for rejection.
+                    </div>
+                    <div class="mb-3">
+                        <label for="rejectionReason" class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejectionReason" rows="4" placeholder="Enter your rejection reason..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRejectTransaction()">
+                        <i class="ri-close-circle-line me-1"></i>Confirm Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- === APPROVAL DETAIL MODAL === --}}
+    <div class="modal fade" id="approvalDetailModal" tabindex="-1" aria-labelledby="approvalDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="approvalDetailModalLabel">
+                        <i class="ri-file-list-3-line me-2"></i>Transaction Detail for Approval
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="approvalTransactionId">
+                    
+                    {{-- Transaction Info --}}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Basic Information</h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td class="fw-semibold" style="width: 130px;">Date</td>
+                                            <td id="approval_transaction_date">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Submitter</td>
+                                            <td id="approval_user_name">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Purpose</td>
+                                            <td id="approval_purpose">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Urgency</td>
+                                            <td id="approval_urgency">-</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Amount & Approval Info</h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td class="fw-semibold" style="width: 130px;">Estimated</td>
+                                            <td class="text-success fw-bold" id="approval_estimated_amount">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Approval Level</td>
+                                            <td id="approval_level_info">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Approval Status</td>
+                                            <td id="approval_status_badge">-</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Items Table --}}
+                    <div class="card border">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="ri-list-check me-2"></i>Transaction Items</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Item Description</th>
+                                            <th>Budget Code</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-end">Unit Price</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="approval_items_body">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">No items</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="openRejectModal()">
+                        <i class="ri-close-circle-line me-1"></i>Reject
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="approveFromDetailModal()">
+                        <i class="ri-check-line me-1"></i>Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('js')
@@ -557,6 +773,14 @@
 
             // Load data on page load
             loadData();
+
+            // Load pending approval count
+            loadPendingApprovalCount();
+
+            // Tab click handler for approval queue
+            $('button[data-bs-target="#approvalQueueTab"]').on('shown.bs.tab', function() {
+                loadPendingApprovals();
+            });
 
             // Filter button
             $('#btnFilter').on('click', function() {
@@ -1949,6 +2173,391 @@
                             showAlert(response.message || 'Error rejecting submission', 'error');
                         }
                     });
+                }
+            });
+        }
+
+        // ==================== APPROVAL QUEUE FUNCTIONS ====================
+        let pendingApprovalItems = [];
+
+        /**
+         * Load pending approval count for badge
+         */
+        function loadPendingApprovalCount() {
+            $.ajax({
+                url: '{{ route("adminSubmission.pendingApprovals") }}',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.count > 0) {
+                        $('#pendingApprovalCount').text(response.count).show();
+                    } else {
+                        $('#pendingApprovalCount').hide();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading pending approval count:', xhr);
+                }
+            });
+        }
+
+        /**
+         * Load pending approvals for the current user
+         */
+        function loadPendingApprovals() {
+            $('#approvalQueueContainer').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading pending approvals...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: '{{ route("adminSubmission.pendingApprovals") }}',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        pendingApprovalItems = response.data;
+                        renderPendingApprovals(response.data);
+                        
+                        // Update badge count
+                        if (response.count > 0) {
+                            $('#pendingApprovalCount').text(response.count).show();
+                        } else {
+                            $('#pendingApprovalCount').hide();
+                        }
+                    } else {
+                        renderEmptyApprovalState(response.message || 'No pending approvals');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading pending approvals:', xhr);
+                    renderEmptyApprovalState('Error loading pending approvals. Please try again.');
+                }
+            });
+        }
+
+        /**
+         * Render pending approvals list
+         */
+        function renderPendingApprovals(items) {
+            if (!items || items.length === 0) {
+                renderEmptyApprovalState('No pending approvals at this time.');
+                return;
+            }
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th>Reference No.</th>
+                                <th>Date</th>
+                                <th>Submitter</th>
+                                <th>Purpose</th>
+                                <th class="text-end">Estimated Amount</th>
+                                <th class="text-center">Level</th>
+                                <th class="text-center" style="width: 220px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            items.forEach(function(item, index) {
+                const transaction = item.transaction;
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><span class="badge bg-secondary">${item.reference_number || '-'}</span></td>
+                        <td>${transaction ? transaction.transaction_date : '-'}</td>
+                        <td>${transaction ? transaction.user_name : '-'}</td>
+                        <td>${transaction ? (transaction.purpose.length > 50 ? transaction.purpose.substring(0, 50) + '...' : transaction.purpose) : '-'}</td>
+                        <td class="text-end fw-bold text-success">${transaction ? formatCurrency(transaction.estimated_amount) : '-'}</td>
+                        <td class="text-center">
+                            <span class="badge bg-info">${item.level} / ${item.total_levels}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="viewApprovalDetail(${transaction ? transaction.id : 0}, ${item.detail_id})" title="View Detail">
+                                    <i class="ri-eye-line"></i> Detail
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="approveTransaction(${transaction ? transaction.id : 0})" title="Approve">
+                                    <i class="ri-check-line"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="openRejectApprovalModal(${transaction ? transaction.id : 0})" title="Reject">
+                                    <i class="ri-close-line"></i> Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            $('#approvalQueueContainer').html(html);
+        }
+
+        /**
+         * Render empty state for approval queue
+         */
+        function renderEmptyApprovalState(message) {
+            $('#approvalQueueContainer').html(`
+                <div class="text-center py-5">
+                    <i class="ri-checkbox-circle-line text-success" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3 text-muted">${message || 'No Pending Approvals'}</h5>
+                    <p class="text-muted">All transactions have been processed.</p>
+                </div>
+            `);
+        }
+
+        /**
+         * View approval detail and open modal
+         */
+        function viewApprovalDetail(transactionId, detailId) {
+            if (!transactionId) {
+                showAlert('Transaction ID not found', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route("adminSubmission.show", ":id") }}'.replace(':id', transactionId),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const data = response.data;
+                        
+                        $('#approvalTransactionId').val(transactionId);
+                        $('#approval_transaction_date').text(formatDate(data.transaction_date));
+                        $('#approval_user_name').text(data.user_name || '-');
+                        $('#approval_purpose').text(data.purpose || '-');
+                        $('#approval_urgency').html(getUrgencyBadge(data.urgency));
+                        $('#approval_estimated_amount').text(formatCurrency(data.estimated_amount));
+                        
+                        // Get approval status badge
+                        $('#approval_status_badge').html(getApprovalStatusBadge(data.status_approval));
+                        
+                        // Get approval level info
+                        if (data.approval_request) {
+                            $('#approval_level_info').html(
+                                `<span class="badge bg-info">Level ${data.approval_request.current_level} of ${data.approval_request.total_levels}</span>`
+                            );
+                        } else {
+                            $('#approval_level_info').text('-');
+                        }
+
+                        // Populate items
+                        let itemsHtml = '';
+                        if (data.details && data.details.length > 0) {
+                            data.details.forEach(function(item, index) {
+                                itemsHtml += `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${item.goods_service_name || '-'}</td>
+                                        <td>${item.budget_name || '-'}</td>
+                                        <td class="text-center">${item.estimated_quantity || 0}</td>
+                                        <td class="text-end">${formatCurrency(item.estimated_price || 0)}</td>
+                                        <td class="text-end fw-bold">${formatCurrency(item.estimated_total || 0)}</td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            itemsHtml = '<tr><td colspan="6" class="text-center text-muted">No items found</td></tr>';
+                        }
+                        $('#approval_items_body').html(itemsHtml);
+
+                        $('#approvalDetailModal').modal('show');
+                    } else {
+                        showAlert(response.message || 'Error loading transaction detail', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading transaction detail:', xhr);
+                    showAlert('Error loading transaction detail', 'error');
+                }
+            });
+        }
+
+        /**
+         * Get approval status badge HTML
+         */
+        function getApprovalStatusBadge(status) {
+            switch(status) {
+                case 'pending':
+                    return '<span class="badge bg-warning">Pending Approval</span>';
+                case 'in_progress':
+                    return '<span class="badge bg-info">In Progress</span>';
+                case 'approved':
+                    return '<span class="badge bg-success">Approved</span>';
+                case 'rejected':
+                    return '<span class="badge bg-danger">Rejected</span>';
+                case 'cancelled':
+                    return '<span class="badge bg-secondary">Cancelled</span>';
+                default:
+                    return '<span class="badge bg-light text-dark">-</span>';
+            }
+        }
+
+        /**
+         * Get urgency badge HTML
+         */
+        function getUrgencyBadge(urgency) {
+            switch(urgency) {
+                case 'high':
+                    return '<span class="badge bg-danger">High</span>';
+                case 'medium':
+                    return '<span class="badge bg-warning">Medium</span>';
+                case 'low':
+                    return '<span class="badge bg-success">Low</span>';
+                default:
+                    return '<span class="badge bg-secondary">-</span>';
+            }
+        }
+
+        /**
+         * Approve transaction directly from queue
+         */
+        function approveTransaction(transactionId) {
+            if (!transactionId) {
+                showAlert('Transaction ID not found', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Approve Transaction?',
+                text: 'Are you sure you want to approve this transaction?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ri-check-line me-1"></i> Yes, Approve',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processApproval(transactionId, 'approve');
+                }
+            });
+        }
+
+        /**
+         * Approve from detail modal
+         */
+        function approveFromDetailModal() {
+            const transactionId = $('#approvalTransactionId').val();
+            if (!transactionId) {
+                showAlert('Transaction ID not found', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Approve Transaction?',
+                text: 'Are you sure you want to approve this transaction?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ri-check-line me-1"></i> Yes, Approve',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#approvalDetailModal').modal('hide');
+                    processApproval(transactionId, 'approve');
+                }
+            });
+        }
+
+        /**
+         * Open reject modal from queue
+         */
+        function openRejectApprovalModal(transactionId) {
+            if (!transactionId) {
+                showAlert('Transaction ID not found', 'error');
+                return;
+            }
+            $('#rejectTransactionId').val(transactionId);
+            $('#rejectionReason').val('');
+            $('#rejectApprovalModal').modal('show');
+        }
+
+        /**
+         * Open reject modal from detail modal
+         */
+        function openRejectModal() {
+            const transactionId = $('#approvalTransactionId').val();
+            if (!transactionId) {
+                showAlert('Transaction ID not found', 'error');
+                return;
+            }
+            $('#approvalDetailModal').modal('hide');
+            $('#rejectTransactionId').val(transactionId);
+            $('#rejectionReason').val('');
+            $('#rejectApprovalModal').modal('show');
+        }
+
+        /**
+         * Confirm reject transaction
+         */
+        function confirmRejectTransaction() {
+            const transactionId = $('#rejectTransactionId').val();
+            const reason = $('#rejectionReason').val().trim();
+
+            if (!reason) {
+                showAlert('Please provide a rejection reason', 'warning');
+                return;
+            }
+
+            $('#rejectApprovalModal').modal('hide');
+            processApproval(transactionId, 'reject', reason);
+        }
+
+        /**
+         * Process approval/rejection
+         */
+        function processApproval(transactionId, action, comments = null) {
+            const url = action === 'approve' 
+                ? '{{ route("adminSubmission.approve", ":id") }}'.replace(':id', transactionId)
+                : '{{ route("adminSubmission.reject", ":id") }}'.replace(':id', transactionId);
+
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we process your request.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    comments: comments
+                },
+                success: function(response) {
+                    Swal.close();
+                    if (response.success) {
+                        showAlert(response.message || (action === 'approve' ? 'Transaction approved successfully' : 'Transaction rejected successfully'), 'success');
+                        loadPendingApprovals();
+                        loadPendingApprovalCount();
+                        loadData(); // Refresh main data tables
+                        loadSummary();
+                    } else {
+                        showAlert(response.message || 'Error processing approval', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    console.error('Error processing approval:', xhr);
+                    const response = xhr.responseJSON;
+                    showAlert(response?.message || 'Error processing approval', 'error');
                 }
             });
         }

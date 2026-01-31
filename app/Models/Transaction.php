@@ -28,6 +28,7 @@ class Transaction extends Model
         'required_approval_levels',
         'approval_completed_at',
         'rejection_reason',
+        'status_approval',
     ];
 
     protected $casts = [
@@ -37,12 +38,19 @@ class Transaction extends Model
         'approval_completed_at' => 'datetime',
     ];
 
-   // Status constants
+   // Status constants (legacy workflow status)
     const STATUS_PENDING = 0;
     const STATUS_IN_PROGRESS = 1;
     const STATUS_APPROVED = 2;
     const STATUS_REJECTED = 3;
     const STATUS_CANCELLED = 4;
+
+    // Approval Status constants (dynamic approval system)
+    const APPROVAL_STATUS_PENDING = 'pending';
+    const APPROVAL_STATUS_IN_PROGRESS = 'in_progress';
+    const APPROVAL_STATUS_APPROVED = 'approved';
+    const APPROVAL_STATUS_REJECTED = 'rejected';
+    const APPROVAL_STATUS_CANCELLED = 'cancelled';
 
     // Urgency constants
     const URGENCY_LOW = 'low';
@@ -243,6 +251,68 @@ class Transaction extends Model
             self::STATUS_CANCELLED => 'secondary',
             default => 'light',
         };
+    }
+
+    /**
+     * Get approval status label (dynamic approval system)
+     */
+    public function getApprovalStatusLabel(): string
+    {
+        return match($this->status_approval) {
+            self::APPROVAL_STATUS_PENDING => 'Pending Approval',
+            self::APPROVAL_STATUS_IN_PROGRESS => 'In Progress',
+            self::APPROVAL_STATUS_APPROVED => 'Approved',
+            self::APPROVAL_STATUS_REJECTED => 'Rejected',
+            self::APPROVAL_STATUS_CANCELLED => 'Cancelled',
+            default => 'Unknown',
+        };
+    }
+
+    /**
+     * Get approval status badge class (dynamic approval system)
+     */
+    public function getApprovalStatusBadgeClass(): string
+    {
+        return match($this->status_approval) {
+            self::APPROVAL_STATUS_PENDING => 'warning',
+            self::APPROVAL_STATUS_IN_PROGRESS => 'info',
+            self::APPROVAL_STATUS_APPROVED => 'success',
+            self::APPROVAL_STATUS_REJECTED => 'danger',
+            self::APPROVAL_STATUS_CANCELLED => 'secondary',
+            default => 'light',
+        };
+    }
+
+    /**
+     * Check if transaction is pending approval
+     */
+    public function isApprovalPending(): bool
+    {
+        return $this->status_approval === self::APPROVAL_STATUS_PENDING;
+    }
+
+    /**
+     * Check if transaction approval is in progress
+     */
+    public function isApprovalInProgress(): bool
+    {
+        return $this->status_approval === self::APPROVAL_STATUS_IN_PROGRESS;
+    }
+
+    /**
+     * Check if transaction is fully approved
+     */
+    public function isApprovalApproved(): bool
+    {
+        return $this->status_approval === self::APPROVAL_STATUS_APPROVED;
+    }
+
+    /**
+     * Check if transaction approval was rejected
+     */
+    public function isApprovalRejected(): bool
+    {
+        return $this->status_approval === self::APPROVAL_STATUS_REJECTED;
     }
 
     public function getUrgencyLabel()

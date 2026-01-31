@@ -152,9 +152,10 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ]);
             }
 
-            // Update transaction status
+            // Update transaction status - set status_approval to pending (waiting for first approval)
             $transaction->update([
                 'status' => Transaction::STATUS_IN_PROGRESS,
+                'status_approval' => Transaction::APPROVAL_STATUS_PENDING,
                 'current_approval_level' => 1,
                 'required_approval_levels' => count($approvalChain),
             ]);
@@ -547,6 +548,9 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             ->where('status', 'pending')
             ->count();
 
+        // Get transaction for status update
+        $transaction = Transaction::find($request->reference_id);
+
         if ($pendingCount === 0) {
             // All approved - update request and transaction
             $request->update([
@@ -555,11 +559,11 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 'completed_at' => now(),
             ]);
 
-            // Update the transaction
-            $transaction = Transaction::find($request->reference_id);
+            // Update the transaction - fully approved
             if ($transaction) {
                 $transaction->update([
                     'status' => Transaction::STATUS_APPROVED,
+                    'status_approval' => Transaction::APPROVAL_STATUS_APPROVED,
                     'current_approval_level' => $request->total_levels,
                     'approval_completed_at' => now(),
                 ]);
@@ -577,11 +581,11 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 'status' => 'pending',
             ]);
 
-            // Update transaction current approval level
-            $transaction = Transaction::find($request->reference_id);
+            // Update transaction - in progress (at least one approved, more pending)
             if ($transaction) {
                 $transaction->update([
                     'current_approval_level' => $detail->level_sequence + 1,
+                    'status_approval' => Transaction::APPROVAL_STATUS_IN_PROGRESS,
                 ]);
             }
 
@@ -616,11 +620,12 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             ->where('status', 'pending')
             ->update(['status' => 'skipped']);
 
-        // Update the transaction
+        // Update the transaction - rejected
         $transaction = Transaction::find($request->reference_id);
         if ($transaction) {
             $transaction->update([
                 'status' => Transaction::STATUS_REJECTED,
+                'status_approval' => Transaction::APPROVAL_STATUS_REJECTED,
                 'rejection_reason' => $comments,
             ]);
         }
@@ -794,11 +799,12 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ->where('status', 'pending')
                 ->update(['status' => 'cancelled']);
 
-            // Update transaction status back to pending
+            // Update transaction status - cancelled
             $transaction = Transaction::find($transactionId);
             if ($transaction) {
                 $transaction->update([
-                    'status' => Transaction::STATUS_PENDING,
+                    'status' => Transaction::STATUS_CANCELLED,
+                    'status_approval' => Transaction::APPROVAL_STATUS_CANCELLED,
                     'current_approval_level' => 0,
                 ]);
             }

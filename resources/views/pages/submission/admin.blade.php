@@ -777,9 +777,17 @@
             // Load pending approval count
             loadPendingApprovalCount();
 
-            // Tab click handler for approval queue
-            $('button[data-bs-target="#approvalQueueTab"]').on('shown.bs.tab', function() {
+            // Load pending approvals immediately since Approval Queue tab is active by default
+            loadPendingApprovals();
+
+            // Tab click handler for approval queue - reload when switching tabs
+            $('a[href="#tab-approval-queue"]').on('shown.bs.tab', function() {
                 loadPendingApprovals();
+            });
+
+            // Tab click handler for all transactions
+            $('a[href="#tab-all-transactions"]').on('shown.bs.tab', function() {
+                loadData();
             });
 
             // Filter button
@@ -2217,9 +2225,10 @@
                 url: '{{ route("adminSubmission.pendingApprovals") }}',
                 type: 'GET',
                 success: function(response) {
+                    console.log('Pending approvals response:', response);
                     if (response.success) {
-                        pendingApprovalItems = response.data;
-                        renderPendingApprovals(response.data);
+                        pendingApprovalItems = response.data || [];
+                        renderPendingApprovals(pendingApprovalItems);
                         
                         // Update badge count
                         if (response.count > 0) {
@@ -2233,6 +2242,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading pending approvals:', xhr);
+                    console.error('Response text:', xhr.responseText);
                     renderEmptyApprovalState('Error loading pending approvals. Please try again.');
                 }
             });

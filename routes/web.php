@@ -735,6 +735,16 @@ Route::middleware('auth')->group(function () {
                 Route::get('/viewpdf/{id}', [SubmissionController::class, 'viewPdf'])
                     ->name('userSubmission.viewPdf');
 
+                // Dynamic approval system routes
+                Route::get('/approval-status/{id}', [SubmissionController::class, 'getApprovalStatus'])
+                    ->name('userSubmission.approvalStatus');
+                Route::get('/pending-approvals', [SubmissionController::class, 'getPendingApprovals'])
+                    ->name('userSubmission.pendingApprovals');
+                Route::post('/cancel-approval/{id}', [SubmissionController::class, 'cancelApproval'])
+                    ->name('userSubmission.cancelApproval');
+                Route::post('/resubmit/{id}', [SubmissionController::class, 'resubmitForApproval'])
+                    ->name('userSubmission.resubmit');
+
                 // Cascading dropdown routes
                 Route::get('/job-positions/{jobLevelId}', [SubmissionController::class, 'getJobPositions'])
                     ->name('userSubmission.jobPositions');

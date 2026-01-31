@@ -55,6 +55,30 @@ class Transaction extends Model
         return $this->belongsTo(TransactionApprovalThreshold::class, 'threshold_id');
     }
 
+    /**
+     * Get the approval request for this transaction (dynamic approval system).
+     */
+    public function approvalRequest()
+    {
+        return $this->hasOne(ApprovalRequest::class, 'reference_id')
+            ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'));
+    }
+
+    /**
+     * Get approval request details through approval request.
+     */
+    public function approvalRequestDetails()
+    {
+        return $this->hasManyThrough(
+            ApprovalRequestDetail::class,
+            ApprovalRequest::class,
+            'reference_id', // Foreign key on ApprovalRequest
+            'request_id', // Foreign key on ApprovalRequestDetail
+            'id', // Local key on Transaction
+            'id' // Local key on ApprovalRequest
+        )->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
+    }
+
     public function approvals()
     {
         return $this->hasMany(TransactionApproval::class, 'transaction_id')

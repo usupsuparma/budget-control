@@ -13,7 +13,10 @@ use App\Models\BudgetCode;
 use App\Models\Employment;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
+use App\Models\ApprovalRequest;
+use App\Models\ApprovalRequestDetail;
 use App\Services\ApprovalService;
+use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +27,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class SubmissionController extends Controller
 {
     protected $approvalService;
+    protected $approvalTransactionService;
 
-    public function __construct(ApprovalService $approvalService)
-    {
+    public function __construct(
+        ApprovalService $approvalService,
+        ApprovalTransactionService $approvalTransactionService
+    ) {
         $this->approvalService = $approvalService;
+        $this->approvalTransactionService = $approvalTransactionService;
     }
 
     public function user()
@@ -145,12 +152,24 @@ class SubmissionController extends Controller
     {
         try {
             $userId = Auth::id();
+            $user = Auth::user();
+            $employment = $user->employment;
+            $employmentId = $employment ? $employment->id : null;
+
             $query = Transaction::query();
             $query->where('user_id', $userId);
-            $query->with(['details', 'approvals' => function($q) use ($userId) {
-                $q->where('approver_id', $userId)
-                  ->where('status', 0); // pending
-            }]);
+            $query->with([
+                'details',
+                // Legacy approval system
+                'approvals' => function($q) use ($userId) {
+                    $q->where('approver_id', $userId)
+                      ->where('status', 0); // pending
+                },
+                // New dynamic approval system
+                'approvalRequest.details' => function($q) {
+                    $q->orderBy('level_sequence');
+                }
+            ]);
 
             // Filter by year
             if ($request->has('year') && $request->year != '' && $request->year != 'all') {
@@ -169,9 +188,36 @@ class SubmissionController extends Controller
             $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
             // Add can_approve flag to each transaction
-            $transactions->getCollection()->transform(function($transaction) use ($userId) {
+            $transactions->getCollection()->transform(function($transaction) use ($userId, $employmentId) {
+                // Check legacy system first
                 $transaction->can_approve = $transaction->approvals->isNotEmpty();
                 $transaction->pending_approval = $transaction->approvals->first();
+
+                // Check new dynamic approval system if employmentId exists
+                if ($employmentId && $transaction->approvalRequest) {
+                    $request = $transaction->approvalRequest;
+                    if ($request->status === 'pending') {
+                        // Find next pending detail
+                        $nextPending = $request->details
+                            ->where('status', 'pending')
+                            ->sortBy('level_sequence')
+                            ->first();
+
+                        if ($nextPending && $nextPending->employment_id == $employmentId) {
+                            $transaction->can_approve = true;
+                            $transaction->pending_approval_detail = $nextPending;
+                        }
+                    }
+
+                    // Add approval progress info
+                    $transaction->approval_progress = [
+                        'current_level' => $request->current_level,
+                        'total_levels' => $request->total_levels,
+                        'status' => $request->status,
+                        'current_phase' => $request->current_phase,
+                    ];
+                }
+
                 return $transaction;
             });
 
@@ -246,7 +292,7 @@ class SubmissionController extends Controller
                 'estimated_amount' => $estimatedAmount,
                 'actual_amount' => 0,
                 'urgency' => $request->urgency,
-                'status' => 0, // Submission
+                'status' => Transaction::STATUS_PENDING, // Pending - waiting for approval submission
             ]);
 
             // Create transaction details
@@ -275,143 +321,22 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            $maxLevel = null;
-            if ($estimatedAmount > 50000000) {
-                $maxLevel = 1;
-            } elseif ($estimatedAmount > 5000000 && $estimatedAmount <= 50000000) {
-                $maxLevel = 2;
-            } elseif ($estimatedAmount <= 5000000) {
-                $maxLevel = 3;
-            }
-
-            $uplines_top_down = session('uplines_top_down');
-            $utd = collect($uplines_top_down)
-                    ->where('level', '>=', $maxLevel)
-                    ->sortByDesc('level')
-                    ->values()
-                    ->toArray();
-
-            $threshold_level = array("","50000000","50000000","5000000");
-            
-            $i=0;
-            foreach($utd as $buff){
-                TransactionApproval::create([
-                    'transaction_id' => $transaction->id, 
-                    'approver_id' => $buff['id'], 
-                    'approver_name' => $buff['fname']." ".$buff['lname'], 
-                    'approval_level' => $buff['level'], 
-                    'threshold_id' => $threshold_level[(int) $buff['level']], 
-                    'is_required' => 1, 
-                    'status' => 0, 
-                    // 'approved_at' => 0, 
-                    'comments' => 0, 
-                    'sequence_order' => $i, 
-                    // 'notified_at' => date("Y-m-d H:i:s"), 
-                    'reminder_count' => 1, 
-                    'reminder_last_sent' => date("Y-m-d H:i:s"), 
-                    'approval_method' => 0, 
-                    'ip_address' => 0
-                ]);
-                $i++;
-            }
-
-            $budgetcontrol_level = array(
-                [
-                    "id" => 190,
-                    "fname" => "Ryan",
-                    "lname" => "Candra Purnama",
-                    "type" => "budget_control_staff",
-                    "level" => "-1",
-                    "threshold_level" => 0
-                ],
-                [
-                    "id" => 181,
-                    "fname" => "A Dadan",
-                    "lname" => "Hadiana",
-                    "type" => "finance_division",
-                    "level" => "-2",
-                    "threshold_level" => 50000000
-                ],
-                [
-                    "id" => 39,
-                    "fname" => "Yara",
-                    "lname" => "Budhi Widowati",
-                    "type" => "finance_director",
-                    "level" => "-3",
-                    "threshold_level" => 50000000
-                ],
-                [
-                    "id" => 42,
-                    "fname" => "Yasuhiko",
-                    "lname" => "Takaizumi",
-                    "type" => "president_director",
-                    "level" => "-4",
-                    "threshold_level" => 50000000
-                ],
-            );
-
-            $maxApproverTypes = [];
-
-            if ($estimatedAmount < 50000000) {
-                // sampai finance_division (A Dadan)
-                $maxApproverTypes = [
-                    'budget_control_staff',
-                    'finance_division',
-                ];
-            } else {
-                // sampai finance_director & president_director
-                $maxApproverTypes = [
-                    'budget_control_staff',
-                    'finance_division',
-                    'finance_director',
-                    'president_director',
-                ];
-            }
-
-            foreach($budgetcontrol_level as $buff){
-                // skip jika approver tidak termasuk flow
-                if (!in_array($buff['type'], $maxApproverTypes, true)) {
-                    continue;
-                }
-                TransactionApproval::create([
-                    'transaction_id' => $transaction->id, 
-                    'approver_id' => $buff['id'], 
-                    'approver_name' => $buff['fname']." ".$buff['lname'], 
-                    'approval_level' => $buff['level'], 
-                    'threshold_id' => $buff['threshold_level'], 
-                    'is_required' => 1, 
-                    'status' => 0, 
-                    // 'approved_at' => 0, 
-                    'comments' => 0, 
-                    'sequence_order' => $i, 
-                    // 'notified_at' => date("Y-m-d H:i:s"), 
-                    'reminder_count' => 1, 
-                    'reminder_last_sent' => date("Y-m-d H:i:s"), 
-                    'approval_method' => 0, 
-                    'ip_address' => 0
-                ]);
-                $i++;
-            }
-
-            $transaction = Transaction::findOrFail($transaction->id);
-            $transaction->update([
-                'current_approval_level' => $utd[0]['level'],
-                'required_approval_levels' => count($utd)+count($maxApproverTypes)
-            ]);
-
             DB::commit();
 
-            // Create approval chain after transaction is committed
-            $approvalResult = $this->approvalService->createApprovalChain($transaction->id);
+            // Submit for approval using dynamic approval system
+            $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
             
             if (!$approvalResult['success']) {
-                Log::warning('Failed to create approval chain: ' . $approvalResult['message']);
+                Log::warning('Failed to submit for approval: ' . $approvalResult['message']);
+                // Transaction is created but approval submission failed - still return success
+                // The user can manually submit for approval later
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaction created successfully',
-                'data' => $transaction->load(['details', 'approvals'])
+                'message' => 'Transaction created successfully' . ($approvalResult['success'] ? ' and submitted for approval.' : '. Note: ' . $approvalResult['message']),
+                'data' => $transaction->load(['details', 'approvalRequest.details']),
+                'approval' => $approvalResult
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -431,13 +356,41 @@ class SubmissionController extends Controller
                 'approvals' => function($query) {
                     $query->orderBy('sequence_order', 'asc');
                 },
+                'approvalRequest.details' => function($query) {
+                    $query->orderBy('phase', 'asc')
+                          ->orderBy('level_sequence', 'asc');
+                },
                 'jobLevel',
                 'jobPosition',
                 'unit'
             ])->findOrFail($id);
 
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
+            // Check if user owns this transaction OR is an approver
+            $user = Auth::user();
+            $isOwner = $transaction->user_id == $user->id;
+            $isApprover = false;
+
+            // Check if user is an approver for this transaction
+            if (!$isOwner && $user->employment) {
+                $employmentId = $user->employment->id;
+                
+                // Check in new dynamic approval system
+                $isApprover = ApprovalRequestDetail::whereHas('request', function($q) use ($id) {
+                    $q->where('reference_id', $id)
+                      ->whereHas('module', fn($mq) => $mq->where('table_name', 'transactions'));
+                })
+                ->where('employment_id', $employmentId)
+                ->exists();
+
+                // Also check legacy system if not found
+                if (!$isApprover) {
+                    $isApprover = TransactionApproval::where('transaction_id', $id)
+                        ->where('approver_id', $user->id)
+                        ->exists();
+                }
+            }
+
+            if (!$isOwner && !$isApprover) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized access'
@@ -837,12 +790,13 @@ class SubmissionController extends Controller
     }
 
     /**
-     * Approve transaction
+     * Approve transaction using dynamic approval system
      */
     public function approve(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'comments' => 'nullable|string|max:500',
+            'detail_id' => 'nullable|integer', // ApprovalRequestDetail ID for new system
         ]);
 
         if ($validator->fails()) {
@@ -854,28 +808,85 @@ class SubmissionController extends Controller
         }
 
         try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 404);
+            }
+
+            // Try to find pending approval using new dynamic system
+            $approvalRequest = ApprovalRequest::where('reference_id', $id)
+                ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'))
+                ->where('status', 'pending')
+                ->first();
+
+            if ($approvalRequest) {
+                // Use new dynamic approval system
+                $pendingDetail = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+                    ->where('employment_id', $employment->id)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if (!$pendingDetail) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses untuk approval ini atau approval sudah diproses.'
+                    ], 404);
+                }
+
+                // Check if this is the next in sequence
+                $nextPending = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+                    ->where('status', 'pending')
+                    ->orderBy('level_sequence')
+                    ->first();
+
+                if ($nextPending && $nextPending->id !== $pendingDetail->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Menunggu approval dari level sebelumnya.'
+                    ], 400);
+                }
+
+                // Process using new service
+                $result = $this->approvalTransactionService->processApproval(
+                    $pendingDetail->id,
+                    'approve',
+                    $employment->id,
+                    $request->comments
+                );
+
+                return response()->json([
+                    'success' => $result['success'],
+                    'message' => $result['message'],
+                    'data' => $result
+                ]);
+            }
+
+            // Fallback to old system for legacy transactions
             DB::beginTransaction();
-
             $userId = Auth::id();
-            $userName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+            $userName = $user->first_name . ' ' . $user->last_name;
 
-            // Find pending approval for this user
-            $approval = \App\Models\TransactionApproval::where('transaction_id', $id)
+            $approval = TransactionApproval::where('transaction_id', $id)
                 ->where('approver_id', $userId)
-                ->where('status', 0) // pending
+                ->where('status', 0)
                 ->first();
 
             if (!$approval) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Approval not found or already processed'
                 ], 404);
             }
 
-            // Process approval using ApprovalService
             $result = $this->approvalService->processApproval(
                 $approval->id,
-                1, // status approved
+                1,
                 $userId,
                 $userName,
                 $request->comments,
@@ -901,12 +912,13 @@ class SubmissionController extends Controller
     }
 
     /**
-     * Reject transaction
+     * Reject transaction using dynamic approval system
      */
     public function reject(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'comments' => 'required|string|max:500',
+            'detail_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -918,28 +930,85 @@ class SubmissionController extends Controller
         }
 
         try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 404);
+            }
+
+            // Try to find pending approval using new dynamic system
+            $approvalRequest = ApprovalRequest::where('reference_id', $id)
+                ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'))
+                ->where('status', 'pending')
+                ->first();
+
+            if ($approvalRequest) {
+                // Use new dynamic approval system
+                $pendingDetail = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+                    ->where('employment_id', $employment->id)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if (!$pendingDetail) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses untuk reject ini atau approval sudah diproses.'
+                    ], 404);
+                }
+
+                // Check if this is the next in sequence
+                $nextPending = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+                    ->where('status', 'pending')
+                    ->orderBy('level_sequence')
+                    ->first();
+
+                if ($nextPending && $nextPending->id !== $pendingDetail->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Menunggu approval dari level sebelumnya.'
+                    ], 400);
+                }
+
+                // Process using new service
+                $result = $this->approvalTransactionService->processApproval(
+                    $pendingDetail->id,
+                    'reject',
+                    $employment->id,
+                    $request->comments
+                );
+
+                return response()->json([
+                    'success' => $result['success'],
+                    'message' => $result['message'],
+                    'data' => $result
+                ]);
+            }
+
+            // Fallback to old system for legacy transactions
             DB::beginTransaction();
-
             $userId = Auth::id();
-            $userName = Auth::user()->name;
+            $userName = $user->first_name . ' ' . $user->last_name;
 
-            // Find pending approval for this user
-            $approval = \App\Models\TransactionApproval::where('transaction_id', $id)
+            $approval = TransactionApproval::where('transaction_id', $id)
                 ->where('approver_id', $userId)
-                ->where('status', 0) // pending
+                ->where('status', 0)
                 ->first();
 
             if (!$approval) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Approval not found or already processed'
                 ], 404);
             }
 
-            // Process rejection using ApprovalService
             $result = $this->approvalService->processApproval(
                 $approval->id,
-                2, // status rejected
+                2,
                 $userId,
                 $userName,
                 $request->comments,
@@ -967,58 +1036,102 @@ class SubmissionController extends Controller
     public function getBadgeInfo($id)
     {
         try {
-            $transaction = Transaction::where('id', $id)->get();
-            $transactionApproval = TransactionApproval::where('transaction_id', $id)->orderBy('sequence_order', 'asc')->get();
-
-            $data = array();
-            foreach($transaction as $buff){
-                $data[] = '<div class="tt-item">
-                    <div class="tt-icon bg-warning">
-                    <!-- icon (optional) -->
-                    <span class="tt-dot"></span>
-                    </div>
-
-                    <div class="tt-content">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div class="fw-semibold">'.date("d M Y H:i:s",strtotime($buff->created_at)).'</div>
-                        <span class="badge rounded-pill bg-warning text-dark">Submission</span>
-                    </div>
-                    <div class="small mt-1">Submission by <span class="fw-semibold">'.$buff->user_name.'</span></div>
-                    </div>
-                </div>';
+            $transaction = Transaction::findOrFail($id);
+            
+            // Try to get timeline from new dynamic approval system first
+            $timelineResult = $this->approvalTransactionService->getApprovalTimeline($id);
+            
+            if ($timelineResult['success'] && !empty($timelineResult['data'])) {
+                $data = [];
+                
+                foreach ($timelineResult['data'] as $item) {
+                    $iconClass = $item['badge_class'] ?? 'bg-secondary';
+                    $badgeClass = $item['badge_class'] ?? 'bg-secondary';
+                    
+                    // Determine if this is a pending item
+                    $isPending = ($item['status'] ?? '') === 'pending';
+                    
+                    if ($isPending) {
+                        $data[] = '<div class="tt-item">
+                            <div class="tt-icon bg-light">
+                                <span class="tt-dot"></span>
+                            </div>
+                            <div class="tt-content">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="fw-semibold"></div>
+                                    <span class="badge rounded-pill bg-light text-muted">Pending</span>
+                                </div>
+                                <div class="small mt-1 text-muted">' . htmlspecialchars($item['label'] ?? '') . ' by <span class="fw-semibold">' . htmlspecialchars($item['approver_name'] ?? 'Waiting') . '</span></div>
+                            </div>
+                        </div>';
+                    } else {
+                        $data[] = '<div class="tt-item">
+                            <div class="tt-icon ' . $iconClass . '">
+                                <span class="tt-dot"></span>
+                            </div>
+                            <div class="tt-content">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="fw-semibold">' . htmlspecialchars($item['date'] ?? '') . '</div>
+                                    <span class="badge rounded-pill ' . $badgeClass . ' text-white">' . htmlspecialchars($item['label'] ?? '') . '</span>
+                                </div>
+                                <div class="small mt-1">' . htmlspecialchars($item['description'] ?? '') . '</div>
+                            </div>
+                        </div>';
+                    }
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'data' => implode("", $data)
+                ]);
             }
 
-            foreach($transactionApproval as $buff2){
-                if($buff2->status==0){
+            // Fallback to old system for legacy transactions
+            $transactionApproval = TransactionApproval::where('transaction_id', $id)
+                ->orderBy('sequence_order', 'asc')
+                ->get();
+
+            $data = [];
+            
+            // Add submission entry
+            $data[] = '<div class="tt-item">
+                <div class="tt-icon bg-warning">
+                    <span class="tt-dot"></span>
+                </div>
+                <div class="tt-content">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="fw-semibold">' . date("d M Y H:i:s", strtotime($transaction->created_at)) . '</div>
+                        <span class="badge rounded-pill bg-warning text-dark">Submission</span>
+                    </div>
+                    <div class="small mt-1">Submission by <span class="fw-semibold">' . $transaction->user_name . '</span></div>
+                </div>
+            </div>';
+
+            foreach ($transactionApproval as $buff2) {
+                if ($buff2->status == 0) {
                     $approvalStatuses = [
                         3  => ['label' => 'Department',          'class' => 'bg-info'],
                         2  => ['label' => 'Division',            'class' => 'bg-info'],
                         1  => ['label' => 'Director',            'class' => 'bg-info'],
-                        -1  => ['label' => 'Budget Control',     'class' => 'bg-info'],
-                        -2  => ['label' => 'Finance Division',   'class' => 'bg-info'],
-                        -3  => ['label' => 'Finance Director',   'class' => 'bg-info'],
-                        -4  => ['label' => 'President Director', 'class' => 'bg-success'],
+                        -1 => ['label' => 'Budget Control',      'class' => 'bg-info'],
+                        -2 => ['label' => 'Finance Division',    'class' => 'bg-info'],
+                        -3 => ['label' => 'Finance Director',    'class' => 'bg-info'],
+                        -4 => ['label' => 'President Director',  'class' => 'bg-success'],
                     ];
 
                     $level = (int) $buff2->approval_level;
-
-                    $status = $approvalStatuses[$level] ?? [
-                        'label' => 'Unknown',
-                        'class' => 'bg-secondary'
-                    ];
+                    $status = $approvalStatuses[$level] ?? ['label' => 'Unknown', 'class' => 'bg-secondary'];
 
                     $data[] = '<div class="tt-item">
                         <div class="tt-icon bg-light">
-                        <!-- icon (optional) -->
-                        <span class="tt-dot"></span>
+                            <span class="tt-dot"></span>
                         </div>
-
                         <div class="tt-content">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <div class="fw-semibold"></div>
-                            <span class="badge rounded-pill bg-light text-muted">Pending</span>
-                        </div>
-                        <div class="small mt-1 text-muted">'.$status['label'].' by <span class="fw-semibold">'.$buff2->approver_name.'</span></div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="fw-semibold"></div>
+                                <span class="badge rounded-pill bg-light text-muted">Pending</span>
+                            </div>
+                            <div class="small mt-1 text-muted">' . $status['label'] . ' by <span class="fw-semibold">' . $buff2->approver_name . '</span></div>
                         </div>
                     </div>';
                 } else {
@@ -1026,31 +1139,25 @@ class SubmissionController extends Controller
                         3  => ['label' => 'Approved Department',          'class' => 'bg-info'],
                         2  => ['label' => 'Approved Division',            'class' => 'bg-info'],
                         1  => ['label' => 'Approved Director',            'class' => 'bg-info'],
-                        -1  => ['label' => 'Approved Budget Control',     'class' => 'bg-info'],
-                        -2  => ['label' => 'Approved Finance Division',   'class' => 'bg-info'],
-                        -3  => ['label' => 'Approved Finance Director',   'class' => 'bg-info'],
-                        -4  => ['label' => 'Approved President Director', 'class' => 'bg-success'],
+                        -1 => ['label' => 'Approved Budget Control',      'class' => 'bg-info'],
+                        -2 => ['label' => 'Approved Finance Division',    'class' => 'bg-info'],
+                        -3 => ['label' => 'Approved Finance Director',    'class' => 'bg-info'],
+                        -4 => ['label' => 'Approved President Director',  'class' => 'bg-success'],
                     ];
 
                     $level = (int) $buff2->approval_level;
-
-                    // fallback kalau level tidak dikenal
-                    $status = $approvalStatuses[$level] ?? [
-                        'label' => 'Unknown',
-                        'class' => 'bg-secondary'
-                    ];
+                    $status = $approvalStatuses[$level] ?? ['label' => 'Unknown', 'class' => 'bg-secondary'];
+                    
                     $data[] = '<div class="tt-item">
-                        <div class="tt-icon '.$status['class'].'">
-                        <!-- icon (optional) -->
-                        <span class="tt-dot"></span>
+                        <div class="tt-icon ' . $status['class'] . '">
+                            <span class="tt-dot"></span>
                         </div>
-
                         <div class="tt-content">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <div class="fw-semibold">'.date("d M Y H:i:s",strtotime($buff2->updated_at)).'</div>
-                            <span class="badge rounded-pill '.$status['class'].' text-white">'.$status['label'].'</span>
-                        </div>
-                        <div class="small mt-1">'.$status['label'].' by <span class="fw-semibold">'.$buff2->approver_name.'</span></div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="fw-semibold">' . date("d M Y H:i:s", strtotime($buff2->updated_at)) . '</div>
+                                <span class="badge rounded-pill ' . $status['class'] . ' text-white">' . $status['label'] . '</span>
+                            </div>
+                            <div class="small mt-1">' . $status['label'] . ' by <span class="fw-semibold">' . $buff2->approver_name . '</span></div>
                         </div>
                     </div>';
                 }
@@ -1058,12 +1165,13 @@ class SubmissionController extends Controller
             
             return response()->json([
                 'success' => true,
-                'data' => implode("",$data)
+                'data' => implode("", $data)
             ]);
         } catch (\Exception $e) {
+            Log::error('Error fetching badge info: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Budget not found'
+                'message' => 'Error fetching approval timeline'
             ], 404);
         }
     }
@@ -1085,6 +1193,116 @@ class SubmissionController extends Controller
         // STREAM = preview di browser
         return $pdf->stream('budget-proposal-preview.pdf');
         // return view('pages.submission.pdf');         
+    }
+
+    /**
+     * Get approval status for a transaction
+     */
+    public function getApprovalStatus($id)
+    {
+        try {
+            $result = $this->approvalTransactionService->getApprovalStatus($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error fetching approval status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching approval status'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get pending approvals for current user
+     */
+    public function getPendingApprovals()
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found',
+                    'data' => [],
+                    'count' => 0
+                ]);
+            }
+
+            $result = $this->approvalTransactionService->getPendingApprovalsForUser($employment->id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error fetching pending approvals: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching pending approvals',
+                'data' => [],
+                'count' => 0
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel approval request for a transaction
+     */
+    public function cancelApproval($id)
+    {
+        try {
+            $transaction = Transaction::findOrFail($id);
+
+            // Check if user owns this transaction
+            if ($transaction->user_id != Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+
+            $result = $this->approvalTransactionService->cancelApproval($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error cancelling approval: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error cancelling approval: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Resubmit transaction for approval
+     */
+    public function resubmitForApproval($id)
+    {
+        try {
+            $transaction = Transaction::findOrFail($id);
+
+            // Check if user owns this transaction
+            if ($transaction->user_id != Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+
+            // Check if transaction can be resubmitted (status is pending/cancelled)
+            if (!in_array($transaction->status, [Transaction::STATUS_PENDING, Transaction::STATUS_CANCELLED])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction cannot be resubmitted in current status'
+                ], 400);
+            }
+
+            $result = $this->approvalTransactionService->submitForApproval($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error resubmitting for approval: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error resubmitting for approval: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

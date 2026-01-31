@@ -175,6 +175,8 @@ function refreshBudgetItems() {
         success: function (response) {
             hideLoading();
             if (response.success) {
+                console.log(response, "refreshed data");
+                
                 allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
                 allItemsData = response.data || [];
@@ -1359,6 +1361,8 @@ function parseFormattedNumber(value) {
  * Render action buttons based on item status, verification status, and approval request
  */
 function renderActionButtons(item) {
+    console.log(item);
+    
     const status = item.status || "draft";
     const verificationStatus = item.verification_status || "unverified";
     const approvalRequest = item.approval_request;
@@ -1495,6 +1499,10 @@ function renderActionButtons(item) {
  * Show approval timeline modal
  */
 function showApprovalTimeline(itemId) {
+    console.log(itemId);
+    console.log(allItemsData);
+    
+    
     const item = allItemsData.find((i) => i.id === itemId);
     if (!item) {
         showToast("Item not found", "error");

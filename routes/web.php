@@ -769,13 +769,12 @@ Route::middleware('auth')->group(function () {
                 Route::get('/{id}', [SubmissionController::class, 'show'])
                     ->name('adminSubmission.show');
                 
-                // Approval actions
+                // Approval actions - Authorization is handled inside controller
+                // (checks if user is the next approver in the approval chain)
                 Route::post('/{id}/approve', [SubmissionController::class, 'approve'])
-                    ->middleware('permission:transaction.admin.approve')
                     ->name('adminSubmission.approve');
                 
                 Route::post('/{id}/reject', [SubmissionController::class, 'reject'])
-                    ->middleware('permission:transaction.admin.approve')
                     ->name('adminSubmission.reject');
             });
     });

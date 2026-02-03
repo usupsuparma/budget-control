@@ -761,7 +761,15 @@ Route::middleware('auth')->group(function () {
                 Route::get('/', [SubmissionController::class, 'approval'])
                     ->name('approvalSubmission.index');
                 
-                // Pending approvals route
+                // Get badge counts for all tabs (pending, approved, rejected)
+                Route::get('/counts', [SubmissionController::class, 'getApprovalCounts'])
+                    ->name('userSubmission.approval.counts');
+                
+                // Get approval data for specific tab (pending, approved, rejected)
+                Route::get('/data', [SubmissionController::class, 'getApprovalData'])
+                    ->name('userSubmission.approval.data');
+                
+                // Pending approvals route (kept for backward compatibility)
                 Route::get('/pending-approvals', [SubmissionController::class, 'getPendingApprovals'])
                     ->name('approvalSubmission.pendingApprovals');
                 

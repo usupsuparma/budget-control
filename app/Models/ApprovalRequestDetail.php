@@ -26,11 +26,21 @@ class ApprovalRequestDetail extends Model
         return $this->belongsTo(ApprovalRequest::class, 'request_id');
     }
 
+    // Alias for request() - for backward compatibility
+    public function approvalRequest()
+    {
+        return $this->request();
+    }
+
     public function employment()
     {
         return $this->belongsTo(Employment::class, 'employment_id');
     }
 
-    
+    // Alias for employment_id as employee_id for easier usage
+    public function getEmployeeIdAttribute()
+    {
+        return $this->employment_id;
+    }
     
 }

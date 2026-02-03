@@ -46,5 +46,14 @@ class ApprovalRequest extends Model
     {
         return $this->belongsTo(Employee::class, 'requester_id');
     }
+
+    /**
+     * Get the transaction associated with this approval request.
+     * reference_id points to transaction.id
+     */
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'reference_id');
+    }
     
 }

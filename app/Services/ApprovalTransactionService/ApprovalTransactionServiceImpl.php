@@ -768,8 +768,216 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
         ];
     }
 
+    /**     * Get approval items by status for a user.
+     */
+    public function getApprovalItemsByStatus(int $employmentId, string $status, array $filters = []): array
+    {
+        try {
+            $year = $filters['year'] ?? null;
+            $search = $filters['search'] ?? null;
+            $page = $filters['page'] ?? 1;
+            $perPage = $filters['per_page'] ?? 10;
+
+            Log::info('getApprovalItemsByStatus called', [
+                'employment_id' => $employmentId,
+                'status' => $status,
+                'filters' => $filters
+            ]);
+
+            // Build query
+            $query = ApprovalRequestDetail::with([
+                'request.transaction.user',
+                'request.transaction.details',
+                'employment.employee'
+            ])
+            ->where('employment_id', $employmentId)
+            ->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
+
+            // Filter by status
+            if ($status === 'pending') {
+                $query->where('status', 'pending')
+                    ->whereHas('request', fn($q) => $q->where('status', 'pending'));
+            } elseif ($status === 'approved') {
+                $query->where('status', 'approved');
+            } elseif ($status === 'rejected') {
+                $query->where('status', 'rejected');
+            }
+
+            // Filter by year
+            if ($year && $year !== 'all') {
+                $query->whereHas('request.transaction', function ($q) use ($year) {
+                    $q->whereYear('transaction_date', $year);
+                });
+            }
+
+            // Search filter
+            if ($search) {
+                $query->whereHas('request.transaction', function ($q) use ($search) {
+                    $q->where('purpose', 'like', "%{$search}%")
+                        ->orWhere('transaction_number', 'like', "%{$search}%");
+                });
+            }
+
+            // Order by latest
+            $query->orderBy('created_at', 'desc');
+
+            // Get total count for pagination
+            $total = $query->count();
+            $lastPage = ceil($total / $perPage);
+            $from = (($page - 1) * $perPage) + 1;
+            $to = min($page * $perPage, $total);
+
+            // Apply pagination
+            $approvalDetails = $query->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->get();
+
+            Log::info('Query results', [
+                'total' => $total,
+                'count' => $approvalDetails->count()
+            ]);
+
+            // Transform data
+            $data = $approvalDetails->map(function ($detail) use ($employmentId, $status) {
+                $transaction = $detail->request->transaction ?? null;
+                
+                if (!$transaction) {
+                    return null;
+                }
+
+                // For pending items, check if this user is the next approver
+                $canApprove = false;
+                if ($status === 'pending') {
+                    $nextPending = ApprovalRequestDetail::where('request_id', $detail->request_id)
+                        ->where('status', 'pending')
+                        ->orderByRaw("FIELD(phase, 'uppline', 'master_flow')")
+                        ->orderBy('level_sequence')
+                        ->first();
+                    
+                    $canApprove = $nextPending && $nextPending->id === $detail->id;
+                }
+
+                return [
+                    'id' => $transaction->id,
+                    'transaction_number' => $transaction->transaction_number,
+                    'transaction_date' => $transaction->transaction_date,
+                    'user_name' => $transaction->user->name ?? 'N/A',
+                    'purpose' => $transaction->purpose,
+                    'urgency' => $transaction->urgency,
+                    'estimated_amount' => $transaction->estimated_value,
+                    'status' => $transaction->status,
+                    'can_approve' => $canApprove,
+                    'can_approve_detail_id' => $detail->id,
+                    'approval_status' => $detail->status,
+                    'approved_at' => $detail->approved_at,
+                    'phase' => $detail->phase,
+                    'level_sequence' => $detail->level_sequence
+                ];
+            })->filter()->values();
+
+            return [
+                'success' => true,
+                'data' => [
+                    'data' => $data->toArray(),
+                    'current_page' => $page,
+                    'last_page' => $lastPage,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'from' => $total > 0 ? $from : 0,
+                    'to' => $total > 0 ? $to : 0,
+                    'prev_page_url' => $page > 1 ? url()->current() . '?page=' . ($page - 1) : null,
+                    'next_page_url' => $page < $lastPage ? url()->current() . '?page=' . ($page + 1) : null
+                ]
+            ];
+        } catch (Exception $e) {
+            Log::error('Error in getApprovalItemsByStatus: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return [
+                'success' => false,
+                'message' => 'Error fetching approval items: ' . $e->getMessage(),
+                'data' => [
+                    'data' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage ?? 10,
+                    'total' => 0,
+                    'from' => 0,
+                    'to' => 0,
+                    'prev_page_url' => null,
+                    'next_page_url' => null
+                ]
+            ];
+        }
+    }
+
     /**
-     * Cancel an approval request.
+     * Get approval counts for a user.
+     */
+    public function getApprovalCounts(int $employmentId, array $filters = []): array
+    {
+        try {
+            $year = $filters['year'] ?? null;
+
+            Log::info('getApprovalCounts called', [
+                'employment_id' => $employmentId,
+                'filters' => $filters
+            ]);
+
+            // Base query
+            $baseQuery = ApprovalRequestDetail::where('employment_id', $employmentId)
+                ->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
+
+            // Get pending count
+            $pendingQuery = clone $baseQuery;
+            $pendingQuery->where('status', 'pending')
+                ->whereHas('request', fn($q) => $q->where('status', 'pending'));
+            
+            if ($year && $year !== 'all') {
+                $pendingQuery->whereHas('request.transaction', fn($q) => $q->whereYear('transaction_date', $year));
+            }
+            $pendingCount = $pendingQuery->count();
+
+            // Get approved count
+            $approvedQuery = clone $baseQuery;
+            $approvedQuery->where('status', 'approved');
+            
+            if ($year && $year !== 'all') {
+                $approvedQuery->whereHas('request.transaction', fn($q) => $q->whereYear('transaction_date', $year));
+            }
+            $approvedCount = $approvedQuery->count();
+
+            // Get rejected count
+            $rejectedQuery = clone $baseQuery;
+            $rejectedQuery->where('status', 'rejected');
+            
+            if ($year && $year !== 'all') {
+                $rejectedQuery->whereHas('request.transaction', fn($q) => $q->whereYear('transaction_date', $year));
+            }
+            $rejectedCount = $rejectedQuery->count();
+
+            return [
+                'success' => true,
+                'data' => [
+                    'pending' => $pendingCount,
+                    'approved' => $approvedCount,
+                    'rejected' => $rejectedCount
+                ]
+            ];
+        } catch (Exception $e) {
+            Log::error('Error in getApprovalCounts: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error fetching approval counts',
+                'data' => [
+                    'pending' => 0,
+                    'approved' => 0,
+                    'rejected' => 0
+                ]
+            ];
+        }
+    }
+
+    /**     * Cancel an approval request.
      */
     public function cancelApproval(int $transactionId): array
     {

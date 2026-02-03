@@ -1306,6 +1306,85 @@ class SubmissionController extends Controller
     }
 
     /**
+     * Get approval counts for all tabs (pending, approved, rejected)
+     */
+    public function getApprovalCounts(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 404);
+            }
+
+            $year = $request->input('year');
+            
+            // Use service to get counts
+            $result = $this->approvalTransactionService->getApprovalCounts(
+                $employment->id,
+                ['year' => $year]
+            );
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error fetching approval counts: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching approval counts'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get approval data for specific tab (pending, approved, rejected)
+     */
+    public function getApprovalData(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 404);
+            }
+
+            $status = $request->input('status'); // pending, approved, rejected
+            $year = $request->input('year');
+            $search = $request->input('search');
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 10);
+
+            // Use service to get approval items
+            $result = $this->approvalTransactionService->getApprovalItemsByStatus(
+                $employment->id,
+                $status,
+                [
+                    'year' => $year,
+                    'search' => $search,
+                    'page' => $page,
+                    'per_page' => $perPage
+                ]
+            );
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error fetching approval data: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching approval data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Cancel approval request for a transaction
      */
     public function cancelApproval($id)

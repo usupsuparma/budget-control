@@ -597,9 +597,9 @@ class SubmissionController extends Controller
         return view('pages.submission.user_create', compact('title'));
     }
 
-    public function admin()
+    public function approval()
     {
-        $title = 'Submission Admin';
+        $title = 'Approval Submission';
         $userId = Auth::user()->id; // employee.id
 
         // Get summary data (employment.employee_id = employee.id)
@@ -636,7 +636,7 @@ class SubmissionController extends Controller
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
-        return view('pages.submission.admin', compact(
+        return view('pages.submission.approval', compact(
             'title',
             'newSubmission',
             'progress',

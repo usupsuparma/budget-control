@@ -2193,7 +2193,7 @@
          */
         function loadPendingApprovalCount() {
             $.ajax({
-                url: '{{ route("adminSubmission.pendingApprovals") }}',
+                url: '{{ route("approvalSubmission.pendingApprovals") }}',
                 type: 'GET',
                 success: function(response) {
                     if (response.success && response.count > 0) {
@@ -2222,7 +2222,7 @@
             `);
 
             $.ajax({
-                url: '{{ route("adminSubmission.pendingApprovals") }}',
+                url: '{{ route("approvalSubmission.pendingApprovals") }}',
                 type: 'GET',
                 success: function(response) {
                     console.log('Pending approvals response:', response);
@@ -2337,7 +2337,7 @@
             }
 
             $.ajax({
-                url: '{{ route("adminSubmission.show", ":id") }}'.replace(':id', transactionId),
+                url: '{{ route("approvalSubmission.show", ":id") }}'.replace(':id', transactionId),
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -2531,8 +2531,8 @@
          */
         function processApproval(transactionId, action, comments = null) {
             const url = action === 'approve' 
-                ? '{{ route("adminSubmission.approve", ":id") }}'.replace(':id', transactionId)
-                : '{{ route("adminSubmission.reject", ":id") }}'.replace(':id', transactionId);
+                ? '{{ route("approvalSubmission.approve", ":id") }}'.replace(':id', transactionId)
+                : '{{ route("approvalSubmission.reject", ":id") }}'.replace(':id', transactionId);
 
             Swal.fire({
                 title: 'Processing...',

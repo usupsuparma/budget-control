@@ -157,7 +157,7 @@
 
 
             {{-- TRANSACTIONS --}}
-            @canany(['transaction.user.view','transaction.admin.view'])
+            @canany(['transaction.user.view','transaction.approval.view'])
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseSubmission"
                     class="pe-nav-link {{ Request::is('admission/*') ? 'active' : '' }}"
@@ -178,9 +178,9 @@
                     </li>
                     @endcan
 
-                    @can('transaction.admin.view')
+                    @can('transaction.approval.view')
                     <li class="pe-slide-item">
-                        <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                        <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/approval*') ? 'active' : '' }}">
                             Approval Submission
                         </a>
                     </li>
@@ -191,7 +191,7 @@
         @endcanany
 
         {{-- FINANCE --}}
-        {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
+        {{-- @canany(['finance.user.view','transaction.approval.view']) --}}
         <li class="pe-slide pe-has-sub">
             <a href="#collapseFinance"
                 class="pe-nav-link {{ Request::is('finance/*') ? 'active' : '' }}"
@@ -220,9 +220,9 @@
                 </li>
                 {{-- @endcan --}}
 
-                {{-- @can('transaction.admin.view') --}}
+                {{-- @can('transaction.approval.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/admin*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('admission/approval*') ? 'active' : '' }}">
                         Master Price
                     </a>
                 </li>
@@ -234,7 +234,7 @@
         {{-- @endcanany --}}
 
         {{-- FINANCE --}}
-        {{-- @canany(['finance.user.view','transaction.admin.view']) --}}
+        {{-- @canany(['finance.user.view','transaction.approval.view']) --}}
         <li class="pe-slide pe-has-sub">
             <a href="#collapseReport"
                 class="pe-nav-link {{ Request::is('report/*') ? 'active' : '' }}"
@@ -248,7 +248,7 @@
             <ul class="pe-slide-menu collapse {{ Request::is('report/*') ? 'show' : '' }}" id="collapseReport">
                 {{-- @can('expenditure.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/expenditure*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/expenditure*') ? 'active' : '' }}">
                         Expenditure
                     </a>
                 </li>
@@ -256,7 +256,7 @@
 
                 {{-- @can('costCenter.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costCenter*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costCenter*') ? 'active' : '' }}">
                         Cost Center
                     </a>
                 </li>
@@ -264,35 +264,35 @@
 
                 {{-- @can('costAllocation.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costAllocation*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/costAllocation*') ? 'active' : '' }}">
                         Cost Allocation
                     </a>
                 </li>
                 {{-- @endcan --}}
                 {{-- @can('cogs.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cogs*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cogs*') ? 'active' : '' }}">
                         COGS
                     </a>
                 </li>
                 {{-- @endcan --}}
                 {{-- @can('incomeStatement.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/incomeStatement*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/incomeStatement*') ? 'active' : '' }}">
                         Income Statement
                     </a>
                 </li>
                 {{-- @endcan --}}
                 {{-- @can('cashflow.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cashflow*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/cashflow*') ? 'active' : '' }}">
                         Cash Flows
                     </a>
                 </li>
                 {{-- @endcan --}}
                 {{-- @can('financialPosition.view') --}}
                 <li class="pe-slide-item">
-                    <a href="{{ route('adminSubmission.index') }}" class="pe-nav-link {{ Request::is('report/financialPosition*') ? 'active' : '' }}">
+                    <a href="{{ route('approvalSubmission.index') }}" class="pe-nav-link {{ Request::is('report/financialPosition*') ? 'active' : '' }}">
                         Financial Position
                     </a>
                 </li>

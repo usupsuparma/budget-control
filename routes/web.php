@@ -754,28 +754,28 @@ Route::middleware('auth')->group(function () {
                     ->name('userSubmission.budgetItems');
             });
 
-        // Admin Submission Routes
-        Route::prefix('admin')
-            ->middleware('permission:transaction.admin.view')
+        // Approval Submission Routes
+        Route::prefix('approval')
+            ->middleware('permission:transaction.approval.view')
             ->group(function () {
-                Route::get('/', [SubmissionController::class, 'admin'])
-                    ->name('adminSubmission.index');
+                Route::get('/', [SubmissionController::class, 'approval'])
+                    ->name('approvalSubmission.index');
                 
                 // Pending approvals route
                 Route::get('/pending-approvals', [SubmissionController::class, 'getPendingApprovals'])
-                    ->name('adminSubmission.pendingApprovals');
+                    ->name('approvalSubmission.pendingApprovals');
                 
                 // Show transaction detail
                 Route::get('/{id}', [SubmissionController::class, 'show'])
-                    ->name('adminSubmission.show');
+                    ->name('approvalSubmission.show');
                 
                 // Approval actions - Authorization is handled inside controller
                 // (checks if user is the next approver in the approval chain)
                 Route::post('/{id}/approve', [SubmissionController::class, 'approve'])
-                    ->name('adminSubmission.approve');
+                    ->name('approvalSubmission.approve');
                 
                 Route::post('/{id}/reject', [SubmissionController::class, 'reject'])
-                    ->name('adminSubmission.reject');
+                    ->name('approvalSubmission.reject');
             });
     });
 

@@ -1794,6 +1794,26 @@
                 error: function(xhr) {
                     console.error('Error:', xhr);
 
+                    // Handle budget validation errors from backend
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.budget_errors) {
+                        const budgetErrors = xhr.responseJSON.budget_errors;
+                        let errorMessage = '<strong>' + xhr.responseJSON.message + '</strong><br><br>';
+                        errorMessage += '<ul class="mb-0 mt-2">';
+                        budgetErrors.forEach(function(error) {
+                            errorMessage += `<li><strong>${error.item}:</strong> Total ${error.total} exceeds Budget ${error.budget} (${error.budget_code})</li>`;
+                        });
+                        errorMessage += '</ul><br><small class="text-muted">Please adjust the quantity or price to match the available budget.</small>';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Budget Validation Error',
+                            html: errorMessage,
+                            confirmButtonColor: '#dc3545',
+                            confirmButtonText: 'OK, I\'ll Fix It'
+                        });
+                        return;
+                    }
+
                     if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                         // Validation errors
                         const errors = xhr.responseJSON.errors;

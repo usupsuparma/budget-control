@@ -264,6 +264,37 @@ class SubmissionController extends Controller
             ], 422);
         }
 
+        // Validate budget values: ensure qty * price does not exceed budget value
+        $budgetErrors = [];
+        foreach ($request->items as $index => $item) {
+            $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
+            
+            if ($budgetItem) {
+                $totalItemCost = $item['quantity'] * $item['price'];
+                $budgetValue = $budgetItem->total ?? 0;
+                
+                if ($totalItemCost > $budgetValue) {
+                    $budgetErrors[] = [
+                        'item' => $item['goods_service_name'] ?? "Item " . ($index + 1),
+                        'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
+                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown'
+                    ];
+                }
+            }
+        }
+
+        if (!empty($budgetErrors)) {
+            $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
+            Log::error('Budget validation error in create transaction', ['errors' => $budgetErrors]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage,
+                'budget_errors' => $budgetErrors
+            ], 422);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -433,6 +464,37 @@ class SubmissionController extends Controller
                 'success' => false,
                 'message' => 'Validation error',
                 'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Validate budget values: ensure qty * price does not exceed budget value
+        $budgetErrors = [];
+        foreach ($request->items as $index => $item) {
+            $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
+            
+            if ($budgetItem) {
+                $totalItemCost = $item['quantity'] * $item['price'];
+                $budgetValue = $budgetItem->value ?? 0;
+                
+                if ($totalItemCost > $budgetValue) {
+                    $budgetErrors[] = [
+                        'item' => $item['goods_service_name'] ?? "Item " . ($index + 1),
+                        'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
+                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown'
+                    ];
+                }
+            }
+        }
+
+        if (!empty($budgetErrors)) {
+            $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
+            Log::error('Budget validation error in update transaction', ['errors' => $budgetErrors]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage,
+                'budget_errors' => $budgetErrors
             ], 422);
         }
 

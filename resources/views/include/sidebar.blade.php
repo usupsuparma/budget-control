@@ -157,6 +157,25 @@
 
 
             {{-- TRANSACTIONS --}}
+            {{--
+                Authorization Directive Comparison:
+                
+                @canany(['permission1', 'permission2'])
+                - Checks if the user has ANY of the listed permissions
+                - Returns true if user has at least ONE of the specified permissions
+                - Useful when multiple permissions can grant access to the same resource
+                - Example: User needs either 'transaction.user.view' OR 'transaction.approval.view'
+                
+                @can('permission')
+                - Checks if the user has a SPECIFIC single permission
+                - Returns true only if user has that exact permission
+                - Useful when only one specific permission is required
+                - Example: User must have 'transaction.user.view'
+                
+                In this context:
+                - @canany allows users with either viewing permission to access the sidebar
+                - @can would only allow users with one specific permission
+            --}}
             @canany(['transaction.user.view','transaction.approval.view'])
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseSubmission"

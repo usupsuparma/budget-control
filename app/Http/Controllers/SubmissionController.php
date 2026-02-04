@@ -43,7 +43,8 @@ class SubmissionController extends Controller
 
         // Get summary data (user_id = employee.id)
         $userId = Auth::user()->id;
-        $employment = Employment::where('employee_id', $userId)->get();
+        $employee = Auth::user();
+        $employment = $employee->employment;
         $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
         $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
         $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();

@@ -268,7 +268,7 @@
                             </button>
                         </div>
                         <div class="col-md-6 d-flex align-items-end justify-content-end">
-                            @if (isset($employment[0]->job_level_id) && in_array($employment[0]->job_level_id, array(3,4)))
+                            @if (isset($employment->job_level_id) && in_array($employment->job_level_id, array(3,4)))
                             <button type="button" class="btn btn-success" id="btnAddData">
                                 <i class="ri-add-line"></i> Add Data
                             </button>

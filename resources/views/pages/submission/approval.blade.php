@@ -114,6 +114,32 @@
             font-size: 0.75rem;
             padding: 0.35em 0.65em;
         }
+
+        /* View toggle buttons */
+        .btn-group .btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        /* Search box styling */
+        #searchApproved {
+            border-left: none;
+        }
+
+        #searchApproved:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        .input-group-text {
+            border-right: none;
+        }
+
+        /* Table hover effect */
+        #approvedTableBody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
     </style>
 @endsection
 
@@ -354,21 +380,86 @@
                             {{-- TAB 2: Approved --}}
                             <div class="tab-pane" id="tab-approved" role="tabpanel">
                                 <div class="card border-0">
-                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                        <h6 class="card-title mb-0">
-                                            <i class="ri-checkbox-circle-line me-2 text-success"></i>Approved Transactions
-                                        </h6>
-                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadApprovalTab('approved')">
-                                            <i class="ri-refresh-line me-1"></i>Refresh
-                                        </button>
+                                    <div class="card-header bg-light">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-4">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="ri-checkbox-circle-line me-2 text-success"></i>Approved Transactions
+                                                </h6>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="d-flex gap-2 justify-content-end">
+                                                    {{-- Search Box --}}
+                                                    <div class="input-group" style="max-width: 300px;">
+                                                        <span class="input-group-text bg-white">
+                                                            <i class="ri-search-line"></i>
+                                                        </span>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="searchApproved" 
+                                                               placeholder="Search transactions..."
+                                                               onkeyup="searchApprovedTransactions()">
+                                                    </div>
+                                                    {{-- View Toggle Buttons --}}
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary btn-sm active" 
+                                                                id="btnApprovedCardView"
+                                                                onclick="toggleApprovedView('card')">
+                                                            <i class="ri-layout-grid-line"></i>
+                                                        </button>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary btn-sm" 
+                                                                id="btnApprovedListView"
+                                                                onclick="toggleApprovedView('list')">
+                                                            <i class="ri-list-check"></i>
+                                                        </button>
+                                                    </div>
+                                                    {{-- Refresh Button --}}
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadApprovalTab('approved')">
+                                                        <i class="ri-refresh-line me-1"></i>Refresh
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="card-body">
-                                        <div id="approvedListContainer">
+                                        {{-- Card View Container --}}
+                                        <div id="approvedListContainer" style="display: block;">
                                             <div class="text-center py-5">
                                                 <div class="spinner-border text-primary" role="status">
                                                     <span class="visually-hidden">Loading...</span>
                                                 </div>
                                                 <p class="mt-2 text-muted">Loading approved transactions...</p>
+                                            </div>
+                                        </div>
+                                        {{-- Table List View Container --}}
+                                        <div id="approvedTableContainer" style="display: none;">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-striped align-middle">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 5%;">#</th>
+                                                            <th style="width: 15%;">Transaction #</th>
+                                                            <th style="width: 12%;">Date</th>
+                                                            <th style="width: 15%;">Submitter</th>
+                                                            <th style="width: 25%;">Purpose</th>
+                                                            <th style="width: 13%;">Amount</th>
+                                                            <th style="width: 10%;">Urgency</th>
+                                                            <th style="width: 5%;">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="approvedTableBody">
+                                                        <tr>
+                                                            <td colspan="8" class="text-center py-5">
+                                                                <div class="spinner-border text-primary" role="status">
+                                                                    <span class="visually-hidden">Loading...</span>
+                                                                </div>
+                                                                <p class="mt-2 text-muted">Loading...</p>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -783,6 +874,10 @@
         const budgetCodes = @json($budgetCodes);
         const units = @json($units);
         let availableBudgetItems = [];
+        
+        // View mode for approved tab
+        let approvedViewMode = 'card'; // 'card' or 'list'
+        let approvedDataCache = null; // Cache data for search functionality
 
         $(document).ready(function() {
             // Load initial data - approval tab (pending)
@@ -986,14 +1081,36 @@
             }
 
             // Show loading
-            $(`#${containerId}`).html(`
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+            if (status === 'approved') {
+                // Show loading in both containers for approved tab
+                $('#approvedListContainer').html(`
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading data...</p>
                     </div>
-                    <p class="mt-2 text-muted">Loading data...</p>
-                </div>
-            `);
+                `);
+                $('#approvedTableBody').html(`
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading data...</p>
+                        </td>
+                    </tr>
+                `);
+            } else {
+                $(`#${containerId}`).html(`
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading data...</p>
+                    </div>
+                `);
+            }
 
             $.ajax({
                 url: '{{ route('userSubmission.approval.data') }}',
@@ -1005,7 +1122,16 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        renderApprovalList(response.data, containerId, status);
+                        // Cache data for approved tab (for search functionality)
+                        if (status === 'approved') {
+                            approvedDataCache = response.data;
+                            // Clear search input when loading new data
+                            $('#searchApproved').val('');
+                            // Render based on current view mode
+                            renderApprovedData(response.data);
+                        } else {
+                            renderApprovalList(response.data, containerId, status);
+                        }
                         
                         // Update badge counts
                         loadBadgeCounts();
@@ -1047,7 +1173,7 @@
                         <div class="approval-card card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0">${item.transaction_number || 'N/A'}</h6>
+                                    <h6 class="card-title mb-0">${item.id || 'N/A'}</h6>
                                     ${urgencyBadge}
                                 </div>
                                 <p class="text-muted small mb-2">
@@ -2490,6 +2616,127 @@
                     showAlert(response?.message || 'Error processing approval', 'error');
                 }
             });
+        }
+
+        // ==================== APPROVED TAB VIEW TOGGLE & SEARCH FUNCTIONS ====================
+
+        /**
+         * Toggle between card and list view for approved tab
+         */
+        function toggleApprovedView(mode) {
+            approvedViewMode = mode;
+            
+            // Update button states
+            if (mode === 'card') {
+                $('#btnApprovedCardView').addClass('active');
+                $('#btnApprovedListView').removeClass('active');
+                $('#approvedListContainer').show();
+                $('#approvedTableContainer').hide();
+            } else {
+                $('#btnApprovedListView').addClass('active');
+                $('#btnApprovedCardView').removeClass('active');
+                $('#approvedListContainer').hide();
+                $('#approvedTableContainer').show();
+            }
+            
+            // Re-render with current data
+            if (approvedDataCache) {
+                renderApprovedData(approvedDataCache);
+            }
+        }
+
+        /**
+         * Search approved transactions
+         */
+        function searchApprovedTransactions() {
+            const searchTerm = $('#searchApproved').val().toLowerCase().trim();
+            
+            if (!approvedDataCache || !approvedDataCache.data) {
+                return;
+            }
+            
+            // Filter data based on search term
+            let filteredData = approvedDataCache.data;
+            if (searchTerm) {
+                filteredData = approvedDataCache.data.filter(item => {
+                    return (
+                        (item.transaction_number && item.transaction_number.toLowerCase().includes(searchTerm)) ||
+                        (item.user_name && item.user_name.toLowerCase().includes(searchTerm)) ||
+                        (item.purpose && item.purpose.toLowerCase().includes(searchTerm)) ||
+                        (item.estimated_amount && item.estimated_amount.toString().includes(searchTerm))
+                    );
+                });
+            }
+            
+            // Create filtered data object
+            const filteredDataObj = {
+                data: filteredData,
+                total: filteredData.length
+            };
+            
+            // Render based on current view mode
+            renderApprovedData(filteredDataObj);
+        }
+
+        /**
+         * Render approved data based on view mode
+         */
+        function renderApprovedData(data) {
+            if (approvedViewMode === 'card') {
+                renderApprovalList(data, 'approvedListContainer', 'approved');
+            } else {
+                renderApprovedTableList(data);
+            }
+        }
+
+        /**
+         * Render approved transactions in table/list format
+         */
+        function renderApprovedTableList(data) {
+            const tbody = $('#approvedTableBody');
+            
+            if (!data.data || data.data.length === 0) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="ri-inbox-line" style="font-size: 3rem; color: #6c757d;"></i>
+                            <p class="mt-2 text-muted">No approved transactions found</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            let html = '';
+            data.data.forEach((item, index) => {
+                const urgencyBadge = getUrgencyBadge(item.urgency);
+                
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <strong>${item.transaction_number || 'N/A'}</strong>
+                        </td>
+                        <td>${formatDate(item.transaction_date)}</td>
+                        <td>${item.user_name || 'N/A'}</td>
+                        <td>
+                            <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                                 title="${item.purpose || 'No purpose'}">
+                                ${item.purpose || 'No purpose'}
+                            </div>
+                        </td>
+                        <td class="fw-bold text-primary">${formatCurrency(item.estimated_amount || 0)}</td>
+                        <td>${urgencyBadge}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewApprovalDetail(${item.id})" title="View Details">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.html(html);
         }
     </script>
 @endsection

@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+
 <div id="layout-wrapper">
     <div class="row">
         <div class="col-12">
@@ -444,12 +446,18 @@
             $("#edit_role_name").val(res.roles && res.roles.length > 0 ? res.roles[0].name : '');
             $("#edit_status").val(res.status);
 
-            // UPPLINE (dari employment)
-            if (res.employment) {
-                $('#editEmployeeModal select[name="uppline_id"]').val(res.employment.uppline_id);
+            // UPPLINE (dari employment) - Update Choices.js value
+            if (res.employment && res.employment.uppline_id) {
+                // Set value using Choices.js method
+                if (upplineChoicesEdit) {
+                    upplineChoicesEdit.setChoiceByValue(res.employment.uppline_id.toString());
+                }
                 $('#edit_uppline_name').val(res.employment.uppline_id_name);
             } else {
-                $('#editEmployeeModal select[name="uppline_id"]').val('');
+                // Clear selection
+                if (upplineChoicesEdit) {
+                    upplineChoicesEdit.setChoiceByValue('');
+                }
                 $('#edit_uppline_name').val('');
             }
 
@@ -606,15 +614,73 @@
         });
     });
 </script>
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 <script>
-    $('select[name="uppline_id"]').on('change', function() {
-        let name = $(this).find('option:selected').text();
-        $('#uppline_name').val(name);
+    // Initialize Choices.js for Add Modal Uppline Select
+    let upplineChoicesAdd = null;
+    let upplineChoicesEdit = null;
+
+    $(document).ready(function() {
+        // Initialize Choices.js for Add Modal
+        const upplineSelectAdd = document.querySelector('#createEmployee select[name="uppline_id"]');
+        if (upplineSelectAdd) {
+            upplineChoicesAdd = new Choices(upplineSelectAdd, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Search uppline...',
+                itemSelectText: 'Click to select',
+                shouldSort: false,
+                noResultsText: 'No uppline found',
+                placeholderValue: '-- Select Uppline --'
+            });
+
+            // Handle change event for hidden input
+            upplineSelectAdd.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    $('#uppline_name').val(selectedOption.text.trim());
+                } else {
+                    $('#uppline_name').val('');
+                }
+            });
+        }
+
+        // Initialize Choices.js for Edit Modal
+        const upplineSelectEdit = document.querySelector('#editEmployeeModal select[name="uppline_id"]');
+        if (upplineSelectEdit) {
+            upplineChoicesEdit = new Choices(upplineSelectEdit, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Search uppline...',
+                itemSelectText: 'Click to select',
+                shouldSort: false,
+                noResultsText: 'No uppline found',
+                placeholderValue: '-- Select Uppline --'
+            });
+
+            // Handle change event for hidden input
+            upplineSelectEdit.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    $('#edit_uppline_name').val(selectedOption.text.trim());
+                } else {
+                    $('#edit_uppline_name').val('');
+                }
+            });
+        }
     });
 
-    $('#editEmployeeModal select[name="uppline_id"]').on('change', function() {
-        let name = $(this).find('option:selected').text();
-        $('#edit_uppline_name').val(name);
+    // Reset Choices.js when modals are closed
+    $('#createEmployee').on('hidden.bs.modal', function() {
+        if (upplineChoicesAdd) {
+            upplineChoicesAdd.setChoiceByValue('');
+        }
+        $('#uppline_name').val('');
+    });
+
+    $('#editEmployeeModal').on('hidden.bs.modal', function() {
+        if (upplineChoicesEdit) {
+            upplineChoicesEdit.setChoiceByValue('');
+        }
+        $('#edit_uppline_name').val('');
     });
 </script>
 

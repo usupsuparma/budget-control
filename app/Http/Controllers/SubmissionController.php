@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
-use App\Models\TransactionApproval;
 use App\Models\Employee;
 use App\Models\JobLevel;
 use App\Models\JobPosition;
@@ -15,7 +14,6 @@ use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestDetail;
-use App\Services\ApprovalService;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,14 +24,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class SubmissionController extends Controller
 {
-    protected $approvalService;
     protected $approvalTransactionService;
 
     public function __construct(
-        ApprovalService $approvalService,
         ApprovalTransactionService $approvalTransactionService
     ) {
-        $this->approvalService = $approvalService;
         $this->approvalTransactionService = $approvalTransactionService;
     }
 
@@ -419,11 +414,6 @@ class SubmissionController extends Controller
                     $isApprover = true;
                     // Can approve if status is pending
                     $canApprove = $approvalDetail->status === 'pending';
-                } else {
-                    // Also check legacy system if not found
-                    $isApprover = TransactionApproval::where('transaction_id', $id)
-                        ->where('approver_id', $user->id)
-                        ->exists();
                 }
             }
 
@@ -958,40 +948,11 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            // Fallback to old system for legacy transactions
-            DB::beginTransaction();
-            $userId = Auth::id();
-            $userName = $user->first_name . ' ' . $user->last_name;
-
-            $approval = TransactionApproval::where('transaction_id', $id)
-                ->where('approver_id', $userId)
-                ->where('status', 0)
-                ->first();
-
-            if (!$approval) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Approval not found or already processed'
-                ], 404);
-            }
-
-            $result = $this->approvalService->processApproval(
-                $approval->id,
-                1,
-                $userId,
-                $userName,
-                $request->comments,
-                $request->ip()
-            );
-
-            DB::commit();
-
+            // If no approval system found
             return response()->json([
-                'success' => true,
-                'message' => $result['message'],
-                'data' => $result
-            ]);
+                'success' => false,
+                'message' => 'Approval system not configured for this transaction'
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1080,40 +1041,11 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            // Fallback to old system for legacy transactions
-            DB::beginTransaction();
-            $userId = Auth::id();
-            $userName = $user->first_name . ' ' . $user->last_name;
-
-            $approval = TransactionApproval::where('transaction_id', $id)
-                ->where('approver_id', $userId)
-                ->where('status', 0)
-                ->first();
-
-            if (!$approval) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Approval not found or already processed'
-                ], 404);
-            }
-
-            $result = $this->approvalService->processApproval(
-                $approval->id,
-                2,
-                $userId,
-                $userName,
-                $request->comments,
-                $request->ip()
-            );
-
-            DB::commit();
-
+            // If no approval system found
             return response()->json([
-                'success' => true,
-                'message' => $result['message'],
-                'data' => $result
-            ]);
+                'success' => false,
+                'message' => 'Approval system not configured for this transaction'
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1178,87 +1110,12 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            // Fallback to old system for legacy transactions
-            $transactionApproval = TransactionApproval::where('transaction_id', $id)
-                ->orderBy('sequence_order', 'asc')
-                ->get();
-
-            $data = [];
-            
-            // Add submission entry
-            $data[] = '<div class="tt-item">
-                <div class="tt-icon bg-warning">
-                    <span class="tt-dot"></span>
-                </div>
-                <div class="tt-content">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div class="fw-semibold">' . date("d M Y H:i:s", strtotime($transaction->created_at)) . '</div>
-                        <span class="badge rounded-pill bg-warning text-dark">Submission</span>
-                    </div>
-                    <div class="small mt-1">Submission by <span class="fw-semibold">' . $transaction->user_name . '</span></div>
-                </div>
-            </div>';
-
-            foreach ($transactionApproval as $buff2) {
-                if ($buff2->status == 0) {
-                    $approvalStatuses = [
-                        3  => ['label' => 'Department',          'class' => 'bg-info'],
-                        2  => ['label' => 'Division',            'class' => 'bg-info'],
-                        1  => ['label' => 'Director',            'class' => 'bg-info'],
-                        -1 => ['label' => 'Budget Control',      'class' => 'bg-info'],
-                        -2 => ['label' => 'Finance Division',    'class' => 'bg-info'],
-                        -3 => ['label' => 'Finance Director',    'class' => 'bg-info'],
-                        -4 => ['label' => 'President Director',  'class' => 'bg-success'],
-                    ];
-
-                    $level = (int) $buff2->approval_level;
-                    $status = $approvalStatuses[$level] ?? ['label' => 'Unknown', 'class' => 'bg-secondary'];
-
-                    $data[] = '<div class="tt-item">
-                        <div class="tt-icon bg-light">
-                            <span class="tt-dot"></span>
-                        </div>
-                        <div class="tt-content">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <div class="fw-semibold"></div>
-                                <span class="badge rounded-pill bg-light text-muted">Pending</span>
-                            </div>
-                            <div class="small mt-1 text-muted">' . $status['label'] . ' by <span class="fw-semibold">' . $buff2->approver_name . '</span></div>
-                        </div>
-                    </div>';
-                } else {
-                    $approvalStatuses = [
-                        3  => ['label' => 'Approved Department',          'class' => 'bg-info'],
-                        2  => ['label' => 'Approved Division',            'class' => 'bg-info'],
-                        1  => ['label' => 'Approved Director',            'class' => 'bg-info'],
-                        -1 => ['label' => 'Approved Budget Control',      'class' => 'bg-info'],
-                        -2 => ['label' => 'Approved Finance Division',    'class' => 'bg-info'],
-                        -3 => ['label' => 'Approved Finance Director',    'class' => 'bg-info'],
-                        -4 => ['label' => 'Approved President Director',  'class' => 'bg-success'],
-                    ];
-
-                    $level = (int) $buff2->approval_level;
-                    $status = $approvalStatuses[$level] ?? ['label' => 'Unknown', 'class' => 'bg-secondary'];
-                    
-                    $data[] = '<div class="tt-item">
-                        <div class="tt-icon ' . $status['class'] . '">
-                            <span class="tt-dot"></span>
-                        </div>
-                        <div class="tt-content">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <div class="fw-semibold">' . date("d M Y H:i:s", strtotime($buff2->updated_at)) . '</div>
-                                <span class="badge rounded-pill ' . $status['class'] . ' text-white">' . $status['label'] . '</span>
-                            </div>
-                            <div class="small mt-1">' . $status['label'] . ' by <span class="fw-semibold">' . $buff2->approver_name . '</span></div>
-                        </div>
-                    </div>';
-                }
-            }
-            
+            // If no approval request found
             return response()->json([
-                'success' => true,
-                'data' => implode("", $data)
-            ]);
+                'success' => false,
+                'message' => 'No approval timeline found for this transaction'
+            ], 404);
+
         } catch (\Exception $e) {
             Log::error('Error fetching badge info: ' . $e->getMessage());
             return response()->json([

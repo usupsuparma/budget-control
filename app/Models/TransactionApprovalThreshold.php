@@ -5,6 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @deprecated This model is part of the legacy approval system.
+ * Use the dynamic approval system with approval_flow_templates and approval_flow_details instead.
+ * This class will be removed in a future version.
+ */
 class TransactionApprovalThreshold extends Model
 {
     use SoftDeletes;

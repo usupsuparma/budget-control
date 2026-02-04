@@ -759,10 +759,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" onclick="openRejectModal()">
+                    <button type="button" class="btn btn-danger" id="btnRejectApprovalDetail" onclick="openRejectModal()" style="display:none;">
                         <i class="ri-close-circle-line me-1"></i>Reject
                     </button>
-                    <button type="button" class="btn btn-success" onclick="approveFromDetailModal()">
+                    <button type="button" class="btn btn-success" id="btnApproveDetail" onclick="approveFromDetailModal()" style="display:none;">
                         <i class="ri-check-line me-1"></i>Approve
                     </button>
                 </div>
@@ -2275,6 +2275,23 @@
                             itemsHtml = '<tr><td colspan="6" class="text-center text-muted">No items found</td></tr>';
                         }
                         $('#approval_items_body').html(itemsHtml);
+
+                        // Show/hide approve and reject buttons based on status and permission
+                        // Only show buttons if:
+                        // 1. Status is 'pending' (status 1-5)
+                        // 2. User can approve (can_approve flag)
+                        const canShowButtons = data.can_approve && 
+                            data.status >= 1 && data.status <= 5 && 
+                            data.status_approval !== 'approved' && 
+                            data.status_approval !== 'rejected';
+                        
+                        if (canShowButtons) {
+                            $('#btnApproveDetail').show();
+                            $('#btnRejectApprovalDetail').show();
+                        } else {
+                            $('#btnApproveDetail').hide();
+                            $('#btnRejectApprovalDetail').hide();
+                        }
 
                         $('#approvalDetailModal').modal('show');
                     } else {

@@ -401,21 +401,26 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $isOwner = $transaction->user_id == $user->id;
             $isApprover = false;
+            $canApprove = false;
 
             // Check if user is an approver for this transaction
             if (!$isOwner && $user->employment) {
                 $employmentId = $user->employment->id;
                 
                 // Check in new dynamic approval system
-                $isApprover = ApprovalRequestDetail::whereHas('request', function($q) use ($id) {
+                $approvalDetail = ApprovalRequestDetail::whereHas('request', function($q) use ($id) {
                     $q->where('reference_id', $id)
                       ->whereHas('module', fn($mq) => $mq->where('table_name', 'transactions'));
                 })
                 ->where('employment_id', $employmentId)
-                ->exists();
+                ->first();
 
-                // Also check legacy system if not found
-                if (!$isApprover) {
+                if ($approvalDetail) {
+                    $isApprover = true;
+                    // Can approve if status is pending
+                    $canApprove = $approvalDetail->status === 'pending';
+                } else {
+                    // Also check legacy system if not found
                     $isApprover = TransactionApproval::where('transaction_id', $id)
                         ->where('approver_id', $user->id)
                         ->exists();
@@ -429,9 +434,33 @@ class SubmissionController extends Controller
                 ], 403);
             }
 
+            // Add can_approve flag and status_approval to transaction data
+            $transactionArray = $transaction->toArray();
+            $transactionArray['can_approve'] = $canApprove;
+            
+            // Determine status_approval based on approval request
+            if ($transaction->approvalRequest) {
+                $transactionArray['status_approval'] = $transaction->approvalRequest->status;
+            } else {
+                // Fallback to transaction status
+                $statusMap = [
+                    0 => 'pending',
+                    1 => 'pending',
+                    2 => 'pending', 
+                    3 => 'pending',
+                    4 => 'pending',
+                    5 => 'pending',
+                    6 => 'rejected',
+                    7 => 'approved',
+                    8 => 'approved',
+                    -1 => 'cancelled'
+                ];
+                $transactionArray['status_approval'] = $statusMap[$transaction->status] ?? 'pending';
+            }
+
             return response()->json([
                 'success' => true,
-                'data' => $transaction
+                'data' => $transactionArray
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching transaction: ' . $e->getMessage());

@@ -154,7 +154,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
             // Update transaction status - set status_approval to pending (waiting for first approval)
             $transaction->update([
-                'status' => Transaction::STATUS_IN_PROGRESS,
+                'status' => Transaction::STATUS_PROGRESS,
                 'status_approval' => Transaction::APPROVAL_STATUS_PENDING,
                 'current_approval_level' => 1,
                 'required_approval_levels' => count($approvalChain),

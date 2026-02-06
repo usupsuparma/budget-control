@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AnggaranController;
-use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthorizationAddBudgetController;
 use App\Http\Controllers\AuthorizationController;
@@ -31,6 +30,7 @@ use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
 use App\Http\Controllers\LpjApprovalMasterController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\MasterApprovalController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\PengajuanAnggaranController;
 use App\Http\Controllers\ProductionController;
@@ -46,7 +46,6 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\VerificationBudgetController;
-use App\Http\Controllers\WorkplanBudgetItemApprovalController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
@@ -1112,94 +1111,94 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:approval.view')
         ->group(function () {
             // Main Approval Page with Tabs (Dashboard, Authorizer, Threshold)
-            Route::get('/', [ApprovalController::class, 'index'])
+            Route::get('/', [MasterApprovalController::class, 'index'])
                 ->name('approval');
 
             // Threshold Management API (Accessed via Tab)
-            Route::put('/threshold/update/{id}', [ApprovalController::class, 'updateThreshold'])
+            Route::put('/threshold/update/{id}', [MasterApprovalController::class, 'updateThreshold'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.threshold.update');
-            Route::delete('/threshold/delete/{id}', [ApprovalController::class, 'deleteThreshold'])
+            Route::delete('/threshold/delete/{id}', [MasterApprovalController::class, 'deleteThreshold'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.threshold.delete');
 
             // Authorizer Management API (Accessed via Tab)
-            Route::get('/authorizer/data', [ApprovalController::class, 'getAuthorizers'])
+            Route::get('/authorizer/data', [MasterApprovalController::class, 'getAuthorizers'])
                 ->name('approval.authorizer.data');
-            Route::post('/authorizer/store', [ApprovalController::class, 'storeAuthorizer'])
+            Route::post('/authorizer/store', [MasterApprovalController::class, 'storeAuthorizer'])
                 ->middleware('permission:approval.create')
                 ->name('approval.authorizer.store');
-            Route::put('/authorizer/update/{id}', [ApprovalController::class, 'updateAuthorizer'])
+            Route::put('/authorizer/update/{id}', [MasterApprovalController::class, 'updateAuthorizer'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.authorizer.update');
-            Route::delete('/authorizer/delete/{id}', [ApprovalController::class, 'deleteAuthorizer'])
+            Route::delete('/authorizer/delete/{id}', [MasterApprovalController::class, 'deleteAuthorizer'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.authorizer.delete');
 
             // ========== NEW: Modules Management API ==========
-            Route::get('/modules/data', [ApprovalController::class, 'getModules'])
+            Route::get('/modules/data', [MasterApprovalController::class, 'getModules'])
                 ->name('approval.modules.data');
-            Route::get('/modules/available-tables', [ApprovalController::class, 'getAvailableTables'])
+            Route::get('/modules/available-tables', [MasterApprovalController::class, 'getAvailableTables'])
                 ->name('approval.modules.tables');
-            Route::post('/modules/store', [ApprovalController::class, 'storeModule'])
+            Route::post('/modules/store', [MasterApprovalController::class, 'storeModule'])
                 ->middleware('permission:approval.create')
                 ->name('approval.modules.store');
-            Route::put('/modules/update/{id}', [ApprovalController::class, 'updateModule'])
+            Route::put('/modules/update/{id}', [MasterApprovalController::class, 'updateModule'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.modules.update');
-            Route::delete('/modules/delete/{id}', [ApprovalController::class, 'deleteModule'])
+            Route::delete('/modules/delete/{id}', [MasterApprovalController::class, 'deleteModule'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.modules.delete');
 
             // ========== NEW: Templates Management API ==========
-            Route::get('/templates/data', [ApprovalController::class, 'getTemplates'])
+            Route::get('/templates/data', [MasterApprovalController::class, 'getTemplates'])
                 ->name('approval.templates.data');
-            Route::get('/templates/modules-dropdown', [ApprovalController::class, 'getModulesForDropdown'])
+            Route::get('/templates/modules-dropdown', [MasterApprovalController::class, 'getModulesForDropdown'])
                 ->name('approval.templates.modules');
-            Route::post('/templates/store', [ApprovalController::class, 'storeTemplate'])
+            Route::post('/templates/store', [MasterApprovalController::class, 'storeTemplate'])
                 ->middleware('permission:approval.create')
                 ->name('approval.templates.store');
-            Route::put('/templates/update/{id}', [ApprovalController::class, 'updateTemplate'])
+            Route::put('/templates/update/{id}', [MasterApprovalController::class, 'updateTemplate'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.templates.update');
-            Route::delete('/templates/delete/{id}', [ApprovalController::class, 'deleteTemplate'])
+            Route::delete('/templates/delete/{id}', [MasterApprovalController::class, 'deleteTemplate'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.templates.delete');
 
             // ========== NEW: Flow Details Management API ==========
-            Route::get('/flow-details/data/{templateId}', [ApprovalController::class, 'getFlowDetails'])
+            Route::get('/flow-details/data/{templateId}', [MasterApprovalController::class, 'getFlowDetails'])
                 ->name('approval.flowdetails.data');
-            Route::post('/flow-details/store', [ApprovalController::class, 'storeFlowDetail'])
+            Route::post('/flow-details/store', [MasterApprovalController::class, 'storeFlowDetail'])
                 ->middleware('permission:approval.create')
                 ->name('approval.flowdetails.store');
-            Route::put('/flow-details/update/{id}', [ApprovalController::class, 'updateFlowDetail'])
+            Route::put('/flow-details/update/{id}', [MasterApprovalController::class, 'updateFlowDetail'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.flowdetails.update');
-            Route::delete('/flow-details/delete/{id}', [ApprovalController::class, 'deleteFlowDetail'])
+            Route::delete('/flow-details/delete/{id}', [MasterApprovalController::class, 'deleteFlowDetail'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.flowdetails.delete');
 
             // ========== NEW: Helper - Employments ==========
-            Route::get('/employments/data', [ApprovalController::class, 'getEmployments'])
+            Route::get('/employments/data', [MasterApprovalController::class, 'getEmployments'])
                 ->name('approval.employments.data');
 
             // ========== NEW: Uppline Configs Management API ==========
-            Route::get('/uppline-configs/data/{templateId}', [ApprovalController::class, 'getUpplineConfigs'])
+            Route::get('/uppline-configs/data/{templateId}', [MasterApprovalController::class, 'getUpplineConfigs'])
                 ->name('approval.upplineconfigs.data');
-            Route::post('/uppline-configs/store', [ApprovalController::class, 'storeUpplineConfig'])
+            Route::post('/uppline-configs/store', [MasterApprovalController::class, 'storeUpplineConfig'])
                 ->middleware('permission:approval.create')
                 ->name('approval.upplineconfigs.store');
-            Route::put('/uppline-configs/update/{id}', [ApprovalController::class, 'updateUpplineConfig'])
+            Route::put('/uppline-configs/update/{id}', [MasterApprovalController::class, 'updateUpplineConfig'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.upplineconfigs.update');
-            Route::delete('/uppline-configs/delete/{id}', [ApprovalController::class, 'deleteUpplineConfig'])
+            Route::delete('/uppline-configs/delete/{id}', [MasterApprovalController::class, 'deleteUpplineConfig'])
                 ->middleware('permission:approval.delete')
                 ->name('approval.upplineconfigs.delete');
 
             // ========== NEW: Helper - Divisions & Job Levels ==========
-            Route::get('/divisions/data', [ApprovalController::class, 'getDivisions'])
+            Route::get('/divisions/data', [MasterApprovalController::class, 'getDivisions'])
                 ->name('approval.divisions.data');
-            Route::get('/joblevels/data', [ApprovalController::class, 'getJobLevels'])
+            Route::get('/joblevels/data', [MasterApprovalController::class, 'getJobLevels'])
                 ->name('approval.joblevels.data');
         });
 
@@ -1209,17 +1208,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('workplan-budget-item-approval')
         ->middleware('auth')
         ->group(function () {
-            Route::post('/{id}/submit', [WorkplanBudgetItemApprovalController::class, 'submitForApproval'])
+            Route::post('/{id}/submit', [WorkplanBudgetItemMasterApprovalController::class, 'submitForApproval'])
                 ->name('wbi.approval.submit');
-            Route::post('/detail/{detailId}/approve', [WorkplanBudgetItemApprovalController::class, 'approve'])
+            Route::post('/detail/{detailId}/approve', [WorkplanBudgetItemMasterApprovalController::class, 'approve'])
                 ->name('wbi.approval.approve');
-            Route::post('/detail/{detailId}/reject', [WorkplanBudgetItemApprovalController::class, 'reject'])
+            Route::post('/detail/{detailId}/reject', [WorkplanBudgetItemMasterApprovalController::class, 'reject'])
                 ->name('wbi.approval.reject');
-            Route::get('/{id}/status', [WorkplanBudgetItemApprovalController::class, 'getApprovalStatus'])
+            Route::get('/{id}/status', [WorkplanBudgetItemMasterApprovalController::class, 'getApprovalStatus'])
                 ->name('wbi.approval.status');
-            Route::get('/pending', [WorkplanBudgetItemApprovalController::class, 'myPendingApprovals'])
+            Route::get('/pending', [WorkplanBudgetItemMasterApprovalController::class, 'myPendingApprovals'])
                 ->name('wbi.approval.pending');
-            Route::post('/{id}/cancel', [WorkplanBudgetItemApprovalController::class, 'cancel'])
+            Route::post('/{id}/cancel', [WorkplanBudgetItemMasterApprovalController::class, 'cancel'])
                 ->name('wbi.approval.cancel');
         });
 
@@ -1416,5 +1415,45 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [AuthorizationAddBudgetController::class, 'edit'])->name('authorizationAddBudget.edit');
         Route::put('/{id}', [AuthorizationAddBudgetController::class, 'update'])->name('authorizationAddBudget.update');
         Route::delete('/{id}', [AuthorizationAddBudgetController::class, 'destroy'])->name('authorizationAddBudget.destroy');
+    });
+
+    /* ========================
+        MASTER APPROVAL
+    ======================== */
+    Route::prefix('approval')->group(function () {
+        // Main page
+        Route::get('/', [MasterApprovalController::class, 'index'])->name('approval.index');
+
+        // Modules
+        Route::get('/modules/data', [MasterApprovalController::class, 'getModules'])->name('approval.modules.data');
+        Route::get('/modules/tables', [MasterApprovalController::class, 'getAvailableTables'])->name('approval.modules.tables');
+        Route::post('/modules/store', [MasterApprovalController::class, 'storeModule'])->name('approval.modules.store');
+        Route::post('/modules/update/{id}', [MasterApprovalController::class, 'updateModule'])->name('approval.modules.update');
+        Route::post('/modules/delete/{id}', [MasterApprovalController::class, 'deleteModule'])->name('approval.modules.delete');
+
+        // Templates
+        Route::get('/templates/data', [MasterApprovalController::class, 'getTemplates'])->name('approval.templates.data');
+        Route::get('/templates/modules', [MasterApprovalController::class, 'getModulesForDropdown'])->name('approval.templates.modules');
+        Route::get('/templates/with-flow-details', [MasterApprovalController::class, 'getAllTemplatesWithFlowDetails'])->name('approval.templates.withflowdetails');
+        Route::post('/templates/store', [MasterApprovalController::class, 'storeTemplate'])->name('approval.templates.store');
+        Route::post('/templates/update/{id}', [MasterApprovalController::class, 'updateTemplate'])->name('approval.templates.update');
+        Route::post('/templates/delete/{id}', [MasterApprovalController::class, 'deleteTemplate'])->name('approval.templates.delete');
+
+        // Flow Details
+        Route::get('/flow-details/data/{templateId}', [MasterApprovalController::class, 'getFlowDetails'])->name('approval.flowdetails.data');
+        Route::post('/flow-details/store', [MasterApprovalController::class, 'storeFlowDetail'])->name('approval.flowdetails.store');
+        Route::post('/flow-details/update/{id}', [MasterApprovalController::class, 'updateFlowDetail'])->name('approval.flowdetails.update');
+        Route::post('/flow-details/delete/{id}', [MasterApprovalController::class, 'deleteFlowDetail'])->name('approval.flowdetails.delete');
+
+        // Uppline Configs
+        Route::get('/uppline-configs/data/{templateId}', [MasterApprovalController::class, 'getUpplineConfigs'])->name('approval.upplineconfigs.data');
+        Route::post('/uppline-configs/store', [MasterApprovalController::class, 'storeUpplineConfig'])->name('approval.upplineconfigs.store');
+        Route::post('/uppline-configs/update/{id}', [MasterApprovalController::class, 'updateUpplineConfig'])->name('approval.upplineconfigs.update');
+        Route::post('/uppline-configs/delete/{id}', [MasterApprovalController::class, 'deleteUpplineConfig'])->name('approval.upplineconfigs.delete');
+
+        // Helpers (Employment, Divisions, Job Levels)
+        Route::get('/employments/data', [MasterApprovalController::class, 'getEmployments'])->name('approval.employments.data');
+        Route::get('/divisions/data', [MasterApprovalController::class, 'getDivisions'])->name('approval.divisions.data');
+        Route::get('/job-levels/data', [MasterApprovalController::class, 'getJobLevels'])->name('approval.joblevels.data');
     });
 });

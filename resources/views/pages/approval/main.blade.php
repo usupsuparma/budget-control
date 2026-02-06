@@ -155,23 +155,12 @@
                     loadTemplates();
                     loadModulesForDropdown();
                 } else if (target === '#flowdetails') {
-                    loadTemplatesForDropdown();
+                    loadAllTemplatesWithFlowDetails();
                     loadEmployments();
                 }
             });
 
-            // Template select change for flow details
-            $('#flowDetailsTemplateSelect').on('change', function() {
-                selectedTemplateId = $(this).val();
-                if (selectedTemplateId) {
-                    $('#btnAddFlowDetail').prop('disabled', false);
-                    loadFlowDetails(selectedTemplateId);
-                } else {
-                    $('#btnAddFlowDetail').prop('disabled', true);
-                    $('#flowDetailsPlaceholder').show();
-                    $('#flowDetailsTableContainer').hide();
-                }
-            });
+            // NOTE: Template dropdown removed - now using accordion direct view
 
             // Form submissions
             $('#moduleForm').on('submit', function(e) {
@@ -284,15 +273,15 @@
             </tr>
         `);
 
-        /**@argument
-         * disable action buttons for modules
-         * <button class="btn btn-sm btn-outline-primary me-1" onclick="editModule(${item.id})">
-                        <i class="ri-edit-line"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteModule(${item.id})">
-                        <i class="ri-delete-bin-line"></i>
-                    </button>
-         * **/
+                /**@argument
+                 * disable action buttons for modules
+                 * <button class="btn btn-sm btn-outline-primary me-1" onclick="editModule(${item.id})">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteModule(${item.id})">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                 * **/
             });
         }
 
@@ -314,7 +303,7 @@
                         if (currentTableName && response.data[currentTableName]) {
                             select.append(
                                 `<option value="${currentTableName}" selected>${response.data[currentTableName]}</option>`
-                                );
+                            );
                             delete response.data[currentTableName];
                         } else if (currentTableName) {
                             // Current table is already in the list, we'll select it below
@@ -468,7 +457,7 @@
 
         function loadModulesForDropdown(callback) {
             const excludeTemplateId = isEditMode ? $('#template-id').val() : null;
-            
+
             $.ajax({
                 url: '{{ route('approval.templates.modules') }}',
                 type: 'GET',
@@ -480,22 +469,25 @@
                         const select = $('#template_module_id');
                         select.empty().append('<option value="">Pilih Module</option>');
                         response.data.forEach(item => {
-                            select.append(`<option value="${item.id}" data-condition-field="${item.condition_field || ''}">${item.module_name}</option>`);
+                            select.append(
+                                `<option value="${item.id}" data-condition-field="${item.condition_field || ''}">${item.module_name}</option>`
+                            );
                         });
-                        
+
                         // Update condition_field display when module changes
                         select.off('change').on('change', function() {
                             const selectedOption = $(this).find('option:selected');
                             const conditionField = selectedOption.data('condition-field');
                             const displayField = $('#display_condition_field');
-                            
+
                             if (conditionField) {
                                 displayField.html(`<code>${conditionField}</code>`);
                             } else {
-                                displayField.html('<span class="text-muted">Tidak ada condition field</span>');
+                                displayField.html(
+                                    '<span class="text-muted">Tidak ada condition field</span>');
                             }
                         });
-                        
+
                         // Execute callback if provided
                         if (typeof callback === 'function') {
                             callback();
@@ -579,11 +571,11 @@
             $('#use_threshold').prop('checked', false);
             $('#template_is_active').prop('checked', true);
             $('#template_priority').val(1);
-            
+
             // Enable module select for new template
             $('#template_module_id').prop('disabled', false);
             $('#display_condition_field').html('<span class="text-muted">Pilih module terlebih dahulu</span>');
-            
+
             // Hide uppline config section for new template
             $('#upplineConfigSection').hide();
             $('#upplineConfigsTableBody').html(`
@@ -593,7 +585,7 @@
                     </td>
                 </tr>
             `);
-            
+
             loadModulesForDropdown();
             $('#templateModal').modal('show');
         }
@@ -607,7 +599,7 @@
                         const item = response.data.find(t => t.id === id);
                         if (item) {
                             isEditMode = true;
-                            
+
                             // Populate form first
                             $('#templateModalTitle').text('Edit Template');
                             $('#template-id').val(item.id);
@@ -616,7 +608,7 @@
                             $('#use_uppline_chain').prop('checked', item.use_uppline_chain);
                             $('#use_threshold').prop('checked', item.use_threshold);
                             $('#template_is_active').prop('checked', item.is_active);
-                            
+
                             // Show/hide uppline config section and load configs if needed
                             if (item.use_uppline_chain) {
                                 $('#upplineConfigSection').show();
@@ -625,30 +617,33 @@
                             } else {
                                 $('#upplineConfigSection').hide();
                             }
-                            
+
                             // Load modules dropdown, then set selected module
                             loadModulesForDropdown(() => {
                                 const select = $('#template_module_id');
-                                
+
                                 // If module not in dropdown (because already used), add it manually
                                 if (select.find(`option[value="${item.module_id}"]`).length === 0) {
-                                    select.append(`<option value="${item.module_id}" data-condition-field="${item.condition_field || ''}">${item.module ? item.module.module_name : 'Module'}</option>`);
+                                    select.append(
+                                        `<option value="${item.module_id}" data-condition-field="${item.condition_field || ''}">${item.module ? item.module.module_name : 'Module'}</option>`
+                                    );
                                 }
-                                
+
                                 // Set selected value
                                 select.val(item.module_id).trigger('change');
-                                
+
                                 // Display condition field
                                 const displayField = $('#display_condition_field');
                                 if (item.condition_field) {
                                     displayField.html(`<code>${item.condition_field}</code>`);
                                 } else {
-                                    displayField.html('<span class="text-muted">Tidak ada condition field</span>');
+                                    displayField.html(
+                                        '<span class="text-muted">Tidak ada condition field</span>');
                                 }
-                                
+
                                 // Disable module select in edit mode (after setting value)
                                 select.prop('disabled', true);
-                                
+
                                 $('#templateModal').modal('show');
                             });
                         }
@@ -755,22 +750,136 @@
 
         // ========== FLOW DETAILS FUNCTIONS ==========
 
-        function loadTemplatesForDropdown() {
+        function loadAllTemplatesWithFlowDetails() {
             $.ajax({
-                url: '{{ route('approval.templates.data') }}',
+                url: '{{ url('approval/templates/with-flow-details') }}',
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
-                        const select = $('#flowDetailsTemplateSelect');
-                        select.empty().append('<option value="">-- Pilih Template --</option>');
-                        response.data.filter(t => t.is_active).forEach(item => {
-                            select.append(
-                                `<option value="${item.id}">${item.template_name} (${item.module?.module_name || '-'})</option>`
-                                );
-                        });
+                        if (response.data.length === 0) {
+                            $('#templatesAccordion').hide();
+                            $('#noTemplatesPlaceholder').show();
+                        } else {
+                            $('#templatesAccordion').show();
+                            $('#noTemplatesPlaceholder').hide();
+                            renderTemplatesAccordion(response.data);
+                        }
+                    } else {
+                        showAlert(response.message, 'error');
                     }
+                },
+                error: function(xhr) {
+                    showAlert('Gagal memuat data templates', 'error');
                 }
             });
+        }
+
+        function renderTemplatesAccordion(templates) {
+            const accordion = $('#templatesAccordion');
+            accordion.empty();
+
+            templates.forEach(template => {
+                const accordionId = `template-${template.id}`;
+                const hasApprovers = template.approvers.length > 0;
+
+                const accordionItem = `
+                    <div class="accordion-item mb-2 border rounded">
+                        <h2 class="accordion-header" id="heading-${template.id}">
+                            <button class="accordion-button collapsed" type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#${accordionId}"
+                                    aria-expanded="false"
+                                    aria-controls="${accordionId}">
+                                <div class="d-flex align-items-center w-100 justify-content-between pe-3">
+                                    <div>
+                                        <strong>${template.template_name}</strong>
+                                        <span class="badge bg-info ms-2">${template.module_name}</span>
+                                        <span class="badge bg-${hasApprovers ? 'success' : 'secondary'} ms-1">
+                                            ${template.approvers_count} Approver(s)
+                                        </span>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="${accordionId}" class="accordion-collapse collapse" 
+                             aria-labelledby="heading-${template.id}"
+                             data-bs-parent="#templatesAccordion">
+                            <div class="accordion-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted small">
+                                        <i class="ri-information-line"></i> 
+                                        Daftar approver untuk template "${template.template_name}"
+                                    </span>
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="showAddFlowDetailModal(${template.id})">
+                                        <i class="ri-add-line me-1"></i> Tambah Approver
+                                    </button>
+                                </div>
+
+                                ${hasApprovers ? renderApproversTable(template.id, template.approvers) : renderNoApprovers()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                accordion.append(accordionItem);
+            });
+        }
+
+        function renderApproversTable(templateId, approvers) {
+            let rows = '';
+            approvers.forEach((approver, index) => {
+                rows += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><span class="level-badge level-${approver.level_sequence}">${approver.level_sequence}</span></td>
+                        <td><strong>${approver.employee_name}</strong></td>
+                        <td>${formatCurrency(approver.threshold_amount)}</td>
+                        <td>
+                            <span class="badge bg-${approver.is_required ? 'primary' : 'secondary'}">
+                                ${approver.is_required ? 'Required' : 'Optional'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" 
+                                    onclick="editFlowDetail(${approver.id}, ${templateId})">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteFlowDetail(${approver.id}, ${templateId})">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">No</th>
+                                <th width="10%">Level</th>
+                                <th>Employee (Approver)</th>
+                                <th>Threshold Amount</th>
+                                <th width="12%">Required</th>
+                                <th width="15%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderNoApprovers() {
+            return `
+                <div class="text-center text-muted py-4">
+                    <i class="ri-user-unfollow-line" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    <p class="mt-2 mb-0">Belum ada approver. Klik "Tambah Approver" untuk menambahkan.</p>
+                </div>
+            `;
         }
 
         function loadEmployments() {
@@ -854,25 +963,27 @@
             });
         }
 
-        function showAddFlowDetailModal() {
-            if (!selectedTemplateId) {
-                showAlert('Pilih template terlebih dahulu', 'warning');
+        function showAddFlowDetailModal(templateId) {
+            if (!templateId) {
+                showAlert('Template ID tidak valid', 'error');
                 return;
             }
 
             isEditMode = false;
+            selectedTemplateId = templateId;
             $('#flowDetailModalTitle').text('Tambah Approver');
             $('#flowDetailForm')[0].reset();
             $('#flowdetail-id').val('');
-            $('#flowdetail_template_id').val(selectedTemplateId);
+            $('#flowdetail_template_id').val(templateId);
             $('#level_sequence').val(1);
             $('#is_required').prop('checked', true);
             $('#flowDetailModal').modal('show');
         }
 
-        function editFlowDetail(id) {
+        function editFlowDetail(id, templateId) {
+            selectedTemplateId = templateId;
             $.ajax({
-                url: `{{ url('approval/flow-details/data') }}/${selectedTemplateId}`,
+                url: `{{ url('approval/flow-details/data') }}/${templateId}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -927,7 +1038,7 @@
                             showConfirmButton: false
                         });
                         $('#flowDetailModal').modal('hide');
-                        loadFlowDetails(selectedTemplateId);
+                        loadAllTemplatesWithFlowDetails();
                     } else {
                         showAlert(response.message, 'error');
                     }
@@ -972,7 +1083,7 @@
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
-                                loadFlowDetails(selectedTemplateId);
+                                loadAllTemplatesWithFlowDetails();
                             } else {
                                 showAlert(response.message, 'error');
                             }
@@ -994,7 +1105,7 @@
         $('#use_uppline_chain').on('change', function() {
             if ($(this).is(':checked')) {
                 $('#upplineConfigSection').slideDown();
-                
+
                 // Load uppline configs if editing existing template
                 const templateId = $('#template-id').val();
                 if (templateId) {
@@ -1038,7 +1149,7 @@
         function populateDivisionDropdown() {
             const select = $('#upplineconfig_division_id');
             select.find('option:not(:first)').remove(); // Keep "Default" option
-            
+
             divisionsData.forEach(division => {
                 select.append(`<option value="${division.id}">${division.division_name}</option>`);
             });
@@ -1075,9 +1186,9 @@
             }
 
             data.forEach(config => {
-                const divisionBadge = config.division_id 
-                    ? `<span class="badge bg-primary">${config.division_name}</span>`
-                    : `<span class="badge bg-secondary">Default (All Divisions)</span>`;
+                const divisionBadge = config.division_id ?
+                    `<span class="badge bg-primary">${config.division_name}</span>` :
+                    `<span class="badge bg-secondary">Default (All Divisions)</span>`;
 
                 tbody.append(`
                     <tr>
@@ -1101,7 +1212,7 @@
 
         function showAddUpplineConfigModal() {
             const templateId = $('#template-id').val();
-            
+
             if (!templateId) {
                 showAlert('Please save the template first before adding uppline configs', 'warning');
                 return;
@@ -1113,14 +1224,14 @@
             $('#upplineconfig-id').val('');
             $('#upplineconfig-template-id').val(templateId);
             $('#upplineconfig_step_sequence').val(1);
-            
+
             loadDivisions();
             $('#upplineConfigModal').modal('show');
         }
 
         function editUpplineConfig(id) {
             const templateId = $('#template-id').val();
-            
+
             $.ajax({
                 url: `{{ url('approval/uppline-configs/data') }}/${templateId}`,
                 type: 'GET',
@@ -1135,9 +1246,9 @@
                             $('#upplineconfig_division_id').val(config.division_id || '');
                             $('#upplineconfig_step_sequence').val(config.step_sequence);
                             $('#upplineconfig_job_level_name').val(config.job_level_name);
-                            
+
                             loadDivisions();
-                            
+
                             setTimeout(() => {
                                 $('#upplineconfig_division_id').val(config.division_id || '');
                                 $('#upplineConfigModal').modal('show');

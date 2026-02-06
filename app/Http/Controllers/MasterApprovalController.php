@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-class ApprovalController extends Controller
+class MasterApprovalController extends Controller
 {
     public function __construct() {}
 
@@ -274,6 +274,62 @@ class ApprovalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get templates',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all templates with their flow details for direct list view
+     */
+    public function getAllTemplatesWithFlowDetails()
+    {
+        try {
+            $templates = ApprovalFlowTemplate::with([
+                'module',
+                'details.employment.employee',
+            ])
+                ->where('is_active', true)
+                ->orderBy('priority')
+                ->get()
+                ->map(function ($template) {
+                    return [
+                        'id' => $template->id,
+                        'template_name' => $template->template_name,
+                        'module_name' => $template->module->module_name ?? '-',
+                        'priority' => $template->priority,
+                        'use_uppline_chain' => $template->use_uppline_chain,
+                        'use_threshold' => $template->use_threshold,
+                        'approvers_count' => $template->details->count(),
+                        'approvers' => $template->details->map(function ($detail) {
+                            $employeeName = 'N/A';
+                            if ($detail->employment && $detail->employment->employee) {
+                                $firstName = $detail->employment->employee->first_name ?? '';
+                                $lastName = $detail->employment->employee->last_name ?? '';
+                                $employeeName = trim($firstName.' '.$lastName);
+                            }
+
+                            return [
+                                'id' => $detail->id,
+                                'level_sequence' => $detail->level_sequence,
+                                'employment_id' => $detail->employment_id,
+                                'employee_name' => $employeeName,
+                                'threshold_amount' => $detail->threshold_amount,
+                                'is_required' => $detail->is_required,
+                            ];
+                        }),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $templates,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get templates with flow details failed: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get templates with flow details',
             ], 500);
         }
     }

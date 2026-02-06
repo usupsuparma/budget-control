@@ -1,8 +1,5 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SasaranStrategisController;
-use App\Http\Controllers\KpiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AreaController;
@@ -10,47 +7,48 @@ use App\Http\Controllers\AuthorizationAddBudgetController;
 use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\AuthorizationTransactionController;
 use App\Http\Controllers\BudgetAdminController;
-use App\Http\Controllers\MasterController;
-use App\Http\Controllers\RealisasiController;
+use App\Http\Controllers\BudgetCategoryController;
+use App\Http\Controllers\BudgetCodeController;
+use App\Http\Controllers\BudgetResumeController;
+use App\Http\Controllers\BudgetSubmissionController;
+use App\Http\Controllers\BudgetUserController;
 use App\Http\Controllers\CompanyPolicyController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DirectorController;
 use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\JobPositionController;
-use App\Http\Controllers\OrganizationController;
-use App\Http\Controllers\SectionController;
-use App\Http\Controllers\SubmissionController;
-use App\Http\Controllers\KPIDivisionController;
-use App\Http\Controllers\KPIDivisionCompanyPolicyController;
-use App\Http\Controllers\KPIDepartmentController;
+use App\Http\Controllers\KpiController;
 use App\Http\Controllers\KPIDepartmentCompanyPolicyController;
-use App\Http\Controllers\KPISectionController;
+use App\Http\Controllers\KPIDepartmentController;
+use App\Http\Controllers\KPIDivisionCompanyPolicyController;
+use App\Http\Controllers\KPIDivisionController;
 use App\Http\Controllers\KPISectionCompanyPolicyController;
+use App\Http\Controllers\KPISectionController;
 use App\Http\Controllers\KPIWorkPlanController;
+use App\Http\Controllers\LpjApprovalMasterController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\MasterController;
 use App\Http\Controllers\PengajuanAnggaranController;
 use App\Http\Controllers\ProductionController;
-use App\Http\Controllers\SettingCodeController;
-use App\Http\Controllers\UsersController;
-use App\Http\Controllers\WorkPlanItemController;
-use App\Http\Controllers\BudgetCategoryController;
-use App\Http\Controllers\BudgetCodeController;
-use App\Http\Controllers\BudgetResumeController;
-use App\Http\Controllers\BudgetSubmissionController;
-use App\Http\Controllers\SettingProductionController;
-use App\Http\Controllers\BudgetUserController;
-use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\RealisasiController;
+use App\Http\Controllers\SasaranStrategisController;
+use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SegmenController;
+use App\Http\Controllers\SettingCodeController;
 use App\Http\Controllers\SettingPriceController;
+use App\Http\Controllers\SettingProductionController;
+use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UsersController;
 use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkplanBudgetItemApprovalController;
-use App\Http\Controllers\LpjApprovalMasterController;
+use App\Http\Controllers\WorkPlanItemController;
 use App\Livewire\Auth\Login;
-use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +69,7 @@ Route::middleware('auth')->group(function () {
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
+
         return redirect('/');
     })->name('logout');
 
@@ -80,7 +79,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/update', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
         Route::post('/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
     });
-
 
     /* ========================
         DASHBOARD
@@ -98,7 +96,6 @@ Route::middleware('auth')->group(function () {
         ->name('dash.executive.policies');
     Route::get('/budget/summary', [DashboardController::class, 'budgetSummaryByYear'])
         ->name('budget.summary.year');
-
 
     /* ========================
         SASARAN STRATEGIS
@@ -131,7 +128,6 @@ Route::middleware('auth')->group(function () {
                 ->name('sasaran-strategis.destroy');
         });
 
-
     /* ========================
         KPI
     ======================== */
@@ -161,7 +157,6 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:kpi.delete')
                 ->name('kpi.destroy');
         });
-
 
     /* ========================
         COMPANY POLICY
@@ -451,7 +446,6 @@ Route::middleware('auth')->group(function () {
             ->name('budget.submission.reject');
     });
 
-
     Route::prefix('supplier')->group(function () {
 
         Route::get('/data', [SupplierController::class, 'data'])
@@ -470,8 +464,6 @@ Route::middleware('auth')->group(function () {
             ->name('supplier.destroy');
     });
 
-
-
     Route::prefix('customer')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('customer.index');
         Route::get('/data', [CustomerController::class, 'data'])->name('customer.data');
@@ -480,7 +472,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/{id}', [CustomerController::class, 'update'])->name('customer.update');
         Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('customer.destroy');
     });
-
 
     Route::prefix('unit')->group(function () {
 
@@ -675,8 +666,6 @@ Route::middleware('auth')->group(function () {
             ->name('marketing.downloadTemplate');
     });
 
-
-
     Route::prefix('resume-anggaran')
         ->middleware('permission:budget.view')
         ->group(function () {
@@ -684,7 +673,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [AnggaranController::class, 'resume'])
                 ->name('resume-anggaran.index');
         });
-
 
     /* ========================
         ADMISSION
@@ -779,33 +767,32 @@ Route::middleware('auth')->group(function () {
             ->group(function () {
                 Route::get('/', [SubmissionController::class, 'approval'])
                     ->name('approvalSubmission.index');
-                
+
                 // Get badge counts for all tabs (pending, approved, rejected)
                 Route::get('/counts', [SubmissionController::class, 'getApprovalCounts'])
                     ->name('userSubmission.approval.counts');
-                
+
                 // Get approval data for specific tab (pending, approved, rejected)
                 Route::get('/data', [SubmissionController::class, 'getApprovalData'])
                     ->name('userSubmission.approval.data');
-                
+
                 // Pending approvals route (kept for backward compatibility)
                 Route::get('/pending-approvals', [SubmissionController::class, 'getPendingApprovals'])
                     ->name('approvalSubmission.pendingApprovals');
-                
+
                 // Show transaction detail
                 Route::get('/{id}', [SubmissionController::class, 'show'])
                     ->name('approvalSubmission.show');
-                
+
                 // Approval actions - Authorization is handled inside controller
                 // (checks if user is the next approver in the approval chain)
                 Route::post('/{id}/approve', [SubmissionController::class, 'approve'])
                     ->name('approvalSubmission.approve');
-                
+
                 Route::post('/{id}/reject', [SubmissionController::class, 'reject'])
                     ->name('approvalSubmission.reject');
             });
     });
-
 
     /* ========================
         REALISASI
@@ -837,9 +824,6 @@ Route::middleware('auth')->group(function () {
                 ->middleware('permission:realisasi.delete')
                 ->name('realisasi.destroy');
         });
-
-
-
 
     /* ========================
         BUDGET ADMIN
@@ -956,7 +940,6 @@ Route::middleware('auth')->group(function () {
             });
         });
 
-
     /*==========================
         BUDGET ADMIN
     ==========================*/
@@ -976,8 +959,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [BudgetResumeController::class, 'index'])
                 ->name('budget-resume.index');
         });
-
-
 
     /* ========================
         MASTER
@@ -1003,9 +984,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [EmployeeController::class, 'show'])
                 ->name('employee.show');
         });
-
-
-
 
     Route::prefix('jobPosition')
         ->middleware('permission:jobposition.view')
@@ -1137,38 +1115,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [ApprovalController::class, 'index'])
                 ->name('approval');
 
-            // Dashboard API Endpoints
-            Route::get('/pending', [ApprovalController::class, 'getPendingApprovals'])
-                ->name('approval.pending');
-            Route::get('/statistics', [ApprovalController::class, 'getStatistics'])
-                ->name('approval.statistics');
-            Route::get('/transactions', [ApprovalController::class, 'getAllTransactions'])
-                ->name('approval.transactions');
-            Route::get('/detail/{id}', [ApprovalController::class, 'show'])
-                ->name('approval.show');
-            Route::get('/transaction/{transactionId}', [ApprovalController::class, 'getTransactionDetail'])
-                ->name('approval.transaction.detail');
-            Route::get('/history/{transactionId}', [ApprovalController::class, 'getHistory'])
-                ->name('approval.history');
-
-            // Approval Actions
-            Route::post('/approve/{id}', [ApprovalController::class, 'approve'])
-                ->middleware('permission:approval.create')
-                ->name('approval.approve');
-            Route::post('/reject/{id}', [ApprovalController::class, 'reject'])
-                ->middleware('permission:approval.create')
-                ->name('approval.reject');
-            Route::post('/cancel/{transactionId}', [ApprovalController::class, 'cancel'])
-                ->name('approval.cancel');
-            Route::post('/check-threshold', [ApprovalController::class, 'checkThreshold'])
-                ->name('approval.checkThreshold');
-
             // Threshold Management API (Accessed via Tab)
-            Route::get('/threshold/data', [ApprovalController::class, 'getThresholds'])
-                ->name('approval.threshold.data');
-            Route::post('/threshold/store', [ApprovalController::class, 'storeThreshold'])
-                ->middleware('permission:approval.create')
-                ->name('approval.threshold.store');
             Route::put('/threshold/update/{id}', [ApprovalController::class, 'updateThreshold'])
                 ->middleware('permission:approval.edit')
                 ->name('approval.threshold.update');
@@ -1285,32 +1232,31 @@ Route::middleware('auth')->group(function () {
             // Dashboard for verifiers
             Route::get('/', [VerificationBudgetController::class, 'index'])
                 ->name('verification.budget.index');
-            
+
             // Get pending verifications for current user
             Route::get('/pending', [VerificationBudgetController::class, 'myPendingVerifications'])
                 ->name('verification.budget.pending');
-            
+
             // Submit item for verification (from budget-user)
             Route::post('/{itemId}/submit', [VerificationBudgetController::class, 'submitForVerification'])
                 ->name('verification.budget.submit');
-            
+
             // Verify item (approve and set fix price)
             Route::post('/{itemId}/verify', [VerificationBudgetController::class, 'verify'])
                 ->name('verification.budget.verify');
-            
+
             // Reject verification
             Route::post('/{itemId}/reject', [VerificationBudgetController::class, 'reject'])
                 ->name('verification.budget.reject');
-            
+
             // Get verification status for an item
             Route::get('/{itemId}/status', [VerificationBudgetController::class, 'getStatus'])
                 ->name('verification.budget.status');
-            
+
             // Check if current user can verify
             Route::get('/{itemId}/can-verify', [VerificationBudgetController::class, 'canVerify'])
                 ->name('verification.budget.canVerify');
         });
-
 
     /* ========================
         SETTINGS
@@ -1358,7 +1304,6 @@ Route::middleware('auth')->group(function () {
         BUDGET CODE
     ======================== */
 
-
     Route::prefix('budgetCode')
         ->middleware('permission:setting.master.view')
         ->group(function () {
@@ -1398,7 +1343,6 @@ Route::middleware('auth')->group(function () {
                 ->name('lpjApprovalMaster.availableEmployees');
         });
 
-
     Route::prefix('setting-price-verificator')
         ->middleware('permission:setting.price.view')
         ->group(function () {
@@ -1429,7 +1373,6 @@ Route::middleware('auth')->group(function () {
                 ->name('settingPriceVerificator.deleteUser');
         });
 
-
     /* ========================
         AUTHORIZATION
     ======================== */
@@ -1446,7 +1389,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/permissions/store', [AuthorizationController::class, 'permissionStore'])->name('authorization.permissions.create');
             Route::post('/permissions/update/{id}', [AuthorizationController::class, 'permissionUpdate'])->name('auth.permissions.update');
             Route::delete('/permissions/delete/{id}', [AuthorizationController::class, 'permissionDelete'])->name('auth.permissions.delete');
-
 
             Route::get('/roles/{id}/permissions', [AuthorizationController::class, 'rolePermissions'])->name('auth.roles.permissions');
             Route::post('/roles/{id}/permissions/update', [AuthorizationController::class, 'rolePermissionsUpdate'])->name('auth.roles.permissions.update');
@@ -1466,7 +1408,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/{id}', [AuthorizationTransactionController::class, 'update'])->name('authorizationTransaction.update');
         Route::delete('/{id}', [AuthorizationTransactionController::class, 'destroy'])->name('authorizationTransaction.destroy');
     });
-
 
     Route::prefix('authorizationAddBudget')->group(function () {
         Route::get('/', [AuthorizationAddBudgetController::class, 'index'])->name('authorizationAddBudget.index');

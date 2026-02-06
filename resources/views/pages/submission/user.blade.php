@@ -324,6 +324,16 @@
                                     </span>
                                 </a>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_lpj" role="tab" aria-selected="false" tabindex="-1" onclick="loadPendingLpjApprovals()">
+                                    <span><i style="font-size: 1rem !important;" class="ri-file-check-line stat-icon text-primary"></i></span>
+                                    <span>LPJ Approval</span>
+                                    <span class="badge bg-light text-dark" id="lpjApprovalCount">
+                                        <span class="spinner-border spinner-border-sm" role="status"
+                                        aria-label="Loading"></span>
+                                    </span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <div class="card-body">
@@ -467,6 +477,39 @@
                                         <p class="mb-0" id="paginationInfo4">Showing 0 to 0 of 0 entries</p>
                                     </div>
                                     <div id="paginationLinks4"></div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="demo-tab-5_lpj" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-information-line me-2"></i>
+                                    <strong>LPJ Approval Queue</strong> - Transaksi yang sudah di-disbursed dan telah submit LPJ, menunggu approval dari Anda.
+                                </div>
+                                <div class="table-box table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Submission Date</th>
+                                                <th>Transaction Date</th>
+                                                <th>User Submitter</th>
+                                                <th>Purpose</th>
+                                                <th>Submission Value</th>
+                                                <th>Realization Value</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lpjApprovalTableBody">
+                                            <tr>
+                                                <td colspan="9" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Loading LPJ approvals...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1180,6 +1223,9 @@
 
             // Load data on page load
             loadData();
+            
+            // Load LPJ approval counts
+            loadLpjApprovalCounts();
 
             // Filter button
             $('#btnFilter').on('click', function() {
@@ -3022,6 +3068,280 @@
                 }
             });
         });
+
+        // ==================== LPJ APPROVAL FUNCTIONS ====================
+        
+        function loadLpjApprovalCounts() {
+            console.log('[LPJ] Loading LPJ approval counts...');
+            const url = '{{ route('userSubmission.lpj.counts') }}';
+            console.log('[LPJ] URL:', url);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    console.log('[LPJ] Counts response:', response);
+                    if (response.success && response.data) {
+                        $('#lpjApprovalCount').text(response.data.pending || 0);
+                        console.log('[LPJ] Count set to:', response.data.pending || 0);
+                    } else {
+                        console.warn('[LPJ] Invalid response format:', response);
+                        $('#lpjApprovalCount').text('0');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[LPJ] Error loading counts:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        response: xhr.responseJSON
+                    });
+                    $('#lpjApprovalCount').text('!');
+                    
+                    // Show error in badge
+                    $('#lpjApprovalCount').attr('title', 'Error loading count: ' + (xhr.responseJSON?.message || error));
+                }
+            });
+        }
+        
+        function loadPendingLpjApprovals() {
+            console.log('[LPJ] Loading pending LPJ approvals...');
+            const url = '{{ route('userSubmission.lpj.pending') }}';
+            console.log('[LPJ] URL:', url);
+            
+            // Show loading spinner
+            $('#lpjApprovalTableBody').html(`
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading LPJ approvals...
+                    </td>
+                </tr>
+            `);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                timeout: 10000, // 10 second timeout
+                success: function(response) {
+                    console.log('[LPJ] Pending approvals response:', response);
+                    if (response.success) {
+                        if (response.data && response.data.length > 0) {
+                            console.log('[LPJ] Found', response.data.length, 'pending approvals');
+                            renderLpjApprovalTable(response.data);
+                        } else {
+                            console.log('[LPJ] No pending approvals found');
+                            $('#lpjApprovalTableBody').html('<tr><td colspan="9" class="text-center text-muted">No pending LPJ approvals</td></tr>');
+                        }
+                    } else {
+                        console.warn('[LPJ] Invalid response:', response);
+                        $('#lpjApprovalTableBody').html('<tr><td colspan="9" class="text-center text-warning">Invalid response from server</td></tr>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[LPJ] Error loading pending approvals:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        response: xhr.responseJSON,
+                        timeout: status === 'timeout'
+                    });
+                    
+                    let errorMsg = 'Error loading data';
+                    if (status === 'timeout') {
+                        errorMsg = 'Request timeout - server took too long to respond';
+                    } else if (xhr.status === 404) {
+                        errorMsg = 'Endpoint not found (404) - Route may not be registered';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'Server error (500) - ' + (xhr.responseJSON?.message || 'Internal server error');
+                    } else if (xhr.status === 0) {
+                        errorMsg = 'Network error - Cannot reach server';
+                    } else if (xhr.responseJSON?.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    
+                    $('#lpjApprovalTableBody').html(`
+                        <tr>
+                            <td colspan="9" class="text-center text-danger">
+                                <i class="ri-error-warning-line me-2"></i>${errorMsg}
+                                <br><small class="text-muted">Check console for details (F12)</small>
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+        
+        function renderLpjApprovalTable(data) {
+            console.log('[LPJ] Rendering approval table with', data.length, 'items');
+            let html = '';
+            
+            if (!data || data.length === 0) {
+                html = '<tr><td colspan="9" class="text-center text-muted">No pending LPJ approvals</td></tr>';
+            } else {
+                try {
+                    data.forEach((item, index) => {
+                        console.log('[LPJ] Processing item', index, ':', item);
+                        
+                        // Backend returns LpjApprovalDetail with lpjSubmission relationship
+                        const lpj = item.lpj_submission || item.lpjSubmission || item.lpj || item;
+                        const transaction = lpj?.transaction || {};
+                        const user = transaction?.user || {};
+                        
+                        if (!lpj || !transaction) {
+                            console.warn('[LPJ] Invalid item structure at index', index, ':', item);
+                            return; // Skip this item
+                        }
+                        
+                        const statusBadge = lpj.status_approval === 'pending' ? 'bg-warning' : 
+                                           lpj.status_approval === 'in_progress' ? 'bg-info' : 
+                                           lpj.status_approval === 'approved' ? 'bg-success' : 'bg-secondary';
+                        
+                        // Get user name from relationship or fallback
+                        const userName = user.name || transaction.user_name || '-';
+                        
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${formatDate(lpj.submission_date)}</td>
+                                <td>${formatDate(transaction.transaction_date)}</td>
+                                <td>${userName}</td>
+                                <td>${transaction.purpose || '-'}</td>
+                                <td>${formatCurrency(transaction.estimated_amount || 0)}</td>
+                                <td>${formatCurrency(transaction.actual_amount || 0)}</td>
+                                <td><span class="badge ${statusBadge}">${lpj.status_approval || 'unknown'}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-info" onclick="viewLpjDetailForApproval(${lpj.id}, ${transaction.id})" title="View Detail">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="approveLpjSubmission(${lpj.id})" title="Approve">
+                                            <i class="ri-check-line"></i> Approve
+                                        </button>
+                                        <button type="button" class="btn btn-danger" onclick="rejectLpjSubmission(${lpj.id})" title="Reject">
+                                            <i class="ri-close-line"></i> Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } catch (err) {
+                    console.error('[LPJ] Error rendering table:', err);
+                    html = `<tr><td colspan="9" class="text-center text-danger">Error rendering table: ${err.message}</td></tr>`;
+                }
+            }
+            
+            $('#lpjApprovalTableBody').html(html);
+            console.log('[LPJ] Table rendered successfully');
+        }
+        
+        function viewLpjDetailForApproval(lpjId, transactionId) {
+            viewLpjDetail(transactionId);
+        }
+        
+        function approveLpjSubmission(lpjId) {
+            Swal.fire({
+                title: 'Approve LPJ?',
+                text: 'Are you sure you want to approve this LPJ submission?',
+                icon: 'question',
+                input: 'textarea',
+                inputLabel: 'Notes (optional)',
+                inputPlaceholder: 'Enter approval notes...',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Approve',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let url = "{{ route('userSubmission.lpj.approve', ':lpjId') }}".replace(':lpjId', lpjId);
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            notes: result.value
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success',
+                                    text: response.message || 'LPJ approved successfully',
+                                    confirmButtonColor: '#198754'
+                                });
+                                loadPendingLpjApprovals();
+                                loadLpjApprovalCounts();
+                                loadData();
+                                loadSummary();
+                            } else {
+                                showAlert(response.message || 'Error approving LPJ', 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            const response = xhr.responseJSON;
+                            showAlert(response?.message || 'Error approving LPJ', 'error');
+                        }
+                    });
+                }
+            });
+        }
+        
+        function rejectLpjSubmission(lpjId) {
+            Swal.fire({
+                title: 'Reject LPJ?',
+                text: 'Are you sure you want to reject this LPJ submission?',
+                icon: 'warning',
+                input: 'textarea',
+                inputLabel: 'Rejection Reason (required)',
+                inputPlaceholder: 'Please provide a reason for rejection...',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Rejection reason is required!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Reject',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let url = "{{ route('userSubmission.lpj.reject', ':lpjId') }}".replace(':lpjId', lpjId);
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            reason: result.value
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success',
+                                    text: response.message || 'LPJ rejected',
+                                    confirmButtonColor: '#dc3545'
+                                });
+                                loadPendingLpjApprovals();
+                                loadLpjApprovalCounts();
+                                loadData();
+                                loadSummary();
+                            } else {
+                                showAlert(response.message || 'Error rejecting LPJ', 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            const response = xhr.responseJSON;
+                            showAlert(response?.message || 'Error rejecting LPJ', 'error');
+                        }
+                    });
+                }
+            });
+        }
 
         // View LPJ Detail
         function viewLpjDetail(transactionId) {

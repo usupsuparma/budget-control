@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('workplan_budget_approver', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('workplan_budget_item_id')
-                ->constrained('workplan_budget_items') 
-                ->onDelete('cascade');
+            // $table->foreignId('workplan_budget_item_id')
+            //     ->constrained('workplan_budget_items')
+            //     ->onDelete('cascade');
+            $table->unsignedBigInteger('workplan_budget_item_id');
             $table->string('verifier_id', 50);
             $table->boolean('is_executor')->default(false);
             $table->timestamps();

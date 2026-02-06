@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
+/**
+ * @deprecated This service is part of the legacy approval system.
+ * Use ApprovalTransactionService for the new dynamic approval system instead.
+ * This class will be removed in a future version.
+ * 
+ * @see \App\Services\ApprovalTransactionService\ApprovalTransactionService
+ */
 class ApprovalService
 {
     /**

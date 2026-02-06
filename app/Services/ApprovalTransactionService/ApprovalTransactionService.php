@@ -49,6 +49,25 @@ interface ApprovalTransactionService
     public function getPendingApprovalsForUser(int $employmentId): array;
 
     /**
+     * Get approval items by status for a user (employment).
+     *
+     * @param int $employmentId
+     * @param string $status 'pending', 'approved', or 'rejected'
+     * @param array $filters Optional filters (year, search, page, per_page)
+     * @return array ['success' => bool, 'data' => array]
+     */
+    public function getApprovalItemsByStatus(int $employmentId, string $status, array $filters = []): array;
+
+    /**
+     * Get approval counts for a user (employment).
+     *
+     * @param int $employmentId
+     * @param array $filters Optional filters (year)
+     * @return array ['success' => bool, 'data' => array]
+     */
+    public function getApprovalCounts(int $employmentId, array $filters = []): array;
+
+    /**
      * Cancel an approval request for a transaction.
      *
      * @param int $transactionId

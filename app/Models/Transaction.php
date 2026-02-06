@@ -22,13 +22,13 @@ class Transaction extends Model
         'estimated_amount',
         'actual_amount',
         'urgency',
-        'status',
+        'status',// Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
         'threshold_id',
         'current_approval_level',
         'required_approval_levels',
         'approval_completed_at',
         'rejection_reason',
-        'status_approval',
+        'status_approval', // 'pending','in_progress','approved','rejected','cancelled'
     ];
 
     protected $casts = [
@@ -36,16 +36,34 @@ class Transaction extends Model
         'estimated_amount' => 'decimal:2',
         'actual_amount' => 'decimal:2',
         'approval_completed_at' => 'datetime',
+        'status' => 'integer',
+        'user_id' => 'integer',
+        'unit_id' => 'integer',
+        'job_level_id' => 'integer',
+        'job_position_id' => 'integer',
+        'threshold_id' => 'integer',
+        'current_approval_level' => 'integer',
+        'required_approval_levels' => 'integer',
     ];
 
-   // Status constants (legacy workflow status)
-    const STATUS_PENDING = 0;
-    const STATUS_IN_PROGRESS = 1;
+    // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled	
+    const STATUS_SUBMISSION = 0;
+    const STATUS_PROGRESS = 1;
     const STATUS_APPROVED = 2;
-    const STATUS_REJECTED = 3;
-    const STATUS_CANCELLED = 4;
+    const STATUS_PAID = 3;
+    const STATUS_COMPLETED = 4;
+    const STATUS_REJECTED = 5;
+    const STATUS_CANCELLED = -1;
 
-    // Approval Status constants (dynamic approval system)
+
+    // Legacy transaction workflow status constants (still in use for 'status' field)
+    const STATUS_PENDING = 0;  // Used for draft/pending transactions
+    // const STATUS_IN_PROGRESS = 1;  // Not used anymore
+    // const STATUS_APPROVED = 2;  // Not used anymore
+    // const STATUS_REJECTED = 3;  // Not used anymore
+    // Note: STATUS_CANCELLED = -1 is defined above
+
+    // Approval Status constants (dynamic approval system for 'status_approval' field)
     const APPROVAL_STATUS_PENDING = 'pending';
     const APPROVAL_STATUS_IN_PROGRESS = 'in_progress';
     const APPROVAL_STATUS_APPROVED = 'approved';
@@ -58,11 +76,6 @@ class Transaction extends Model
     const URGENCY_HIGH = 'high';
 
     // Relationships
-    public function threshold()
-    {
-        return $this->belongsTo(TransactionApprovalThreshold::class, 'threshold_id');
-    }
-
     /**
      * Get the approval request for this transaction (dynamic approval system).
      */
@@ -85,33 +98,6 @@ class Transaction extends Model
             'id', // Local key on Transaction
             'id' // Local key on ApprovalRequest
         )->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
-    }
-
-    public function approvals()
-    {
-        return $this->hasMany(TransactionApproval::class, 'transaction_id')
-                    ->orderBy('sequence_order');
-    }
-
-    public function pendingApprovals()
-    {
-        return $this->hasMany(TransactionApproval::class, 'transaction_id')
-                    ->where('status', TransactionApproval::STATUS_PENDING)
-                    ->orderBy('sequence_order');
-    }
-
-    public function nextApprover()
-    {
-        return $this->hasOne(TransactionApproval::class, 'transaction_id')
-                    ->where('status', TransactionApproval::STATUS_PENDING)
-                    ->orderBy('sequence_order')
-                    ->oldest();
-    }
-
-    public function logs()
-    {
-        return $this->hasMany(TransactionApprovalLog::class, 'transaction_id')
-                    ->orderBy('created_at', 'desc');
     }
 
     public function details()
@@ -139,21 +125,40 @@ class Transaction extends Model
         return $this->belongsTo(JobPosition::class, 'job_position_id');
     }
 
+    /**
+     * Get the LPJ submission for this transaction.
+     */
+    public function lpjSubmission()
+    {
+        return $this->hasOne(TransactionLpjSubmission::class, 'transaction_id');
+    }
+
+    /**
+     * Check if transaction can submit LPJ (status must be PAID).
+     */
+    public function canSubmitLpj(): bool
+    {
+        return $this->status === self::STATUS_PAID && !$this->lpjSubmission;
+    }
+
+    /**
+     * Check if transaction has pending LPJ.
+     */
+    public function hasPendingLpj(): bool
+    {
+        return $this->lpjSubmission && $this->lpjSubmission->isPending();
+    }
+
+    /**
+     * Check if transaction LPJ is approved.
+     */
+    public function hasApprovedLpj(): bool
+    {
+        return $this->lpjSubmission && $this->lpjSubmission->isApproved();
+    }
+
     // Scopes
-    public function scopePending($query)
-    {
-        return $query->where('status', self::STATUS_PENDING);
-    }
-
-    public function scopeInProgress($query)
-    {
-        return $query->where('status', self::STATUS_IN_PROGRESS);
-    }
-
-    public function scopeApproved($query)
-    {
-        return $query->where('status', self::STATUS_APPROVED);
-    }
+    
 
     public function scopeRejected($query)
     {
@@ -185,41 +190,7 @@ class Transaction extends Model
     {
         return $this->current_approval_level >= $this->required_approval_levels;
     }
-
-    public function isPending()
-    {
-        return $this->status === self::STATUS_PENDING;
-    }
-
-    public function isInProgress()
-    {
-        return $this->status === self::STATUS_IN_PROGRESS;
-    }
-
-    public function isApproved()
-    {
-        return $this->status === self::STATUS_APPROVED;
-    }
-
-    public function isRejected()
-    {
-        return $this->status === self::STATUS_REJECTED;
-    }
-
-    public function isCancelled()
-    {
-        return $this->status === self::STATUS_CANCELLED;
-    }
-
-    public function canBeEdited()
-    {
-        return $this->status === self::STATUS_PENDING;
-    }
-
-    public function canBeCancelled()
-    {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_IN_PROGRESS]);
-    }
+    
 
     public function getApprovalProgress()
     {
@@ -229,29 +200,6 @@ class Transaction extends Model
         return round(($this->current_approval_level / $this->required_approval_levels) * 100);
     }
 
-    public function getStatusLabel()
-    {
-        return match($this->status) {
-            self::STATUS_PENDING => 'Pending',
-            self::STATUS_IN_PROGRESS => 'In Progress',
-            self::STATUS_APPROVED => 'Approved',
-            self::STATUS_REJECTED => 'Rejected',
-            self::STATUS_CANCELLED => 'Cancelled',
-            default => 'Unknown',
-        };
-    }
-
-    public function getStatusBadgeClass()
-    {
-        return match($this->status) {
-            self::STATUS_PENDING => 'warning',
-            self::STATUS_IN_PROGRESS => 'info',
-            self::STATUS_APPROVED => 'success',
-            self::STATUS_REJECTED => 'danger',
-            self::STATUS_CANCELLED => 'secondary',
-            default => 'light',
-        };
-    }
 
     /**
      * Get approval status label (dynamic approval system)
@@ -333,62 +281,5 @@ class Transaction extends Model
             self::URGENCY_HIGH => 'danger',
             default => 'light',
         };
-    }
-
-    /**
-     * Get the next pending approval
-     */
-    public function getNextPendingApproval()
-    {
-        return $this->approvals()
-            ->where('status', TransactionApproval::STATUS_PENDING)
-            ->orderBy('sequence_order')
-            ->first();
-    }
-
-    /**
-     * Get current approver info
-     */
-    public function getCurrentApproverInfo()
-    {
-        $nextApproval = $this->getNextPendingApproval();
-        
-        if ($nextApproval) {
-            return [
-                'level' => $nextApproval->approval_level,
-                'name' => $nextApproval->approver_name,
-                'id' => $nextApproval->approver_id,
-            ];
-        }
-        
-        return null;
-    }
-
-    /**
-     * Check if a user can approve this transaction
-     */
-    public function canBeApprovedBy($userId)
-    {
-        if ($this->status !== self::STATUS_IN_PROGRESS) {
-            return false;
-        }
-
-        $nextApproval = $this->getNextPendingApproval();
-        
-        if (!$nextApproval) {
-            return false;
-        }
-
-        // Check if user is the assigned approver
-        if ($nextApproval->approver_id === $userId) {
-            return true;
-        }
-
-        // Check if user has override permission
-        $authorizer = TransactionAuthorizer::where('employee_id', $userId)
-            ->where('can_override', true)
-            ->first();
-
-        return $authorizer !== null;
     }
 }

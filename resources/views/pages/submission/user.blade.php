@@ -1320,9 +1320,11 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        $('#newSubmissionCount').text(response.data.newSubmission);
-                        $('#progressCount').text(response.data.progress);
-                        $('#paidCount').text(response.data.paid);
+                        // Request Tab (submission + progress + approved)
+                        $('#newSubmissionCount').text(response.data.requestCount);
+                        // Disbursed Tab (paid)
+                        $('#progressCount').text(response.data.paid);
+
                         $('#completionCount').text(response.data.completion);
                         $("#rejectedCount").text(response.data.rejected);
                         $('#totalSubmissionCount').text(response.data.totalSubmission);
@@ -1370,7 +1372,8 @@
                 type: 'GET',
                 data: {
                     year: year,
-                    status: 'dis',
+                    // 'request' filter covers status 0 (Submission), 1 (Progress), 2 (Approved)
+                    status: 'request',
                     page: currentPage
                 },
                 success: function(response) {
@@ -1473,21 +1476,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                                    <i class="ri-edit-line"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                                    <i class="ri-delete-bin-line"></i>
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                        <i class="ri-edit-line"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                        <i class="ri-delete-bin-line"></i>
+                                                                    </button>
+                                                                ` : ''}
                             ${item.can_approve ? `
-                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                                    <i class="ri-check-line"></i> Approve
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                                    <i class="ri-close-line"></i> Reject
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                        <i class="ri-check-line"></i> Approve
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                        <i class="ri-close-line"></i> Reject
+                                                                    </button>
+                                                                ` : ''}
                             <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})">
                                 <i class="ri-file-pdf-2-line"></i>
                             </button>
@@ -1563,15 +1566,15 @@
                                 <i class="ri-file-pdf-2-line"></i>
                             </button>
                             ${!hasLpj && item.status == 3 ? `
-                                                    <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
-                                                        <i class="ri-file-text-line"></i> LPJ
-                                                    </button>
-                                                ` : ''}
+                                                        <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
+                                                            <i class="ri-file-text-line"></i> LPJ
+                                                        </button>
+                                                    ` : ''}
                             ${hasLpj ? `
-                                                    <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
-                                                        <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
-                                                    </button>
-                                                ` : ''}
+                                                        <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
+                                                            <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
+                                                        </button>
+                                                    ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1659,21 +1662,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                                    <i class="ri-edit-line"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                                    <i class="ri-delete-bin-line"></i>
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                        <i class="ri-edit-line"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                        <i class="ri-delete-bin-line"></i>
+                                                                    </button>
+                                                                ` : ''}
                             ${item.can_approve ? `
-                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                                    <i class="ri-check-line"></i> Approve
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                                    <i class="ri-close-line"></i> Reject
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                        <i class="ri-check-line"></i> Approve
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                        <i class="ri-close-line"></i> Reject
+                                                                    </button>
+                                                                ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1740,21 +1743,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                                    <i class="ri-edit-line"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                                    <i class="ri-delete-bin-line"></i>
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                        <i class="ri-edit-line"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                        <i class="ri-delete-bin-line"></i>
+                                                                    </button>
+                                                                ` : ''}
                             ${item.can_approve ? `
-                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                                    <i class="ri-check-line"></i> Approve
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                                    <i class="ri-close-line"></i> Reject
-                                                                </button>
-                                                            ` : ''}
+                                                                    <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                        <i class="ri-check-line"></i> Approve
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                        <i class="ri-close-line"></i> Reject
+                                                                    </button>
+                                                                ` : ''}
                         </div>
                     </td>
                 </tr>

@@ -98,15 +98,17 @@ class SubmissionController extends Controller
 
             $yearFilter = $request->filled('year') && $request->year !== 'all';
 
-            $newSubmission = Transaction::where('user_id', $userId)
-                ->where('status', Transaction::STATUS_SUBMISSION)
+            $requestCount = Transaction::where('user_id', $userId)
+                ->whereIn('status', [
+                    Transaction::STATUS_SUBMISSION,
+                    Transaction::STATUS_PROGRESS,
+                    Transaction::STATUS_APPROVED
+                ])
                 ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
-            $progress = Transaction::where('user_id', $userId)
-                ->where('status', Transaction::STATUS_PROGRESS)
-                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
-                ->count();
+            // Keep separate counts if needed for other specific logic, 
+            // but for the UI badge we will use $requestCount
 
             $paid = Transaction::where('user_id', $userId)
                 ->where('status', Transaction::STATUS_PAID)
@@ -128,8 +130,7 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'newSubmission' => $newSubmission,
-                    'progress' => $progress,
+                    'requestCount' => $requestCount,
                     'paid' => $paid,
                     'completion' => $completion,
                     'rejected' => $rejected,
@@ -172,8 +173,9 @@ class SubmissionController extends Controller
             }
 
             // Filter by status
-            if ($request->has('status') && $request->status == 'dis') {
-                $query->whereIn('status', [1, 2]);
+            // 'request' tab includes: submission (0), progress (1), approved (2)
+            if ($request->has('status') && $request->status == 'request') {
+                $query->whereIn('status', [0, 1, 2]);
             } elseif ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }

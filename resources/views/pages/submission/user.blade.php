@@ -154,91 +154,6 @@
                 }
             </style>
 
-
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3" style="display: none;">
-
-                {{-- New Submission --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#0d6efd;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">New Submission</div>
-                                <div class="h3 mb-0 stat-value" id="newSubmissionCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-file-add-line stat-icon text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Progress --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#ffc107;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Progress</div>
-                                <div class="h3 mb-0 stat-value" id="progressCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-time-line stat-icon text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Paid --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#198754;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Paid</div>
-                                <div class="h3 mb-0 stat-value" id="paidCount">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-money-dollar-circle-line stat-icon text-success"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Completion --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#6c757d;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Completion</div>
-                                <div class="h3 mb-0 stat-value" id="completionCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-checkbox-circle-line stat-icon text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Total Submission --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#6610f2;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Total Submission</div>
-                                <div class="h3 mb-0 stat-value" id="totalSubmissionCount">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-file-list-3-line stat-icon text-purple"></i>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
             {{-- === FILTER SECTION === --}}
             <div class="card mb-3">
                 <div class="card-body">
@@ -268,10 +183,10 @@
                             </button>
                         </div>
                         <div class="col-md-6 d-flex align-items-end justify-content-end">
-                            @if (isset($employment->job_level_id) && in_array($employment->job_level_id, array(3,4)))
-                            <button type="button" class="btn btn-success" id="btnAddData">
-                                <i class="ri-add-line"></i> Add Data
-                            </button>
+                            @if (isset($employment->job_level_id) && in_array($employment->job_level_id, [3, 4]))
+                                <button type="button" class="btn btn-success" id="btnAddData">
+                                    <i class="ri-add-line"></i> Add Data
+                                </button>
                             @endif
                         </div>
                     </div>
@@ -285,52 +200,62 @@
                         <!-- Nav tabs -->
                         <ul class="nav nav-pills nav-primary nav-justified" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab" aria-selected="false" tabindex="-1">
-                                    <span><i style="font-size: 1rem !important;" class="ri-file-add-line stat-icon text-secondary"></i></span>
+                                <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab"
+                                    aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;"
+                                            class="ri-file-add-line stat-icon text-secondary"></i></span>
                                     <span>Request</span>
                                     <span class="badge bg-light text-dark" id="newSubmissionCount">
                                         <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
+                                            aria-label="Loading"></span>
                                     </span>
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab" aria-selected="true">
-                                    <span><i style="font-size: 1rem !important;" class="ri-time-line stat-icon text-warning"></i></span>
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab"
+                                    aria-selected="true">
+                                    <span><i style="font-size: 1rem !important;"
+                                            class="ri-time-line stat-icon text-warning"></i></span>
                                     <span>Disbursed</span>
                                     <span class="badge bg-light text-dark" id="progressCount">
                                         <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
+                                            aria-label="Loading"></span>
                                     </span>
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_messages" role="tab" aria-selected="false" tabindex="-1">
-                                    <span><i style="font-size: 1rem !important;" class="ri-checkbox-circle-line stat-icon text-success"></i></span>
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_messages" role="tab"
+                                    aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;"
+                                            class="ri-checkbox-circle-line stat-icon text-success"></i></span>
                                     <span>Completed</span>
                                     <span class="badge bg-light text-dark" id="completionCount">
                                         <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
+                                            aria-label="Loading"></span>
                                     </span>
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_settings" role="tab" aria-selected="false" tabindex="-1">
-                                    <span><i style="font-size: 1rem !important;" class="ri-file-forbid-line stat-icon text-danger"></i></span>
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_settings" role="tab"
+                                    aria-selected="false" tabindex="-1">
+                                    <span><i style="font-size: 1rem !important;"
+                                            class="ri-file-forbid-line stat-icon text-danger"></i></span>
                                     <span>Rejected</span>
                                     <span class="badge bg-light text-dark" id="rejectedCount">
                                         <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
+                                            aria-label="Loading"></span>
                                     </span>
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_lpj" role="tab" aria-selected="false" tabindex="-1" onclick="loadPendingLpjApprovals()">
-                                    <span><i style="font-size: 1rem !important;" class="ri-file-check-line stat-icon text-primary"></i></span>
+                                <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_lpj" role="tab"
+                                    aria-selected="false" tabindex="-1" onclick="loadPendingLpjApprovals()">
+                                    <span><i style="font-size: 1rem !important;"
+                                            class="ri-file-check-line stat-icon text-primary"></i></span>
                                     <span>LPJ Approval</span>
                                     <span class="badge bg-light text-dark" id="lpjApprovalCount">
                                         <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
+                                            aria-label="Loading"></span>
                                     </span>
                                 </a>
                             </li>
@@ -482,7 +407,8 @@
                             <div class="tab-pane" id="demo-tab-5_lpj" role="tabpanel">
                                 <div class="alert alert-info mb-3">
                                     <i class="ri-information-line me-2"></i>
-                                    <strong>LPJ Approval Queue</strong> - Transaksi yang sudah di-disbursed dan telah submit LPJ, menunggu approval dari Anda.
+                                    <strong>LPJ Approval Queue</strong> - Transaksi yang sudah di-disbursed dan telah submit
+                                    LPJ, menunggu approval dari Anda.
                                 </div>
                                 <div class="table-box table-responsive">
                                     <table class="table table-hover mb-0">
@@ -663,7 +589,8 @@
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobLevel" name="job_level_id" value="{{ optional($employment ?? null)->job_level_id }}">
+                                <input type="hidden" id="jobLevel" name="job_level_id"
+                                    value="{{ optional($employment ?? null)->job_level_id }}">
 
                             </div>
                             <div class="col-md-4">
@@ -671,11 +598,14 @@
                                 <select class="form-select" disabled>
                                     <option value="">Select Job Position</option>
                                     @foreach ($jobPositions as $position)
-                                        <option value="{{ $position->id }}" {{ optional($employment ?? null)->job_position_id == $position->id ? 'selected' : '' }}>{{ $position->job_position_name }}</option>
+                                        <option value="{{ $position->id }}"
+                                            {{ optional($employment ?? null)->job_position_id == $position->id ? 'selected' : '' }}>
+                                            {{ $position->job_position_name }}</option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" id="jobPosition" name="job_position_id" value="{{ optional($employment  ?? null)->job_position_id }}">
+                                <input type="hidden" id="jobPosition" name="job_position_id"
+                                    value="{{ optional($employment ?? null)->job_position_id }}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Date <span class="text-danger">*</span></label>
@@ -687,8 +617,9 @@
                                 <select class="form-select" id="programId" name="program_id" required>
                                     <option value="">Select Program</option>
                                     @foreach ($workplans as $workplan)
-                                        @if ($workplan->year==date("Y"))
-                                            <option value="{{ $workplan->id }}">{{ $workplan->activity }} - {{ $workplan->year }}</option>
+                                        @if ($workplan->year == date('Y'))
+                                            <option value="{{ $workplan->id }}">{{ $workplan->activity }} -
+                                                {{ $workplan->year }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -751,7 +682,7 @@
 
     <style>
         /* Timeline wrapper */
-        .tracking-timeline{
+        .tracking-timeline {
             position: relative;
             display: flex;
             flex-direction: column;
@@ -760,7 +691,7 @@
         }
 
         /* Each item */
-        .tt-item{
+        .tt-item {
             position: relative;
             display: grid;
             grid-template-columns: 44px 1fr;
@@ -769,84 +700,90 @@
         }
 
         /* Vertical line */
-        .tt-item::before{
-            content:"";
+        .tt-item::before {
+            content: "";
             position: absolute;
-            left: 22px;            /* center of icon col */
-            top: 44px;             /* below icon */
-            bottom: -18px;         /* extend to next item */
+            left: 22px;
+            /* center of icon col */
+            top: 44px;
+            /* below icon */
+            bottom: -18px;
+            /* extend to next item */
             width: 2px;
-            background: rgba(0,0,0,.12);
+            background: rgba(0, 0, 0, .12);
         }
-        .tt-item:last-child::before{
-            display:none;
+
+        .tt-item:last-child::before {
+            display: none;
         }
 
         /* Icon circle */
-        .tt-icon{
+        .tt-icon {
             width: 44px;
             height: 44px;
             border-radius: 50%;
             display: grid;
             place-items: center;
             color: #fff;
-            box-shadow: 0 6px 18px rgba(0,0,0,.08);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
             position: relative;
         }
 
         /* Dot inside icon (simple) */
-        .tt-dot{
+        .tt-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: rgba(255,255,255,.92);
+            background: rgba(255, 255, 255, .92);
             display: inline-block;
         }
 
         /* Content card feel */
-        .tt-content{
+        .tt-content {
             background: #fff;
-            border: 1px solid rgba(0,0,0,.08);
+            border: 1px solid rgba(0, 0, 0, .08);
             border-radius: 12px;
             padding: 12px 12px;
         }
 
-        .sts{
+        .sts {
             cursor: pointer;
         }
     </style>
     <div class="modal fade" id="trackingModal" tabindex="-1" aria-labelledby="trackingModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="trackingModalLabel">Status Tracking</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="trackingModalLabel">Status Tracking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-            <div class="modal-body">
+                <div class="modal-body">
 
-                <!-- Timeline -->
-                <div class="tracking-timeline" id="timeline"></div>
-                <!-- /Timeline -->
+                    <!-- Timeline -->
+                    <div class="tracking-timeline" id="timeline"></div>
+                    <!-- /Timeline -->
 
-            </div>
+                </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
 
     {{-- === APPROVAL REJECTION MODAL === --}}
-    <div class="modal fade" id="rejectApprovalModal" tabindex="-1" aria-labelledby="rejectApprovalModalLabel" aria-hidden="true">
+    <div class="modal fade" id="rejectApprovalModal" tabindex="-1" aria-labelledby="rejectApprovalModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="rejectApprovalModalLabel">
                         <i class="ri-close-circle-line me-2"></i>Reject Transaction
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="rejectTransactionId">
@@ -855,7 +792,8 @@
                         You are about to reject this transaction. Please provide a reason for rejection.
                     </div>
                     <div class="mb-3">
-                        <label for="rejectionReason" class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                        <label for="rejectionReason" class="form-label fw-semibold">Rejection Reason <span
+                                class="text-danger">*</span></label>
                         <textarea class="form-control" id="rejectionReason" rows="4" placeholder="Enter your rejection reason..."></textarea>
                     </div>
                 </div>
@@ -870,18 +808,20 @@
     </div>
 
     {{-- === APPROVAL DETAIL MODAL === --}}
-    <div class="modal fade" id="approvalDetailModal" tabindex="-1" aria-labelledby="approvalDetailModalLabel" aria-hidden="true">
+    <div class="modal fade" id="approvalDetailModal" tabindex="-1" aria-labelledby="approvalDetailModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title" id="approvalDetailModalLabel">
                         <i class="ri-file-list-3-line me-2"></i>Transaction Detail for Approval
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="approvalTransactionId">
-                    
+
                     {{-- Transaction Info --}}
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -977,15 +917,16 @@
                     <h5 class="modal-title" id="lpjModalLabel">
                         <i class="ri-file-text-line me-2"></i>Laporan Pertanggungjawaban (LPJ)
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <form id="lpjForm" enctype="multipart/form-data">
                     <div class="modal-body">
                         <input type="hidden" id="lpj_transaction_id" name="transaction_id">
-                        
+
                         {{-- Alert for errors --}}
                         <div id="lpjErrorAlert" class="alert alert-danger d-none" role="alert"></div>
-                        
+
                         {{-- Transaction Info (Read-only) --}}
                         <div class="row mb-4">
                             <div class="col-md-6">
@@ -1020,21 +961,25 @@
                                         <div class="row mb-2">
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold">Submission Date</label>
-                                                <input type="date" class="form-control" id="lpj_submission_date" name="submission_date" required>
+                                                <input type="date" class="form-control" id="lpj_submission_date"
+                                                    name="submission_date" required>
                                             </div>
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold">Submission Value</label>
-                                                <input type="text" class="form-control-plaintext fw-bold text-success" id="lpj_submission_value" readonly>
+                                                <input type="text" class="form-control-plaintext fw-bold text-success"
+                                                    id="lpj_submission_value" readonly>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold">Realization Date</label>
-                                                <input type="date" class="form-control" id="lpj_realization_date" name="realization_date" required>
+                                                <input type="date" class="form-control" id="lpj_realization_date"
+                                                    name="realization_date" required>
                                             </div>
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold">Realization Value</label>
-                                                <input type="text" class="form-control-plaintext fw-bold" id="lpj_realization_value" readonly value="Rp 0">
+                                                <input type="text" class="form-control-plaintext fw-bold"
+                                                    id="lpj_realization_value" readonly value="Rp 0">
                                             </div>
                                         </div>
                                     </div>
@@ -1053,9 +998,12 @@
                                     <table class="table table-hover table-bordered mb-0" id="lpjItemsTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th rowspan="2" class="align-middle text-center" style="width: 200px;">Description of Goods/Service</th>
-                                                <th colspan="5" class="text-center bg-secondary bg-opacity-10">Submission</th>
-                                                <th colspan="4" class="text-center bg-success bg-opacity-10">Realization Report</th>
+                                                <th rowspan="2" class="align-middle text-center"
+                                                    style="width: 200px;">Description of Goods/Service</th>
+                                                <th colspan="5" class="text-center bg-secondary bg-opacity-10">
+                                                    Submission</th>
+                                                <th colspan="4" class="text-center bg-success bg-opacity-10">
+                                                    Realization Report</th>
                                             </tr>
                                             <tr>
                                                 <th class="bg-secondary bg-opacity-10">Budget ID</th>
@@ -1064,8 +1012,10 @@
                                                 <th class="bg-secondary bg-opacity-10 text-end">Price</th>
                                                 <th class="bg-secondary bg-opacity-10 text-end">Total</th>
                                                 <th class="bg-success bg-opacity-10 text-center">Unit</th>
-                                                <th class="bg-success bg-opacity-10 text-center" style="width: 80px;">Qty</th>
-                                                <th class="bg-success bg-opacity-10 text-end" style="width: 150px;">Price</th>
+                                                <th class="bg-success bg-opacity-10 text-center" style="width: 80px;">Qty
+                                                </th>
+                                                <th class="bg-success bg-opacity-10 text-end" style="width: 150px;">Price
+                                                </th>
                                                 <th class="bg-success bg-opacity-10 text-end">Total</th>
                                             </tr>
                                         </thead>
@@ -1093,7 +1043,8 @@
                                 <label class="form-label fw-semibold">
                                     <i class="ri-attachment-2 me-1"></i>Attach Proof of Payment
                                 </label>
-                                <input type="file" class="form-control" id="lpj_proof_of_payment" name="proof_of_payment" accept=".jpg,.jpeg,.png,.pdf">
+                                <input type="file" class="form-control" id="lpj_proof_of_payment"
+                                    name="proof_of_payment" accept=".jpg,.jpeg,.png,.pdf">
                                 <small class="text-muted">Accepted formats: JPG, PNG, PDF (Max: 5MB)</small>
                             </div>
                         </div>
@@ -1120,16 +1071,17 @@
                     <h5 class="modal-title" id="lpjViewModalLabel">
                         <i class="ri-file-text-line me-2"></i>LPJ Detail
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="lpj_view_id">
-                    
+
                     {{-- LPJ Status --}}
                     <div class="alert alert-info" id="lpj_view_status_alert">
                         <strong>Status:</strong> <span id="lpj_view_status_text">-</span>
                     </div>
-                    
+
                     {{-- LPJ Info --}}
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -1223,7 +1175,7 @@
 
             // Load data on page load
             loadData();
-            
+
             // Load LPJ approval counts
             loadLpjApprovalCounts();
 
@@ -1409,9 +1361,12 @@
         function loadData() {
             const year = $('#filterYear').val();
             const status = $('#filterStatus').val();
+            let url = "{{ route('userSubmission.data') }}";
+            console.log(url);
+
 
             $.ajax({
-                url: '{{ route('userSubmission.data') }}',
+                url: url,
                 type: 'GET',
                 data: {
                     year: year,
@@ -1457,7 +1412,7 @@
                 type: 'GET',
                 data: {
                     year: year,
-                    status: 8,
+                    status: 4,
                     page: currentPage
                 },
                 success: function(response) {
@@ -1478,7 +1433,7 @@
                 type: 'GET',
                 data: {
                     year: year,
-                    status: '6',
+                    status: '5',
                     page: currentPage
                 },
                 success: function(response) {
@@ -1518,21 +1473,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                <i class="ri-edit-line"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                    <i class="ri-edit-line"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                    <i class="ri-delete-bin-line"></i>
+                                                                </button>
+                                                            ` : ''}
                             ${item.can_approve ? `
-                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                <i class="ri-check-line"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                <i class="ri-close-line"></i> Reject
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                    <i class="ri-check-line"></i> Approve
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                    <i class="ri-close-line"></i> Reject
+                                                                </button>
+                                                            ` : ''}
                             <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})">
                                 <i class="ri-file-pdf-2-line"></i>
                             </button>
@@ -1590,7 +1545,7 @@
                     const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
                     const hasLpj = item.lpj_submission != null;
                     const lpjStatus = hasLpj ? item.lpj_submission.status_approval : null;
-                    
+
                     html += `
                 <tr>
                     <td>${rowNumber}</td>
@@ -1608,15 +1563,15 @@
                                 <i class="ri-file-pdf-2-line"></i>
                             </button>
                             ${!hasLpj && item.status == 3 ? `
-                                <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
-                                    <i class="ri-file-text-line"></i> LPJ
-                                </button>
-                            ` : ''}
+                                                    <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
+                                                        <i class="ri-file-text-line"></i> LPJ
+                                                    </button>
+                                                ` : ''}
                             ${hasLpj ? `
-                                <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
-                                    <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
-                                </button>
-                            ` : ''}
+                                                    <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
+                                                        <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
+                                                    </button>
+                                                ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1704,21 +1659,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                <i class="ri-edit-line"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                    <i class="ri-edit-line"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                    <i class="ri-delete-bin-line"></i>
+                                                                </button>
+                                                            ` : ''}
                             ${item.can_approve ? `
-                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                <i class="ri-check-line"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                <i class="ri-close-line"></i> Reject
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                    <i class="ri-check-line"></i> Approve
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                    <i class="ri-close-line"></i> Reject
+                                                                </button>
+                                                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1785,21 +1740,21 @@
                                 <i class="ri-eye-line"></i>
                             </button>
                             ${item.status == 0 ? `
-                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                <i class="ri-edit-line"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                    <i class="ri-edit-line"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                    <i class="ri-delete-bin-line"></i>
+                                                                </button>
+                                                            ` : ''}
                             ${item.can_approve ? `
-                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                <i class="ri-check-line"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                <i class="ri-close-line"></i> Reject
-                                            </button>
-                                        ` : ''}
+                                                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                    <i class="ri-check-line"></i> Approve
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                    <i class="ri-close-line"></i> Reject
+                                                                </button>
+                                                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1961,7 +1916,7 @@
                 row.find('.total-input').addClass('is-invalid');
                 row.find('.price-input').addClass('is-invalid');
                 row.find('.qty-input').addClass('is-invalid');
-                
+
                 // Add or update error message
                 row.find('.validation-error').remove();
                 row.find('td:last').before(`
@@ -2028,9 +1983,11 @@
                 let errorMessage = '<strong>Budget Validation Failed!</strong><br><br>';
                 errorMessage += 'The following items exceed their budget values:<br><ul class="mb-0 mt-2">';
                 exceededItems.forEach(function(item) {
-                    errorMessage += `<li><strong>${item.name}:</strong> Total ${item.total} exceeds Budget ${item.budget}</li>`;
+                    errorMessage +=
+                        `<li><strong>${item.name}:</strong> Total ${item.total} exceeds Budget ${item.budget}</li>`;
                 });
-                errorMessage += '</ul><br><small class="text-muted">Please adjust the quantity or price to match the available budget.</small>';
+                errorMessage +=
+                    '</ul><br><small class="text-muted">Please adjust the quantity or price to match the available budget.</small>';
 
                 Swal.fire({
                     icon: 'error',
@@ -2084,7 +2041,7 @@
                 },
                 success: function(response) {
                     console.log(response);
-                    
+
                     if (response.success) {
                         $('#submissionModal').modal('hide');
                         showAlert(response.message || 'Submission saved successfully', 'success');
@@ -2101,9 +2058,11 @@
                         let errorMessage = '<strong>' + xhr.responseJSON.message + '</strong><br><br>';
                         errorMessage += '<ul class="mb-0 mt-2">';
                         budgetErrors.forEach(function(error) {
-                            errorMessage += `<li><strong>${error.item}:</strong> Total ${error.total} exceeds Budget ${error.budget} (${error.budget_code})</li>`;
+                            errorMessage +=
+                                `<li><strong>${error.item}:</strong> Total ${error.total} exceeds Budget ${error.budget} (${error.budget_code})</li>`;
                         });
-                        errorMessage += '</ul><br><small class="text-muted">Please adjust the quantity or price to match the available budget.</small>';
+                        errorMessage +=
+                            '</ul><br><small class="text-muted">Please adjust the quantity or price to match the available budget.</small>';
 
                         Swal.fire({
                             icon: 'error',
@@ -2243,7 +2202,8 @@
                         let hasApprovalData = false;
 
                         // Check for new dynamic approval system data
-                        if (data.approval_request && data.approval_request.details && data.approval_request.details.length > 0) {
+                        if (data.approval_request && data.approval_request.details && data.approval_request
+                            .details.length > 0) {
                             hasApprovalData = true;
                             data.approval_request.details.forEach(function(detail) {
                                 const statusLabel = detail.status === 'pending' ?
@@ -2256,8 +2216,10 @@
                                     '<span class="badge bg-secondary">Skipped</span>' :
                                     '<span class="badge bg-secondary">-</span>';
 
-                                const approvedDate = detail.approved_at ? formatDate(detail.approved_at) : '-';
-                                const phaseLabel = detail.phase === 'uppline' ? 'Uppline' : 'Master Flow';
+                                const approvedDate = detail.approved_at ? formatDate(detail
+                                    .approved_at) : '-';
+                                const phaseLabel = detail.phase === 'uppline' ? 'Uppline' :
+                                    'Master Flow';
 
                                 approvalHtml += `
                                     <tr>
@@ -2282,7 +2244,8 @@
                                     '<span class="badge bg-danger">Rejected</span>' :
                                     '<span class="badge bg-secondary">-</span>';
 
-                                const approvedDate = approval.approved_at ? formatDate(approval.approved_at) : '-';
+                                const approvedDate = approval.approved_at ? formatDate(approval
+                                    .approved_at) : '-';
 
                                 approvalHtml += `
                                     <tr>
@@ -2668,36 +2631,24 @@
                     class: 'bg-primary'
                 },
                 1: {
-                    label: 'Approved Parent',
+                    label: 'Progress',
                     class: 'bg-info'
                 },
                 2: {
-                    label: 'Approved Finance',
+                    label: 'Approved',
                     class: 'bg-info'
                 },
                 3: {
-                    label: 'Disbursed (Ready for LPJ)',
-                    class: 'bg-success'
-                },
-                4: {
-                    label: 'Approved Finance Director',
-                    class: 'bg-info'
-                },
-                5: {
-                    label: 'Approved President Director',
-                    class: 'bg-success'
-                },
-                6: {
-                    label: 'Rejected',
-                    class: 'bg-danger'
-                },
-                7: {
                     label: 'Paid',
                     class: 'bg-success'
                 },
-                8: {
-                    label: 'Complete',
-                    class: 'bg-secondary'
+                4: {
+                    label: 'Completed',
+                    class: 'bg-info'
+                },
+                5: {
+                    label: 'Rejected',
+                    class: 'bg-danger'
                 },
                 '-1': {
                     label: 'Cancelled',
@@ -2709,7 +2660,7 @@
                 label: 'Unknown',
                 class: 'bg-secondary'
             };
-            
+
             return `<span data-bs-toggle="modal" data-bs-target="#trackingModal" onclick="getbadgeinfo(${transaction_id})" class="badge ${statusInfo.class} badge-status sts">${statusInfo.label}</span>`;
         }
 
@@ -2869,7 +2820,7 @@
             resetLpjForm();
             $('#lpj_transaction_id').val(transactionId);
             $('#lpjErrorAlert').addClass('d-none');
-            
+
             // Set default dates
             const today = new Date().toISOString().split('T')[0];
             $('#lpj_submission_date').val(today);
@@ -2972,7 +2923,7 @@
                 const qty = parseFloat($(this).val()) || 0;
                 const price = parseFloat($(`input.lpj-price[data-index="${index}"]`).val()) || 0;
                 const total = qty * price;
-                
+
                 $(`.lpj-item-total[data-index="${index}"]`).text(formatCurrency(total));
                 realizationTotal += total;
             });
@@ -2989,7 +2940,7 @@
             // Update variance badge
             const variance = realizationTotal - submissionTotal;
             const variancePercent = submissionTotal > 0 ? ((variance / submissionTotal) * 100).toFixed(1) : 0;
-            
+
             if (variance > 0) {
                 $('#lpj_variance_badge').removeClass('bg-success bg-info').addClass('bg-danger')
                     .text(`Over Budget: +${formatCurrency(variance)} (${variancePercent}%)`);
@@ -3014,16 +2965,17 @@
         // Submit LPJ Form
         $('#lpjForm').on('submit', function(e) {
             e.preventDefault();
-            
+
             const transactionId = $('#lpj_transaction_id').val();
             const formData = new FormData(this);
             formData.append('_token', '{{ csrf_token() }}');
 
             // Disable submit button
-            $('#btnSubmitLpj').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Submitting...');
+            $('#btnSubmitLpj').prop('disabled', true).html(
+                '<span class="spinner-border spinner-border-sm"></span> Submitting...');
 
             let url = "{{ route('userSubmission.lpj.submit', ':id') }}".replace(':id', transactionId);
-            
+
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -3038,19 +2990,20 @@
                             text: response.message || 'LPJ submitted successfully',
                             confirmButtonColor: '#198754'
                         });
-                        
+
                         // Close modal and reload data
                         bootstrap.Modal.getInstance(document.getElementById('lpjModal')).hide();
                         loadData();
                         loadSummary();
                     } else {
-                        $('#lpjErrorAlert').removeClass('d-none').text(response.message || 'Error submitting LPJ');
+                        $('#lpjErrorAlert').removeClass('d-none').text(response.message ||
+                            'Error submitting LPJ');
                     }
                 },
                 error: function(xhr) {
                     const response = xhr.responseJSON;
                     let errorMsg = response?.message || 'Error submitting LPJ';
-                    
+
                     if (response?.errors) {
                         errorMsg += '<ul class="mb-0 mt-2">';
                         Object.values(response.errors).forEach(errors => {
@@ -3060,22 +3013,23 @@
                         });
                         errorMsg += '</ul>';
                     }
-                    
+
                     $('#lpjErrorAlert').removeClass('d-none').html(errorMsg);
                 },
                 complete: function() {
-                    $('#btnSubmitLpj').prop('disabled', false).html('<i class="ri-save-line me-1"></i>Submit LPJ');
+                    $('#btnSubmitLpj').prop('disabled', false).html(
+                        '<i class="ri-save-line me-1"></i>Submit LPJ');
                 }
             });
         });
 
         // ==================== LPJ APPROVAL FUNCTIONS ====================
-        
+
         function loadLpjApprovalCounts() {
             console.log('[LPJ] Loading LPJ approval counts...');
             const url = '{{ route('userSubmission.lpj.counts') }}';
             console.log('[LPJ] URL:', url);
-            
+
             $.ajax({
                 url: url,
                 type: 'GET',
@@ -3097,18 +3051,19 @@
                         response: xhr.responseJSON
                     });
                     $('#lpjApprovalCount').text('!');
-                    
+
                     // Show error in badge
-                    $('#lpjApprovalCount').attr('title', 'Error loading count: ' + (xhr.responseJSON?.message || error));
+                    $('#lpjApprovalCount').attr('title', 'Error loading count: ' + (xhr.responseJSON?.message ||
+                        error));
                 }
             });
         }
-        
+
         function loadPendingLpjApprovals() {
             console.log('[LPJ] Loading pending LPJ approvals...');
             const url = '{{ route('userSubmission.lpj.pending') }}';
             console.log('[LPJ] URL:', url);
-            
+
             // Show loading spinner
             $('#lpjApprovalTableBody').html(`
                 <tr>
@@ -3120,7 +3075,7 @@
                     </td>
                 </tr>
             `);
-            
+
             $.ajax({
                 url: url,
                 type: 'GET',
@@ -3133,11 +3088,15 @@
                             renderLpjApprovalTable(response.data);
                         } else {
                             console.log('[LPJ] No pending approvals found');
-                            $('#lpjApprovalTableBody').html('<tr><td colspan="9" class="text-center text-muted">No pending LPJ approvals</td></tr>');
+                            $('#lpjApprovalTableBody').html(
+                                '<tr><td colspan="9" class="text-center text-muted">No pending LPJ approvals</td></tr>'
+                            );
                         }
                     } else {
                         console.warn('[LPJ] Invalid response:', response);
-                        $('#lpjApprovalTableBody').html('<tr><td colspan="9" class="text-center text-warning">Invalid response from server</td></tr>');
+                        $('#lpjApprovalTableBody').html(
+                            '<tr><td colspan="9" class="text-center text-warning">Invalid response from server</td></tr>'
+                        );
                     }
                 },
                 error: function(xhr, status, error) {
@@ -3148,20 +3107,21 @@
                         response: xhr.responseJSON,
                         timeout: status === 'timeout'
                     });
-                    
+
                     let errorMsg = 'Error loading data';
                     if (status === 'timeout') {
                         errorMsg = 'Request timeout - server took too long to respond';
                     } else if (xhr.status === 404) {
                         errorMsg = 'Endpoint not found (404) - Route may not be registered';
                     } else if (xhr.status === 500) {
-                        errorMsg = 'Server error (500) - ' + (xhr.responseJSON?.message || 'Internal server error');
+                        errorMsg = 'Server error (500) - ' + (xhr.responseJSON?.message ||
+                            'Internal server error');
                     } else if (xhr.status === 0) {
                         errorMsg = 'Network error - Cannot reach server';
                     } else if (xhr.responseJSON?.message) {
                         errorMsg = xhr.responseJSON.message;
                     }
-                    
+
                     $('#lpjApprovalTableBody').html(`
                         <tr>
                             <td colspan="9" class="text-center text-danger">
@@ -3173,35 +3133,35 @@
                 }
             });
         }
-        
+
         function renderLpjApprovalTable(data) {
             console.log('[LPJ] Rendering approval table with', data.length, 'items');
             let html = '';
-            
+
             if (!data || data.length === 0) {
                 html = '<tr><td colspan="9" class="text-center text-muted">No pending LPJ approvals</td></tr>';
             } else {
                 try {
                     data.forEach((item, index) => {
                         console.log('[LPJ] Processing item', index, ':', item);
-                        
+
                         // Backend returns LpjApprovalDetail with lpjSubmission relationship
                         const lpj = item.lpj_submission || item.lpjSubmission || item.lpj || item;
                         const transaction = lpj?.transaction || {};
                         const user = transaction?.user || {};
-                        
+
                         if (!lpj || !transaction) {
                             console.warn('[LPJ] Invalid item structure at index', index, ':', item);
                             return; // Skip this item
                         }
-                        
-                        const statusBadge = lpj.status_approval === 'pending' ? 'bg-warning' : 
-                                           lpj.status_approval === 'in_progress' ? 'bg-info' : 
-                                           lpj.status_approval === 'approved' ? 'bg-success' : 'bg-secondary';
-                        
+
+                        const statusBadge = lpj.status_approval === 'pending' ? 'bg-warning' :
+                            lpj.status_approval === 'in_progress' ? 'bg-info' :
+                            lpj.status_approval === 'approved' ? 'bg-success' : 'bg-secondary';
+
                         // Get user name from relationship or fallback
                         const userName = user.name || transaction.user_name || '-';
-                        
+
                         html += `
                             <tr>
                                 <td>${index + 1}</td>
@@ -3230,18 +3190,19 @@
                     });
                 } catch (err) {
                     console.error('[LPJ] Error rendering table:', err);
-                    html = `<tr><td colspan="9" class="text-center text-danger">Error rendering table: ${err.message}</td></tr>`;
+                    html =
+                        `<tr><td colspan="9" class="text-center text-danger">Error rendering table: ${err.message}</td></tr>`;
                 }
             }
-            
+
             $('#lpjApprovalTableBody').html(html);
             console.log('[LPJ] Table rendered successfully');
         }
-        
+
         function viewLpjDetailForApproval(lpjId, transactionId) {
             viewLpjDetail(transactionId);
         }
-        
+
         function approveLpjSubmission(lpjId) {
             Swal.fire({
                 title: 'Approve LPJ?',
@@ -3289,7 +3250,7 @@
                 }
             });
         }
-        
+
         function rejectLpjSubmission(lpjId) {
             Swal.fire({
                 title: 'Reject LPJ?',
@@ -3346,7 +3307,7 @@
         // View LPJ Detail
         function viewLpjDetail(transactionId) {
             let url = "{{ route('userSubmission.lpj.byTransaction', ':id') }}".replace(':id', transactionId);
-            
+
             $.ajax({
                 url: url,
                 type: 'GET',
@@ -3363,9 +3324,11 @@
 
                         // Status
                         const statusColor = getLpjStatusColor(lpj.status_approval);
-                        $('#lpj_view_status_alert').removeClass('alert-info alert-warning alert-success alert-danger')
+                        $('#lpj_view_status_alert').removeClass(
+                                'alert-info alert-warning alert-success alert-danger')
                             .addClass(`alert-${statusColor}`);
-                        $('#lpj_view_status_text').text(getLpjStatusLabel(lpj.status_approval).replace('LPJ ', ''));
+                        $('#lpj_view_status_text').text(getLpjStatusLabel(lpj.status_approval).replace('LPJ ',
+                            ''));
 
                         // Items
                         let itemsHtml = '';
@@ -3390,12 +3353,13 @@
                         let timelineHtml = '';
                         lpj.approval_details.forEach(detail => {
                             const employee = detail.employment?.employee;
-                            const name = employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown';
-                            const statusBadge = detail.status === 'approved' ? 'bg-success' : 
-                                               detail.status === 'rejected' ? 'bg-danger' : 'bg-warning';
-                            const icon = detail.status === 'approved' ? 'ri-check-line' : 
-                                        detail.status === 'rejected' ? 'ri-close-line' : 'ri-time-line';
-                            
+                            const name = employee ? `${employee.first_name} ${employee.last_name}` :
+                                'Unknown';
+                            const statusBadge = detail.status === 'approved' ? 'bg-success' :
+                                detail.status === 'rejected' ? 'bg-danger' : 'bg-warning';
+                            const icon = detail.status === 'approved' ? 'ri-check-line' :
+                                detail.status === 'rejected' ? 'ri-close-line' : 'ri-time-line';
+
                             timelineHtml += `
                                 <div class="tt-item">
                                     <div class="tt-icon">
@@ -3412,7 +3376,8 @@
                                 </div>
                             `;
                         });
-                        $('#lpj_approval_timeline').html(timelineHtml || '<p class="text-muted">No approval history</p>');
+                        $('#lpj_approval_timeline').html(timelineHtml ||
+                            '<p class="text-muted">No approval history</p>');
 
                         // Show modal
                         const modal = new bootstrap.Modal(document.getElementById('lpjViewModal'));
@@ -3427,7 +3392,5 @@
                 }
             });
         }
-
-
     </script>
 @endsection

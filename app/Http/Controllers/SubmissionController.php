@@ -2,31 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
-use App\Models\TransactionDetail;
+use App\Models\ApprovalRequest;
+use App\Models\ApprovalRequestDetail;
 use App\Models\Employee;
+use App\Models\Employment;
 use App\Models\JobLevel;
 use App\Models\JobPosition;
 use App\Models\KPIWorkPlan;
-use App\Models\BudgetCode;
-use App\Models\Employment;
+use App\Models\Transaction;
+use App\Models\TransactionDetail;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
-use App\Models\ApprovalRequest;
-use App\Models\ApprovalRequestDetail;
-use App\Models\TransactionLpjSubmission;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\LpjService\LpjService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class SubmissionController extends Controller
 {
     protected $approvalTransactionService;
+
     protected $lpjService;
 
     public function __construct(
@@ -45,10 +44,10 @@ class SubmissionController extends Controller
         $userId = Auth::user()->id;
         $employee = Auth::user();
         $employment = $employee->employment;
-        $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
-        $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
-        $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
-        $completion = Transaction::where('user_id', $userId)->where('status', 8)->count();
+        $newSubmission = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_SUBMISSION)->count();
+        $progress = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PROGRESS)->count();
+        $paid = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PAID)->count();
+        $completion = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_COMPLETED)->count();
         $totalSubmission = Transaction::where('user_id', $userId)->count();
 
         // Get filter data
@@ -58,16 +57,13 @@ class SubmissionController extends Controller
             ->pluck('year');
 
         $statuses = [
-            ['value' => 0, 'label' => 'Submission'],
-            ['value' => 1, 'label' => 'Approved Parent'],
-            ['value' => 2, 'label' => 'Approved Finance'],
-            ['value' => 3, 'label' => 'Approved Division'],
-            ['value' => 4, 'label' => 'Approved Finance Director'],
-            ['value' => 5, 'label' => 'Approved President Director'],
-            ['value' => 6, 'label' => 'Rejected'],
-            ['value' => 7, 'label' => 'Paid'],
-            ['value' => 8, 'label' => 'Complete'],
-            ['value' => -1, 'label' => 'Cancelled'],
+            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
+            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
+            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
+            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
+            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
+            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
 
         // Get dropdown data for modal
@@ -99,32 +95,32 @@ class SubmissionController extends Controller
     {
         try {
             $userId = Auth::id();
-            
+
             $yearFilter = $request->filled('year') && $request->year !== 'all';
 
             $newSubmission = Transaction::where('user_id', $userId)
-                ->whereIn('status', [0, 1, 2, 3, 4, 5])
-                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->where('status', Transaction::STATUS_SUBMISSION)
+                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
             $progress = Transaction::where('user_id', $userId)
-                ->where('status', 7)
-                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->where('status', Transaction::STATUS_PROGRESS)
+                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
             $paid = Transaction::where('user_id', $userId)
-                ->where('status', 7)
-                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->where('status', Transaction::STATUS_PAID)
+                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
             $completion = Transaction::where('user_id', $userId)
-                ->where('status', 8)
-                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->where('status', Transaction::STATUS_COMPLETED)
+                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
             $rejected = Transaction::where('user_id', $userId)
-                ->where('status', 6)
-                ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $request->year))
+                ->where('status', Transaction::STATUS_REJECTED)
+                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
                 ->count();
 
             $totalSubmission = Transaction::where('user_id', $userId)->count();
@@ -136,15 +132,16 @@ class SubmissionController extends Controller
                     'progress' => $progress,
                     'paid' => $paid,
                     'completion' => $completion,
-                    'rejected' => $rejected, 
-                    'totalSubmission' => $totalSubmission
-                ]
+                    'rejected' => $rejected,
+                    'totalSubmission' => $totalSubmission,
+                ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching summary: ' . $e->getMessage());
+            Log::error('Error fetching summary: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching summary: ' . $e->getMessage()
+                'message' => 'Error fetching summary: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -162,11 +159,11 @@ class SubmissionController extends Controller
             $query->with([
                 'details',
                 // New dynamic approval system
-                'approvalRequest.details' => function($q) {
+                'approvalRequest.details' => function ($q) {
                     $q->orderBy('level_sequence');
                 },
                 // LPJ submission
-                'lpjSubmission'
+                'lpjSubmission',
             ]);
 
             // Filter by year
@@ -175,8 +172,8 @@ class SubmissionController extends Controller
             }
 
             // Filter by status
-            if($request->has('status') && $request->status == 'dis'){
-                $query->whereIn('status', array(0,1,2,3,4,5));
+            if ($request->has('status') && $request->status == 'dis') {
+                $query->whereIn('status', [1, 2]);
             } elseif ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }
@@ -186,7 +183,7 @@ class SubmissionController extends Controller
             $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
             // Add can_approve flag to each transaction
-            $transactions->getCollection()->transform(function($transaction) use ($userId, $employmentId) {
+            $transactions->getCollection()->transform(function ($transaction) use ($employmentId) {
                 // Initialize can_approve as false
                 $transaction->can_approve = false;
                 $transaction->pending_approval = null;
@@ -221,14 +218,15 @@ class SubmissionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $transactions
+                'data' => $transactions,
             ]);
         } catch (\Throwable $th) {
-            //throw $th;
-            Log::error('Error fetching transactions: ' . $th->getMessage());
+            // throw $th;
+            Log::error('Error fetching transactions: '.$th->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching transactions: ' . $th->getMessage()
+                'message' => 'Error fetching transactions: '.$th->getMessage(),
             ], 500);
         }
     }
@@ -255,10 +253,11 @@ class SubmissionController extends Controller
 
         if ($validator->fails()) {
             Log::error('Validation error in create transaction: ', $validator->errors()->toArray());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -266,30 +265,30 @@ class SubmissionController extends Controller
         $budgetErrors = [];
         foreach ($request->items as $index => $item) {
             $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
-            
+
             if ($budgetItem) {
                 $totalItemCost = $item['quantity'] * $item['price'];
                 $budgetValue = $budgetItem->total ?? 0;
-                
+
                 if ($totalItemCost > $budgetValue) {
                     $budgetErrors[] = [
-                        'item' => $item['goods_service_name'] ?? "Item " . ($index + 1),
-                        'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
-                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
-                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown'
+                        'item' => $item['goods_service_name'] ?? 'Item '.($index + 1),
+                        'total' => 'Rp '.number_format($totalItemCost, 0, ',', '.'),
+                        'budget' => 'Rp '.number_format($budgetValue, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
                     ];
                 }
             }
         }
 
-        if (!empty($budgetErrors)) {
+        if (! empty($budgetErrors)) {
             $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
             Log::error('Budget validation error in create transaction', ['errors' => $budgetErrors]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $errorMessage,
-                'budget_errors' => $budgetErrors
+                'budget_errors' => $budgetErrors,
             ], 422);
         }
 
@@ -311,7 +310,7 @@ class SubmissionController extends Controller
             $transaction = Transaction::create([
                 'transaction_date' => $request->transaction_date,
                 'user_id' => $user->id,
-                'user_name' => $user->first_name . ' ' . $user->last_name,
+                'user_name' => $user->first_name.' '.$user->last_name,
                 'unit_id' => $unit->id ?? 0,
                 'unit_name' => $unit->unit ?? '',
                 'job_level_id' => $request->job_level_id,
@@ -354,25 +353,26 @@ class SubmissionController extends Controller
 
             // Submit for approval using dynamic approval system
             $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
-            
-            if (!$approvalResult['success']) {
-                Log::warning('Failed to submit for approval: ' . $approvalResult['message']);
+
+            if (! $approvalResult['success']) {
+                Log::warning('Failed to submit for approval: '.$approvalResult['message']);
                 // Transaction is created but approval submission failed - still return success
                 // The user can manually submit for approval later
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaction created successfully' . ($approvalResult['success'] ? ' and submitted for approval.' : '. Note: ' . $approvalResult['message']),
+                'message' => 'Transaction created successfully'.($approvalResult['success'] ? ' and submitted for approval.' : '. Note: '.$approvalResult['message']),
                 'data' => $transaction->load(['details', 'approvalRequest.details']),
-                'approval' => $approvalResult
+                'approval' => $approvalResult,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating transaction: ' . $e->getMessage());
+            Log::error('Error creating transaction: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating transaction: ' . $e->getMessage()
+                'message' => 'Error creating transaction: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -382,13 +382,13 @@ class SubmissionController extends Controller
         try {
             $transaction = Transaction::with([
                 'details',
-                'approvalRequest.details' => function($query) {
+                'approvalRequest.details' => function ($query) {
                     $query->orderBy('phase', 'asc')
-                          ->orderBy('level_sequence', 'asc');
+                        ->orderBy('level_sequence', 'asc');
                 },
                 'jobLevel',
                 'jobPosition',
-                'unit'
+                'unit',
             ])->findOrFail($id);
 
             // Check if user owns this transaction OR is an approver
@@ -398,16 +398,16 @@ class SubmissionController extends Controller
             $canApprove = false;
 
             // Check if user is an approver for this transaction
-            if (!$isOwner && $user->employment) {
+            if (! $isOwner && $user->employment) {
                 $employmentId = $user->employment->id;
-                
+
                 // Check in new dynamic approval system
-                $approvalDetail = ApprovalRequestDetail::whereHas('request', function($q) use ($id) {
+                $approvalDetail = ApprovalRequestDetail::whereHas('request', function ($q) use ($id) {
                     $q->where('reference_id', $id)
-                      ->whereHas('module', fn($mq) => $mq->where('table_name', 'transactions'));
+                        ->whereHas('module', fn ($mq) => $mq->where('table_name', 'transactions'));
                 })
-                ->where('employment_id', $employmentId)
-                ->first();
+                    ->where('employment_id', $employmentId)
+                    ->first();
 
                 if ($approvalDetail) {
                     $isApprover = true;
@@ -416,17 +416,17 @@ class SubmissionController extends Controller
                 }
             }
 
-            if (!$isOwner && !$isApprover) {
+            if (! $isOwner && ! $isApprover) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
             // Add can_approve flag and status_approval to transaction data
             $transactionArray = $transaction->toArray();
             $transactionArray['can_approve'] = $canApprove;
-            
+
             // Determine status_approval based on approval request
             if ($transaction->approvalRequest) {
                 $transactionArray['status_approval'] = $transaction->approvalRequest->status;
@@ -435,27 +435,28 @@ class SubmissionController extends Controller
                 $statusMap = [
                     0 => 'pending',
                     1 => 'pending',
-                    2 => 'pending', 
+                    2 => 'pending',
                     3 => 'pending',
                     4 => 'pending',
                     5 => 'pending',
                     6 => 'rejected',
                     7 => 'approved',
                     8 => 'approved',
-                    -1 => 'cancelled'
+                    -1 => 'cancelled',
                 ];
                 $transactionArray['status_approval'] = $statusMap[$transaction->status] ?? 'pending';
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $transactionArray
+                'data' => $transactionArray,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching transaction: ' . $e->getMessage());
+            Log::error('Error fetching transaction: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Transaction not found'
+                'message' => 'Transaction not found',
             ], 404);
         }
     }
@@ -479,10 +480,11 @@ class SubmissionController extends Controller
 
         if ($validator->fails()) {
             Log::error('Validation error in update transaction: ', $validator->errors()->toArray());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -490,30 +492,30 @@ class SubmissionController extends Controller
         $budgetErrors = [];
         foreach ($request->items as $index => $item) {
             $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
-            
+
             if ($budgetItem) {
                 $totalItemCost = $item['quantity'] * $item['price'];
                 $budgetValue = $budgetItem->value ?? 0;
-                
+
                 if ($totalItemCost > $budgetValue) {
                     $budgetErrors[] = [
-                        'item' => $item['goods_service_name'] ?? "Item " . ($index + 1),
-                        'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
-                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
-                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown'
+                        'item' => $item['goods_service_name'] ?? 'Item '.($index + 1),
+                        'total' => 'Rp '.number_format($totalItemCost, 0, ',', '.'),
+                        'budget' => 'Rp '.number_format($budgetValue, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
                     ];
                 }
             }
         }
 
-        if (!empty($budgetErrors)) {
+        if (! empty($budgetErrors)) {
             $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
             Log::error('Budget validation error in update transaction', ['errors' => $budgetErrors]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $errorMessage,
-                'budget_errors' => $budgetErrors
+                'budget_errors' => $budgetErrors,
             ], 422);
         }
 
@@ -524,7 +526,7 @@ class SubmissionController extends Controller
             if ($transaction->user_id != Auth::id()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
@@ -532,7 +534,7 @@ class SubmissionController extends Controller
             if ($transaction->status != 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Transaction cannot be edited'
+                    'message' => 'Transaction cannot be edited',
                 ], 403);
             }
 
@@ -595,14 +597,15 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transaction updated successfully',
-                'data' => $transaction->load('details')
+                'data' => $transaction->load('details'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating transaction: ' . $e->getMessage());
+            Log::error('Error updating transaction: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating transaction: ' . $e->getMessage()
+                'message' => 'Error updating transaction: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -616,7 +619,7 @@ class SubmissionController extends Controller
             if ($transaction->user_id != Auth::id()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
@@ -624,7 +627,7 @@ class SubmissionController extends Controller
             if ($transaction->status != 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Transaction cannot be deleted'
+                    'message' => 'Transaction cannot be deleted',
                 ], 403);
             }
 
@@ -640,13 +643,14 @@ class SubmissionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaction deleted successfully'
+                'message' => 'Transaction deleted successfully',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error deleting transaction: ' . $e->getMessage()
+                'message' => 'Error deleting transaction: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -662,12 +666,12 @@ class SubmissionController extends Controller
                     'budget_value' => $budgetItem->total,
                     'budget_name' => $budgetItem->description,
                     'budget_code' => $budgetItem->budget_code,
-                ]
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Budget not found'
+                'message' => 'Budget not found',
             ], 404);
         }
     }
@@ -675,6 +679,7 @@ class SubmissionController extends Controller
     public function user_create()
     {
         $title = 'Submission Users Create';
+
         return view('pages.submission.user_create', compact('title'));
     }
 
@@ -685,10 +690,10 @@ class SubmissionController extends Controller
 
         // Get summary data (employment.employee_id = employee.id)
         $employment = Employment::where('employee_id', $userId)->get();
-        $newSubmission = Transaction::where('user_id', $userId)->where('status', 0)->count();
-        $progress = Transaction::where('user_id', $userId)->whereIn('status', [1, 2, 3, 4, 5])->count();
-        $paid = Transaction::where('user_id', $userId)->where('status', 7)->count();
-        $completion = Transaction::where('user_id', $userId)->where('status', 8)->count();
+        $newSubmission = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_SUBMISSION)->count();
+        $progress = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PROGRESS)->count();
+        $paid = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PAID)->count();
+        $completion = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_COMPLETED)->count();
         $totalSubmission = Transaction::where('user_id', $userId)->count();
 
         // Get filter data
@@ -698,16 +703,13 @@ class SubmissionController extends Controller
             ->pluck('year');
 
         $statuses = [
-            ['value' => 0, 'label' => 'Submission'],
-            ['value' => 1, 'label' => 'Approved Parent'],
-            ['value' => 2, 'label' => 'Approved Finance'],
-            ['value' => 3, 'label' => 'Approved Division'],
-            ['value' => 4, 'label' => 'Approved Finance Director'],
-            ['value' => 5, 'label' => 'Approved President Director'],
-            ['value' => 6, 'label' => 'Rejected'],
-            ['value' => 7, 'label' => 'Paid'],
-            ['value' => 8, 'label' => 'Complete'],
-            ['value' => -1, 'label' => 'Cancelled'],
+            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
+            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
+            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
+            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
+            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
+            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
 
         // Get dropdown data for modal
@@ -747,12 +749,12 @@ class SubmissionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $jobPositions
+                'data' => $jobPositions,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching job positions: ' . $e->getMessage()
+                'message' => 'Error fetching job positions: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -767,18 +769,18 @@ class SubmissionController extends Controller
         try {
             // Get job level to determine kpi_type
             $jobLevel = JobLevel::find($jobLevelId);
-            
-            if (!$jobLevel) {
+
+            if (! $jobLevel) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Job level not found'
+                    'message' => 'Job level not found',
                 ], 404);
             }
 
             // Determine kpi_type based on job level name or a specific field
             // You may need to adjust this logic based on your business rules
             $jobLevelName = strtolower($jobLevel->job_level_name);
-            
+
             // If job level contains 'section' -> kpi_type = 'section'
             // If job level contains 'department' or 'manager' -> kpi_type = 'department'
             $kpiType = null;
@@ -788,7 +790,7 @@ class SubmissionController extends Controller
                 $kpiType = 'department';
             }
 
-            if (!$kpiType) {
+            if (! $kpiType) {
                 // Default to both if cannot determine
                 $workplans = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
                     ->orderBy('year', 'desc')
@@ -804,12 +806,12 @@ class SubmissionController extends Controller
 
             // Format the data
             $formattedWorkplans = $workplans->map(function ($workplan) {
-                $label = $workplan->activity . ' (' . $workplan->year . ')';
-                
+                $label = $workplan->activity.' ('.$workplan->year.')';
+
                 if ($workplan->kpi_type === 'department' && $workplan->kpiDepartment) {
-                    $label .= ' - ' . ($workplan->kpiDepartment->department->department_name ?? '');
+                    $label .= ' - '.($workplan->kpiDepartment->department->department_name ?? '');
                 } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
-                    $label .= ' - ' . ($workplan->kpiSection->section->section_name ?? '');
+                    $label .= ' - '.($workplan->kpiSection->section->section_name ?? '');
                 }
 
                 return [
@@ -817,19 +819,19 @@ class SubmissionController extends Controller
                     'activity' => $workplan->activity,
                     'year' => $workplan->year,
                     'kpi_type' => $workplan->kpi_type,
-                    'label' => $label
+                    'label' => $label,
                 ];
             });
 
             return response()->json([
                 'success' => true,
                 'data' => $formattedWorkplans,
-                'kpi_type' => $kpiType
+                'kpi_type' => $kpiType,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching programs: ' . $e->getMessage()
+                'message' => 'Error fetching programs: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -854,18 +856,18 @@ class SubmissionController extends Controller
                     'budget_code' => $item->budget_code,
                     'category_name' => $item->category->category_name ?? '',
                     'total' => $item->total,
-                    'label' => $item->description . ' (' . ($item->stock_code ?? $item->budget_code) . ')'
+                    'label' => $item->description.' ('.($item->stock_code ?? $item->budget_code).')',
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'data' => $formattedItems
+                'data' => $formattedItems,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching budget items: ' . $e->getMessage()
+                'message' => 'Error fetching budget items: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -884,7 +886,7 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -892,16 +894,16 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 404);
             }
 
             // Try to find pending approval using new dynamic system
             $approvalRequest = ApprovalRequest::where('reference_id', $id)
-                ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'))
+                ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
                 ->where('status', 'pending')
                 ->first();
 
@@ -912,10 +914,10 @@ class SubmissionController extends Controller
                     ->where('status', 'pending')
                     ->first();
 
-                if (!$pendingDetail) {
+                if (! $pendingDetail) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Anda tidak memiliki akses untuk approval ini atau approval sudah diproses.'
+                        'message' => 'Anda tidak memiliki akses untuk approval ini atau approval sudah diproses.',
                     ], 404);
                 }
 
@@ -928,7 +930,7 @@ class SubmissionController extends Controller
                 if ($nextPending && $nextPending->id !== $pendingDetail->id) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Menunggu approval dari level sebelumnya.'
+                        'message' => 'Menunggu approval dari level sebelumnya.',
                     ], 400);
                 }
 
@@ -943,22 +945,23 @@ class SubmissionController extends Controller
                 return response()->json([
                     'success' => $result['success'],
                     'message' => $result['message'],
-                    'data' => $result
+                    'data' => $result,
                 ]);
             }
 
             // If no approval system found
             return response()->json([
                 'success' => false,
-                'message' => 'Approval system not configured for this transaction'
+                'message' => 'Approval system not configured for this transaction',
             ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error approving transaction: ' . $e->getMessage());
+            Log::error('Error approving transaction: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error approving transaction: ' . $e->getMessage()
+                'message' => 'Error approving transaction: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -977,7 +980,7 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -985,16 +988,16 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 404);
             }
 
             // Try to find pending approval using new dynamic system
             $approvalRequest = ApprovalRequest::where('reference_id', $id)
-                ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'))
+                ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
                 ->where('status', 'pending')
                 ->first();
 
@@ -1005,10 +1008,10 @@ class SubmissionController extends Controller
                     ->where('status', 'pending')
                     ->first();
 
-                if (!$pendingDetail) {
+                if (! $pendingDetail) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Anda tidak memiliki akses untuk reject ini atau approval sudah diproses.'
+                        'message' => 'Anda tidak memiliki akses untuk reject ini atau approval sudah diproses.',
                     ], 404);
                 }
 
@@ -1021,7 +1024,7 @@ class SubmissionController extends Controller
                 if ($nextPending && $nextPending->id !== $pendingDetail->id) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Menunggu approval dari level sebelumnya.'
+                        'message' => 'Menunggu approval dari level sebelumnya.',
                     ], 400);
                 }
 
@@ -1036,22 +1039,23 @@ class SubmissionController extends Controller
                 return response()->json([
                     'success' => $result['success'],
                     'message' => $result['message'],
-                    'data' => $result
+                    'data' => $result,
                 ]);
             }
 
             // If no approval system found
             return response()->json([
                 'success' => false,
-                'message' => 'Approval system not configured for this transaction'
+                'message' => 'Approval system not configured for this transaction',
             ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error rejecting transaction: ' . $e->getMessage());
+            Log::error('Error rejecting transaction: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error rejecting transaction: ' . $e->getMessage()
+                'message' => 'Error rejecting transaction: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1060,20 +1064,20 @@ class SubmissionController extends Controller
     {
         try {
             $transaction = Transaction::findOrFail($id);
-            
+
             // Try to get timeline from new dynamic approval system first
             $timelineResult = $this->approvalTransactionService->getApprovalTimeline($id);
-            
-            if ($timelineResult['success'] && !empty($timelineResult['data'])) {
+
+            if ($timelineResult['success'] && ! empty($timelineResult['data'])) {
                 $data = [];
-                
+
                 foreach ($timelineResult['data'] as $item) {
                     $iconClass = $item['badge_class'] ?? 'bg-secondary';
                     $badgeClass = $item['badge_class'] ?? 'bg-secondary';
-                    
+
                     // Determine if this is a pending item
                     $isPending = ($item['status'] ?? '') === 'pending';
-                    
+
                     if ($isPending) {
                         $data[] = '<div class="tt-item">
                             <div class="tt-icon bg-light">
@@ -1084,42 +1088,43 @@ class SubmissionController extends Controller
                                     <div class="fw-semibold"></div>
                                     <span class="badge rounded-pill bg-light text-muted">Pending</span>
                                 </div>
-                                <div class="small mt-1 text-muted">' . htmlspecialchars($item['label'] ?? '') . ' by <span class="fw-semibold">' . htmlspecialchars($item['approver_name'] ?? 'Waiting') . '</span></div>
+                                <div class="small mt-1 text-muted">'.htmlspecialchars($item['label'] ?? '').' by <span class="fw-semibold">'.htmlspecialchars($item['approver_name'] ?? 'Waiting').'</span></div>
                             </div>
                         </div>';
                     } else {
                         $data[] = '<div class="tt-item">
-                            <div class="tt-icon ' . $iconClass . '">
+                            <div class="tt-icon '.$iconClass.'">
                                 <span class="tt-dot"></span>
                             </div>
                             <div class="tt-content">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="fw-semibold">' . htmlspecialchars($item['date'] ?? '') . '</div>
-                                    <span class="badge rounded-pill ' . $badgeClass . ' text-white">' . htmlspecialchars($item['label'] ?? '') . '</span>
+                                    <div class="fw-semibold">'.htmlspecialchars($item['date'] ?? '').'</div>
+                                    <span class="badge rounded-pill '.$badgeClass.' text-white">'.htmlspecialchars($item['label'] ?? '').'</span>
                                 </div>
-                                <div class="small mt-1">' . htmlspecialchars($item['description'] ?? '') . '</div>
+                                <div class="small mt-1">'.htmlspecialchars($item['description'] ?? '').'</div>
                             </div>
                         </div>';
                     }
                 }
-                
+
                 return response()->json([
                     'success' => true,
-                    'data' => implode("", $data)
+                    'data' => implode('', $data),
                 ]);
             }
 
             // If no approval request found
             return response()->json([
                 'success' => false,
-                'message' => 'No approval timeline found for this transaction'
+                'message' => 'No approval timeline found for this transaction',
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching badge info: ' . $e->getMessage());
+            Log::error('Error fetching badge info: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching approval timeline'
+                'message' => 'Error fetching approval timeline',
             ], 404);
         }
     }
@@ -1136,11 +1141,11 @@ class SubmissionController extends Controller
             // ambil data sesuai kebutuhan
         ];
         $pdf = Pdf::loadView('pages.submission.pdf', $data)
-                  ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'portrait');
 
         // STREAM = preview di browser
         return $pdf->stream('budget-proposal-preview.pdf');
-        // return view('pages.submission.pdf');         
+        // return view('pages.submission.pdf');
     }
 
     /**
@@ -1150,12 +1155,14 @@ class SubmissionController extends Controller
     {
         try {
             $result = $this->approvalTransactionService->getApprovalStatus($id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error fetching approval status: ' . $e->getMessage());
+            Log::error('Error fetching approval status: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching approval status'
+                'message' => 'Error fetching approval status',
             ], 500);
         }
     }
@@ -1169,24 +1176,26 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Employment data not found',
                     'data' => [],
-                    'count' => 0
+                    'count' => 0,
                 ]);
             }
 
             $result = $this->approvalTransactionService->getPendingApprovalsForUser($employment->id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error fetching pending approvals: ' . $e->getMessage());
+            Log::error('Error fetching pending approvals: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching pending approvals',
                 'data' => [],
-                'count' => 0
+                'count' => 0,
             ], 500);
         }
     }
@@ -1200,15 +1209,15 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 404);
             }
 
             $year = $request->input('year');
-            
+
             // Use service to get counts
             $result = $this->approvalTransactionService->getApprovalCounts(
                 $employment->id,
@@ -1217,10 +1226,11 @@ class SubmissionController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error fetching approval counts: ' . $e->getMessage());
+            Log::error('Error fetching approval counts: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching approval counts'
+                'message' => 'Error fetching approval counts',
             ], 500);
         }
     }
@@ -1234,10 +1244,10 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 404);
             }
 
@@ -1255,17 +1265,18 @@ class SubmissionController extends Controller
                     'year' => $year,
                     'search' => $search,
                     'page' => $page,
-                    'per_page' => $perPage
+                    'per_page' => $perPage,
                 ]
             );
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error fetching approval data: ' . $e->getMessage());
+            Log::error('Error fetching approval data: '.$e->getMessage());
             Log::error($e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching approval data: ' . $e->getMessage()
+                'message' => 'Error fetching approval data: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1282,17 +1293,19 @@ class SubmissionController extends Controller
             if ($transaction->user_id != Auth::id()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
             $result = $this->approvalTransactionService->cancelApproval($id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error cancelling approval: ' . $e->getMessage());
+            Log::error('Error cancelling approval: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error cancelling approval: ' . $e->getMessage()
+                'message' => 'Error cancelling approval: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1309,25 +1322,27 @@ class SubmissionController extends Controller
             if ($transaction->user_id != Auth::id()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
             // Check if transaction can be resubmitted (status is pending/cancelled)
-            if (!in_array($transaction->status, [Transaction::STATUS_PENDING, Transaction::STATUS_CANCELLED])) {
+            if (! in_array($transaction->status, [Transaction::STATUS_PENDING, Transaction::STATUS_CANCELLED])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Transaction cannot be resubmitted in current status'
+                    'message' => 'Transaction cannot be resubmitted in current status',
                 ], 400);
             }
 
             $result = $this->approvalTransactionService->submitForApproval($id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error resubmitting for approval: ' . $e->getMessage());
+            Log::error('Error resubmitting for approval: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error resubmitting for approval: ' . $e->getMessage()
+                'message' => 'Error resubmitting for approval: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1341,12 +1356,14 @@ class SubmissionController extends Controller
     {
         try {
             $result = $this->lpjService->getLpjFormData($id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error getting LPJ form data: ' . $e->getMessage());
+            Log::error('Error getting LPJ form data: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error getting LPJ form data: ' . $e->getMessage()
+                'message' => 'Error getting LPJ form data: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1370,7 +1387,7 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -1381,24 +1398,26 @@ class SubmissionController extends Controller
             if ($transaction->user_id != Auth::id()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Unauthorized access',
                 ], 403);
             }
 
             $data = $request->only(['submission_date', 'realization_date', 'items']);
-            
+
             // Handle file upload
             if ($request->hasFile('proof_of_payment')) {
                 $data['proof_of_payment'] = $request->file('proof_of_payment');
             }
 
             $result = $this->lpjService->submitLpj($id, $data);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error submitting LPJ: ' . $e->getMessage());
+            Log::error('Error submitting LPJ: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error submitting LPJ: ' . $e->getMessage()
+                'message' => 'Error submitting LPJ: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1410,12 +1429,14 @@ class SubmissionController extends Controller
     {
         try {
             $result = $this->lpjService->getLpjByTransactionId($id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error getting LPJ: ' . $e->getMessage());
+            Log::error('Error getting LPJ: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error getting LPJ: ' . $e->getMessage()
+                'message' => 'Error getting LPJ: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1429,21 +1450,23 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 400);
             }
 
             $notes = $request->input('notes');
             $result = $this->lpjService->processApproval($lpjId, 'approve', $employment->id, $notes);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error approving LPJ: ' . $e->getMessage());
+            Log::error('Error approving LPJ: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error approving LPJ: ' . $e->getMessage()
+                'message' => 'Error approving LPJ: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1461,7 +1484,7 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Rejection reason is required',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -1469,20 +1492,22 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employment data not found'
+                    'message' => 'Employment data not found',
                 ], 400);
             }
 
             $result = $this->lpjService->processApproval($lpjId, 'reject', $employment->id, $request->input('reason'));
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error rejecting LPJ: ' . $e->getMessage());
+            Log::error('Error rejecting LPJ: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error rejecting LPJ: ' . $e->getMessage()
+                'message' => 'Error rejecting LPJ: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1496,21 +1521,23 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => true,
                     'data' => [],
-                    'count' => 0
+                    'count' => 0,
                 ]);
             }
 
             $result = $this->lpjService->getPendingLpjApprovalsForUser($employment->id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error getting pending LPJ approvals: ' . $e->getMessage());
+            Log::error('Error getting pending LPJ approvals: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error getting pending LPJ approvals: ' . $e->getMessage()
+                'message' => 'Error getting pending LPJ approvals: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1524,22 +1551,23 @@ class SubmissionController extends Controller
             $user = Auth::user();
             $employment = $user->employment;
 
-            if (!$employment) {
+            if (! $employment) {
                 return response()->json([
                     'success' => true,
-                    'data' => ['pending' => 0, 'approved' => 0, 'rejected' => 0]
+                    'data' => ['pending' => 0, 'approved' => 0, 'rejected' => 0],
                 ]);
             }
 
             $result = $this->lpjService->getLpjApprovalCounts($employment->id);
+
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error getting LPJ approval counts: ' . $e->getMessage());
+            Log::error('Error getting LPJ approval counts: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error getting LPJ approval counts: ' . $e->getMessage()
+                'message' => 'Error getting LPJ approval counts: '.$e->getMessage(),
             ], 500);
         }
     }
-
 }

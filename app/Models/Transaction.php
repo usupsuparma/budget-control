@@ -38,17 +38,15 @@ class Transaction extends Model
         'approval_completed_at' => 'datetime',
     ];
 
-    // Status Transaction constants 0:Submission|1:Approved Parent|2:Approved Finance|3:Approved Division|4:Approved Finance Director|5:Approved President Director|6:Rejected|7:Paid|8:Complete|-1:Cancelled
+    // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled	
     const STATUS_SUBMISSION = 0;
-    const STATUS_APPROVED_PARENT = 1;
-    const STATUS_APPROVED_FINANCE = 2;
-    const STATUS_APPROVED_DIVISION = 3;
-    const STATUS_APPROVED_FINANCE_DIRECTOR = 4;
-    const STATUS_APPROVED_PRESIDENT_DIRECTOR = 5;
-    const STATUS_REJECTED = 6;
-    const STATUS_PAID = 7;
-    const STATUS_COMPLETE = 8;
+    const STATUS_PROGRESS = 1;
+    const STATUS_APPROVED = 2;
+    const STATUS_PAID = 3;
+    const STATUS_COMPLETED = 4;
+    const STATUS_REJECTED = 5;
     const STATUS_CANCELLED = -1;
+
 
     // Legacy transaction workflow status constants (still in use for 'status' field)
     const STATUS_PENDING = 0;  // Used for draft/pending transactions
@@ -117,6 +115,38 @@ class Transaction extends Model
     public function jobPosition()
     {
         return $this->belongsTo(JobPosition::class, 'job_position_id');
+    }
+
+    /**
+     * Get the LPJ submission for this transaction.
+     */
+    public function lpjSubmission()
+    {
+        return $this->hasOne(TransactionLpjSubmission::class, 'transaction_id');
+    }
+
+    /**
+     * Check if transaction can submit LPJ (status must be PAID).
+     */
+    public function canSubmitLpj(): bool
+    {
+        return $this->status === self::STATUS_PAID && !$this->lpjSubmission;
+    }
+
+    /**
+     * Check if transaction has pending LPJ.
+     */
+    public function hasPendingLpj(): bool
+    {
+        return $this->lpjSubmission && $this->lpjSubmission->isPending();
+    }
+
+    /**
+     * Check if transaction LPJ is approved.
+     */
+    public function hasApprovedLpj(): bool
+    {
+        return $this->lpjSubmission && $this->lpjSubmission->isApproved();
     }
 
     // Scopes

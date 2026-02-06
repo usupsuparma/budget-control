@@ -925,6 +925,240 @@
             </div>
         </div>
     </div>
+
+    {{-- === LPJ (Laporan Pertanggungjawaban) MODAL === --}}
+    <div class="modal fade" id="lpjModal" tabindex="-1" aria-labelledby="lpjModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="lpjModalLabel">
+                        <i class="ri-file-text-line me-2"></i>Laporan Pertanggungjawaban (LPJ)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="lpjForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="hidden" id="lpj_transaction_id" name="transaction_id">
+                        
+                        {{-- Alert for errors --}}
+                        <div id="lpjErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+                        
+                        {{-- Transaction Info (Read-only) --}}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Transaction Information</h6>
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <tr>
+                                                <td class="fw-semibold" style="width: 140px;">User</td>
+                                                <td id="lpj_user_name">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-semibold">Submitter</td>
+                                                <td id="lpj_job_level">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-semibold">Program ID</td>
+                                                <td id="lpj_program_id">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-semibold">Purpose</td>
+                                                <td id="lpj_purpose">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Date & Value</h6>
+                                        <div class="row mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Submission Date</label>
+                                                <input type="date" class="form-control" id="lpj_submission_date" name="submission_date" required>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Submission Value</label>
+                                                <input type="text" class="form-control-plaintext fw-bold text-success" id="lpj_submission_value" readonly>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Realization Date</label>
+                                                <input type="date" class="form-control" id="lpj_realization_date" name="realization_date" required>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Realization Value</label>
+                                                <input type="text" class="form-control-plaintext fw-bold" id="lpj_realization_value" readonly value="Rp 0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Items Table --}}
+                        <div class="card border mb-3">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="ri-list-check me-2"></i>Realization Report</h6>
+                                <span class="badge bg-info" id="lpj_variance_badge"></span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered mb-0" id="lpjItemsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th rowspan="2" class="align-middle text-center" style="width: 200px;">Description of Goods/Service</th>
+                                                <th colspan="5" class="text-center bg-secondary bg-opacity-10">Submission</th>
+                                                <th colspan="4" class="text-center bg-success bg-opacity-10">Realization Report</th>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-secondary bg-opacity-10">Budget ID</th>
+                                                <th class="bg-secondary bg-opacity-10 text-center">Unit</th>
+                                                <th class="bg-secondary bg-opacity-10 text-center">Qty</th>
+                                                <th class="bg-secondary bg-opacity-10 text-end">Price</th>
+                                                <th class="bg-secondary bg-opacity-10 text-end">Total</th>
+                                                <th class="bg-success bg-opacity-10 text-center">Unit</th>
+                                                <th class="bg-success bg-opacity-10 text-center" style="width: 80px;">Qty</th>
+                                                <th class="bg-success bg-opacity-10 text-end" style="width: 150px;">Price</th>
+                                                <th class="bg-success bg-opacity-10 text-end">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lpj_items_body">
+                                            <tr>
+                                                <td colspan="10" class="text-center text-muted">Loading items...</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="5" class="text-end fw-bold">Submission Total:</td>
+                                                <td class="text-end fw-bold" id="lpj_submission_total">Rp 0</td>
+                                                <td colspan="3" class="text-end fw-bold">Realization Total:</td>
+                                                <td class="text-end fw-bold" id="lpj_realization_total">Rp 0</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Proof of Payment --}}
+                        <div class="card border">
+                            <div class="card-body">
+                                <label class="form-label fw-semibold">
+                                    <i class="ri-attachment-2 me-1"></i>Attach Proof of Payment
+                                </label>
+                                <input type="file" class="form-control" id="lpj_proof_of_payment" name="proof_of_payment" accept=".jpg,.jpeg,.png,.pdf">
+                                <small class="text-muted">Accepted formats: JPG, PNG, PDF (Max: 5MB)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="reset" class="btn btn-outline-warning" onclick="resetLpjForm()">
+                            <i class="ri-refresh-line me-1"></i>Reset
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnSubmitLpj">
+                            <i class="ri-save-line me-1"></i>Submit LPJ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- === LPJ VIEW DETAIL MODAL === --}}
+    <div class="modal fade" id="lpjViewModal" tabindex="-1" aria-labelledby="lpjViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="lpjViewModalLabel">
+                        <i class="ri-file-text-line me-2"></i>LPJ Detail
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="lpj_view_id">
+                    
+                    {{-- LPJ Status --}}
+                    <div class="alert alert-info" id="lpj_view_status_alert">
+                        <strong>Status:</strong> <span id="lpj_view_status_text">-</span>
+                    </div>
+                    
+                    {{-- LPJ Info --}}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="fw-semibold" style="width: 140px;">Submission Date</td>
+                                    <td id="lpj_view_submission_date">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Realization Date</td>
+                                    <td id="lpj_view_realization_date">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="fw-semibold" style="width: 140px;">Submission Value</td>
+                                    <td id="lpj_view_submission_value" class="fw-bold text-success">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Realization Value</td>
+                                    <td id="lpj_view_realization_value" class="fw-bold">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Items Table --}}
+                    <div class="card border mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="ri-list-check me-2"></i>Items</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Description</th>
+                                            <th class="text-center">Est. Qty</th>
+                                            <th class="text-end">Est. Price</th>
+                                            <th class="text-end">Est. Total</th>
+                                            <th class="text-center">Real. Qty</th>
+                                            <th class="text-end">Real. Price</th>
+                                            <th class="text-end">Real. Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lpj_view_items_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Approval Timeline --}}
+                    <div class="card border">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="ri-time-line me-2"></i>Approval Timeline</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="tracking-timeline" id="lpj_approval_timeline">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('js')
@@ -1308,6 +1542,9 @@
             } else {
                 data.data.forEach((item, index) => {
                     const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                    const hasLpj = item.lpj_submission != null;
+                    const lpjStatus = hasLpj ? item.lpj_submission.status_approval : null;
+                    
                     html += `
                 <tr>
                     <td>${rowNumber}</td>
@@ -1318,25 +1555,22 @@
                     <td>${getStatusBadge(item.status, item.transaction_id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})" title="View Detail">
                                 <i class="ri-eye-line"></i>
                             </button>
-                            ${item.status == 0 ? `
-                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
-                                                <i class="ri-edit-line"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
-                                        ` : ''}
-                            ${item.can_approve ? `
-                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
-                                                <i class="ri-check-line"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
-                                                <i class="ri-close-line"></i> Reject
-                                            </button>
-                                        ` : ''}
+                            <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})" title="View PDF">
+                                <i class="ri-file-pdf-2-line"></i>
+                            </button>
+                            ${!hasLpj && item.status == 3 ? `
+                                <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
+                                    <i class="ri-file-text-line"></i> LPJ
+                                </button>
+                            ` : ''}
+                            ${hasLpj ? `
+                                <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
+                                    <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
+                                </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1345,6 +1579,27 @@
             }
 
             $('#tableBody2').html(html);
+        }
+
+        // LPJ Status helpers
+        function getLpjStatusColor(status) {
+            const colors = {
+                'pending': 'warning',
+                'in_progress': 'info',
+                'approved': 'success',
+                'rejected': 'danger'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getLpjStatusLabel(status) {
+            const labels = {
+                'pending': 'LPJ Pending',
+                'in_progress': 'LPJ In Progress',
+                'approved': 'LPJ Approved',
+                'rejected': 'LPJ Rejected'
+            };
+            return labels[status] || 'View LPJ';
         }
 
         // Render pagination
@@ -2555,6 +2810,300 @@
                             showAlert(response.message || 'Error rejecting submission', 'error');
                         }
                     });
+                }
+            });
+        }
+
+        // ==================== LPJ FUNCTIONS ====================
+
+        let lpjItemsData = [];
+
+        function openLpjModal(transactionId) {
+            // Reset form
+            resetLpjForm();
+            $('#lpj_transaction_id').val(transactionId);
+            $('#lpjErrorAlert').addClass('d-none');
+            
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            $('#lpj_submission_date').val(today);
+            $('#lpj_realization_date').val(today);
+
+            // Load transaction data
+            let url = "{{ route('userSubmission.lpj.form', ':id') }}".replace(':id', transactionId);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const data = response.data;
+                        const transaction = data.transaction;
+                        const details = data.details;
+
+                        // Populate transaction info
+                        $('#lpj_user_name').text(transaction.user_name);
+                        $('#lpj_job_level').text(transaction.job_level?.name || '-');
+                        $('#lpj_program_id').text(transaction.program_id || '-');
+                        $('#lpj_purpose').text(transaction.purpose);
+                        $('#lpj_submission_value').text(formatCurrency(transaction.estimated_amount));
+                        $('#lpj_submission_total').text(formatCurrency(transaction.estimated_amount));
+
+                        // Populate items table
+                        lpjItemsData = details;
+                        renderLpjItems(details);
+
+                        // Show modal
+                        const modal = new bootstrap.Modal(document.getElementById('lpjModal'));
+                        modal.show();
+                    } else {
+                        showAlert(response.message || 'Error loading LPJ data', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert(response?.message || 'Error loading LPJ data', 'error');
+                }
+            });
+        }
+
+        function renderLpjItems(details) {
+            let html = '';
+            let submissionTotal = 0;
+
+            if (details.length === 0) {
+                html = '<tr><td colspan="10" class="text-center text-muted">No items found</td></tr>';
+            } else {
+                details.forEach((item, index) => {
+                    const estTotal = parseFloat(item.estimated_total) || 0;
+                    submissionTotal += estTotal;
+
+                    html += `
+                        <tr>
+                            <td>
+                                <strong>${item.goods_service_name}</strong>
+                                <input type="hidden" name="items[${index}][detail_id]" value="${item.id}">
+                            </td>
+                            <td><small>${item.budget_name || '-'}</small></td>
+                            <td class="text-center">${item.unit_name || '-'}</td>
+                            <td class="text-center">${item.estimated_quantity}</td>
+                            <td class="text-end">${formatCurrency(item.estimated_price)}</td>
+                            <td class="text-end">${formatCurrency(estTotal)}</td>
+                            <td class="text-center">${item.unit_name || '-'}</td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm lpj-qty" 
+                                    name="items[${index}][fix_quantity]" 
+                                    value="${item.fix_quantity || item.estimated_quantity}" 
+                                    min="0" step="1" 
+                                    data-index="${index}"
+                                    onchange="calculateLpjTotal()">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm lpj-price" 
+                                    name="items[${index}][fix_price]" 
+                                    value="${item.fix_price || item.estimated_price}" 
+                                    min="0" step="0.01"
+                                    data-index="${index}"
+                                    onchange="calculateLpjTotal()">
+                            </td>
+                            <td class="text-end lpj-item-total" data-index="${index}">
+                                ${formatCurrency((item.fix_quantity || item.estimated_quantity) * (item.fix_price || item.estimated_price))}
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            $('#lpj_items_body').html(html);
+            calculateLpjTotal();
+        }
+
+        function calculateLpjTotal() {
+            let realizationTotal = 0;
+            let submissionTotal = 0;
+
+            $('.lpj-qty').each(function() {
+                const index = $(this).data('index');
+                const qty = parseFloat($(this).val()) || 0;
+                const price = parseFloat($(`input.lpj-price[data-index="${index}"]`).val()) || 0;
+                const total = qty * price;
+                
+                $(`.lpj-item-total[data-index="${index}"]`).text(formatCurrency(total));
+                realizationTotal += total;
+            });
+
+            // Calculate submission total from original data
+            lpjItemsData.forEach(item => {
+                submissionTotal += parseFloat(item.estimated_total) || 0;
+            });
+
+            $('#lpj_realization_total').text(formatCurrency(realizationTotal));
+            $('#lpj_realization_value').text(formatCurrency(realizationTotal));
+            $('#lpj_submission_total').text(formatCurrency(submissionTotal));
+
+            // Update variance badge
+            const variance = realizationTotal - submissionTotal;
+            const variancePercent = submissionTotal > 0 ? ((variance / submissionTotal) * 100).toFixed(1) : 0;
+            
+            if (variance > 0) {
+                $('#lpj_variance_badge').removeClass('bg-success bg-info').addClass('bg-danger')
+                    .text(`Over Budget: +${formatCurrency(variance)} (${variancePercent}%)`);
+            } else if (variance < 0) {
+                $('#lpj_variance_badge').removeClass('bg-danger bg-info').addClass('bg-success')
+                    .text(`Under Budget: ${formatCurrency(variance)} (${variancePercent}%)`);
+            } else {
+                $('#lpj_variance_badge').removeClass('bg-danger bg-success').addClass('bg-info')
+                    .text('On Budget');
+            }
+        }
+
+        function resetLpjForm() {
+            $('#lpjForm')[0].reset();
+            $('#lpj_items_body').html('<tr><td colspan="10" class="text-center text-muted">No items</td></tr>');
+            $('#lpj_realization_total').text('Rp 0');
+            $('#lpj_realization_value').text('Rp 0');
+            $('#lpj_variance_badge').text('');
+            lpjItemsData = [];
+        }
+
+        // Submit LPJ Form
+        $('#lpjForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const transactionId = $('#lpj_transaction_id').val();
+            const formData = new FormData(this);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            // Disable submit button
+            $('#btnSubmitLpj').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Submitting...');
+
+            let url = "{{ route('userSubmission.lpj.submit', ':id') }}".replace(':id', transactionId);
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message || 'LPJ submitted successfully',
+                            confirmButtonColor: '#198754'
+                        });
+                        
+                        // Close modal and reload data
+                        bootstrap.Modal.getInstance(document.getElementById('lpjModal')).hide();
+                        loadData();
+                        loadSummary();
+                    } else {
+                        $('#lpjErrorAlert').removeClass('d-none').text(response.message || 'Error submitting LPJ');
+                    }
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    let errorMsg = response?.message || 'Error submitting LPJ';
+                    
+                    if (response?.errors) {
+                        errorMsg += '<ul class="mb-0 mt-2">';
+                        Object.values(response.errors).forEach(errors => {
+                            errors.forEach(err => {
+                                errorMsg += `<li>${err}</li>`;
+                            });
+                        });
+                        errorMsg += '</ul>';
+                    }
+                    
+                    $('#lpjErrorAlert').removeClass('d-none').html(errorMsg);
+                },
+                complete: function() {
+                    $('#btnSubmitLpj').prop('disabled', false).html('<i class="ri-save-line me-1"></i>Submit LPJ');
+                }
+            });
+        });
+
+        // View LPJ Detail
+        function viewLpjDetail(transactionId) {
+            let url = "{{ route('userSubmission.lpj.byTransaction', ':id') }}".replace(':id', transactionId);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const lpj = response.data;
+                        const transaction = lpj.transaction;
+
+                        $('#lpj_view_id').val(lpj.id);
+                        $('#lpj_view_submission_date').text(formatDate(lpj.submission_date));
+                        $('#lpj_view_realization_date').text(formatDate(lpj.realization_date));
+                        $('#lpj_view_submission_value').text(formatCurrency(transaction.estimated_amount));
+                        $('#lpj_view_realization_value').text(formatCurrency(transaction.actual_amount));
+
+                        // Status
+                        const statusColor = getLpjStatusColor(lpj.status_approval);
+                        $('#lpj_view_status_alert').removeClass('alert-info alert-warning alert-success alert-danger')
+                            .addClass(`alert-${statusColor}`);
+                        $('#lpj_view_status_text').text(getLpjStatusLabel(lpj.status_approval).replace('LPJ ', ''));
+
+                        // Items
+                        let itemsHtml = '';
+                        let no = 1;
+                        transaction.details.forEach(item => {
+                            itemsHtml += `
+                                <tr>
+                                    <td>${no++}</td>
+                                    <td>${item.goods_service_name}</td>
+                                    <td class="text-center">${item.estimated_quantity}</td>
+                                    <td class="text-end">${formatCurrency(item.estimated_price)}</td>
+                                    <td class="text-end">${formatCurrency(item.estimated_total)}</td>
+                                    <td class="text-center">${item.fix_quantity || 0}</td>
+                                    <td class="text-end">${formatCurrency(item.fix_price || 0)}</td>
+                                    <td class="text-end">${formatCurrency(item.fix_total || 0)}</td>
+                                </tr>
+                            `;
+                        });
+                        $('#lpj_view_items_body').html(itemsHtml);
+
+                        // Approval Timeline
+                        let timelineHtml = '';
+                        lpj.approval_details.forEach(detail => {
+                            const employee = detail.employment?.employee;
+                            const name = employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown';
+                            const statusBadge = detail.status === 'approved' ? 'bg-success' : 
+                                               detail.status === 'rejected' ? 'bg-danger' : 'bg-warning';
+                            const icon = detail.status === 'approved' ? 'ri-check-line' : 
+                                        detail.status === 'rejected' ? 'ri-close-line' : 'ri-time-line';
+                            
+                            timelineHtml += `
+                                <div class="tt-item">
+                                    <div class="tt-icon">
+                                        <span class="tt-dot ${statusBadge}"><i class="${icon} text-white"></i></span>
+                                    </div>
+                                    <div class="tt-content">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Level ${detail.level_sequence}: ${name}</strong>
+                                            <span class="badge ${statusBadge}">${detail.status.charAt(0).toUpperCase() + detail.status.slice(1)}</span>
+                                        </div>
+                                        ${detail.notes ? `<small class="text-muted">${detail.notes}</small>` : ''}
+                                        ${detail.actioned_at ? `<small class="text-muted d-block">${formatDate(detail.actioned_at)}</small>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        $('#lpj_approval_timeline').html(timelineHtml || '<p class="text-muted">No approval history</p>');
+
+                        // Show modal
+                        const modal = new bootstrap.Modal(document.getElementById('lpjViewModal'));
+                        modal.show();
+                    } else {
+                        showAlert(response.message || 'LPJ not found', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert(response?.message || 'Error loading LPJ detail', 'error');
                 }
             });
         }

@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->string('status')->comment('0:Submission|1:Approved Parent|2:Approved Finance|3:Approved Division|4:Approved Finance Director|5:Approved President Director|6:Rejected|7:Paid|8:Complete|-1:Cancelled')->change();
+            $table->string('status')->comment('0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled')->default('0')->change();
         });
     }
-
+    
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->string('status')->comment('0:Submission|1:Approved Parent|2:Approved Finance|3:Approved Division|4:Approved Finance Director|5:Approved President Director|6:Rejected|7:Paid|8:Complete|-1:Cancelled')->change();
+            $table->string('status')->comment('0:Submission|1:Progress|2:Paid|3:Complete|4:Reject|-1:Cancelled')->change();
         });
     }
 };

@@ -14,7 +14,9 @@ use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestDetail;
+use App\Models\TransactionLpjSubmission;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
+use App\Services\LpjService\LpjService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -25,11 +27,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class SubmissionController extends Controller
 {
     protected $approvalTransactionService;
+    protected $lpjService;
 
     public function __construct(
-        ApprovalTransactionService $approvalTransactionService
+        ApprovalTransactionService $approvalTransactionService,
+        LpjService $lpjService
     ) {
         $this->approvalTransactionService = $approvalTransactionService;
+        $this->lpjService = $lpjService;
     }
 
     public function user()
@@ -156,15 +161,12 @@ class SubmissionController extends Controller
             $query->where('user_id', $userId);
             $query->with([
                 'details',
-                // Legacy approval system
-                'approvals' => function($q) use ($userId) {
-                    $q->where('approver_id', $userId)
-                      ->where('status', 0); // pending
-                },
                 // New dynamic approval system
                 'approvalRequest.details' => function($q) {
                     $q->orderBy('level_sequence');
-                }
+                },
+                // LPJ submission
+                'lpjSubmission'
             ]);
 
             // Filter by year
@@ -185,9 +187,9 @@ class SubmissionController extends Controller
 
             // Add can_approve flag to each transaction
             $transactions->getCollection()->transform(function($transaction) use ($userId, $employmentId) {
-                // Check legacy system first
-                $transaction->can_approve = $transaction->approvals->isNotEmpty();
-                $transaction->pending_approval = $transaction->approvals->first();
+                // Initialize can_approve as false
+                $transaction->can_approve = false;
+                $transaction->pending_approval = null;
 
                 // Check new dynamic approval system if employmentId exists
                 if ($employmentId && $transaction->approvalRequest) {
@@ -380,9 +382,6 @@ class SubmissionController extends Controller
         try {
             $transaction = Transaction::with([
                 'details',
-                'approvals' => function($query) {
-                    $query->orderBy('sequence_order', 'asc');
-                },
                 'approvalRequest.details' => function($query) {
                     $query->orderBy('phase', 'asc')
                           ->orderBy('level_sequence', 'asc');
@@ -1329,6 +1328,216 @@ class SubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error resubmitting for approval: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ==================== LPJ METHODS ====================
+
+    /**
+     * Get LPJ form data for a transaction
+     */
+    public function getLpjFormData($id)
+    {
+        try {
+            $result = $this->lpjService->getLpjFormData($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error getting LPJ form data: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting LPJ form data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Submit LPJ for a transaction
+     */
+    public function submitLpj(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'submission_date' => 'required|date',
+            'realization_date' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.detail_id' => 'required|integer',
+            'items.*.fix_quantity' => 'required|numeric|min:0',
+            'items.*.fix_price' => 'required|numeric|min:0',
+            'proof_of_payment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $transaction = Transaction::findOrFail($id);
+
+            // Check if user owns this transaction
+            if ($transaction->user_id != Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+
+            $data = $request->only(['submission_date', 'realization_date', 'items']);
+            
+            // Handle file upload
+            if ($request->hasFile('proof_of_payment')) {
+                $data['proof_of_payment'] = $request->file('proof_of_payment');
+            }
+
+            $result = $this->lpjService->submitLpj($id, $data);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error submitting LPJ: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error submitting LPJ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get LPJ details by transaction ID
+     */
+    public function getLpjByTransaction($id)
+    {
+        try {
+            $result = $this->lpjService->getLpjByTransactionId($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error getting LPJ: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting LPJ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve LPJ
+     */
+    public function approveLpj(Request $request, $lpjId)
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 400);
+            }
+
+            $notes = $request->input('notes');
+            $result = $this->lpjService->processApproval($lpjId, 'approve', $employment->id, $notes);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error approving LPJ: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving LPJ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject LPJ
+     */
+    public function rejectLpj(Request $request, $lpjId)
+    {
+        $validator = Validator::make($request->all(), [
+            'reason' => 'required|string|min:5',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rejection reason is required',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employment data not found'
+                ], 400);
+            }
+
+            $result = $this->lpjService->processApproval($lpjId, 'reject', $employment->id, $request->input('reason'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error rejecting LPJ: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting LPJ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get pending LPJ approvals for current user
+     */
+    public function getPendingLpjApprovals()
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'count' => 0
+                ]);
+            }
+
+            $result = $this->lpjService->getPendingLpjApprovalsForUser($employment->id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error getting pending LPJ approvals: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting pending LPJ approvals: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get LPJ approval counts for current user
+     */
+    public function getLpjApprovalCounts()
+    {
+        try {
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['pending' => 0, 'approved' => 0, 'rejected' => 0]
+                ]);
+            }
+
+            $result = $this->lpjService->getLpjApprovalCounts($employment->id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error getting LPJ approval counts: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting LPJ approval counts: ' . $e->getMessage()
             ], 500);
         }
     }

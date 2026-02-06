@@ -48,6 +48,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkplanBudgetItemApprovalController;
+use App\Http\Controllers\LpjApprovalMasterController;
 use App\Livewire\Auth\Login;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Support\Facades\Auth;
@@ -752,6 +753,24 @@ Route::middleware('auth')->group(function () {
                     ->name('userSubmission.programs');
                 Route::get('/budget-items/{programId}', [SubmissionController::class, 'getBudgetItems'])
                     ->name('userSubmission.budgetItems');
+
+                // LPJ (Laporan Pertanggungjawaban) routes
+                Route::prefix('lpj')->group(function () {
+                    Route::get('/form/{transactionId}', [SubmissionController::class, 'getLpjFormData'])
+                        ->name('userSubmission.lpj.form');
+                    Route::post('/submit/{transactionId}', [SubmissionController::class, 'submitLpj'])
+                        ->name('userSubmission.lpj.submit');
+                    Route::get('/transaction/{transactionId}', [SubmissionController::class, 'getLpjByTransaction'])
+                        ->name('userSubmission.lpj.byTransaction');
+                    Route::post('/{lpjId}/approve', [SubmissionController::class, 'approveLpj'])
+                        ->name('userSubmission.lpj.approve');
+                    Route::post('/{lpjId}/reject', [SubmissionController::class, 'rejectLpj'])
+                        ->name('userSubmission.lpj.reject');
+                    Route::get('/pending', [SubmissionController::class, 'getPendingLpjApprovals'])
+                        ->name('userSubmission.lpj.pending');
+                    Route::get('/counts', [SubmissionController::class, 'getLpjApprovalCounts'])
+                        ->name('userSubmission.lpj.counts');
+                });
             });
 
         // Approval Submission Routes
@@ -1355,6 +1374,28 @@ Route::middleware('auth')->group(function () {
                 ->name('budgetCode.update');
             Route::delete('/{id}', [BudgetCodeController::class, 'destroy'])
                 ->name('budgetCode.destroy');
+        });
+
+    /* ========================
+        LPJ APPROVER MASTER
+    ======================== */
+    Route::prefix('lpj-approver')
+        ->middleware('permission:setting.master.view')
+        ->group(function () {
+            Route::get('/', [LpjApprovalMasterController::class, 'index'])
+                ->name('lpjApprovalMaster.index');
+            Route::get('/data', [LpjApprovalMasterController::class, 'getData'])
+                ->name('lpjApprovalMaster.data');
+            Route::post('/', [LpjApprovalMasterController::class, 'store'])
+                ->name('lpjApprovalMaster.store');
+            Route::put('/{id}', [LpjApprovalMasterController::class, 'update'])
+                ->name('lpjApprovalMaster.update');
+            Route::post('/{id}/toggle', [LpjApprovalMasterController::class, 'toggleActive'])
+                ->name('lpjApprovalMaster.toggleActive');
+            Route::delete('/{id}', [LpjApprovalMasterController::class, 'destroy'])
+                ->name('lpjApprovalMaster.destroy');
+            Route::get('/available-employees', [LpjApprovalMasterController::class, 'getAvailableEmployees'])
+                ->name('lpjApprovalMaster.availableEmployees');
         });
 
 

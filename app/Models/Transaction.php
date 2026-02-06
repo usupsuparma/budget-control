@@ -22,13 +22,13 @@ class Transaction extends Model
         'estimated_amount',
         'actual_amount',
         'urgency',
-        'status',
+        'status',// Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
         'threshold_id',
         'current_approval_level',
         'required_approval_levels',
         'approval_completed_at',
         'rejection_reason',
-        'status_approval',
+        'status_approval', // 'pending','in_progress','approved','rejected','cancelled'
     ];
 
     protected $casts = [
@@ -36,6 +36,14 @@ class Transaction extends Model
         'estimated_amount' => 'decimal:2',
         'actual_amount' => 'decimal:2',
         'approval_completed_at' => 'datetime',
+        'status' => 'integer',
+        'user_id' => 'integer',
+        'unit_id' => 'integer',
+        'job_level_id' => 'integer',
+        'job_position_id' => 'integer',
+        'threshold_id' => 'integer',
+        'current_approval_level' => 'integer',
+        'required_approval_levels' => 'integer',
     ];
 
     // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled	

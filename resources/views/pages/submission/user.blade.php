@@ -1390,7 +1390,7 @@
                 type: 'GET',
                 data: {
                     year: year,
-                    status: 7,
+                    status: 3, // STATUS_PAID - Transaction approved and ready for disbursement/LPJ
                     page: currentPage
                 },
                 success: function(response) {
@@ -2630,8 +2630,8 @@
                     class: 'bg-info'
                 },
                 3: {
-                    label: 'Approved Division',
-                    class: 'bg-info'
+                    label: 'Disbursed (Ready for LPJ)',
+                    class: 'bg-success'
                 },
                 4: {
                     label: 'Approved Finance Director',

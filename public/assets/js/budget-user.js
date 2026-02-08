@@ -176,7 +176,7 @@ function refreshBudgetItems() {
             hideLoading();
             if (response.success) {
                 console.log(response, "refreshed data");
-                
+
                 allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
                 allItemsData = response.data || [];
@@ -193,7 +193,7 @@ function refreshBudgetItems() {
             } else {
                 showToast(
                     response.message || "Failed to refresh budget items",
-                    "error"
+                    "error",
                 );
             }
         },
@@ -236,7 +236,7 @@ function loadAllBudgetItems() {
 
                 // Update info section
                 const divisionName = $(
-                    "#divisionFilter option:selected"
+                    "#divisionFilter option:selected",
                 ).text();
                 $("#selectedDivisionName").text(divisionName);
                 $("#selectedYear").text(selectedYear);
@@ -254,7 +254,7 @@ function loadAllBudgetItems() {
             } else {
                 showToast(
                     response.message || "Failed to load budget data",
-                    "error"
+                    "error",
                 );
             }
         },
@@ -318,9 +318,17 @@ function renderItemRowForTable(item) {
     const categoryColor = categoryColors[item.category_type] || "bg-secondary";
 
     // Determine which price to use and calculate total
-    const isVerified = item.verification_status === 'verified' && item.price_final && parseFloat(item.price_final) > 0;
-    const unitPrice = isVerified ? parseFloat(item.price_final) : parseFloat(item.price_estimation || 0);
-    const totalQty = months.reduce((sum, m) => sum + (parseInt(item[`activity_${m}`]) || 0), 0);
+    const isVerified =
+        item.verification_status === "verified" &&
+        item.price_final &&
+        parseFloat(item.price_final) > 0;
+    const unitPrice = isVerified
+        ? parseFloat(item.price_final)
+        : parseFloat(item.price_estimation || 0);
+    const totalQty = months.reduce(
+        (sum, m) => sum + (parseInt(item[`activity_${m}`]) || 0),
+        0,
+    );
     const totalBudget = unitPrice * totalQty;
 
     let html = `<tr data-item-id="${item.id}">`;
@@ -359,7 +367,6 @@ function renderItemRowForTable(item) {
         html += `<td class="text-center ${qtyClass}" style="font-size: 10px;">${qty}</td>`;
     });
 
-
     // Unit Price - show verified or estimated with indicator
     html += `<td class="text-end" style="font-size: 10px;">`;
     html += `<div class="d-flex flex-column align-items-end">`;
@@ -376,17 +383,23 @@ function renderItemRowForTable(item) {
     html += `<td style="font-size: 10px;">`;
     if (isVerified) {
         html += `<span class="badge bg-success">Verified</span>`;
-        if (item.price_estimation && parseFloat(item.price_estimation) !== unitPrice) {
+        if (
+            item.price_estimation &&
+            parseFloat(item.price_estimation) !== unitPrice
+        ) {
             const diff = unitPrice - parseFloat(item.price_estimation);
-            const diffPercent = ((diff / parseFloat(item.price_estimation)) * 100).toFixed(1);
-            const diffClass = diff > 0 ? 'text-danger' : 'text-success';
-            html += `<br><small class="${diffClass}">${ diff > 0 ? '+' : ''}${formatCurrency(diff)}</small>`;
-            html += `<br><small class="${diffClass}">(${diff > 0 ? '+' : ''}${diffPercent}%)</small>`;
+            const diffPercent = (
+                (diff / parseFloat(item.price_estimation)) *
+                100
+            ).toFixed(1);
+            const diffClass = diff > 0 ? "text-danger" : "text-success";
+            html += `<br><small class="${diffClass}">${diff > 0 ? "+" : ""}${formatCurrency(diff)}</small>`;
+            html += `<br><small class="${diffClass}">(${diff > 0 ? "+" : ""}${diffPercent}%)</small>`;
         }
-    } else if (item.verification_status === 'pending') {
+    } else if (item.verification_status === "pending") {
         html += `<span class="badge bg-warning text-dark">Pending Verification</span>`;
         html += `<br><small class="text-muted">Est: ${formatCurrency(item.price_estimation || 0)}</small>`;
-    } else if (item.verification_status === 'rejected') {
+    } else if (item.verification_status === "rejected") {
         html += `<span class="badge bg-danger">Rejected</span>`;
         html += `<br><small class="text-muted">Est: ${formatCurrency(item.price_estimation || 0)}</small>`;
     } else {
@@ -440,7 +453,7 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
             if (response.success) {
                 // Update info section
                 const divisionName = $(
-                    "#divisionFilter option:selected"
+                    "#divisionFilter option:selected",
                 ).text();
                 $("#selectedDivisionName").text(divisionName);
                 $("#selectedYear").text(year);
@@ -475,7 +488,7 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
 function openAddItemModalWithWorkplan(workplanId) {
     resetItemForm();
     $("#itemModalLabel").html(
-        '<i class="bi bi-plus-circle me-2"></i>Add Budget Item'
+        '<i class="bi bi-plus-circle me-2"></i>Add Budget Item',
     );
     $("#itemId").val("");
 
@@ -498,7 +511,7 @@ function openAddItemModalWithWorkplan(workplanId) {
 function openAddItemModal() {
     resetItemForm();
     $("#itemModalLabel").html(
-        '<i class="bi bi-plus-circle me-2"></i>Add Budget Item'
+        '<i class="bi bi-plus-circle me-2"></i>Add Budget Item',
     );
     $("#itemId").val("");
 
@@ -543,7 +556,7 @@ function editItemFromWorkplan(itemId, workplanId) {
                 const item = response.data.find((i) => i.id === itemId);
                 if (item) {
                     $("#itemModalLabel").html(
-                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item'
+                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
                     );
 
                     // Load all dropdown data
@@ -596,21 +609,32 @@ function editItem(itemId) {
                 const item = response.data.find((i) => i.id === itemId);
                 if (item) {
                     $("#itemModalLabel").html(
-                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item'
+                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
                     );
 
-                    // Load all dropdown data
-                    loadBudgetCategories();
-                    loadBudgetCodes();
-                    loadCostCenters();
-                    loadSuppliers();
-                    loadUnits();
-                    loadWorkplansForDropdown();
-
-                    // Wait a bit for data to load before populating
-                    setTimeout(() => {
-                        populateItemForm(item);
-                    }, 800);
+                    // Load all dropdown data using Promise.all to wait for completion
+                    Promise.all([
+                        loadBudgetCategoriesAsync(),
+                        loadBudgetCodesAsync(),
+                        loadCostCentersAsync(),
+                        loadSuppliersAsync(),
+                        loadUnitsAsync(),
+                        loadWorkplansForDropdownWithSelectionAsync(
+                            item.kpi_workplan_id,
+                        ),
+                    ])
+                        .then(() => {
+                            // Populate form after all dropdowns are loaded
+                            populateItemForm(item);
+                        })
+                        .catch((error) => {
+                            console.error(
+                                "Error loading dropdown data:",
+                                error,
+                            );
+                            // Still try to populate with whatever data loaded
+                            populateItemForm(item);
+                        });
 
                     $("#itemModal").modal("show");
                 }
@@ -635,7 +659,7 @@ function populateItemForm(item) {
     // Set category_type radio button
     if (item.category_type) {
         $(
-            'input[name="category_type"][value="' + item.category_type + '"]'
+            'input[name="category_type"][value="' + item.category_type + '"]',
         ).prop("checked", true);
     }
 
@@ -666,7 +690,7 @@ function populateItemForm(item) {
     // Format price estimation and total with separator
     if (item.price_estimation) {
         $("#priceEstimation").val(
-            formatNumberWithSeparator(item.price_estimation)
+            formatNumberWithSeparator(item.price_estimation),
         );
     }
     if (item.total) {
@@ -692,7 +716,7 @@ function populateItemForm(item) {
     ];
     months.forEach((month) => {
         $(`input[name="activity_${month}"]`).val(
-            item[`activity_${month}`] || 0
+            item[`activity_${month}`] || 0,
         );
     });
 }
@@ -760,12 +784,12 @@ function loadBudgetCategories() {
                 const select = $("#budgetCategoryId");
                 select.empty();
                 select.append(
-                    '<option value="">Select Budget Category...</option>'
+                    '<option value="">Select Budget Category...</option>',
                 );
 
                 response.data.forEach((category) => {
                     select.append(
-                        `<option value="${category.id}">${category.name}</option>`
+                        `<option value="${category.id}">${category.name}</option>`,
                     );
                 });
             }
@@ -830,12 +854,12 @@ function loadSuppliers() {
                 const select = $("#supplier");
                 select.empty();
                 select.append(
-                    '<option value="" data-id="">Select Supplier</option>'
+                    '<option value="" data-id="">Select Supplier</option>',
                 );
 
                 response.data.forEach((supplier) => {
                     select.append(
-                        `<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`
+                        `<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`,
                     );
                 });
             }
@@ -858,12 +882,12 @@ function loadUnits() {
                 const select = $("#unit");
                 select.empty();
                 select.append(
-                    '<option value="" data-name="">Select Unit</option>'
+                    '<option value="" data-name="">Select Unit</option>',
                 );
 
                 response.data.forEach((unit) => {
                     select.append(
-                        `<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`
+                        `<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`,
                     );
                 });
             }
@@ -925,7 +949,7 @@ function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
                     ],
                     "value",
                     "label",
-                    true
+                    true,
                 );
 
                 if (response.data && response.data.length > 0) {
@@ -950,25 +974,25 @@ function loadWorkplansForDropdownWithSelection(selectedWorkplanId) {
                         choices,
                         "value",
                         "label",
-                        false
+                        false,
                     );
 
                     // Set selected workplan
                     if (selectedWorkplanId) {
                         programIdChoices.setChoiceByValue(
-                            selectedWorkplanId.toString()
+                            selectedWorkplanId.toString(),
                         );
                     }
                 } else {
                     showToast(
                         "No workplans found for this division and year",
-                        "info"
+                        "info",
                     );
                 }
             } else {
                 showToast(
                     response.message || "Failed to load workplans",
-                    "error"
+                    "error",
                 );
             }
         },
@@ -1028,7 +1052,7 @@ function loadWorkplansForDropdown() {
                     ],
                     "value",
                     "label",
-                    true
+                    true,
                 );
 
                 // Add workplan options
@@ -1104,10 +1128,310 @@ function loadBudgetCodes() {
             const costCenterSelect = document.getElementById("costCenter");
             if (costCenterSelect.choicesInstance) {
                 costCenterSelect.choicesInstance.setChoiceByValue(
-                    inchargeCode || ""
+                    inchargeCode || "",
                 );
             }
         });
+}
+
+/**
+ * Async version of loadBudgetCategories - returns a Promise
+ */
+function loadBudgetCategoriesAsync() {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: "/budget-user/budget-categories",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    const select = $("#budgetCategoryId");
+                    select.empty();
+                    select.append(
+                        '<option value="">Select Budget Category...</option>',
+                    );
+
+                    response.data.forEach((category) => {
+                        select.append(
+                            `<option value="${category.id}">${category.name}</option>`,
+                        );
+                    });
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error(
+                    "Error loading budget categories:",
+                    xhr.responseJSON,
+                );
+                reject(xhr);
+            },
+        });
+    });
+}
+
+/**
+ * Async version of loadBudgetCodes - returns a Promise
+ */
+function loadBudgetCodesAsync() {
+    return new Promise((resolve) => {
+        const select = document.getElementById("budgetCode");
+
+        // Destroy existing Choices instance if it exists
+        if (select.choicesInstance) {
+            select.choicesInstance.destroy();
+        }
+
+        // Clear and populate options
+        select.innerHTML = '<option value="">Select Budget Code</option>';
+        budgetCodesData.forEach((code) => {
+            const option = document.createElement("option");
+            option.value = code.stock_code;
+            option.textContent = `${code.stock_code} - ${code.name}`;
+            option.setAttribute("data-incharge", code.inchargeCode || "");
+            select.appendChild(option);
+        });
+
+        // Initialize Choices.js for searchable dropdown
+        const choices = new Choices(select, {
+            searchEnabled: true,
+            searchChoices: true,
+            searchPlaceholderValue: "Search budget code...",
+            itemSelectText: "Click to select",
+            noResultsText: "No budget codes found",
+            shouldSort: false,
+            removeItemButton: false,
+        });
+
+        select.choicesInstance = choices;
+
+        // Bind change event to populate cost_center
+        $(select)
+            .off("change")
+            .on("change", function () {
+                const selectedOption = $(this).find("option:selected");
+                const inchargeCode = selectedOption.data("incharge");
+                $("#costCenter").val(inchargeCode || "");
+
+                // Update Cost Center Choices if it exists
+                const costCenterSelect = document.getElementById("costCenter");
+                if (costCenterSelect.choicesInstance) {
+                    costCenterSelect.choicesInstance.setChoiceByValue(
+                        inchargeCode || "",
+                    );
+                }
+            });
+
+        resolve();
+    });
+}
+
+/**
+ * Async version of loadCostCenters - returns a Promise
+ */
+function loadCostCentersAsync() {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: "/budget-user/cost-centers",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    const select = document.getElementById("costCenter");
+                    select.innerHTML =
+                        '<option value="">Select Cost Center</option>';
+
+                    response.data.forEach((center) => {
+                        const option = document.createElement("option");
+                        option.value = center;
+                        option.textContent = center;
+                        select.appendChild(option);
+                    });
+
+                    // Initialize Choices.js
+                    if (select.choicesInstance) {
+                        select.choicesInstance.destroy();
+                    }
+
+                    const choices = new Choices(select, {
+                        searchEnabled: true,
+                        searchPlaceholderValue: "Search cost center...",
+                        itemSelectText: "Click to select",
+                        shouldSort: false,
+                    });
+
+                    select.choicesInstance = choices;
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading cost centers:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
+    });
+}
+
+/**
+ * Async version of loadSuppliers - returns a Promise
+ */
+function loadSuppliersAsync() {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: "/budget-user/suppliers",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    const select = $("#supplier");
+                    select.empty();
+                    select.append(
+                        '<option value="" data-id="">Select Supplier</option>',
+                    );
+
+                    response.data.forEach((supplier) => {
+                        select.append(
+                            `<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`,
+                        );
+                    });
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading suppliers:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
+    });
+}
+
+/**
+ * Async version of loadUnits - returns a Promise
+ */
+function loadUnitsAsync() {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: "/budget-user/units",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    const select = $("#unit");
+                    select.empty();
+                    select.append(
+                        '<option value="" data-name="">Select Unit</option>',
+                    );
+
+                    response.data.forEach((unit) => {
+                        select.append(
+                            `<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`,
+                        );
+                    });
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading units:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
+    });
+}
+
+/**
+ * Async version of loadWorkplansForDropdownWithSelection - returns a Promise
+ */
+function loadWorkplansForDropdownWithSelectionAsync(selectedWorkplanId) {
+    return new Promise((resolve, reject) => {
+        if (!selectedDivisionId || !selectedYear) {
+            resolve();
+            return;
+        }
+
+        $.ajax({
+            url: "/budget-user/workplans/dropdown",
+            method: "GET",
+            data: {
+                division_id: selectedDivisionId,
+                year: selectedYear,
+            },
+            success: function (response) {
+                if (response.success) {
+                    const select = document.getElementById("programId");
+
+                    // Destroy existing Choices instance if it exists
+                    if (programIdChoices) {
+                        programIdChoices.destroy();
+                    }
+
+                    // Initialize Choices.js for searchable dropdown
+                    programIdChoices = new Choices(select, {
+                        searchEnabled: true,
+                        searchPlaceholderValue: "Search work plan...",
+                        itemSelectText: "Click to select",
+                        shouldSort: false,
+                        removeItemButton: false,
+                        placeholder: true,
+                        placeholderValue: "Select work plan",
+                    });
+
+                    // Clear existing choices
+                    programIdChoices.clearChoices();
+
+                    // Add default option
+                    programIdChoices.setChoices(
+                        [
+                            {
+                                value: "",
+                                label: "Select Work Plan...",
+                                selected: true,
+                                disabled: false,
+                            },
+                        ],
+                        "value",
+                        "label",
+                        true,
+                    );
+
+                    if (response.data && response.data.length > 0) {
+                        // Add workplan options with consistent formatting
+                        const choices = response.data.map((workplan) => {
+                            const typeLabel =
+                                workplan.kpi_type === "department"
+                                    ? "Department"
+                                    : "Section";
+                            const typeBadge =
+                                workplan.kpi_type === "department"
+                                    ? "🏢"
+                                    : "📋";
+                            return {
+                                value: workplan.id.toString(),
+                                label: `${typeBadge} [${typeLabel}] ${workplan.activity}`,
+                                customProperties: {
+                                    kpi_type: workplan.kpi_type,
+                                },
+                            };
+                        });
+
+                        programIdChoices.setChoices(
+                            choices,
+                            "value",
+                            "label",
+                            false,
+                        );
+
+                        // Set selected workplan
+                        if (selectedWorkplanId) {
+                            programIdChoices.setChoiceByValue(
+                                selectedWorkplanId.toString(),
+                            );
+                        }
+                    }
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading workplans:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
+    });
 }
 
 /**
@@ -1116,7 +1440,7 @@ function loadBudgetCodes() {
 function saveItem() {
     // Parse formatted numbers before sending
     const priceEstimationValue = parseFormattedNumber(
-        $("#priceEstimation").val()
+        $("#priceEstimation").val(),
     );
     const totalValue = parseFormattedNumber($("#total").val());
 
@@ -1257,13 +1581,13 @@ function deleteItem(itemId) {
                     if (response.success) {
                         showToast(
                             response.message || "Item deleted successfully",
-                            "success"
+                            "success",
                         );
                         loadAllBudgetItems(); // Reload all data
                     } else {
                         showToast(
                             response.message || "Failed to delete item",
-                            "error"
+                            "error",
                         );
                     }
                 },
@@ -1362,7 +1686,7 @@ function parseFormattedNumber(value) {
  */
 function renderActionButtons(item) {
     console.log(item);
-    
+
     const status = item.status || "draft";
     const verificationStatus = item.verification_status || "unverified";
     const approvalRequest = item.approval_request;
@@ -1458,7 +1782,7 @@ function renderActionButtons(item) {
                 const pendingDetail = approvalRequest.details.find(
                     (d) =>
                         d.status === "pending" &&
-                        d.employment_id === currentEmploymentId
+                        d.employment_id === currentEmploymentId,
                 );
                 // Also check if it's the next in sequence
                 const nextPending = approvalRequest.details
@@ -1501,8 +1825,7 @@ function renderActionButtons(item) {
 function showApprovalTimeline(itemId) {
     console.log(itemId);
     console.log(allItemsData);
-    
-    
+
     const item = allItemsData.find((i) => i.id === itemId);
     if (!item) {
         showToast("Item not found", "error");
@@ -1516,7 +1839,7 @@ function showApprovalTimeline(itemId) {
                 <strong>Description:</strong> ${item.description || "-"}<br>
                 <strong>Category:</strong> ${item.category_type || "-"}<br>
                 <strong>Status:</strong> <span class="badge bg-${getStatusBadgeClass(
-                    item.status
+                    item.status,
                 )}">${item.status}</span>
             </div>
             <div class="col-md-6">
@@ -1544,7 +1867,7 @@ function showApprovalTimeline(itemId) {
         `;
     } else {
         const sortedDetails = [...approvalRequest.details].sort(
-            (a, b) => a.level_sequence - b.level_sequence
+            (a, b) => a.level_sequence - b.level_sequence,
         );
         const nextPending = sortedDetails.find((d) => d.status === "pending");
 
@@ -1553,19 +1876,19 @@ function showApprovalTimeline(itemId) {
                 nextPending && nextPending.id === detail.id;
             const statusClass = getTimelineStatusClass(
                 detail.status,
-                isCurrentPending
+                isCurrentPending,
             );
             const contentClass = isCurrentPending ? "current" : "";
 
             timelineHtml += `
                 <div class="timeline-item ${statusClass} ${
-                isCurrentPending ? "current" : ""
-            }">
+                    isCurrentPending ? "current" : ""
+                }">
                     <div class="timeline-content ${contentClass}">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <strong>Level ${detail.level_sequence}</strong>
                             <span class="badge bg-${getStatusBadgeClass(
-                                detail.status
+                                detail.status,
                             )}">${capitalizeFirst(detail.status)}</span>
                         </div>
                         <div class="text-muted small">
@@ -1578,7 +1901,7 @@ function showApprovalTimeline(itemId) {
                                 ? `
                             <div class="text-muted small mt-1">
                                 <i class="bi bi-calendar me-1"></i>${formatDate(
-                                    detail.approved_at
+                                    detail.approved_at,
                                 )}
                             </div>
                         `
@@ -1598,7 +1921,7 @@ function showApprovalTimeline(itemId) {
         const myPendingDetail = approvalRequest.details.find(
             (d) =>
                 d.status === "pending" &&
-                d.employment_id === currentEmploymentId
+                d.employment_id === currentEmploymentId,
         );
         const nextPending = approvalRequest.details
             .filter((d) => d.status === "pending")
@@ -1650,13 +1973,13 @@ function submitForApproval(itemId) {
                     if (response.success) {
                         showToast(
                             response.message || "Item submitted for approval",
-                            "success"
+                            "success",
                         );
                         loadAllBudgetItems(); // Refresh data
                     } else {
                         showToast(
                             response.message || "Failed to submit for approval",
-                            "error"
+                            "error",
                         );
                     }
                 },
@@ -1696,14 +2019,14 @@ function approveItem(detailId, itemId) {
                     if (response.success) {
                         showToast(
                             response.message || "Item approved successfully",
-                            "success"
+                            "success",
                         );
                         $("#approvalTimelineModal").modal("hide");
                         loadAllBudgetItems(); // Refresh data
                     } else {
                         showToast(
                             response.message || "Failed to approve",
-                            "error"
+                            "error",
                         );
                     }
                 },
@@ -1815,7 +2138,7 @@ function formatDate(dateStr) {
  */
 function submitForVerification(itemId) {
     const item = allItemsData.find((i) => i.id === itemId);
-    
+
     if (!item) {
         showToast("Item not found", "error");
         return;
@@ -1823,7 +2146,10 @@ function submitForVerification(itemId) {
 
     // Check if cost_center is filled
     if (!item.cost_center) {
-        showToast("Cost center is required for verification. Please edit the item first.", "warning");
+        showToast(
+            "Cost center is required for verification. Please edit the item first.",
+            "warning",
+        );
         return;
     }
 
@@ -1853,23 +2179,29 @@ function submitForVerification(itemId) {
                     hideLoading();
                     if (response.success) {
                         Swal.fire({
-                            icon: 'success',
-                            title: 'Submitted!',
+                            icon: "success",
+                            title: "Submitted!",
                             html: `
                                 <p>${response.message}</p>
                                 <p class="text-muted">Verifier count: ${response.data?.verifier_count || 0}</p>
                             `,
                             timer: 3000,
-                            showConfirmButton: false
+                            showConfirmButton: false,
                         });
                         loadAllBudgetItems(); // Refresh data
                     } else {
-                        showToast(response.message || "Failed to submit for verification", "error");
+                        showToast(
+                            response.message ||
+                                "Failed to submit for verification",
+                            "error",
+                        );
                     }
                 },
                 error: function (xhr) {
                     hideLoading();
-                    const msg = xhr.responseJSON?.message || "Error submitting for verification";
+                    const msg =
+                        xhr.responseJSON?.message ||
+                        "Error submitting for verification";
                     showToast(msg, "error");
                 },
             });
@@ -1888,25 +2220,32 @@ function showVerificationStatus(itemId) {
         method: "GET",
         success: function (response) {
             hideLoading();
-            
+
             if (response.success) {
                 const data = response.data;
-                
-                let candidatesHtml = '';
+
+                let candidatesHtml = "";
                 if (data.candidates && data.candidates.length > 0) {
-                    candidatesHtml = data.candidates.map(c => `
+                    candidatesHtml = data.candidates
+                        .map(
+                            (c) => `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                             <span>${c.verifier_name || c.verifier_id}</span>
                             ${c.is_executor ? '<span class="badge bg-success">Executor</span>' : '<span class="badge bg-secondary">Candidate</span>'}
                         </div>
-                    `).join('');
+                    `,
+                        )
+                        .join("");
                 } else {
-                    candidatesHtml = '<p class="text-muted">No candidates found</p>';
+                    candidatesHtml =
+                        '<p class="text-muted">No candidates found</p>';
                 }
 
-                let historyHtml = '';
+                let historyHtml = "";
                 if (data.history && data.history.length > 0) {
-                    historyHtml = data.history.map(h => `
+                    historyHtml = data.history
+                        .map(
+                            (h) => `
                         <div class="border-bottom py-2">
                             <div class="d-flex justify-content-between">
                                 <strong>${h.verifier_name || h.verifier_id}</strong>
@@ -1916,17 +2255,22 @@ function showVerificationStatus(itemId) {
                                 <span class="text-muted">Submitted:</span> ${formatCurrency(h.submitted_price)}<br>
                                 <span class="text-muted">Verified:</span> ${formatCurrency(h.verified_price)}
                             </div>
-                            ${h.notes ? `<div class="small mt-1"><span class="text-muted">Notes:</span> ${h.notes}</div>` : ''}
+                            ${h.notes ? `<div class="small mt-1"><span class="text-muted">Notes:</span> ${h.notes}</div>` : ""}
                         </div>
-                    `).join('');
+                    `,
+                        )
+                        .join("");
                 } else {
-                    historyHtml = '<p class="text-muted">No verification history</p>';
+                    historyHtml =
+                        '<p class="text-muted">No verification history</p>';
                 }
 
-                const statusBadge = getVerificationStatusBadge(data.verification_status);
+                const statusBadge = getVerificationStatusBadge(
+                    data.verification_status,
+                );
 
                 Swal.fire({
-                    title: 'Verification Status',
+                    title: "Verification Status",
                     html: `
                         <div class="text-start">
                             <div class="mb-3">
@@ -1946,17 +2290,22 @@ function showVerificationStatus(itemId) {
                             <div>${historyHtml}</div>
                         </div>
                     `,
-                    width: '600px',
+                    width: "600px",
                     showConfirmButton: true,
-                    confirmButtonText: 'Close'
+                    confirmButtonText: "Close",
                 });
             } else {
-                showToast(response.message || "Failed to load verification status", "error");
+                showToast(
+                    response.message || "Failed to load verification status",
+                    "error",
+                );
             }
         },
         error: function (xhr) {
             hideLoading();
-            const msg = xhr.responseJSON?.message || "Error loading verification status";
+            const msg =
+                xhr.responseJSON?.message ||
+                "Error loading verification status";
             showToast(msg, "error");
         },
     });
@@ -1967,12 +2316,13 @@ function showVerificationStatus(itemId) {
  */
 function getVerificationStatusBadge(status) {
     const badges = {
-        'unverified': '<span class="badge bg-secondary">Unverified</span>',
-        'pending': '<span class="badge bg-warning text-dark">Pending Verification</span>',
-        'verified': '<span class="badge bg-success">Verified</span>',
-        'rejected': '<span class="badge bg-danger">Rejected</span>',
+        unverified: '<span class="badge bg-secondary">Unverified</span>',
+        pending:
+            '<span class="badge bg-warning text-dark">Pending Verification</span>',
+        verified: '<span class="badge bg-success">Verified</span>',
+        rejected: '<span class="badge bg-danger">Rejected</span>',
     };
-    return badges[status] || badges['unverified'];
+    return badges[status] || badges["unverified"];
 }
 
 /**
@@ -1981,33 +2331,42 @@ function getVerificationStatusBadge(status) {
 function renderStatusBadges(item) {
     const status = item.status || "draft";
     const verificationStatus = item.verification_status || "unverified";
-    let html = '';
+    let html = "";
 
     // Verification status badge
     const verificationBadges = {
-        'unverified': '<span class="badge bg-light text-dark" style="font-size:10px;">Unverified</span>',
-        'pending': '<span class="badge bg-info" style="font-size:10px;">Verifying</span>',
-        'verified': '<span class="badge bg-success" style="font-size:10px;">Verified</span>',
-        'rejected': '<span class="badge bg-danger" style="font-size:10px;">V.Rejected</span>',
+        unverified:
+            '<span class="badge bg-light text-dark" style="font-size:10px;">Unverified</span>',
+        pending:
+            '<span class="badge bg-info" style="font-size:10px;">Verifying</span>',
+        verified:
+            '<span class="badge bg-success" style="font-size:10px;">Verified</span>',
+        rejected:
+            '<span class="badge bg-danger" style="font-size:10px;">V.Rejected</span>',
     };
 
     // Approval status badge
     const statusBadges = {
-        'draft': '<span class="badge bg-secondary" style="font-size:10px;">Draft</span>',
-        'pending': '<span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>',
-        'in_progress': '<span class="badge bg-info" style="font-size:10px;">In Progress</span>',
-        'approved': '<span class="badge bg-success" style="font-size:10px;">Approved</span>',
-        'rejected': '<span class="badge bg-danger" style="font-size:10px;">Rejected</span>',
+        draft: '<span class="badge bg-secondary" style="font-size:10px;">Draft</span>',
+        pending:
+            '<span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>',
+        in_progress:
+            '<span class="badge bg-info" style="font-size:10px;">In Progress</span>',
+        approved:
+            '<span class="badge bg-success" style="font-size:10px;">Approved</span>',
+        rejected:
+            '<span class="badge bg-danger" style="font-size:10px;">Rejected</span>',
     };
 
     // Show verification badge first if not verified yet (only for draft items)
-    if (status === 'draft' && verificationStatus !== 'verified') {
-        html += verificationBadges[verificationStatus] || verificationBadges['unverified'];
+    if (status === "draft" && verificationStatus !== "verified") {
+        html +=
+            verificationBadges[verificationStatus] ||
+            verificationBadges["unverified"];
     } else {
         // Show approval status
-        html += statusBadges[status] || statusBadges['draft'];
+        html += statusBadges[status] || statusBadges["draft"];
     }
 
     return html;
 }
-

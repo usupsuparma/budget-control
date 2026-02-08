@@ -864,7 +864,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     'user_name' => $transaction->user->name ?? 'N/A',
                     'purpose' => $transaction->purpose,
                     'urgency' => $transaction->urgency,
-                    'estimated_amount' => $transaction->estimated_value,
+                    'estimated_amount' => $transaction->estimated_amount,
                     'status' => $transaction->status,
                     'can_approve' => $canApprove,
                     'can_approve_detail_id' => $detail->id,

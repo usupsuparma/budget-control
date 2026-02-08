@@ -203,91 +203,6 @@
                 }
             </style>
 
-
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3" style="display: none;">
-
-                {{-- New Submission --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#0d6efd;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">New Submission</div>
-                                <div class="h3 mb-0 stat-value" id="newSubmissionCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-file-add-line stat-icon text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Progress --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#ffc107;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Progress</div>
-                                <div class="h3 mb-0 stat-value" id="progressCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-time-line stat-icon text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Paid --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#198754;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Paid</div>
-                                <div class="h3 mb-0 stat-value" id="paidCount">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-money-dollar-circle-line stat-icon text-success"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Completion --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#6c757d;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Completion</div>
-                                <div class="h3 mb-0 stat-value" id="completionCount2">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-checkbox-circle-line stat-icon text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Total Submission --}}
-                <div class="col">
-                    <div class="card border-0 shadow-sm stat-card" style="border-left-color:#6610f2;">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="text-muted stat-title">Total Submission</div>
-                                <div class="h3 mb-0 stat-value" id="totalSubmissionCount">
-                                    <span class="spinner-border spinner-border-sm" role="status"
-                                        aria-label="Loading"></span>
-                                </div>
-                            </div>
-                            <i class="ri-file-list-3-line stat-icon text-purple"></i>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
             {{-- === FILTER SECTION === --}}
             <div class="card mb-3">
                 <div class="card-body">
@@ -519,7 +434,7 @@
                                         <h6 class="card-title mb-0">
                                             <i class="ri-file-check-line me-2 text-success"></i>Approved LPJ Submissions
                                         </h6>
-                                        <button type="button" class="btn btn-outline-success btn-sm"
+                                        <button type="button" class="btn btn-outline-succesadmissions btn-sm"
                                             onclick="loadApprovedLpjApprovals()">
                                             <i class="ri-refresh-line me-1"></i>Refresh
                                         </button>
@@ -1390,6 +1305,8 @@
         // Render approval list items
         function renderApprovalList(data, containerId, status) {
             const container = $(`#${containerId}`);
+            console.log(data);
+            
 
             if (!data.data || data.data.length === 0) {
                 container.html(`

@@ -12,6 +12,7 @@ use App\Models\Employee;
 use App\Models\Employment;
 use App\Models\Transaction;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,12 @@ use Illuminate\Support\Facades\Log;
 
 class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 {
+    protected BudgetLedgerService $budgetLedgerService;
+
+    public function __construct(BudgetLedgerService $budgetLedgerService)
+    {
+        $this->budgetLedgerService = $budgetLedgerService;
+    }
     /**
      * Submit a transaction for approval.
      */
@@ -552,6 +559,18 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
         $transaction = Transaction::find($request->reference_id);
 
         if ($pendingCount === 0) {
+            // === BUDGET LEDGER: Validate budget sufficiency before final approval ===
+            $budgetValidation = $this->budgetLedgerService->validateBudgetSufficiency($request->reference_id);
+            if (!$budgetValidation['success']) {
+                // Rollback approval detail status
+                $detail->update(['status' => 'pending', 'approved_at' => null]);
+                return [
+                    'success' => false,
+                    'message' => 'Saldo anggaran tidak mencukupi: ' . $budgetValidation['message'],
+                    'insufficient_items' => $budgetValidation['insufficient_items'] ?? [],
+                ];
+            }
+
             // All approved - update request and transaction
             $request->update([
                 'status' => 'approved',
@@ -567,6 +586,15 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     'current_approval_level' => $request->total_levels,
                     'approval_completed_at' => now(),
                 ]);
+
+                // === BUDGET LEDGER: Phase 1 - Record Cash Advance debit mutations ===
+                $mutationResult = $this->budgetLedgerService->recordCashAdvanceMutations($transaction->id);
+                if (!$mutationResult['success']) {
+                    Log::warning('Failed to record cash advance mutations (non-blocking)', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $mutationResult['message'],
+                    ]);
+                }
             }
 
             return [

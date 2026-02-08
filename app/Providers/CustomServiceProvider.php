@@ -14,6 +14,8 @@ use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\ApprovalTransactionService\ApprovalTransactionServiceImpl;
 use App\Services\LpjService\LpjService;
 use App\Services\LpjService\LpjServiceImpl;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
+use App\Services\BudgetLedgerService\BudgetLedgerServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -32,6 +34,7 @@ $this->app->bind(LpjService::class, LpjServiceImpl::class);
         $this->app->bind(VerificationBudgetService::class, VerificationBudgetServiceImpl::class);
         $this->app->bind(ApprovalService::class, ApprovalServiceImpl::class);
         $this->app->bind(TransactionService::class, TransactionServiceImpl::class);
+        $this->app->bind(BudgetLedgerService::class, BudgetLedgerServiceImpl::class);
     }
 
     /**

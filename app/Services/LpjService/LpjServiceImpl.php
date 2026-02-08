@@ -7,12 +7,19 @@ use App\Models\TransactionDetail;
 use App\Models\TransactionLpjSubmission;
 use App\Models\LpjApprovalMaster;
 use App\Models\LpjApprovalDetail;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class LpjServiceImpl implements LpjService
 {
+    protected BudgetLedgerService $budgetLedgerService;
+
+    public function __construct(BudgetLedgerService $budgetLedgerService)
+    {
+        $this->budgetLedgerService = $budgetLedgerService;
+    }
     /**
      * Submit LPJ for a transaction.
      */
@@ -211,6 +218,19 @@ class LpjServiceImpl implements LpjService
                     $lpjSubmission->transaction->update([
                         'status' => Transaction::STATUS_COMPLETED,
                     ]);
+
+                    // === BUDGET LEDGER: Phase 3 - Record LPJ Settlement mutations ===
+                    $mutationResult = $this->budgetLedgerService->recordLpjSettlementMutations(
+                        $lpjSubmission->transaction_id,
+                        $lpjSubmission->id
+                    );
+                    if (!$mutationResult['success']) {
+                        Log::warning('Failed to record LPJ settlement mutations (non-blocking)', [
+                            'transaction_id' => $lpjSubmission->transaction_id,
+                            'lpj_submission_id' => $lpjSubmission->id,
+                            'error' => $mutationResult['message'],
+                        ]);
+                    }
 
                     DB::commit();
                     return [

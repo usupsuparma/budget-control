@@ -47,6 +47,7 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkPlanItemController;
+use App\Http\Controllers\WorkplanBudgetItemMasterApprovalController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -1205,22 +1206,22 @@ Route::middleware('auth')->group(function () {
     /* ========================
         WORKPLAN BUDGET ITEM APPROVAL
     ======================== */
-    // Route::prefix('workplan-budget-item-approval')
-    //     ->middleware('auth')
-    //     ->group(function () {
-    //         Route::post('/{id}/submit', [WorkplanBudgetItemMasterApprovalController::class, 'submitForApproval'])
-    //             ->name('wbi.approval.submit');
-    //         Route::post('/detail/{detailId}/approve', [WorkplanBudgetItemMasterApprovalController::class, 'approve'])
-    //             ->name('wbi.approval.approve');
-    //         Route::post('/detail/{detailId}/reject', [WorkplanBudgetItemMasterApprovalController::class, 'reject'])
-    //             ->name('wbi.approval.reject');
-    //         Route::get('/{id}/status', [WorkplanBudgetItemMasterApprovalController::class, 'getApprovalStatus'])
-    //             ->name('wbi.approval.status');
-    //         Route::get('/pending', [WorkplanBudgetItemMasterApprovalController::class, 'myPendingApprovals'])
-    //             ->name('wbi.approval.pending');
-    //         Route::post('/{id}/cancel', [WorkplanBudgetItemMasterApprovalController::class, 'cancel'])
-    //             ->name('wbi.approval.cancel');
-    //     });
+    Route::prefix('workplan-budget-item-approval')
+        ->middleware('auth')
+        ->group(function () {
+            Route::post('/{id}/submit', [WorkplanBudgetItemMasterApprovalController::class, 'submitForApproval'])
+                ->name('wbi.approval.submit');
+            Route::post('/detail/{detailId}/approve', [WorkplanBudgetItemMasterApprovalController::class, 'approve'])
+                ->name('wbi.approval.approve');
+            Route::post('/detail/{detailId}/reject', [WorkplanBudgetItemMasterApprovalController::class, 'reject'])
+                ->name('wbi.approval.reject');
+            Route::get('/{id}/status', [WorkplanBudgetItemMasterApprovalController::class, 'getApprovalStatus'])
+                ->name('wbi.approval.status');
+            Route::get('/pending', [WorkplanBudgetItemMasterApprovalController::class, 'myPendingApprovals'])
+                ->name('wbi.approval.pending');
+            Route::post('/{id}/cancel', [WorkplanBudgetItemMasterApprovalController::class, 'cancel'])
+                ->name('wbi.approval.cancel');
+        });
 
     /* ========================
         BUDGET VERIFICATION

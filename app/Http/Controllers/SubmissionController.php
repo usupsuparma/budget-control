@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 
 class SubmissionController extends Controller
 {
@@ -1133,21 +1137,47 @@ class SubmissionController extends Controller
 
     public function viewPdf($id)
     {
-        // $pdf = Pdf::loadView('pages.submission.pdf', [
-        //     'title' => 'Budget'
-        // ]);
+        $transaction = Transaction::where('id', $id)->get();
+        // dd($transaction);
+        // $transactionApproval = TransactionApproval::where('transaction_id', $id)->orderBy('sequence_order', 'asc')->get();
+        $transactionApproval = $this->approvalTransactionService->getApprovalTimeline($id);
 
-        // return $pdf->download('budget-proposal.pdf');
+        $qrText_Proposedby = "Proposed by ".$transaction[0]->user_name.", Date: ".date("d M Y H:i:s", strtotime($transaction[0]->created_at));
+        $qrText = 'APPROVED|TX-';
+
+        // Buat QR object
+        $qrCode = new QrCode(
+            data: $qrText,
+            encoding: new Encoding('UTF-8'),
+            size: 300,
+            margin: 10
+        );
+
+        // Writer PNG (pakai GD, bukan Imagick)
+        $writer = new PngWriter();
+
+        // Generate hasil
+        $result = $writer->write($qrCode);
+
+        // PNG binary → base64 (DOMPDF friendly)
+        $qr = base64_encode($result->getString());
 
         $data = [
-            // ambil data sesuai kebutuhan
+            'transaction' => $transaction,
+            'transactionApproval' => $transactionApproval,
+            'qrStaff'    => $qr,
+            'qrFinance'    => $qr,
+            'qrDivision'    => $qr,
+            'qrManager'    => $qr,
+            'qrPresident'    => $qr,
+            'qrFinanceDirector'    => $qr,
         ];
         $pdf = Pdf::loadView('pages.submission.pdf', $data)
-            ->setPaper('a4', 'portrait');
+                  ->setPaper('a4', 'portrait');
 
         // STREAM = preview di browser
         return $pdf->stream('budget-proposal-preview.pdf');
-        // return view('pages.submission.pdf');
+        // return view('pages.submission.pdf', compact('transaction', 'transactionApproval', 'qr'));   
     }
 
     /**

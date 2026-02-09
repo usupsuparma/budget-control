@@ -40,7 +40,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
             }
 
             // Use fix_price_total as the initial budget amount
-            $amount = $budgetItem->fix_price_total ?? 0;
+            $amount = $budgetItem->total ?? 0;
 
             if ($amount <= 0) {
                 return [
@@ -57,7 +57,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'mutation_type' => BudgetMutation::TYPE_CREDIT, // Initial budget is CREDIT (incoming)
                 'amount' => $amount,
                 'category' => BudgetMutation::CATEGORY_INITIAL_BUDGET,
-                'description' => "Saldo Awal: {$budgetItem->item_name}",
+                'description' => "Saldo Awal: {$amount} untuk Budget Item ID {$budgetItemId}",
                 'created_at' => now(),
             ]);
 
@@ -73,6 +73,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
             ];
         } catch (Exception $e) {
             Log::error('Failed to record initial budget mutation: ' . $e->getMessage(), [
+                'BudgetLedgerServiceImpl.recordInitialBudgetMutation',
                 'budget_item_id' => $budgetItemId,
                 'trace' => $e->getTraceAsString(),
             ]);

@@ -32,7 +32,7 @@ class BudgetMutation extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:4',
+        'amount' => 'decimal:2',
         'created_at' => 'datetime',
     ];
 
@@ -41,6 +41,7 @@ class BudgetMutation extends Model
     const TYPE_CREDIT = 'C';  // Masuk (pengembalian anggaran)
 
     // Category constants
+    const CATEGORY_INITIAL_BUDGET = 'INITIAL_BUDGET';  // Saldo awal dari approved budget item
     const CATEGORY_CASH_ADVANCE = 'CASH_ADVANCE';
     const CATEGORY_LPJ_REFUND = 'LPJ_REFUND';
     const CATEGORY_LPJ_REIMBURSE = 'LPJ_REIMBURSE';

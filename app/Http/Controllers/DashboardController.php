@@ -52,6 +52,7 @@ class DashboardController extends Controller
             ->join('kpi_workplans', 'kpi_workplans.id', '=', 'workplan_budget_items.kpi_workplan_id')
             ->where('kpi_workplans.year', $year)
             ->whereNull('workplan_budget_items.deleted_at')
+            ->groupBy('kpi_workplans.year')
             ->first();
 
         return response()->json([

@@ -13,6 +13,79 @@ use Illuminate\Support\Facades\Log;
 class BudgetLedgerServiceImpl implements BudgetLedgerService
 {
     /**
+     * Phase 0: Record Initial Budget (Saldo Awal) when WorkplanBudgetItem is fully approved.
+     * 
+     * Trigger: WorkplanBudgetItem fully approved (all approval levels done).
+     * Action: Insert CREDIT mutation with amount = fix_price_total (verified price).
+     */
+    public function recordInitialBudgetMutation(int $budgetItemId): array
+    {
+        try {
+            $budgetItem = WorkplanBudgetItem::find($budgetItemId);
+
+            if (!$budgetItem) {
+                return ['success' => false, 'message' => 'Budget item tidak ditemukan.'];
+            }
+
+            // Check if already recorded
+            $existingMutation = BudgetMutation::where('workplan_budget_item_id', $budgetItemId)
+                ->where('category', BudgetMutation::CATEGORY_INITIAL_BUDGET)
+                ->exists();
+
+            if ($existingMutation) {
+                return [
+                    'success' => false,
+                    'message' => 'Saldo awal untuk budget item ini sudah pernah dicatat.',
+                ];
+            }
+
+            // Use fix_price_total as the initial budget amount
+            $amount = $budgetItem->total ?? 0;
+
+            if ($amount <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Fix price total harus lebih dari 0 untuk mencatat saldo awal.',
+                ];
+            }
+
+            $mutation = BudgetMutation::create([
+                'workplan_budget_item_id' => $budgetItemId,
+                'transaction_id' => null, // No transaction for initial budget
+                'transaction_detail_id' => null,
+                'transaction_lpj_submission_id' => null,
+                'mutation_type' => BudgetMutation::TYPE_CREDIT, // Initial budget is CREDIT (incoming)
+                'amount' => $amount,
+                'category' => BudgetMutation::CATEGORY_INITIAL_BUDGET,
+                'description' => "Saldo Awal: {$amount} untuk Budget Item ID {$budgetItemId}",
+                'created_at' => now(),
+            ]);
+
+            Log::info('Initial budget mutation recorded', [
+                'budget_item_id' => $budgetItemId,
+                'amount' => $amount,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Saldo awal berhasil dicatat.',
+                'data' => $mutation,
+            ];
+        } catch (Exception $e) {
+            Log::error('Failed to record initial budget mutation: ' . $e->getMessage(), [
+                'BudgetLedgerServiceImpl.recordInitialBudgetMutation',
+                'budget_item_id' => $budgetItemId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal mencatat saldo awal: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Phase 1: Record Cash Advance debit mutations when transaction is fully approved.
      * 
      * Trigger: Transaction fully approved (all approval levels done).

@@ -12,6 +12,15 @@ namespace App\Services\BudgetLedgerService;
 interface BudgetLedgerService
 {
     /**
+     * Phase 0: Record Initial Budget (Saldo Awal) when WorkplanBudgetItem is fully approved.
+     * Creates CREDIT mutation with amount = fix_price_total (verified price).
+     * 
+     * @param int $budgetItemId workplan_budget_items.id
+     * @return array ['success' => bool, 'message' => string, 'data' => mixed]
+     */
+    public function recordInitialBudgetMutation(int $budgetItemId): array;
+
+    /**
      * Phase 1: Record Cash Advance debit mutations when transaction is fully approved.
      * Loops through transaction_details and creates DEBIT mutations.
      * 

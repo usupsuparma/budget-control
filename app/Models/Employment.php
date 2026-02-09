@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class Employment extends Model
 {
@@ -94,20 +95,44 @@ class Employment extends Model
     public function uplineEmployeesTopDown(array $levels = [1,2,3,4]): Collection
     {
         $employees = collect();
+        $visited = []; // Track visited employee IDs to prevent circular references
+        $maxDepth = 50; // Safety limit
+        $depth = 0;
 
         $current = $this;
 
-        while ($current && $current->uppline_id) { // uppline_id -> employee.id :contentReference[oaicite:3]{index=3}
+        while ($current && $current->uppline_id && $depth < $maxDepth) {
+            $depth++;
+
+            // Circular reference protection
+            if (in_array($current->employee_id, $visited)) {
+                Log::warning('Circular reference detected in uppline chain', [
+                    'employee_id' => $current->employee_id,
+                    'chain' => $visited
+                ]);
+                break;
+            }
+
+            // Self-reference protection
+            if ($current->uppline_id == $current->employee_id) {
+                Log::warning('Self-reference detected in uppline', [
+                    'employee_id' => $current->employee_id
+                ]);
+                break;
+            }
+
+            $visited[] = $current->employee_id;
+
             // Ambil employment milik uplinenya (1 step up)
             $uplineEmployment = $current->upplineEmployment()
-                ->with('employee') // relasi employee() :contentReference[oaicite:4]{index=4}
+                ->with('employee') // relasi employee()
                 ->first();
 
             if (!$uplineEmployment || !$uplineEmployment->employee) {
                 break;
             }
 
-            $lvl = (int) $uplineEmployment->job_level_id; // :contentReference[oaicite:5]{index=5}
+            $lvl = (int) $uplineEmployment->job_level_id;
 
             if (in_array($lvl, $levels, true)) {
                 // push Employee; sisipkan info level di object (opsional, biar enak dipakai)
@@ -117,6 +142,13 @@ class Employment extends Model
             }
 
             $current = $uplineEmployment; // lanjut naik
+        }
+
+        if ($depth >= $maxDepth) {
+            Log::warning('Uppline chain exceeded max depth', [
+                'max_depth' => $maxDepth,
+                'starting_employee_id' => $this->employee_id
+            ]);
         }
 
         // Top-down: level 1 paling atas

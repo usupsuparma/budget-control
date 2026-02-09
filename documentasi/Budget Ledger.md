@@ -1,156 +1,182 @@
-Berikut adalah draf **Dokumentasi Teknis & Panduan Implementasi** untuk Modul Kontrol Anggaran (Budget Ledger System). Dokumentasi ini dirancang agar Anda bisa langsung menerjemahkannya ke dalam kode *backend* (seperti Controllers, Services, atau Observers di *framework* pilihan Anda).
+Tentu, ini adalah **Dokumentasi Teknis Final (Versi Pure Ledger)** yang telah diperbarui sesuai dengan diskusi terakhir kita (di mana Saldo Awal juga masuk ke dalam tabel mutasi).
+
+Dokumentasi ini menggantikan versi sebelumnya.
 
 ---
 
-# 📚 Dokumentasi Sistem Kontrol Anggaran (Budget Ledger)
+# 📘 Dokumentasi Teknis: Budget Control System (Pure Ledger)
 
-## 1. Konsep Dasar Sistem
+## 1. Filosofi Sistem
 
-Sistem ini menggunakan pendekatan **Ledger (Buku Besar)** untuk melacak sisa anggaran. Nilai pagu awal di master data (`workplan_budget_items`) bersifat statis dan **tidak boleh diubah (di-update)** oleh transaksi harian. Seluruh pergerakan uang keluar (Cash Advance) dan uang kembali (LPJ Refund) dicatat sebagai mutasi baru di tabel `budget_mutations`.
+Sistem ini menggunakan pendekatan **Pure Ledger**. Artinya, tabel `budget_mutations` adalah satu-satunya sumber kebenaran (*Single Source of Truth*) untuk nilai saldo.
 
-**Rumus Utama Saldo Real-time:**
+* Kami **TIDAK** menggunakan kolom `total` di tabel master untuk perhitungan saldo berjalan.
+* **Saldo Awal** dicatat sebagai transaksi "Credit" pertama di tabel mutasi.
+* **Rumus Saldo:** `Total Credit (Masuk) - Total Debit (Keluar)`.
 
+## 2. Struktur Database (Schema Update)
 
-## 2. Struktur Database (Entity Relationships)
+Perubahan utama ada pada kolom referensi transaksi yang kini bersifat **NULLABLE**. Ini wajib karena transaksi "Saldo Awal" atau "Top Up Anggaran" tidak memiliki ID Transaksi belanja.
 
-Sistem ini melibatkan 4 tabel utama:
-
-1. **`workplan_budget_items`**: Master data pagu anggaran (Pagu Awal).
-2. **`transactions` & `transaction_details**`: Dokumen pengajuan pencairan dana (Cash Advance).
-3. **`transaction_lpj_submissions`**: Dokumen pelaporan penggunaan dana (LPJ).
-4. **`budget_mutations`** *(Tabel Baru)*: Buku besar yang merekam setiap pemotongan atau pengembalian dana ke `workplan_budget_items`.
-
-### DDL Tabel `budget_mutations`
+### DDL Tabel `budget_mutations` (Final)
 
 ```sql
 CREATE TABLE budget_mutations (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    
+    -- 1. SUMBER ANGGARAN (Wajib)
     workplan_budget_item_id BIGINT UNSIGNED NOT NULL,
-    transaction_id BIGINT UNSIGNED NOT NULL,
-    transaction_detail_id BIGINT UNSIGNED NOT NULL,
+    
+    -- 2. REFERENSI DOKUMEN (Nullable)
+    -- Boleh NULL jika tipe transaksinya adalah INITIAL_BUDGET atau ADJUSTMENT
+    transaction_id BIGINT UNSIGNED NULL,
+    transaction_detail_id BIGINT UNSIGNED NULL,
     transaction_lpj_submission_id BIGINT UNSIGNED NULL,
     
-    mutation_type ENUM('D', 'C') NOT NULL COMMENT 'D=Debit (Keluar), C=Credit (Masuk/Refund)',
+    -- 3. INTI LEDGER
+    mutation_type ENUM('D', 'C') NOT NULL COMMENT 'D=Debit (Keluar/Penggunaan), C=Credit (Masuk/Refund/Initial)',
     amount DECIMAL(19, 4) NOT NULL DEFAULT 0.0000,
-    category VARCHAR(50) NOT NULL COMMENT 'CASH_ADVANCE, LPJ_REFUND, LPJ_REIMBURSE',
-    description TEXT,
     
+    -- 4. METADATA
+    category VARCHAR(50) NOT NULL COMMENT 'INITIAL_BUDGET, CASH_ADVANCE, LPJ_REFUND, LPJ_REIMBURSE, AMENDMENT',
+    description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (workplan_budget_item_id) REFERENCES workplan_budget_items(id),
-    FOREIGN KEY (transaction_id) REFERENCES transactions(id),
-    FOREIGN KEY (transaction_detail_id) REFERENCES transaction_details(id),
-    FOREIGN KEY (transaction_lpj_submission_id) REFERENCES transaction_lpj_submissions(id)
+    -- 5. RELASI
+    FOREIGN KEY (workplan_budget_item_id) REFERENCES workplan_budget_items(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_detail_id) REFERENCES transaction_details(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_lpj_submission_id) REFERENCES transaction_lpj_submissions(id) ON DELETE SET NULL,
+    
+    -- Index untuk performa hitung saldo
+    INDEX idx_ledger_calc (workplan_budget_item_id, mutation_type)
 );
 
 ```
 
 ---
 
-## 3. Alur Implementasi Logic (SOP Backend)
+## 3. Alur Logika Bisnis (Backend Flow)
 
-Ini adalah alur logika yang harus Anda tulis di *backend service* saat terjadi perubahan status dokumen. **Sangat disarankan membungkus logika ini dalam Database Transaction (`DB::beginTransaction()`)** untuk mencegah data *corrupt* jika terjadi *error* di tengah proses.
+Berikut adalah *trigger points* di mana Anda harus melakukan insert ke `budget_mutations`.
 
-### Fase 1: Approval Transaksi (Cash Advance)
+### Fase 0: Inisialisasi Anggaran (PENTING)
 
-**Kondisi (Trigger):** Dokumen `transactions` di-Approve oleh atasan.
-**Tindakan Sistem:**
+**Trigger:** Dokumen Rencana Kerja (`kpi_workplans`) disetujui (Status: **Approved**).
+**Aksi:** Masukkan saldo awal ke ledger.
 
-1. *Looping* semua data di `transaction_details` milik `transaction_id` tersebut.
-2. Lakukan *insert* ke tabel `budget_mutations` untuk memotong anggaran.
-3. **Data yang di-insert:**
-* `mutation_type` = **'D'** (Debit)
-* `amount` = Nilai dari `transaction_details.estimated_total`
-* `category` = 'CASH_ADVANCE'
-* `transaction_lpj_submission_id` = `NULL`
+```sql
+-- Contoh Query Insert
+INSERT INTO budget_mutations (
+    workplan_budget_item_id, mutation_type, amount, category, description
+) VALUES (
+    1, 'C', 100000000, 'INITIAL_BUDGET', 'Saldo Awal Disetujui'
+);
+
+```
+
+### Fase 1: Pencairan Dana (Cash Advance)
+
+**Trigger:** Dokumen `transactions` disetujui (Status: **Approved**).
+**Aksi:** Catat pengeluaran uang (Debit).
+
+1. Ambil semua `transaction_details`.
+2. Looping dan insert ke ledger:
+* `mutation_type`: **'D'** (Debit)
+* `amount`: `detail.estimated_total`
+* `category`: 'CASH_ADVANCE'
+* `transaction_id`: (ID Transaksi)
+* `transaction_detail_id`: (ID Detail)
 
 
 
-### Fase 2: Input LPJ oleh User
+### Fase 2: Pelaporan LPJ (Settlement)
 
-**Kondisi (Trigger):** User membuat LPJ baru.
-**Tindakan Sistem:**
-
-1. Buat *record* baru di `transaction_lpj_submissions`.
-2. *Update* tabel `transaction_details`, isi kolom `fix_total` dengan nominal kuitansi asli dari lapangan.
-3. *(Saldo anggaran belum berubah di fase ini).*
-
-### Fase 3: Approval LPJ (Settlement)
-
-**Kondisi (Trigger):** Dokumen LPJ di-Approve oleh bagian Keuangan.
-**Tindakan Sistem:**
-Sistem harus menghitung selisih antara uang yang dibawa (Estimasi) dan uang yang dipakai (Fix).
+**Trigger:** Dokumen `transaction_lpj_submissions` disetujui (Status: **Approved**).
+**Aksi:** Bandingkan Estimasi vs Realisasi, lalu catat selisihnya.
 
 *Pseudocode Logic:*
 
 ```php
-foreach ($transaction->details as $detail) {
-    $uang_dibawa = $detail->estimated_total;
-    $uang_terpakai = $detail->fix_total;
-    
-    $selisih = $uang_dibawa - $uang_terpakai;
-    
+$details = TransactionDetail::where('transaction_id', $id_transaksi)->get();
+
+foreach ($details as $detail) {
+    // Hitung selisih
+    $uang_diambil = $detail->estimated_total;
+    $uang_terpakai = $detail->fix_total; // Dari inputan LPJ user
+    $selisih = $uang_diambil - $uang_terpakai;
+
     if ($selisih > 0) {
-        // KASUS 1: Uang sisa (Hemat). Harus dikembalikan ke budget.
-        // Insert Credit ke budget_mutations
-        insertMutation([
-            'type' => 'C', 
-            'amount' => abs($selisih), 
-            'category' => 'LPJ_REFUND'
-        ]);
-    } 
-    elseif ($selisih < 0) {
-        // KASUS 2: Uang kurang (Overbudget). Budget dipotong lagi untuk reimburse ke user.
-        // Insert Debit ke budget_mutations
-        insertMutation([
-            'type' => 'D', 
-            'amount' => abs($selisih), 
-            'category' => 'LPJ_REIMBURSE'
-        ]);
+        // CASE: HEMAT (Uang Sisa) -> Credit (Kembalikan ke Saldo)
+        createMutation(
+            type: 'C',
+            amount: abs($selisih),
+            category: 'LPJ_REFUND',
+            lpj_id: $lpj_id,
+            detail_id: $detail->id
+        );
+    } elseif ($selisih < 0) {
+        // CASE: TEKOR (Kurang Bayar) -> Debit (Keluarkan lagi dari Saldo)
+        createMutation(
+            type: 'D',
+            amount: abs($selisih),
+            category: 'LPJ_REIMBURSE',
+            lpj_id: $lpj_id,
+            detail_id: $detail->id
+        );
     }
-    // Jika $selisih == 0 (Pas), tidak perlu insert mutasi baru.
 }
 
 ```
 
+### Fase Tambahan: Revisi Anggaran (Optional)
+
+Jika di masa depan ada penambahan anggaran (*Top Up*), Anda cukup insert baris baru:
+
+* `mutation_type`: **'C'**
+* `category`: 'BUDGET_AMENDMENT'
+* `amount`: (Nilai Top Up)
+
 ---
 
-## 4. Query Standardisasi Data (Data Access)
+## 4. Query Monitoring Saldo (Data Access)
 
-Gunakan *Query* ini di *Model* atau *Repository* Anda untuk selalu mendapatkan nilai pagu yang valid (misalnya saat menampilkan *Dashboard* atau memvalidasi apakah saldo cukup sebelum user *submit* transaksi baru).
+Gunakan query ini untuk Dashboard atau pengecekan saldo sebelum transaksi. Perhatikan bahwa kita tidak lagi menggunakan `wbi.total` dalam rumus aritmatika, hanya sebagai info display saja.
 
 ```sql
 SELECT 
     wbi.id,
+    wbi.budget_code,
     wbi.description,
-    CAST(wbi.total AS DECIMAL(15,2)) AS initial_budget,
     
-    -- Hitung total pemakaian (Debit)
-    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0) AS total_debit,
+    -- Info Pagu Awal (Hanya untuk display/perbandingan)
+    CAST(wbi.total AS DECIMAL(19,4)) AS original_pagu_plan,
     
-    -- Hitung total pengembalian (Credit)
-    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) AS total_credit,
+    -- 1. TOTAL CREDIT (Pemasukan: Initial + Refund + TopUp)
+    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) AS total_in,
     
-    -- Hitung sisa saldo
+    -- 2. TOTAL DEBIT (Pengeluaran: Cash Advance + Reimburse)
+    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0) AS total_out,
+    
+    -- 3. SISA SALDO (Total In - Total Out)
     (
-        CAST(wbi.total AS DECIMAL(15,2)) 
-        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0)
-        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0)
+        COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) - 
+        COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0)
     ) AS current_balance
 
 FROM workplan_budget_items wbi
 LEFT JOIN budget_mutations bm ON wbi.id = bm.workplan_budget_item_id
-WHERE wbi.id = ? -- Masukkan ID Budget spesifik jika perlu
-GROUP BY wbi.id, wbi.description, wbi.total;
+GROUP BY wbi.id, wbi.budget_code, wbi.description, wbi.total;
 
 ```
 
-## 5. ⚠️ Aturan Emas (Golden Rules) Implementasi
-
-1. **Immutability:** Data mutasi yang sudah ter-insert di `budget_mutations` sifatnya *Read-Only*. Jika ada salah input, JANGAN `UPDATE` baris mutasi tersebut. Buatlah mutasi baru (Adjustment) untuk mengoreksi nilainya. Ini adalah prinsip dasar *audit trail*.
-2. **Validasi Saldo:** Sebelum mengeksekusi Fase 1 (Approval Transaksi), pastikan *backend* Anda mengecek: *Apakah `estimated_total` <= `current_balance`?* Jika tidak, tolak approval (karena *overbudget*).
-3. **Tipe Data Uang:** Selalu pastikan variabel penampung nominal uang di sisi kode *backend* Anda tidak mengalami kehilangan presisi *floating point*.
-
 ---
 
-Apakah Anda ingin saya membuatkan contoh *syntax* spesifik menggunakan fitur Eloquent / Query Builder Laravel untuk meng-handle proses *insert* DB Transaction pada Fase 3 di atas?
+## 5. Golden Rules Implementasi
+
+1. **Strict Append-Only:** Tabel `budget_mutations` dirancang untuk mencatat sejarah. Jangan pernah melakukan `UPDATE` atau `DELETE` pada data yang sudah lama tersimpan (kecuali *soft delete* seluruh transaksi jika dibatalkan). Jika ada kesalahan angka, buatlah mutasi penyeimbang baru (Adjustment).
+2. **Validasi Saldo:** Sebelum `Phase 1` (Approval Transaksi), jalankan Query Monitoring Saldo di atas.
+* *Rule:* `Request Amount` harus <= `current_balance`.
+
+
+3. **Handling NULL:** Pastikan kode backend Anda siap menangani nilai `NULL` pada kolom `transaction_id` saat membaca data dengan kategori `INITIAL_BUDGET`.

@@ -10,6 +10,7 @@ use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestDetail;
 use App\Models\Employment;
 use App\Models\WorkplanBudgetItem;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,13 @@ use Illuminate\Support\Facades\Log;
 
 class WorkplanBudgetItemApprovalService
 {
+    protected BudgetLedgerService $budgetLedgerService;
+
+    public function __construct(BudgetLedgerService $budgetLedgerService)
+    {
+        $this->budgetLedgerService = $budgetLedgerService;
+    }
+
     /**
      * Submit a workplan budget item for approval.
      */
@@ -601,6 +609,16 @@ class WorkplanBudgetItemApprovalService
                     'approved_at' => now(),
                     'approval_notes' => $comments,
                 ]);
+
+                // Record initial budget mutation (Saldo Awal)
+                $mutationResult = $this->budgetLedgerService->recordInitialBudgetMutation($item->id);
+                
+                if (!$mutationResult['success']) {
+                    Log::warning('Failed to record initial budget mutation', [
+                        'item_id' => $item->id,
+                        'error' => $mutationResult['message'],
+                    ]);
+                }
             }
 
             return [

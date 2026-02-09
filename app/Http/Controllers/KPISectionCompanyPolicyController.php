@@ -14,8 +14,8 @@ class KPISectionCompanyPolicyController extends Controller
             return [
                 'id'    => $r->id,
                 'tahun' => $r->tahun,
-                'file'  => '<a href="'.route('kpisectioncompanypolicy.pdf', $r->id).'" target="_blank"
-                                class="btn btn-link btn-sm">
+                'file'  => '<a href="' . route('kpisectioncompanypolicy.pdf', $r->id) . '" target="_blank"
+                                class="btn btn-workplan btn-sm">
                                 Document PDF
                             </a>', // (opsional) ganti jadi link PDF kalau kamu punya route PDF
             ];

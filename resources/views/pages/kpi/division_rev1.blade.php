@@ -47,8 +47,8 @@
     }
 
     .month-container .form-check-input:checked {
-        background-color: #ff6900;
-        border-color: #ff6900;
+        background-color: #0099d6;
+        border-color: #0099d6;
     }
 
     .month-container .form-check-label {
@@ -79,6 +79,49 @@
 
     .ql-editor .table-wrap {
         overflow-x: auto;
+    }
+
+    /* Styling untuk Tab Navigation */
+    .nav-pills .nav-link {
+        background-color: #e9ecef;
+        color: #495057;
+        border-radius: 6px;
+        margin-right: 8px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: #0099d6;
+        color: white;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #0099d6;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0, 153, 214, 0.3);
+    }
+
+    .nav-pills .nav-link i {
+        margin-right: 6px;
+    }
+
+    /* FORCE warna tab KPI Division */
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: #0099d6 !important;
+        color: #ffffff !important;
+    }
+
+    /* Hover */
+    .nav-pills .nav-link:hover {
+        background-color: #0099d6;
+        color: #ffffff;
+    }
+
+    /* Optional: biar lebih solid */
+    .nav-pills .nav-link {
+        font-weight: 600;
     }
 </style>
 @endsection
@@ -1420,7 +1463,7 @@ $years = range(2023, date('Y') + 5);
         });
 
         function renderMonthCell(value, monthText, fieldName) {
-            var color = value == 1 ? "background-color: limegreen;" : "background-color: grey;";
+            var color = value == 1 ? "background-color: #0099d6;" : "background-color: #e9ecef;";
             return `<span class="month-cell" style="${color}" data-field="${fieldName}">${monthText}</span>`;
         }
 

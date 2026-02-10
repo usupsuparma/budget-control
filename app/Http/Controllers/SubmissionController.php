@@ -14,6 +14,7 @@ use App\Models\TransactionDetail;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
 use App\Services\LpjService\LpjService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,19 +31,20 @@ use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 class SubmissionController extends Controller
 {
     protected $approvalTransactionService;
-
     protected $lpjService;
-
     protected $logService;
+    protected $budgetLedgerService;
 
     public function __construct(
         ApprovalTransactionService $approvalTransactionService,
         LpjService $lpjService,
         LogService $logService,
+        BudgetLedgerService $budgetLedgerService
     ) {
         $this->approvalTransactionService = $approvalTransactionService;
         $this->lpjService = $lpjService;
         $this->logService = $logService;
+        $this->budgetLedgerService = $budgetLedgerService;
     }
 
     public function user()
@@ -671,10 +673,13 @@ class SubmissionController extends Controller
         try {
             $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->findOrFail($budgetId);
 
+            $balanceResult = $this->budgetLedgerService->getBudgetBalance($budgetId);
+            $currentBalance = $balanceResult['success'] ? $balanceResult['data']['current_balance'] : $budgetItem->total;
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'budget_value' => $budgetItem->total,
+                    'budget_value' => $currentBalance,
                     'budget_name' => $budgetItem->description,
                     'budget_code' => $budgetItem->budget_code,
                 ],
@@ -861,13 +866,16 @@ class SubmissionController extends Controller
 
             // Format the data
             $formattedItems = $budgetItems->map(function ($item) {
+                $balanceResult = $this->budgetLedgerService->getBudgetBalance($item->id);
+                $currentBalance = $balanceResult['success'] ? $balanceResult['data']['current_balance'] : $item->total;
+
                 return [
                     'id' => $item->id,
                     'description' => $item->description,
                     'stock_code' => $item->stock_code,
                     'budget_code' => $item->budget_code,
                     'category_name' => $item->category->category_name ?? '',
-                    'total' => $item->total,
+                    'total' => $currentBalance,
                     'label' => $item->description.' ('.($item->stock_code ?? $item->budget_code).')',
                 ];
             });

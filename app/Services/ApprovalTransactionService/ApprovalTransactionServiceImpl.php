@@ -553,7 +553,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
     protected function handleApprove(ApprovalRequestDetail $detail, ApprovalRequest $request, ?string $comments): array
     {
         // Update detail status
-        $this->logService->create('Approval detail approved', [
+        $this->logService->create("ApprovalTransactionServiceImpl.handleApprove", [
             'detail_id' => $detail->id,
             'request_id' => $request->id,
             'approver_id' => $detail->employment_id,

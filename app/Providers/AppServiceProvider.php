@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Employee;
+use App\Models\WorkplanBudgetItem;
 use App\Observers\EmployeeObserver;
+use App\Observers\WorkplanBudgetItemObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
@@ -24,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         
-        // Register Employee Observer
+        // Register Observers
         Employee::observe(EmployeeObserver::class);
+        WorkplanBudgetItem::observe(WorkplanBudgetItemObserver::class);
     }
 }

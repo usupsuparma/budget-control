@@ -1505,7 +1505,6 @@ function saveItem() {
         cons_rate: $("#consRate").val(),
         unit_id: unitId,
         unit_name: unitName,
-        total: $("#total").val(),
         price_estimation: $("#priceEstimation").val(),
         price_estimation_description: $("#priceEstimationDescription").val(),
         activity_jan: $('input[name="activity_jan"]').val() || 0,

@@ -291,22 +291,6 @@ class BudgetUserController extends Controller
 
             $validated['status'] = 'draft';
 
-            $total = $validated['price_estimation'] * (
-                ($validated['activity_jan'] ?? 0) +
-                ($validated['activity_feb'] ?? 0) +
-                ($validated['activity_mar'] ?? 0) +
-                ($validated['activity_apr'] ?? 0) +
-                ($validated['activity_may'] ?? 0) +
-                ($validated['activity_jun'] ?? 0) +
-                ($validated['activity_jul'] ?? 0) +
-                ($validated['activity_aug'] ?? 0) +
-                ($validated['activity_sep'] ?? 0) +
-                ($validated['activity_oct'] ?? 0) +
-                ($validated['activity_nov'] ?? 0) +
-                ($validated['activity_dec'] ?? 0)
-            );
-            $validated['total'] = $total;
-
             // Set sort order
             $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $validated['kpi_workplan_id'])
                 ->max('sort_order');
@@ -382,22 +366,6 @@ class BudgetUserController extends Controller
                 'activity_dec' => 'nullable|integer|min:0',
             ]);
 
-
-            $total = $validated['price_estimation'] * (
-                ($validated['activity_jan'] ?? 0) +
-                ($validated['activity_feb'] ?? 0) +
-                ($validated['activity_mar'] ?? 0) +
-                ($validated['activity_apr'] ?? 0) +
-                ($validated['activity_may'] ?? 0) +
-                ($validated['activity_jun'] ?? 0) +
-                ($validated['activity_jul'] ?? 0) +
-                ($validated['activity_aug'] ?? 0) +
-                ($validated['activity_sep'] ?? 0) +
-                ($validated['activity_oct'] ?? 0) +
-                ($validated['activity_nov'] ?? 0) +
-                ($validated['activity_dec'] ?? 0)
-            );
-            $validated['total'] = $total;
             $item->update($validated);
             $item->load(['category', 'budgetCodeRelation', 'workplan']);
 

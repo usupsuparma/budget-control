@@ -854,6 +854,7 @@ class SubmissionController extends Controller
     {
         try {
             $budgetItems = WorkplanBudgetItem::where('kpi_workplan_id', $programId)
+                ->approved() // Filter by approved status
                 ->with(['budgetCodeRelation', 'category'])
                 ->orderBy('description')
                 ->get();

@@ -1230,9 +1230,7 @@
 
     // Load job positions based on job level
     function loadJobPositions(jobLevelId) {
-        let urlJobPositions = '{{ route('
-        userSubmission.jobPositions ', ': jobLevelId ') }}'.replace(':jobLevelId',
-            jobLevelId);
+        let urlJobPositions = `{{ route('userSubmission.jobPositions', ':jobLevelId') }}`.replace(':jobLevelId',jobLevelId);
         $.ajax({
             url: urlJobPositions,
             type: 'GET',
@@ -1256,8 +1254,7 @@
 
     // Load programs based on job level
     function loadPrograms(jobLevelId) {
-        let urlPrograms = '{{ route('
-        userSubmission.programs ', ': jobLevelId ') }}'.replace(':jobLevelId', jobLevelId);
+        let urlPrograms = `{{ route('userSubmission.programs', ':jobLevelId') }}`.replace(':jobLevelId', jobLevelId);
         $.ajax({
             url: urlPrograms,
             type: 'GET',
@@ -1306,8 +1303,7 @@
     function loadSummary() {
         const year = $('#filterYear').val();
         $.ajax({
-            url: '{{ route('
-            userSubmission.summary ') }}',
+            url: `{{ route('userSubmission.summary') }}`,
             type: 'GET',
             data: {
                 year: year
@@ -1357,7 +1353,7 @@
     function loadData() {
         const year = $('#filterYear').val();
         const status = $('#filterStatus').val();
-        let url = "{{ route('userSubmission.data') }}";
+        let url = `{{ route('userSubmission.data') }}`;
         console.log(url);
 
 
@@ -1384,8 +1380,7 @@
         });
 
         $.ajax({
-            url: '{{ route('
-            userSubmission.data ') }}',
+            url: `{{ route('userSubmission.data') }}`,
             type: 'GET',
             data: {
                 year: year,
@@ -1406,8 +1401,7 @@
         });
 
         $.ajax({
-            url: '{{ route('
-            userSubmission.data ') }}',
+            url: `{{ route('userSubmission.data') }}`,
             type: 'GET',
             data: {
                 year: year,
@@ -1428,8 +1422,7 @@
         });
 
         $.ajax({
-            url: '{{ route('
-            userSubmission.data ') }}',
+            url: `{{ route('userSubmission.data') }}`,
             type: 'GET',
             data: {
                 year: year,
@@ -2001,10 +1994,8 @@
 
         const submissionId = $('#submissionId').val();
         const url = submissionId ?
-            '{{ route('
-        userSubmission.update ', ': id ') }}'.replace(':id', submissionId):
-            '{{ route('
-        userSubmission.store ') }}';
+            `{{ route('userSubmission.update', ':id') }}`.replace(':id', submissionId):
+            `{{ route('userSubmission.store') }}`;
         const method = submissionId ? 'PUT' : 'POST';
 
         // Build data object properly
@@ -2157,8 +2148,7 @@
     // View submission
     function viewSubmission(id) {
         $.ajax({
-            url: '{{ route('
-            userSubmission.show ', ': id ') }}'.replace(':id', id),
+            url: `{{ route('userSubmission.show', ':id') }}`.replace(':id', id),
             type: 'GET',
             success: function(response) {
                 if (response.success) {
@@ -2170,7 +2160,7 @@
                     $('#view_job_level').text(data.job_level ? data.job_level.job_level_name : '-');
                     $('#view_job_position').text(data.job_position ? data.job_position.job_position_name :
                         '-');
-                    $('#view_program').text(data.program_id || '-');
+                    $('#view_program').text(data.program ? data.program.program_name : '-');
                     $('#view_unit').text(data.unit_name || '-');
                     $('#view_purpose').text(data.purpose || '-');
                     $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) +
@@ -2294,8 +2284,7 @@
         resetForm();
 
         $.ajax({
-            url: '{{ route('
-            userSubmission.show ', ': id ') }}'.replace(':id', id),
+            url: `{{ route('userSubmission.show', ':id') }}`.replace(':id', id),
             type: 'GET',
             success: function(response) {
                 if (response.success) {
@@ -2324,7 +2313,8 @@
 
                         // Load Programs based on Job Level
                         $.ajax({
-                            url: '{{ route('
+                            url: `{{ route('userSubmission.programs', ':jobLevelId') }}`.replace(':jobLevelId', data.job_level_id),
+                            type: 'GET',
                             userSubmission.programs ', ': jobLevelId ') }}'.replace(
                                 ':jobLevelId', data.job_level_id),
                             type: 'GET',
@@ -2341,9 +2331,7 @@
                                     // Load Budget Items based on Program
                                     if (data.program_id) {
                                         $.ajax({
-                                            url: '{{ route('
-                                            userSubmission.budgetItems ', ': programId ') }}'
-                                                .replace(':programId', data.program_id),
+                                            url: `{{ route('userSubmission.budgetItems', ':programId') }}`.replace(':programId', data.program_id),
                                             type: 'GET',
                                             success: function(budgetResponse) {
                                                 if (budgetResponse.success) {
@@ -2565,8 +2553,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '{{ route('
-                    userSubmission.destroy ', ': id ') }}'.replace(':id', id),
+                    url: `{{ route('userSubmission.destroy', ':id') }}`.replace(':id', id),
                     type: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -3034,8 +3021,7 @@
 
     function loadLpjApprovalCounts() {
         console.log('[LPJ] Loading LPJ approval counts...');
-        const url = '{{ route('
-        userSubmission.lpj.counts ') }}';
+        const url = `{{ route('userSubmission.lpj.counts') }}`;
         console.log('[LPJ] URL:', url);
 
         $.ajax({
@@ -3069,8 +3055,7 @@
 
     function loadPendingLpjApprovals() {
         console.log('[LPJ] Loading pending LPJ approvals...');
-        const url = '{{ route('
-        userSubmission.lpj.pending ') }}';
+        const url = `{{ route('userSubmission.lpj.pending') }}`;
         console.log('[LPJ] URL:', url);
 
         // Show loading spinner

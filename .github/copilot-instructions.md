@@ -65,6 +65,61 @@ Uses Livewire 3 with PowerGrid for data tables:
 - Example: `app/Livewire/EmployeeTable.php`
 - Views in `resources/views/livewire/`
 
+### Logging Pattern
+All significant actions and processes within services MUST be logged using the `LogService`. This provides essential traceability and debugging capabilities.
+
+**Usage:**
+Inject `LogService` into your class constructor:
+```php
+use App\Services\LogService\LogService;
+
+class YourService
+{
+    protected $logService;
+
+    public function __construct(LogService $logService)
+    {
+        $this->logService = $logService;
+    }
+
+    public function someMethod($data)
+    {
+        // Log an informational message
+        $this->logService->create(
+            'Processing some data in someMethod.',
+            [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'data_id' => $data->id ?? null, // Example: Log a relevant ID
+                'user_id' => auth()->id(),      // Example: Log the authenticated user ID
+            ],
+            'info'
+        );
+
+        // ... business logic ...
+
+        // Log a warning
+        if (empty($data)) {
+            $this->logService->create(
+                'Attempted to process empty data.',
+                [
+                    'class' => __CLASS__,
+                    'function' => __FUNCTION__,
+                    'input' => request()->all() // Example: Log problematic input
+                ],
+                'warning'
+            );
+        }
+    }
+}
+```
+
+**Guidelines:**
+-   **Exclude Credentials:** NEVER log sensitive information such as passwords, API keys, tokens, or any other credentials. Filter out sensitive data from context arrays.
+-   **Relevant Message:** Ensure the `message` string clearly describes the event being logged.
+-   **Standard Context:** Always include `'class' => __CLASS__` and `'function' => __FUNCTION__` in the `$context` array to easily trace the origin of the log entry. Add other relevant data to the context, such as IDs, user information, or input parameters, but **never sensitive data**.
+-   **Appropriate Level:** Use the correct log level (`info`, `warning`, `error`, `debug`, `notice`, `critical`, `alert`, `emergency`) to reflect the severity of the event.
+
 ## Development Workflow
 
 ### Starting Development

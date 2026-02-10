@@ -11,14 +11,8 @@ class LogServiceImpl implements LogService
      */
     public function __construct()
     {
-        // Inject your dependencies here
+        
     }
-
-    // Implement your interface methods here
-    // public function someMethod()
-    // {
-    //     //
-    // }
 
     public function create(string $message, array $context = [], string $level = 'info')
     {

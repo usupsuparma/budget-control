@@ -1254,7 +1254,8 @@
 
     // Load programs based on job level
     function loadPrograms(jobLevelId) {
-        let urlPrograms = `{{ route('userSubmission.programs', ':jobLevelId') }}`.replace(':jobLevelId', jobLevelId);
+        let urlPrograms = `{{ route('userSubmission.programs', ':jobLevelId') }}`;
+        urlPrograms = urlPrograms.replace(':jobLevelId', jobLevelId);
         $.ajax({
             url: urlPrograms,
             type: 'GET',
@@ -2314,9 +2315,6 @@
                         // Load Programs based on Job Level
                         $.ajax({
                             url: `{{ route('userSubmission.programs', ':jobLevelId') }}`.replace(':jobLevelId', data.job_level_id),
-                            type: 'GET',
-                            userSubmission.programs ', ': jobLevelId ') }}'.replace(
-                                ':jobLevelId', data.job_level_id),
                             type: 'GET',
                             success: function(programResponse) {
                                 if (programResponse.success) {

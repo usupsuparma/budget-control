@@ -184,7 +184,7 @@
                                             <td class="text-end"><strong>0.00</strong></td>
                                             <td class="text-end">
                                                 <strong>{{ number_format($divisionTotalBudget, 2) }}</strong></td>
-                                            @foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month)
+                                            @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                 @php
                                                     $monthBudget = collect($items)->sum("months.$month");
                                                 @endphp
@@ -204,7 +204,7 @@
                                                 <td class="text-end">0.00</td>
                                                 <td class="text-end">{{ number_format($item['total'], 2) }}</td>
 
-                                                @foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month)
+                                                @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                     <td class="text-end">{{ number_format($item['months'][$month], 0) }}
                                                     </td>
                                                     <td class="text-end">0</td>

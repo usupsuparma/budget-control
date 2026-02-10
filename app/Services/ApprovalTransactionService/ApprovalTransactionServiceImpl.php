@@ -13,6 +13,7 @@ use App\Models\Employment;
 use App\Models\Transaction;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
+use App\Services\LogService\LogService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,10 +22,12 @@ use Illuminate\Support\Facades\Log;
 class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 {
     protected BudgetLedgerService $budgetLedgerService;
+    protected LogService $logService;
 
-    public function __construct(BudgetLedgerService $budgetLedgerService)
+    public function __construct(BudgetLedgerService $budgetLedgerService, LogService $logService)
     {
         $this->budgetLedgerService = $budgetLedgerService;
+        $this->logService = $logService;
     }
     /**
      * Submit a transaction for approval.
@@ -33,6 +36,11 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
     {
         try {
             $transaction = Transaction::with(['user', 'details'])->findOrFail($transactionId);
+            $this->logService->create("Submitting transaction for approval", [
+                'transaction_id' => $transactionId,
+                'user_id' => $transaction->user_id,
+                'estimated_amount' => $transaction->estimated_amount,
+            ], 'info');
 
             // Check if already has pending approval
             $existingRequest = ApprovalRequest::where('reference_id', $transactionId)
@@ -59,7 +67,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ];
             }
 
-            Log::info('ApprovalTransactionService: Module found', [
+            $this->logService->create("ApprovalTransactionService: Module found", [
                 'module_id' => $module->id,
                 'module_name' => $module->module_name,
             ]);
@@ -70,7 +78,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ->orderBy('priority')
                 ->first();
 
-            Log::info('ApprovalTransactionService: Template found', [
+            $this->logService->create("ApprovalTransactionService: Template found", [
                 'template_id' => $template ? $template->id : null,
                 'template_name' => $template ? $template->template_name : null,
             ]);
@@ -86,7 +94,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             $employee = Auth::user();
             $requesterEmployment = $employee ? $employee->employment : null;
 
-            Log::info('ApprovalTransactionService: Requester employment', [
+            $this->logService->create("ApprovalTransactionService: Requester employment", [
                 'employee_id' => $employee ? $employee->id : null,
                 'employment_id' => $requesterEmployment ? $requesterEmployment->id : null,
             ]);
@@ -118,7 +126,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ];
             }
 
-            Log::info('Final approval chain ready for submission', [
+            $this->logService->create("Final approval chain ready for submission", [
                 'transaction_id' => $transactionId,
                 'template_id' => $template->id,
                 'template_name' => $template->template_name,
@@ -180,10 +188,10 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('ApprovalTransactionService.submitForApproval', [
+            $this->logService->create("Error in submitForApproval", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-            ]);
+            ], 'error');
 
             return [
                 'success' => false,
@@ -545,6 +553,13 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
     protected function handleApprove(ApprovalRequestDetail $detail, ApprovalRequest $request, ?string $comments): array
     {
         // Update detail status
+        $this->logService->create('Approval detail approved', [
+            'detail_id' => $detail->id,
+            'request_id' => $request->id,
+            'approver_id' => $detail->employment_id,
+            'reference_id' => $request->reference_id,
+        ], 'info');
+
         $detail->update([
             'status' => 'approved',
             'approved_at' => now(),
@@ -564,6 +579,12 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             if (!$budgetValidation['success']) {
                 // Rollback approval detail status
                 $detail->update(['status' => 'pending', 'approved_at' => null]);
+                $this->logService->create("Budget validation failed on final approval", [
+                    'transaction_id' => $transaction ? $transaction->id : null,
+                    'request_id' => $request->id,
+                    'message' => $budgetValidation['message'],
+                    'insufficient_items' => $budgetValidation['insufficient_items'] ?? [],
+                ], 'warning');
                 return [
                     'success' => false,
                     'message' => 'Saldo anggaran tidak mencukupi: ' . $budgetValidation['message'],
@@ -590,10 +611,10 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 // === BUDGET LEDGER: Phase 1 - Record Cash Advance debit mutations ===
                 $mutationResult = $this->budgetLedgerService->recordCashAdvanceMutations($transaction->id);
                 if (!$mutationResult['success']) {
-                    Log::warning('Failed to record cash advance mutations (non-blocking)', [
+                    $this->logService->create('Failed to record cash advance mutations (non-blocking)', [
                         'transaction_id' => $transaction->id,
                         'error' => $mutationResult['message'],
-                    ]);
+                    ], 'warning');
                 }
             }
 
@@ -615,6 +636,10 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     'current_approval_level' => $detail->level_sequence + 1,
                     'status_approval' => Transaction::APPROVAL_STATUS_IN_PROGRESS,
                 ]);
+                $this->logService->create('Transaction approval in progress', [
+                    'transaction_id' => $transaction->id,
+                    'current_approval_level' => $detail->level_sequence + 1,
+                ], 'info');
             }
 
             return [

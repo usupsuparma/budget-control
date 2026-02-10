@@ -14,6 +14,7 @@ use App\Models\TransactionDetail;
 use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
+use App\Services\LogService\LogService;
 use App\Services\LpjService\LpjService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -32,12 +33,16 @@ class SubmissionController extends Controller
 
     protected $lpjService;
 
+    protected $logService;
+
     public function __construct(
         ApprovalTransactionService $approvalTransactionService,
-        LpjService $lpjService
+        LpjService $lpjService,
+        LogService $logService,
     ) {
         $this->approvalTransactionService = $approvalTransactionService;
         $this->lpjService = $lpjService;
+        $this->logService = $logService;
     }
 
     public function user()
@@ -963,7 +968,11 @@ class SubmissionController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error approving transaction: '.$e->getMessage());
+            $this->logService->create($e->getMessage(), [
+                'Class' => SubmissionController::class,
+                'Function' => 'approve',
+                'User ID' => Auth::id(),
+            ]);
 
             return response()->json([
                 'success' => false,

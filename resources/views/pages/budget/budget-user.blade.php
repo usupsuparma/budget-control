@@ -430,6 +430,12 @@
                         <span class="badge bg-warning ms-2" id="verificationBadge" style="display: none;">0</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#approvalTab" role="tab" id="approvalTabLink">
+                        <i class="ri-check-double-line me-2"></i>Approval
+                        <span class="badge bg-danger ms-2" id="approvalBadge" style="display: none;">0</span>
+                    </a>
+                </li>
             </ul>
 
             <!-- TAB CONTENT -->
@@ -565,6 +571,32 @@
                             </div>
                         </div>
                         <!-- END TAB 2: Verification -->
+
+                        <!-- TAB 3: Approval -->
+                        <div class="tab-pane fade" id="approvalTab">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-check-double me-2"></i>Pending Approvals
+                                        <span class="badge bg-danger ms-2" id="approvalCountHeader">0</span>
+                                    </h5>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadPendingApprovalItems()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="pendingApprovalContainer">
+                                        <div class="text-center py-5">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <p class="mt-2 text-muted">Loading pending approvals...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- END TAB 3: Approval -->
                     </div>
         </div>
     </div>
@@ -991,10 +1023,14 @@
             if (targetTab === '#verification') {
                 loadPendingVerificationItems();
             }
+            if (targetTab === '#approvalTab') {
+                loadPendingApprovalItems();
+            }
         });
 
         // Load pending count on page load
         loadVerificationBadgeCount();
+        loadApprovalBadgeCount();
 
         // Format price input and recalculate verified total
         $('#verifyFixPrice').on('input', function() {
@@ -1391,7 +1427,407 @@
     function formatNumberVerify(value) {
         return new Intl.NumberFormat('id-ID').format(value);
     }
+
+    // ==================== APPROVAL TAB FUNCTIONS ====================
+    let pendingApprovalItems = [];
+
+    /**
+     * Load approval badge count (called on page load)
+     */
+    function loadApprovalBadgeCount() {
+        $.ajax({
+            url: '/workplan-budget-item-approval/pending',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.count > 0) {
+                    $('#approvalBadge').text(response.count).show();
+                    $('#approvalCountHeader').text(response.count);
+                } else {
+                    $('#approvalBadge').hide();
+                    $('#approvalCountHeader').text('0');
+                }
+            },
+            error: function() {
+                $('#approvalBadge').hide();
+            }
+        });
+    }
+
+    /**
+     * Load all pending approval items for the current user
+     */
+    function loadPendingApprovalItems() {
+        $('#pendingApprovalContainer').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading pending approvals...</p>
+            </div>
+        `);
+
+        $.ajax({
+            url: '/workplan-budget-item-approval/pending',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    pendingApprovalItems = response.data || [];
+                    const count = response.count || 0;
+
+                    // Update badges
+                    if (count > 0) {
+                        $('#approvalBadge').text(count).show();
+                    } else {
+                        $('#approvalBadge').hide();
+                    }
+                    $('#approvalCountHeader').text(count);
+
+                    renderPendingApprovalItems(pendingApprovalItems);
+                } else {
+                    $('#pendingApprovalContainer').html(`
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>${response.message || 'Failed to load pending approvals.'}
+                        </div>
+                    `);
+                }
+            },
+            error: function(xhr) {
+                $('#pendingApprovalContainer').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-2"></i>Error loading pending approvals. Please try again.
+                    </div>
+                `);
+            }
+        });
+    }
+
+    /**
+     * Render the list of pending approval items
+     */
+    function renderPendingApprovalItems(items) {
+        if (!items || items.length === 0) {
+            $('#pendingApprovalContainer').html(`
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle fs-1 text-success"></i>
+                    <h5 class="mt-3 text-muted">No Pending Approvals</h5>
+                    <p class="text-muted">All budget items have been reviewed. Great job!</p>
+                </div>
+            `);
+            return;
+        }
+
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" id="approvalItemsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="width:50px;">#</th>
+                            <th>Ref Number</th>
+                            <th>Description</th>
+                            <th>Program / Workplan</th>
+                            <th>Division / Department</th>
+                            <th>Category</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-center">Total Qty</th>
+                            <th class="text-end">Total Budget</th>
+                            <th class="text-center">Approval Level</th>
+                            <th>Requested At</th>
+                            <th class="text-center" style="width:160px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        items.forEach((approval, index) => {
+            const item = approval.item;
+            if (!item) return;
+
+            const categoryColors = {
+                'Routine': 'bg-secondary',
+                'Turn Around': 'bg-info',
+                'Carry Over': 'bg-warning',
+                'Multi Year': 'bg-primary',
+            };
+            const categoryColor = categoryColors[item.category_type] || 'bg-secondary';
+
+            html += `
+                <tr>
+                    <td class="text-center">${index + 1}</td>
+                    <td>
+                        <span class="fw-semibold text-primary" style="font-size:12px;">${approval.reference_number || '-'}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold" style="font-size:13px;">${item.description || '-'}</div>
+                        <small class="text-muted">${item.stock_code || ''} ${item.budget_code ? '| ' + item.budget_code : ''}</small>
+                    </td>
+                    <td>
+                        <div style="font-size:12px;">${item.workplan_activity || '-'}</div>
+                        <small class="text-muted">Year: ${item.workplan_year || '-'}</small>
+                    </td>
+                    <td>
+                        <div style="font-size:12px;">${item.division_name || '-'}</div>
+                        <small class="text-muted">${item.department_name || ''}</small>
+                    </td>
+                    <td><span class="badge ${categoryColor}" style="font-size:11px;">${item.category_type || '-'}</span></td>
+                    <td class="text-end" style="font-size:12px;">${formatApprovalCurrency(item.unit_price || 0)}</td>
+                    <td class="text-center" style="font-size:12px;">${item.total_qty || 0}</td>
+                    <td class="text-end fw-bold" style="font-size:12px;">${formatApprovalCurrency(item.total_budget || 0)}</td>
+                    <td class="text-center">
+                        <span class="badge bg-info">Level ${approval.level} / ${approval.total_levels}</span>
+                    </td>
+                    <td style="font-size:12px;">
+                        <div>${formatApprovalDate(approval.requested_at)}</div>
+                        <small class="text-muted">${getApprovalTimeAgo(approval.requested_at)}</small>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info" onclick="showApprovalDetail(${index})" title="Detail & Timeline">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="approveFromTab(${approval.detail_id}, ${item.id})" title="Approve">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="rejectFromTab(${approval.detail_id})" title="Reject">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        $('#pendingApprovalContainer').html(html);
+    }
+
+    /**
+     * Show detailed approval modal with timeline from the approval tab
+     */
+    function showApprovalDetail(index) {
+        const approval = pendingApprovalItems[index];
+        if (!approval || !approval.item) return;
+
+        const item = approval.item;
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const monthKeys = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+        // Build monthly breakdown
+        let monthlyHtml = '';
+        monthKeys.forEach((m, i) => {
+            const val = item.monthly ? (item.monthly[m] || 0) : 0;
+            if (val > 0) {
+                monthlyHtml += `<span class="badge bg-light text-dark me-1 mb-1">${months[i]}: ${val}</span>`;
+            }
+        });
+
+        // Build item details
+        const detailsHtml = `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted" style="width:130px;">Ref Number</td><td class="fw-semibold">${approval.reference_number || '-'}</td></tr>
+                        <tr><td class="text-muted">Description</td><td class="fw-semibold">${item.description || '-'}</td></tr>
+                        <tr><td class="text-muted">Workplan</td><td>${item.workplan_activity || '-'} (${item.workplan_year || '-'})</td></tr>
+                        <tr><td class="text-muted">Division</td><td>${item.division_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Department</td><td>${item.department_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Category</td><td><span class="badge bg-secondary">${item.category_type || '-'}</span></td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted" style="width:130px;">Stock Code</td><td>${item.stock_code || '-'}</td></tr>
+                        <tr><td class="text-muted">Budget Code</td><td>${item.budget_code || '-'}</td></tr>
+                        <tr><td class="text-muted">Cost Center</td><td>${item.cost_center || '-'}</td></tr>
+                        <tr><td class="text-muted">Supplier</td><td>${item.supplier_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Unit</td><td>${item.unit_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Cons Rate</td><td>${item.cons_rate || '-'}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Unit Price</small>
+                            <div class="fw-bold">${formatApprovalCurrency(item.unit_price || 0)}</div>
+                            <small class="text-muted">${item.verification_status === 'verified' ? '<i class="bi bi-check-circle text-success"></i> Verified' : '<i class="bi bi-hourglass-split"></i> Estimated'}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Total Qty</small>
+                            <div class="fw-bold">${item.total_qty || 0}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-primary bg-opacity-10 border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Total Budget</small>
+                            <div class="fw-bold text-primary">${formatApprovalCurrency(item.total_budget || 0)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${monthlyHtml ? `<div class="mb-2"><small class="text-muted">Monthly Activity:</small><br>${monthlyHtml}</div>` : ''}
+        `;
+        $('#approvalItemDetails').html(detailsHtml);
+
+        // Build timeline
+        let timelineHtml = '';
+        const timeline = approval.timeline || [];
+        if (timeline.length === 0) {
+            timelineHtml = `<div class="text-center text-muted py-3"><i class="bi bi-info-circle fs-3"></i><p class="mt-2">No timeline data available.</p></div>`;
+        } else {
+            const nextPending = timeline.find(d => d.status === 'pending');
+            timeline.forEach(detail => {
+                const isCurrentPending = nextPending && nextPending.id === detail.id;
+                const statusClass = getTimelineStatusClassApproval(detail.status, isCurrentPending);
+                const contentClass = isCurrentPending ? 'current' : '';
+
+                timelineHtml += `
+                    <div class="timeline-item ${statusClass} ${isCurrentPending ? 'current' : ''}">
+                        <div class="timeline-content ${contentClass}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Level ${detail.level_sequence}</strong>
+                                <span class="badge bg-${getStatusBadgeClassApproval(detail.status)}">${capitalizeFirstApproval(detail.status)}</span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-person me-1"></i>${detail.employment_name || 'Unknown Approver'}
+                            </div>
+                            ${detail.approved_at ? `<div class="text-muted small mt-1"><i class="bi bi-calendar me-1"></i>${formatApprovalDate(detail.approved_at)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        $('#approvalTimelineContent').html(timelineHtml);
+
+        // Footer buttons
+        let footerHtml = `
+            <button type="button" class="btn btn-danger" onclick="rejectFromTab(${approval.detail_id})">
+                <i class="bi bi-x-lg me-1"></i>Reject
+            </button>
+            <button type="button" class="btn btn-success" onclick="approveFromTab(${approval.detail_id}, ${item.id})">
+                <i class="bi bi-check-lg me-1"></i>Approve
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        `;
+        $('#approvalTimelineFooter').html(footerHtml);
+
+        $('#approvalTimelineModal').modal('show');
+    }
+
+    /**
+     * Approve item from approval tab
+     */
+    function approveFromTab(detailId, itemId) {
+        Swal.fire({
+            title: 'Approve this item?',
+            text: 'Are you sure you want to approve this budget item?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/workplan-budget-item-approval/detail/${detailId}/approve`,
+                    method: 'POST',
+                    data: { _token: CSRF_TOKEN },
+                    success: function(response) {
+                        hideLoading();
+                        if (response.success) {
+                            showToast(response.message || 'Item approved successfully', 'success');
+                            $('#approvalTimelineModal').modal('hide');
+                            loadPendingApprovalItems(); // Refresh approval list
+                        } else {
+                            showToast(response.message || 'Failed to approve', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        hideLoading();
+                        const msg = xhr.responseJSON?.message || 'Error approving item';
+                        showToast(msg, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Reject item from approval tab - opens rejection modal
+     */
+    function rejectFromTab(detailId) {
+        $('#rejectDetailId').val(detailId);
+        $('#rejectComments').val('');
+        $('#approvalTimelineModal').modal('hide');
+        // Set flag so after reject we refresh approval tab
+        window._rejectFromApprovalTab = true;
+        $('#rejectCommentModal').modal('show');
+    }
+
+    // Override confirmReject to also refresh approval tab
+    const _originalConfirmReject = (typeof confirmReject === 'function') ? confirmReject : null;
+
+    // Note: confirmReject is defined in budget-user.js with approval tab support
+
+    // ==================== APPROVAL TAB HELPER FUNCTIONS ====================
+
+    function formatApprovalCurrency(value) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    }
+
+    function formatApprovalDate(dateStr) {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getApprovalTimeAgo(dateStr) {
+        if (!dateStr) return '';
+        const now = new Date();
+        const date = new Date(dateStr);
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+    }
+
+    function getStatusBadgeClassApproval(status) {
+        const classes = { 'draft': 'secondary', 'pending': 'warning', 'in_progress': 'info', 'approved': 'success', 'rejected': 'danger', 'skipped': 'secondary', 'cancelled': 'secondary' };
+        return classes[status] || 'secondary';
+    }
+
+    function getTimelineStatusClassApproval(status, isCurrentPending) {
+        if (isCurrentPending) return 'current';
+        if (status === 'approved') return 'completed';
+        if (status === 'rejected') return 'rejected';
+        if (status === 'skipped') return 'skipped';
+        return 'pending';
+    }
+
+    function capitalizeFirstApproval(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
     
+
 </script>
 <script src="{{ asset('assets/js/budget-user.js') }}"></script>
 @endsection

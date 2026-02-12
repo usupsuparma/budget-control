@@ -747,6 +747,7 @@ class WorkplanBudgetItemApprovalService
     {
         $pendingDetails = ApprovalRequestDetail::with([
             'request.module',
+            'request.details',
             'employment.employee',
         ])
             ->where('employment_id', $employmentId)
@@ -763,8 +764,56 @@ class WorkplanBudgetItemApprovalService
                 return $nextPending && $nextPending->id === $detail->id;
             })
             ->map(function ($detail) {
-                $item = WorkplanBudgetItem::with('workplan', 'category')
-                    ->find($detail->request->reference_id);
+                $item = WorkplanBudgetItem::with([
+                    'workplan.kpiDepartment.department',
+                    'workplan.kpiDepartment.kpiDivision.division',
+                    'workplan.kpiSection.section.department',
+                    'category',
+                    'approvalRequest.details',
+                ])->find($detail->request->reference_id);
+
+                // Calculate total qty & budget
+                $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+                $totalQty = 0;
+                $monthlyData = [];
+                if ($item) {
+                    foreach ($months as $m) {
+                        $val = (int) ($item->{"activity_$m"} ?? 0);
+                        $totalQty += $val;
+                        $monthlyData[$m] = $val;
+                    }
+                }
+
+                $isVerified = $item && $item->verification_status === 'verified' && $item->price_final && (float) $item->price_final > 0;
+                $unitPrice = $isVerified ? (float) $item->price_final : (float) ($item->price_estimation ?? 0);
+                $totalBudget = $unitPrice * $totalQty;
+
+                // Resolve division name from workplan
+                $divisionName = null;
+                $departmentName = null;
+                if ($item && $item->workplan) {
+                    if ($item->workplan->kpi_type === 'department' && $item->workplan->kpiDepartment) {
+                        $departmentName = $item->workplan->kpiDepartment->department?->name;
+                        $divisionName = $item->workplan->kpiDepartment->kpiDivision?->division?->name;
+                    } elseif ($item->workplan->kpi_type === 'section' && $item->workplan->kpiSection) {
+                        $departmentName = $item->workplan->kpiSection->section?->department?->name;
+                        $divisionName = $item->workplan->kpiSection->section?->department?->division?->name ?? null;
+                    }
+                }
+
+                // Build approval timeline details
+                $timelineDetails = [];
+                if ($detail->request && $detail->request->details) {
+                    $timelineDetails = $detail->request->details
+                        ->sortBy('level_sequence')
+                        ->map(fn ($d) => [
+                            'id' => $d->id,
+                            'level_sequence' => $d->level_sequence,
+                            'employment_name' => $d->employment_name,
+                            'status' => $d->status,
+                            'approved_at' => $d->approved_at?->format('Y-m-d H:i:s'),
+                        ])->values()->toArray();
+                }
 
                 return [
                     'detail_id' => $detail->id,
@@ -773,15 +822,35 @@ class WorkplanBudgetItemApprovalService
                     'level' => $detail->level_sequence,
                     'total_levels' => $detail->request->total_levels,
                     'requested_at' => $detail->request->requested_at?->format('Y-m-d H:i:s'),
+                    'requester_name' => Employment::with('employee')->find($detail->request->requester_id)?->employee?->name ?? '-',
+                    'timeline' => $timelineDetails,
                     'item' => $item ? [
                         'id' => $item->id,
                         'description' => $item->description,
+                        'category_type' => $item->category_type,
+                        'category_name' => $item->category?->name,
+                        'stock_code' => $item->stock_code,
+                        'budget_code' => $item->budget_code,
+                        'cost_center' => $item->cost_center,
+                        'supplier_name' => $item->supplier_name,
+                        'unit_name' => $item->unit_name,
+                        'cons_rate' => $item->cons_rate,
+                        'price_estimation' => $item->price_estimation,
+                        'price_final' => $item->price_final,
+                        'verification_status' => $item->verification_status,
                         'total' => $item->total,
-                        'category' => $item->category?->name,
-                        'workplan' => $item->workplan?->name,
+                        'total_qty' => $totalQty,
+                        'unit_price' => $unitPrice,
+                        'total_budget' => $totalBudget,
+                        'monthly' => $monthlyData,
+                        'workplan_activity' => $item->workplan?->activity,
+                        'workplan_year' => $item->workplan?->year,
+                        'division_name' => $divisionName,
+                        'department_name' => $departmentName,
                     ] : null,
                 ];
-            });
+            })
+            ->sortBy('requested_at');
 
         return [
             'success' => true,

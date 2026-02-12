@@ -2021,7 +2021,14 @@ function approveItem(detailId, itemId) {
                             "success",
                         );
                         $("#approvalTimelineModal").modal("hide");
-                        loadAllBudgetItems(); // Refresh data
+                        // Refresh approval tab if open
+                        if (typeof loadPendingApprovalItems === 'function') {
+                            loadPendingApprovalItems();
+                        }
+                        // Refresh budget items if loaded
+                        if (selectedDivisionId && selectedYear) {
+                            loadAllBudgetItems();
+                        }
                     } else {
                         showToast(
                             response.message || "Failed to approve",
@@ -2075,7 +2082,15 @@ function confirmReject() {
             if (response.success) {
                 showToast(response.message || "Item rejected", "success");
                 $("#rejectCommentModal").modal("hide");
-                loadAllBudgetItems(); // Refresh data
+                // Refresh approval tab if rejection came from there
+                if (window._rejectFromApprovalTab && typeof loadPendingApprovalItems === 'function') {
+                    loadPendingApprovalItems();
+                    window._rejectFromApprovalTab = false;
+                }
+                // Also refresh budget items if loaded
+                if (selectedDivisionId && selectedYear) {
+                    loadAllBudgetItems();
+                }
             } else {
                 showToast(response.message || "Failed to reject", "error");
             }

@@ -352,6 +352,9 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
     /**
      * Get current balance for a specific workplan_budget_item.
      * Formula: initial_budget - total_debit + total_credit
+     * 
+     * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
+     * to prevent double counting (initial_budget is already from wbi.total).
      */
     public function getBudgetBalance(int $budgetItemId): array
     {
@@ -365,12 +368,12 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                     wbi.id,
                     wbi.description,
                     CAST(wbi.total AS DECIMAL(19,4)) AS initial_budget,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0) AS total_debit,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) AS total_credit,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_debit,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_credit,
                     (
                         CAST(wbi.total AS DECIMAL(19,4))
-                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0)
-                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0)
+                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
+                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
                     ) AS current_balance
                 ")
                 ->first();
@@ -486,6 +489,9 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
     /**
      * Get balance overview for multiple budget items (dashboard use).
+     * 
+     * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
+     * to prevent double counting (initial_budget is already from wbi.total).
      */
     public function getBulkBudgetBalances(array $budgetItemIds): array
     {
@@ -503,12 +509,12 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                     wbi.id,
                     wbi.description,
                     CAST(wbi.total AS DECIMAL(19,4)) AS initial_budget,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0) AS total_debit,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) AS total_credit,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_debit,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_credit,
                     (
                         CAST(wbi.total AS DECIMAL(19,4))
-                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0)
-                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0)
+                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
+                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
                     ) AS current_balance
                 ")
                 ->get();

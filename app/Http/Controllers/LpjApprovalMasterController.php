@@ -102,7 +102,7 @@ class LpjApprovalMasterController extends Controller
             $approver = LpjApprovalMaster::create([
                 'employment_id' => $request->employment_id,
                 'approval_sequence' => $request->approval_sequence,
-                'is_active' => $request->input('is_active', true),
+                'is_active' => filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
             ]);
 
             return response()->json([
@@ -140,7 +140,7 @@ class LpjApprovalMasterController extends Controller
             $approver = LpjApprovalMaster::findOrFail($id);
             $approver->update([
                 'approval_sequence' => $request->approval_sequence,
-                'is_active' => $request->input('is_active', $approver->is_active),
+                'is_active' => filter_var($request->input('is_active', $approver->is_active), FILTER_VALIDATE_BOOLEAN),
             ]);
 
             return response()->json([

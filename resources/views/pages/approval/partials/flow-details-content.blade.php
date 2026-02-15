@@ -24,6 +24,44 @@
     </div>
 </div>
 
+{{-- LPJ Approval Master Section --}}
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1"><i class="ri-file-list-3-line me-2"></i>LPJ Master Approvers</h5>
+                <p class="text-muted small mb-0">Master approval untuk modul LPJ (Laporan Pertanggungjawaban). Tentukan urutan approver untuk semua LPJ.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="showAddLpjApproverModal()">
+                <i class="ri-add-line me-1"></i> Tambah Approver
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="10%">Sequence</th>
+                        <th width="30%">Employee</th>
+                        <th width="25%">Job Position</th>
+                        <th width="15%">Status</th>
+                        <th width="15%" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="lpjApproversTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            <i class="ri-loader-4-line"></i> Loading data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 {{-- Flow Detail Modal (untuk tambah/edit approver) --}}
 <div class="modal fade" id="flowDetailModal" tabindex="-1" aria-labelledby="flowDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -65,6 +103,52 @@
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="is_required" checked>
                             <label class="form-check-label" for="is_required">Required (Wajib Approve)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-save-line me-1"></i> Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- LPJ Approver Modal (untuk tambah/edit approver LPJ) --}}
+<div class="modal fade" id="lpjApproverModal" tabindex="-1" aria-labelledby="lpjApproverModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lpjApproverModalTitle">Tambah LPJ Approver</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="lpjApproverForm">
+                <div class="modal-body">
+                    <input type="hidden" id="lpjapprover-id">
+
+                    <div class="mb-3">
+                        <label for="lpj_approval_sequence" class="form-label">Approval Sequence <span
+                                class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="lpj_approval_sequence" name="approval_sequence" required
+                            min="1" value="1">
+                        <small class="text-muted">Urutan approval: 1, 2, 3, dst.</small>
+                    </div>
+
+                    <div class="mb-3" id="lpjEmploymentSelectDiv">
+                        <label for="lpj_employment_id" class="form-label">Employee (Approver) <span
+                                class="text-danger">*</span></label>
+                        <select class="form-select" id="lpj_employment_id" name="employment_id" required>
+                            <option value="">Pilih Employee</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="lpj_is_active" checked>
+                            <label class="form-check-label" for="lpj_is_active">Active</label>
                         </div>
                     </div>
                 </div>

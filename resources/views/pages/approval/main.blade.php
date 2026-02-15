@@ -157,6 +157,7 @@
                 } else if (target === '#flowdetails') {
                     loadAllTemplatesWithFlowDetails();
                     loadEmployments();
+                    loadLpjApprovers();
                 }
             });
 
@@ -176,6 +177,11 @@
             $('#flowDetailForm').on('submit', function(e) {
                 e.preventDefault();
                 saveFlowDetail();
+            });
+
+            $('#lpjApproverForm').on('submit', function(e) {
+                e.preventDefault();
+                saveLpjApprover();
             });
         });
 
@@ -368,7 +374,7 @@
                 module_name: $('#module_name').val(),
                 table_name: $('#table_name').val(),
                 condition_field: $('#condition_field').val(),
-                is_active: $('#module_is_active').is(':checked')
+                is_active: $('#module_is_active').is(':checked') ? 1 : 0
             };
 
             const moduleId = $('#module-id').val();
@@ -657,10 +663,10 @@
             const data = {
                 _token: '{{ csrf_token() }}',
                 template_name: $('#template_name').val(),
-                use_uppline_chain: $('#use_uppline_chain').is(':checked'),
-                use_threshold: $('#use_threshold').is(':checked'),
+                use_uppline_chain: $('#use_uppline_chain').is(':checked') ? 1 : 0,
+                use_threshold: $('#use_threshold').is(':checked') ? 1 : 0,
                 priority: $('#template_priority').val() || 1,
-                is_active: $('#template_is_active').is(':checked')
+                is_active: $('#template_is_active').is(':checked') ? 1 : 0
             };
 
             let url = '{{ route('approval.templates.store') }}';
@@ -1011,7 +1017,7 @@
                 level_sequence: $('#level_sequence').val(),
                 employment_id: $('#employment_id').val(),
                 threshold_amount: parseThousand($('#threshold_amount').val()),
-                is_required: $('#is_required').is(':checked')
+                is_required: $('#is_required').is(':checked') ? 1 : 0
             };
 
             const detailId = $('#flowdetail-id').val();
@@ -1339,6 +1345,229 @@
                                 });
                                 const templateId = $('#template-id').val();
                                 loadUpplineConfigs(templateId);
+                            }
+                        },
+                        error: function(xhr) {
+                            showAlert(xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // ========== LPJ APPROVAL MASTER FUNCTIONS ==========
+
+        let lpjApproversData = [];
+        let isEditLpjMode = false;
+
+        /**
+         * Load all LPJ approvers
+         */
+        function loadLpjApprovers() {
+            $.ajax({
+                url: '{{ route('lpjApprovalMaster.data') }}',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        lpjApproversData = response.data;
+                        renderLpjApproversTable(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Gagal memuat data LPJ approvers', 'error');
+                }
+            });
+        }
+
+        /**
+         * Render LPJ approvers table
+         */
+        function renderLpjApproversTable(data) {
+            const tbody = $('#lpjApproversTableBody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="ri-inbox-line" style="font-size: 2rem; opacity: 0.3;"></i>
+                            <p class="mt-2 mb-0">Belum ada approver LPJ</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const statusBadge = item.is_active
+                    ? '<span class="badge bg-success-subtle text-success">Active</span>'
+                    : '<span class="badge bg-secondary-subtle text-secondary">Inactive</span>';
+
+                tbody.append(`
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <span class="level-badge level-${Math.min(item.approval_sequence, 5)}">
+                                ${item.approval_sequence}
+                            </span>
+                        </td>
+                        <td>${item.employee_name}</td>
+                        <td>${item.job_position || '-'}</td>
+                        <td>${statusBadge}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-warning" onclick="editLpjApprover(${item.id})" title="Edit">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger ms-1" onclick="deleteLpjApprover(${item.id})" title="Hapus">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        /**
+         * Load available employees for LPJ dropdown
+         */
+        function loadLpjAvailableEmployees() {
+            $.ajax({
+                url: '{{ route('lpjApprovalMaster.availableEmployees') }}',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const select = $('#lpj_employment_id');
+                        select.empty();
+                        select.append('<option value="">Pilih Employee</option>');
+                        
+                        response.data.forEach(emp => {
+                            select.append(`<option value="${emp.id}">${emp.name} - ${emp.job_position}</option>`);
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('Gagal memuat data employees', 'error');
+                }
+            });
+        }
+
+        /**
+         * Show add LPJ approver modal
+         */
+        function showAddLpjApproverModal() {
+            isEditLpjMode = false;
+            $('#lpjApproverModalTitle').text('Tambah LPJ Approver');
+            $('#lpjApproverForm')[0].reset();
+            $('#lpjapprover-id').val('');
+            $('#lpj_approval_sequence').val(lpjApproversData.length + 1);
+            $('#lpj_is_active').prop('checked', true);
+            $('#lpjEmploymentSelectDiv').show();
+            loadLpjAvailableEmployees();
+            $('#lpjApproverModal').modal('show');
+        }
+
+        /**
+         * Edit LPJ approver
+         */
+        function editLpjApprover(id) {
+            const approver = lpjApproversData.find(a => a.id === id);
+            if (!approver) {
+                showAlert('Data tidak ditemukan', 'error');
+                return;
+            }
+
+            isEditLpjMode = true;
+            $('#lpjApproverModalTitle').text('Edit LPJ Approver');
+            $('#lpjapprover-id').val(approver.id);
+            $('#lpj_approval_sequence').val(approver.approval_sequence);
+            $('#lpj_is_active').prop('checked', approver.is_active);
+            
+            // For edit mode, we don't change employment, so hide the select
+            $('#lpjEmploymentSelectDiv').hide();
+            
+            $('#lpjApproverModal').modal('show');
+        }
+
+        /**
+         * Save LPJ approver (create or update)
+         */
+        function saveLpjApprover() {
+            const id = $('#lpjapprover-id').val();
+            const data = {
+                approval_sequence: $('#lpj_approval_sequence').val(),
+                is_active: $('#lpj_is_active').is(':checked') ? 1 : 0,
+                _token: '{{ csrf_token() }}'
+            };
+
+            // Only include employment_id when creating new
+            if (!isEditLpjMode) {
+                data.employment_id = $('#lpj_employment_id').val();
+                
+                if (!data.employment_id) {
+                    showAlert('Pilih employee terlebih dahulu', 'warning');
+                    return;
+                }
+            }
+
+            let url = '{{ route('lpjApprovalMaster.store') }}';
+            let method = 'POST';
+
+            if (isEditLpjMode && id) {
+                url = '{{ route('lpjApprovalMaster.update', ':id') }}'.replace(':id', id);
+                method = 'POST';
+                data._method = 'PUT';
+            }
+
+            $.ajax({
+                url: url,
+                method: method,
+                data: data,
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        $('#lpjApproverModal').modal('hide');
+                        loadLpjApprovers();
+                    }
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Terjadi kesalahan';
+                    showAlert(message, 'error');
+                }
+            });
+        }
+
+        /**
+         * Delete LPJ approver
+         */
+        function deleteLpjApprover(id) {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: 'Apakah Anda yakin ingin menghapus approver ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ route('lpjApprovalMaster.destroy', ':id') }}'.replace(':id', id),
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terhapus!',
+                                    text: response.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                loadLpjApprovers();
                             }
                         },
                         error: function(xhr) {

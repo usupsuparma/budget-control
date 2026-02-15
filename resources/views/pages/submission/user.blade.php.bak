@@ -169,14 +169,13 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3" style="display: none;">
                 <label class="form-label">Status</label>
                 <select id="filterStatus" class="form-select">
                     <option value="all">Semua Status</option>
-                    <option value="request">Request</option>
-                    <option value="3">Disbursed</option>
-                    <option value="4">Completed</option>
-                    <option value="5">Rejected</option>
+                    @foreach ($statuses as $status)
+                    <option value="{{ $status['value'] }}">{{ $status['label'] }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
@@ -184,7 +183,7 @@
                     <i class="ri-filter-line"></i> Filter
                 </button>
             </div>
-            <div class="col-md-3 d-flex align-items-end justify-content-end">
+            <div class="col-md-6 d-flex align-items-end justify-content-end">
                 @if (isset($employment->job_level_id) && in_array($employment->job_level_id, [3, 4]))
                 <button type="button" class="btn btn-success" id="btnAddData">
                     <i class="ri-add-line"></i> Add Data
@@ -198,66 +197,236 @@
 {{-- === MAIN TABLE === --}}
 <div class="col-12">
     <div class="card card-h-100">
-        <div class="card-header bg-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="ri-file-list-3-line me-2"></i>Daftar Pengajuan</h5>
-                <div class="d-flex gap-2">
-                    <span class="badge bg-light text-dark border">
-                        <i class="ri-file-add-line me-1"></i>Request: <strong id="newSubmissionCount">
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        </strong>
-                    </span>
-                    <span class="badge bg-light text-dark border">
-                        <i class="ri-time-line me-1 text-warning"></i>Disbursed: <strong id="progressCount">
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        </strong>
-                    </span>
-                    <span class="badge bg-light text-dark border">
-                        <i class="ri-checkbox-circle-line me-1 text-success"></i>Completed: <strong id="completionCount">
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        </strong>
-                    </span>
-                    <span class="badge bg-light text-dark border">
-                        <i class="ri-file-forbid-line me-1 text-danger"></i>Rejected: <strong id="rejectedCount">
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        </strong>
-                    </span>
-                </div>
-            </div>
+        <div class="card-header p-0">
+            <!-- Nav tabs -->
+            <ul class="nav nav-pills nav-primary nav-justified" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#demo-tab-5_home" role="tab"
+                        aria-selected="false" tabindex="-1">
+                        <span><i style="font-size: 1rem !important;"
+                                class="ri-file-add-line stat-icon text-secondary"></i></span>
+                        <span>Request</span>
+                        <span class="badge bg-light text-dark" id="newSubmissionCount">
+                            <span class="spinner-border spinner-border-sm" role="status"
+                                aria-label="Loading"></span>
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_profile" role="tab"
+                        aria-selected="true">
+                        <span><i style="font-size: 1rem !important;"
+                                class="ri-time-line stat-icon text-warning"></i></span>
+                        <span>Disbursed</span>
+                        <span class="badge bg-light text-dark" id="progressCount">
+                            <span class="spinner-border spinner-border-sm" role="status"
+                                aria-label="Loading"></span>
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_messages" role="tab"
+                        aria-selected="false" tabindex="-1">
+                        <span><i style="font-size: 1rem !important;"
+                                class="ri-checkbox-circle-line stat-icon text-success"></i></span>
+                        <span>Completed</span>
+                        <span class="badge bg-light text-dark" id="completionCount">
+                            <span class="spinner-border spinner-border-sm" role="status"
+                                aria-label="Loading"></span>
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" data-bs-toggle="tab" href="#demo-tab-5_settings" role="tab"
+                        aria-selected="false" tabindex="-1">
+                        <span><i style="font-size: 1rem !important;"
+                                class="ri-file-forbid-line stat-icon text-danger"></i></span>
+                        <span>Rejected</span>
+                        <span class="badge bg-light text-dark" id="rejectedCount">
+                            <span class="spinner-border spinner-border-sm" role="status"
+                                aria-label="Loading"></span>
+                        </span>
+                    </a>
+                </li>
+            </ul>
         </div>
         <div class="card-body">
-            <div class="table-box table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No</th>
-                            <th>Date</th>
-                            <th>User Submitter</th>
-                            <th>Purpose</th>
-                            <th>Estimated Value</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr>
-                            <td colspan="7" class="text-center">
-                                <div class="spinner-border spinner-border-sm" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                Loading data...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active show" id="demo-tab-5_home" role="tabpanel">
+                    <div class="table-box table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Date</th>
+                                    <th>User Submitter</th>
+                                    <th>Purpose</th>
+                                    <th>Estimated Value</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-            {{-- Pagination --}}
-            <div class="d-flex flex-wrap gap-4 align-items-center m-4">
-                <div class="flex-grow-1">
-                    <p class="mb-0" id="paginationInfo">Showing 0 to 0 of 0 entries</p>
+                    {{-- Pagination --}}
+                    <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                        <div class="flex-grow-1">
+                            <p class="mb-0" id="paginationInfo">Showing 0 to 0 of 0 entries</p>
+                        </div>
+                        <div id="paginationLinks"></div>
+                    </div>
                 </div>
-                <div id="paginationLinks"></div>
+                <div class="tab-pane" id="demo-tab-5_profile" role="tabpanel">
+                    <div class="table-box table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Date</th>
+                                    <th>User Submitter</th>
+                                    <th>Purpose</th>
+                                    <th>Estimated Value</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody2">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Pagination --}}
+                    <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                        <div class="flex-grow-1">
+                            <p class="mb-0" id="paginationInfo2">Showing 0 to 0 of 0 entries</p>
+                        </div>
+                        <div id="paginationLinks2"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="demo-tab-5_messages" role="tabpanel">
+                    <div class="table-box table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Date</th>
+                                    <th>User Submitter</th>
+                                    <th>Purpose</th>
+                                    <th>Estimated Value</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody3">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Pagination --}}
+                    <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                        <div class="flex-grow-1">
+                            <p class="mb-0" id="paginationInfo3">Showing 0 to 0 of 0 entries</p>
+                        </div>
+                        <div id="paginationLinks3"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="demo-tab-5_settings" role="tabpanel">
+                    <div class="table-box table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Date</th>
+                                    <th>User Submitter</th>
+                                    <th>Purpose</th>
+                                    <th>Estimated Value</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody4">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Pagination --}}
+                    <div class="d-flex flex-wrap gap-4 align-items-center m-4">
+                        <div class="flex-grow-1">
+                            <p class="mb-0" id="paginationInfo4">Showing 0 to 0 of 0 entries</p>
+                        </div>
+                        <div id="paginationLinks4"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="demo-tab-5_lpj" role="tabpanel">
+                    <div class="alert alert-info mb-3">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>LPJ Approval Queue</strong> - Transaksi yang sudah di-disbursed dan telah submit
+                        LPJ, menunggu approval dari Anda.
+                    </div>
+                    <div class="table-box table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Submission Date</th>
+                                    <th>Transaction Date</th>
+                                    <th>User Submitter</th>
+                                    <th>Purpose</th>
+                                    <th>Submission Value</th>
+                                    <th>Realization Value</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lpjApprovalTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        Loading LPJ approvals...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1186,13 +1355,16 @@
         const year = $('#filterYear').val();
         const status = $('#filterStatus').val();
         let url = `{{ route('userSubmission.data') }}`;
+        console.log(url);
+
 
         $.ajax({
             url: url,
             type: 'GET',
             data: {
                 year: year,
-                status: status,
+                // 'request' filter covers status 0 (Submission), 1 (Progress), 2 (Approved)
+                status: 'request',
                 page: currentPage
             },
             success: function(response) {
@@ -1201,6 +1373,69 @@
                 if (response.success) {
                     renderTable(response.data);
                     renderPagination(response.data);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading data', 'danger');
+            }
+        });
+
+        $.ajax({
+            url: `{{ route('userSubmission.data') }}`,
+            type: 'GET',
+            data: {
+                year: year,
+                status: 3, // STATUS_PAID - Transaction approved and ready for disbursement/LPJ
+                page: currentPage
+            },
+            success: function(response) {
+                console.log(response);
+
+                if (response.success) {
+                    renderTable2(response.data);
+                    renderPagination2(response.data);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading data', 'danger');
+            }
+        });
+
+        $.ajax({
+            url: `{{ route('userSubmission.data') }}`,
+            type: 'GET',
+            data: {
+                year: year,
+                status: 4,
+                page: currentPage
+            },
+            success: function(response) {
+                console.log(response);
+
+                if (response.success) {
+                    renderTable3(response.data);
+                    renderPagination3(response.data);
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error loading data', 'danger');
+            }
+        });
+
+        $.ajax({
+            url: `{{ route('userSubmission.data') }}`,
+            type: 'GET',
+            data: {
+                year: year,
+                status: '5',
+                page: currentPage
+            },
+            success: function(response) {
+                console.log(response);
+
+                if (response.success) {
+                    renderTable4(response.data);
+                    renderPagination4(response.data);
                 }
             },
             error: function(xhr) {
@@ -1218,9 +1453,6 @@
         } else {
             data.data.forEach((item, index) => {
                 const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
-                const hasLpj = item.lpj_submission != null;
-                const lpjStatus = hasLpj ? item.lpj_submission.status_approval : null;
-
                 html += `
                 <tr>
                     <td>${rowNumber}</td>
@@ -1231,38 +1463,28 @@
                     <td>${getStatusBadge(item.status, item.id)}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})" title="View Detail">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
                                 <i class="ri-eye-line"></i>
                             </button>
-                            <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})" title="View PDF">
+                            ${item.status == 0 ? `
+                                                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                                <i class="ri-edit-line"></i>
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                                <i class="ri-delete-bin-line"></i>
+                                                                            </button>
+                                                                        ` : ''}
+                            ${item.can_approve ? `
+                                                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                                <i class="ri-check-line"></i> Approve
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                                <i class="ri-close-line"></i> Reject
+                                                                            </button>
+                                                                        ` : ''}
+                            <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})">
                                 <i class="ri-file-pdf-2-line"></i>
                             </button>
-                            ${item.status == 0 ? `
-                                <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})" title="Edit">
-                                    <i class="ri-edit-line"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})" title="Delete">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            ` : ''}
-                            ${item.can_approve ? `
-                                <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})" title="Approve">
-                                    <i class="ri-check-line"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})" title="Reject">
-                                    <i class="ri-close-line"></i>
-                                </button>
-                            ` : ''}
-                            ${!hasLpj && item.status == 3 ? `
-                                <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
-                                    <i class="ri-file-text-line"></i> LPJ
-                                </button>
-                            ` : ''}
-                            ${hasLpj ? `
-                                <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
-                                    <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
-                                </button>
-                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1307,6 +1529,53 @@
         $('#paginationLinks').html(paginationHtml);
     }
 
+    function renderTable2(data) {
+        let html = '';
+
+        if (data.data.length === 0) {
+            html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        } else {
+            data.data.forEach((item, index) => {
+                const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                const hasLpj = item.lpj_submission != null;
+                const lpjStatus = hasLpj ? item.lpj_submission.status_approval : null;
+
+                html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})" title="View Detail">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="viewPdf(${item.id})" title="View PDF">
+                                <i class="ri-file-pdf-2-line"></i>
+                            </button>
+                            ${!hasLpj && item.status == 3 ? `
+                                                                <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
+                                                                    <i class="ri-file-text-line"></i> LPJ
+                                                                </button>
+                                                            ` : ''}
+                            ${hasLpj ? `
+                                                                <button type="button" class="btn btn-outline-${getLpjStatusColor(lpjStatus)}" onclick="viewLpjDetail(${item.id})" title="View LPJ">
+                                                                    <i class="ri-file-text-line"></i> ${getLpjStatusLabel(lpjStatus)}
+                                                                </button>
+                                                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+            });
+        }
+
+        $('#tableBody2').html(html);
+    }
+
     // LPJ Status helpers
     function getLpjStatusColor(status) {
         const colors = {
@@ -1326,6 +1595,202 @@
             'rejected': 'LPJ Rejected'
         };
         return labels[status] || 'View LPJ';
+    }
+
+    // Render pagination
+    function renderPagination2(data) {
+        let paginationInfo2 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+        $('#paginationInfo2').text(paginationInfo2);
+
+        let paginationHtml = '<ul class="pagination mb-0">';
+
+        // Previous button
+        paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+        // Page numbers
+        for (let i = 1; i <= data.last_page; i++) {
+            paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+        }
+
+        // Next button
+        paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+        paginationHtml += '</ul>';
+        $('#paginationLinks2').html(paginationHtml);
+    }
+
+    function renderTable3(data) {
+        let html = '';
+
+        if (data.data.length === 0) {
+            html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        } else {
+            data.data.forEach((item, index) => {
+                const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            ${item.status == 0 ? `
+                                                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                                <i class="ri-edit-line"></i>
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                                <i class="ri-delete-bin-line"></i>
+                                                                            </button>
+                                                                        ` : ''}
+                            ${item.can_approve ? `
+                                                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                                <i class="ri-check-line"></i> Approve
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                                <i class="ri-close-line"></i> Reject
+                                                                            </button>
+                                                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+            });
+        }
+
+        $('#tableBody3').html(html);
+    }
+
+    // Render pagination
+    function renderPagination3(data) {
+        let paginationInfo3 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+        $('#paginationInfo3').text(paginationInfo3);
+
+        let paginationHtml = '<ul class="pagination mb-0">';
+
+        // Previous button
+        paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+        // Page numbers
+        for (let i = 1; i <= data.last_page; i++) {
+            paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+        }
+
+        // Next button
+        paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+        paginationHtml += '</ul>';
+        $('#paginationLinks3').html(paginationHtml);
+    }
+
+    function renderTable4(data) {
+        let html = '';
+
+        if (data.data.length === 0) {
+            html = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        } else {
+            data.data.forEach((item, index) => {
+                const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                html += `
+                <tr>
+                    <td>${rowNumber}</td>
+                    <td>${formatDate(item.transaction_date)}</td>
+                    <td>${item.user_name}</td>
+                    <td>${item.purpose}</td>
+                    <td>${formatCurrency(item.estimated_amount)}</td>
+                    <td>${getStatusBadge(item.status, item.transaction_id)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})">
+                                <i class="ri-eye-line"></i>
+                            </button>
+                            ${item.status == 0 ? `
+                                                                            <button type="button" class="btn btn-warning" onclick="editSubmission(${item.id})">
+                                                                                <i class="ri-edit-line"></i>
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="deleteSubmission(${item.id})">
+                                                                                <i class="ri-delete-bin-line"></i>
+                                                                            </button>
+                                                                        ` : ''}
+                            ${item.can_approve ? `
+                                                                            <button type="button" class="btn btn-success" onclick="approveSubmission(${item.id})">
+                                                                                <i class="ri-check-line"></i> Approve
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-danger" onclick="rejectSubmission(${item.id})">
+                                                                                <i class="ri-close-line"></i> Reject
+                                                                            </button>
+                                                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+            });
+        }
+
+        $('#tableBody4').html(html);
+    }
+
+    // Render pagination
+    function renderPagination4(data) {
+        let paginationInfo4 = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total || 0} entries`;
+        $('#paginationInfo4').text(paginationInfo4);
+
+        let paginationHtml = '<ul class="pagination mb-0">';
+
+        // Previous button
+        paginationHtml += `
+        <li class="page-item ${!data.prev_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page - 1}); return false;">«</a>
+        </li>
+    `;
+
+        // Page numbers
+        for (let i = 1; i <= data.last_page; i++) {
+            paginationHtml += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+        }
+
+        // Next button
+        paginationHtml += `
+        <li class="page-item ${!data.next_page_url ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${data.current_page + 1}); return false;">»</a>
+        </li>
+    `;
+
+        paginationHtml += '</ul>';
+        $('#paginationLinks4').html(paginationHtml);
     }
 
     // Change page function

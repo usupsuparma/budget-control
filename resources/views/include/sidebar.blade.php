@@ -167,7 +167,7 @@
                         <li class="pe-slide-item">
                             <a href="{{ route('budget.submission.index') }}"
                                 class="pe-nav-link {{ Request::is('budget-submission*') ? 'active' : '' }}">
-                                <i class="bi bi-file-earmark-text"></i> Budget Submission
+                                <i class="bi bi-file-earmark-text"></i> Budget Movement
                             </a>
                         </li>
                     </ul>

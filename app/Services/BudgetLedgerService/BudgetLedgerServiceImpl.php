@@ -4,7 +4,6 @@ namespace App\Services\BudgetLedgerService;
 
 use App\Models\BudgetMutation;
 use App\Models\Transaction;
-use App\Models\TransactionDetail;
 use App\Models\WorkplanBudgetItem;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +13,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 {
     /**
      * Phase 0: Record Initial Budget (Saldo Awal) when WorkplanBudgetItem is fully approved.
-     * 
+     *
      * Trigger: WorkplanBudgetItem fully approved (all approval levels done).
      * Action: Insert CREDIT mutation with amount = fix_price_total (verified price).
      */
@@ -23,7 +22,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
         try {
             $budgetItem = WorkplanBudgetItem::find($budgetItemId);
 
-            if (!$budgetItem) {
+            if (! $budgetItem) {
                 return ['success' => false, 'message' => 'Budget item tidak ditemukan.'];
             }
 
@@ -72,7 +71,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'data' => $mutation,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to record initial budget mutation: ' . $e->getMessage(), [
+            Log::error('Failed to record initial budget mutation: '.$e->getMessage(), [
                 'BudgetLedgerServiceImpl.recordInitialBudgetMutation',
                 'budget_item_id' => $budgetItemId,
                 'trace' => $e->getTraceAsString(),
@@ -80,14 +79,14 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mencatat saldo awal: ' . $e->getMessage(),
+                'message' => 'Gagal mencatat saldo awal: '.$e->getMessage(),
             ];
         }
     }
 
     /**
      * Phase 1: Record Cash Advance debit mutations when transaction is fully approved.
-     * 
+     *
      * Trigger: Transaction fully approved (all approval levels done).
      * Action: Loop all transaction_details, insert DEBIT mutation per detail.
      */
@@ -96,7 +95,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
         try {
             $transaction = Transaction::with('details')->find($transactionId);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return ['success' => false, 'message' => 'Transaksi tidak ditemukan.'];
             }
 
@@ -121,6 +120,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                         'transaction_detail_id' => $detail->id,
                         'transaction_id' => $transactionId,
                     ]);
+
                     continue;
                 }
 
@@ -151,25 +151,25 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
             return [
                 'success' => true,
-                'message' => 'Mutasi Cash Advance berhasil dicatat (' . count($mutations) . ' item).',
+                'message' => 'Mutasi Cash Advance berhasil dicatat ('.count($mutations).' item).',
                 'data' => $mutations,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to record Cash Advance mutations: ' . $e->getMessage(), [
+            Log::error('Failed to record Cash Advance mutations: '.$e->getMessage(), [
                 'transaction_id' => $transactionId,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal mencatat mutasi Cash Advance: ' . $e->getMessage(),
+                'message' => 'Gagal mencatat mutasi Cash Advance: '.$e->getMessage(),
             ];
         }
     }
 
     /**
      * Phase 3: Record LPJ Settlement mutations when LPJ is fully approved.
-     * 
+     *
      * Trigger: LPJ fully approved by all approvers.
      * Action: Calculate selisih per detail, create CREDIT (refund) or DEBIT (reimburse).
      */
@@ -178,7 +178,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
         try {
             $transaction = Transaction::with('details')->find($transactionId);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return ['success' => false, 'message' => 'Transaksi tidak ditemukan.'];
             }
 
@@ -226,7 +226,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                         'mutation_type' => BudgetMutation::TYPE_CREDIT,
                         'amount' => abs($selisih),
                         'category' => BudgetMutation::CATEGORY_LPJ_REFUND,
-                        'description' => "LPJ Refund: {$transaction->transaction_number} - {$detail->goods_service_name} (hemat " . number_format(abs($selisih), 2) . ")",
+                        'description' => "LPJ Refund: {$transaction->transaction_number} - {$detail->goods_service_name} (hemat ".number_format(abs($selisih), 2).')',
                         'created_at' => now(),
                     ]);
                     $mutations[] = $mutation;
@@ -241,7 +241,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                         'mutation_type' => BudgetMutation::TYPE_DEBIT,
                         'amount' => abs($selisih),
                         'category' => BudgetMutation::CATEGORY_LPJ_REIMBURSE,
-                        'description' => "LPJ Reimburse: {$transaction->transaction_number} - {$detail->goods_service_name} (kurang " . number_format(abs($selisih), 2) . ")",
+                        'description' => "LPJ Reimburse: {$transaction->transaction_number} - {$detail->goods_service_name} (kurang ".number_format(abs($selisih), 2).')',
                         'created_at' => now(),
                     ]);
                     $mutations[] = $mutation;
@@ -257,11 +257,11 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
             return [
                 'success' => true,
-                'message' => 'Mutasi settlement LPJ berhasil dicatat (' . count($mutations) . ' item).',
+                'message' => 'Mutasi settlement LPJ berhasil dicatat ('.count($mutations).' item).',
                 'data' => $mutations,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to record LPJ settlement mutations: ' . $e->getMessage(), [
+            Log::error('Failed to record LPJ settlement mutations: '.$e->getMessage(), [
                 'transaction_id' => $transactionId,
                 'lpj_submission_id' => $lpjSubmissionId,
                 'trace' => $e->getTraceAsString(),
@@ -269,7 +269,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mencatat mutasi settlement LPJ: ' . $e->getMessage(),
+                'message' => 'Gagal mencatat mutasi settlement LPJ: '.$e->getMessage(),
             ];
         }
     }
@@ -283,7 +283,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
         try {
             $transaction = Transaction::with('details')->find($transactionId);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return ['success' => false, 'message' => 'Transaksi tidak ditemukan.'];
             }
 
@@ -296,13 +296,14 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
                 $balanceResult = $this->getBudgetBalance($detail->budget_id);
 
-                if (!$balanceResult['success']) {
+                if (! $balanceResult['success']) {
                     $insufficientItems[] = [
                         'detail_id' => $detail->id,
                         'budget_id' => $detail->budget_id,
                         'budget_name' => $detail->budget_name,
-                        'reason' => 'Gagal mengambil data saldo: ' . $balanceResult['message'],
+                        'reason' => 'Gagal mengambil data saldo: '.$balanceResult['message'],
                     ];
+
                     continue;
                 }
 
@@ -325,7 +326,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
             if (count($insufficientItems) > 0) {
                 return [
                     'success' => false,
-                    'message' => 'Saldo anggaran tidak mencukupi untuk ' . count($insufficientItems) . ' item.',
+                    'message' => 'Saldo anggaran tidak mencukupi untuk '.count($insufficientItems).' item.',
                     'insufficient_items' => $insufficientItems,
                 ];
             }
@@ -336,14 +337,14 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'insufficient_items' => [],
             ];
         } catch (Exception $e) {
-            Log::error('Budget sufficiency validation failed: ' . $e->getMessage(), [
+            Log::error('Budget sufficiency validation failed: '.$e->getMessage(), [
                 'transaction_id' => $transactionId,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal memvalidasi saldo anggaran: ' . $e->getMessage(),
+                'message' => 'Gagal memvalidasi saldo anggaran: '.$e->getMessage(),
                 'insufficient_items' => [],
             ];
         }
@@ -352,7 +353,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
     /**
      * Get current balance for a specific workplan_budget_item.
      * Formula: initial_budget - total_debit + total_credit
-     * 
+     *
      * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
      * to prevent double counting (initial_budget is already from wbi.total).
      */
@@ -378,7 +379,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 ")
                 ->first();
 
-            if (!$result) {
+            if (! $result) {
                 return [
                     'success' => false,
                     'message' => 'Budget item tidak ditemukan.',
@@ -397,13 +398,13 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 ],
             ];
         } catch (Exception $e) {
-            Log::error('Failed to get budget balance: ' . $e->getMessage(), [
+            Log::error('Failed to get budget balance: '.$e->getMessage(), [
                 'budget_item_id' => $budgetItemId,
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengambil saldo anggaran: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil saldo anggaran: '.$e->getMessage(),
             ];
         }
     }
@@ -419,16 +420,16 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 ->orderBy('created_at', 'desc');
 
             // Apply filters
-            if (!empty($filters['category'])) {
+            if (! empty($filters['category'])) {
                 $query->where('category', $filters['category']);
             }
 
-            if (!empty($filters['date_from'])) {
+            if (! empty($filters['date_from'])) {
                 $query->where('created_at', '>=', $filters['date_from']);
             }
 
-            if (!empty($filters['date_to'])) {
-                $query->where('created_at', '<=', $filters['date_to'] . ' 23:59:59');
+            if (! empty($filters['date_to'])) {
+                $query->where('created_at', '<=', $filters['date_to'].' 23:59:59');
             }
 
             $mutations = $query->get();
@@ -438,13 +439,13 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'data' => $mutations,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to get mutation history: ' . $e->getMessage(), [
+            Log::error('Failed to get mutation history: '.$e->getMessage(), [
                 'budget_item_id' => $budgetItemId,
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengambil riwayat mutasi: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil riwayat mutasi: '.$e->getMessage(),
                 'data' => [],
             ];
         }
@@ -475,13 +476,13 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'data' => $summary,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to get transaction mutations: ' . $e->getMessage(), [
+            Log::error('Failed to get transaction mutations: '.$e->getMessage(), [
                 'transaction_id' => $transactionId,
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengambil data mutasi transaksi: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data mutasi transaksi: '.$e->getMessage(),
                 'data' => [],
             ];
         }
@@ -489,7 +490,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
     /**
      * Get balance overview for multiple budget items (dashboard use).
-     * 
+     *
      * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
      * to prevent double counting (initial_budget is already from wbi.total).
      */
@@ -535,13 +536,13 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'data' => $data,
             ];
         } catch (Exception $e) {
-            Log::error('Failed to get bulk budget balances: ' . $e->getMessage(), [
+            Log::error('Failed to get bulk budget balances: '.$e->getMessage(), [
                 'budget_item_ids' => $budgetItemIds,
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengambil data saldo anggaran: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data saldo anggaran: '.$e->getMessage(),
                 'data' => [],
             ];
         }

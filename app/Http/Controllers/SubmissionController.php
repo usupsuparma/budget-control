@@ -2,152 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ApprovalRequest;
-use App\Models\ApprovalRequestDetail;
-use App\Models\Employee;
-use App\Models\Employment;
-use App\Models\JobLevel;
-use App\Models\JobPosition;
-use App\Models\KPIWorkPlan;
-use App\Models\Transaction;
-use App\Models\TransactionDetail;
-use App\Models\Unit;
-use App\Models\WorkplanBudgetItem;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
-use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
 use App\Services\LpjService\LpjService;
+use App\Services\SubmissionService\SubmissionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 
 class SubmissionController extends Controller
 {
-    protected $approvalTransactionService;
-    protected $lpjService;
-    protected $logService;
-    protected $budgetLedgerService;
-
     public function __construct(
-        ApprovalTransactionService $approvalTransactionService,
-        LpjService $lpjService,
-        LogService $logService,
-        BudgetLedgerService $budgetLedgerService
-    ) {
-        $this->approvalTransactionService = $approvalTransactionService;
-        $this->lpjService = $lpjService;
-        $this->logService = $logService;
-        $this->budgetLedgerService = $budgetLedgerService;
-    }
+        private readonly SubmissionService $submissionService,
+        private readonly ApprovalTransactionService $approvalTransactionService,
+        private readonly LpjService $lpjService,
+        private readonly LogService $logService,
+    ) {}
+
+    /* ========================
+        VIEW METHODS
+    ======================== */
 
     public function user()
     {
         $title = 'Submission Users';
+        $data = $this->submissionService->getUserPageData();
 
-        // Get summary data (user_id = employee.id)
-        $userId = Auth::user()->id;
-        $employee = Auth::user();
-        $employment = $employee->employment;
-        $newSubmission = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_SUBMISSION)->count();
-        $progress = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PROGRESS)->count();
-        $paid = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PAID)->count();
-        $completion = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_COMPLETED)->count();
-        $totalSubmission = Transaction::where('user_id', $userId)->count();
-
-        // Get filter data
-        $years = Transaction::selectRaw('YEAR(transaction_date) as year')
-            ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year');
-
-        $statuses = [
-            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
-            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
-            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
-            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
-            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
-            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
-            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
-        ];
-
-        // Get dropdown data for modal
-        $jobLevels = JobLevel::all();
-        $jobPositions = JobPosition::all();
-        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
-        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
-        $units = Unit::all();
-
-        return view('pages.submission.user', compact(
-            'title',
-            'newSubmission',
-            'progress',
-            'paid',
-            'completion',
-            'totalSubmission',
-            'years',
-            'statuses',
-            'jobLevels',
-            'jobPositions',
-            'workplans',
-            'budgetCodes',
-            'units',
-            'employment'
-        ));
+        return view('pages.submission.user', array_merge(compact('title'), $data));
     }
+
+    public function user_create()
+    {
+        $title = 'Submission Users Create';
+
+        return view('pages.submission.user_create', compact('title'));
+    }
+
+    public function approval()
+    {
+        $title = 'Approval Submission';
+        $data = $this->submissionService->getApprovalPageData();
+
+        return view('pages.submission.approval', array_merge(compact('title'), $data));
+    }
+
+    /* ========================
+        DATA / SUMMARY
+    ======================== */
 
     public function getSummary(Request $request)
     {
         try {
-            $userId = Auth::id();
-
-            $yearFilter = $request->filled('year') && $request->year !== 'all';
-
-            $requestCount = Transaction::where('user_id', $userId)
-                ->whereIn('status', [
-                    Transaction::STATUS_SUBMISSION,
-                    Transaction::STATUS_PROGRESS,
-                    Transaction::STATUS_APPROVED
-                ])
-                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
-                ->count();
-
-            // Keep separate counts if needed for other specific logic, 
-            // but for the UI badge we will use $requestCount
-
-            $paid = Transaction::where('user_id', $userId)
-                ->where('status', Transaction::STATUS_PAID)
-                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
-                ->count();
-
-            $completion = Transaction::where('user_id', $userId)
-                ->where('status', Transaction::STATUS_COMPLETED)
-                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
-                ->count();
-
-            $rejected = Transaction::where('user_id', $userId)
-                ->where('status', Transaction::STATUS_REJECTED)
-                ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $request->year))
-                ->count();
-
-            $totalSubmission = Transaction::where('user_id', $userId)->count();
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'requestCount' => $requestCount,
-                    'paid' => $paid,
-                    'completion' => $completion,
-                    'rejected' => $rejected,
-                    'totalSubmission' => $totalSubmission,
-                ],
+            $result = $this->submissionService->getSummary([
+                'year' => $request->input('year'),
             ]);
+
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error fetching summary: '.$e->getMessage());
 
@@ -161,89 +73,14 @@ class SubmissionController extends Controller
     public function getData(Request $request)
     {
         try {
-            $userId = Auth::id();
-            $user = Auth::user();
-            $employment = $user->employment;
-            $employmentId = $employment ? $employment->id : null;
-
-            $query = Transaction::query();
-            $query->where('user_id', $userId);
-            $query->with([
-                'details',
-                // New dynamic approval system
-                'approvalRequest.details' => function ($q) {
-                    $q->orderBy('level_sequence');
-                },
-                // LPJ submission
-                'lpjSubmission',
+            $result = $this->submissionService->getTransactions([
+                'year' => $request->input('year'),
+                'status' => $request->input('status'),
+                'per_page' => $request->input('per_page', 10),
             ]);
 
-            // Filter by year
-            if ($request->has('year') && $request->year != '' && $request->year != 'all') {
-                $query->whereYear('transaction_date', $request->year);
-            }
-
-            // Filter by status
-            // 'request' tab includes: submission (0), progress (1), approved (2)
-            if ($request->has('status') && $request->status == 'request') {
-                $query->whereIn('status', [0, 1, 2]);
-            } elseif ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
-                $query->where('status', $request->status);
-            }
-
-            // Pagination
-            $perPage = $request->per_page ?? 10;
-            $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-            // Add can_approve flag to each transaction
-            $transactions->getCollection()->transform(function ($transaction) use ($employmentId) {
-                // Initialize can_approve as false
-                $transaction->can_approve = false;
-                $transaction->pending_approval = null;
-
-                // Determine can_edit: editable if no approver has approved yet
-                $hasApproved = false;
-                if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
-                    $hasApproved = $transaction->approvalRequest->details
-                        ->where('status', 'approved')
-                        ->isNotEmpty();
-                }
-                $transaction->can_edit = !$hasApproved;
-
-                // Check new dynamic approval system if employmentId exists
-                if ($employmentId && $transaction->approvalRequest) {
-                    $request = $transaction->approvalRequest;
-                    if ($request->status === 'pending') {
-                        // Find next pending detail
-                        $nextPending = $request->details
-                            ->where('status', 'pending')
-                            ->sortBy('level_sequence')
-                            ->first();
-
-                        if ($nextPending && $nextPending->employment_id == $employmentId) {
-                            $transaction->can_approve = true;
-                            $transaction->pending_approval_detail = $nextPending;
-                        }
-                    }
-
-                    // Add approval progress info
-                    $transaction->approval_progress = [
-                        'current_level' => $request->current_level,
-                        'total_levels' => $request->total_levels,
-                        'status' => $request->status,
-                        'current_phase' => $request->current_phase,
-                    ];
-                }
-
-                return $transaction;
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => $transactions,
-            ]);
+            return response()->json($result);
         } catch (\Throwable $th) {
-            // throw $th;
             Log::error('Error fetching transactions: '.$th->getMessage());
 
             return response()->json([
@@ -253,9 +90,12 @@ class SubmissionController extends Controller
         }
     }
 
+    /* ========================
+        CRUD ACTIONS
+    ======================== */
+
     public function store(Request $request)
     {
-        // Log incoming request data for debugging
         Log::info('Store transaction request data:', $request->all());
 
         $validator = Validator::make($request->all(), [
@@ -284,114 +124,13 @@ class SubmissionController extends Controller
             ], 422);
         }
 
-        // Validate budget values: ensure qty * price does not exceed budget value
-        $budgetErrors = [];
-        foreach ($request->items as $index => $item) {
-            $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
-
-            if ($budgetItem) {
-                $totalItemCost = $item['quantity'] * $item['price'];
-                $budgetValue = $budgetItem->total ?? 0;
-
-                if ($totalItemCost > $budgetValue) {
-                    $budgetErrors[] = [
-                        'item' => $item['goods_service_name'] ?? 'Item '.($index + 1),
-                        'total' => 'Rp '.number_format($totalItemCost, 0, ',', '.'),
-                        'budget' => 'Rp '.number_format($budgetValue, 0, ',', '.'),
-                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
-                    ];
-                }
-            }
-        }
-
-        if (! empty($budgetErrors)) {
-            $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
-            Log::error('Budget validation error in create transaction', ['errors' => $budgetErrors]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $errorMessage,
-                'budget_errors' => $budgetErrors,
-            ], 422);
-        }
-
         try {
-            DB::beginTransaction();
+            $result = $this->submissionService->createTransaction($request->all());
 
-            $user = Auth::user();
-            $estimatedAmount = 0;
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 422);
 
-            // Calculate total estimated amount
-            foreach ($request->items as $item) {
-                $estimatedAmount += $item['quantity'] * $item['price'];
-            }
-
-            // Get unit info
-            $unit = Unit::find($request->items[0]['unit_id']);
-
-            // Create transaction
-            $transaction = Transaction::create([
-                'transaction_date' => $request->transaction_date,
-                'planned_usage_date' => $request->planned_usage_date,
-                'user_id' => $user->id,
-                'user_name' => $user->first_name.' '.$user->last_name,
-                'unit_id' => $unit->id ?? 0,
-                'unit_name' => $unit->unit ?? '',
-                'job_level_id' => $request->job_level_id,
-                'job_position_id' => $request->job_position_id,
-                'program_id' => $request->program_id,
-                'purpose' => $request->purpose,
-                'estimated_amount' => $estimatedAmount,
-                'actual_amount' => 0,
-                'urgency' => $request->urgency,
-                'status' => Transaction::STATUS_PENDING, // Pending - waiting for approval submission
-            ]);
-
-            // Create transaction details
-            foreach ($request->items as $item) {
-                $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->find($item['budget_id']);
-                $unit = Unit::find($item['unit_id']);
-                $total = $item['quantity'] * $item['price'];
-
-                TransactionDetail::create([
-                    'transaction_id' => $transaction->id,
-                    'budget_id' => $budgetItem->id,
-                    'budget_name' => $budgetItem->description ?? '',
-                    'goods_service_name' => $item['goods_service_name'],
-                    'balance' => $budgetItem->total ?? 0,
-                    'estimated_price' => $item['price'],
-                    'estimated_quantity' => $item['quantity'],
-                    'estimated_total' => $total,
-                    'fix_price' => 0,
-                    'fix_quantity' => 0,
-                    'fix_total' => 0,
-                    'unit_id' => $unit->id,
-                    'unit_name' => $unit->name,
-                    'remark' => $item['remark'] ?? '',
-                    'urgency' => $request->urgency,
-                    'status' => 0,
-                ]);
-            }
-
-            DB::commit();
-
-            // Submit for approval using dynamic approval system
-            $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
-
-            if (! $approvalResult['success']) {
-                Log::warning('Failed to submit for approval: '.$approvalResult['message']);
-                // Transaction is created but approval submission failed - still return success
-                // The user can manually submit for approval later
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction created successfully'.($approvalResult['success'] ? ' and submitted for approval.' : '. Note: '.$approvalResult['message']),
-                'data' => $transaction->load(['details', 'approvalRequest.details']),
-                'approval' => $approvalResult,
-            ]);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error creating transaction: '.$e->getMessage());
 
             return response()->json([
@@ -404,86 +143,11 @@ class SubmissionController extends Controller
     public function show($id)
     {
         try {
-            $transaction = Transaction::with([
-                'details',
-                'approvalRequest.details' => function ($query) {
-                    $query->orderBy('phase', 'asc')
-                        ->orderBy('level_sequence', 'asc');
-                },
-                'jobLevel',
-                'jobPosition',
-                'unit',
-            ])->findOrFail($id);
+            $result = $this->submissionService->getTransactionDetail((int) $id);
 
-            // Check if user owns this transaction OR is an approver
-            $user = Auth::user();
-            $isOwner = $transaction->user_id == $user->id;
-            $isApprover = false;
-            $canApprove = false;
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 404);
 
-            // Check if user is an approver for this transaction
-            if (! $isOwner && $user->employment) {
-                $employmentId = $user->employment->id;
-
-                // Check in new dynamic approval system
-                $approvalDetail = ApprovalRequestDetail::whereHas('request', function ($q) use ($id) {
-                    $q->where('reference_id', $id)
-                        ->whereHas('module', fn ($mq) => $mq->where('table_name', 'transactions'));
-                })
-                    ->where('employment_id', $employmentId)
-                    ->first();
-
-                if ($approvalDetail) {
-                    $isApprover = true;
-                    // Can approve if status is pending
-                    $canApprove = $approvalDetail->status === 'pending';
-                }
-            }
-
-            if (! $isOwner && ! $isApprover) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
-
-            // Add can_approve flag and status_approval to transaction data
-            $transactionArray = $transaction->toArray();
-            $transactionArray['can_approve'] = $canApprove;
-
-            // Determine can_edit: editable if no approver has approved yet
-            $hasApproved = false;
-            if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
-                $hasApproved = $transaction->approvalRequest->details
-                    ->where('status', 'approved')
-                    ->isNotEmpty();
-            }
-            $transactionArray['can_edit'] = !$hasApproved;
-
-            // Determine status_approval based on approval request
-            if ($transaction->approvalRequest) {
-                $transactionArray['status_approval'] = $transaction->approvalRequest->status;
-            } else {
-                // Fallback to transaction status
-                $statusMap = [
-                    0 => 'pending',
-                    1 => 'pending',
-                    2 => 'pending',
-                    3 => 'pending',
-                    4 => 'pending',
-                    5 => 'pending',
-                    6 => 'rejected',
-                    7 => 'approved',
-                    8 => 'approved',
-                    -1 => 'cancelled',
-                ];
-                $transactionArray['status_approval'] = $statusMap[$transaction->status] ?? 'pending';
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $transactionArray,
-            ]);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
             Log::error('Error fetching transaction: '.$e->getMessage());
 
@@ -522,127 +186,13 @@ class SubmissionController extends Controller
             ], 422);
         }
 
-        // Validate budget values: ensure qty * price does not exceed budget value
-        $budgetErrors = [];
-        foreach ($request->items as $index => $item) {
-            $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
-
-            if ($budgetItem) {
-                $totalItemCost = $item['quantity'] * $item['price'];
-                $budgetValue = $budgetItem->value ?? 0;
-
-                if ($totalItemCost > $budgetValue) {
-                    $budgetErrors[] = [
-                        'item' => $item['goods_service_name'] ?? 'Item '.($index + 1),
-                        'total' => 'Rp '.number_format($totalItemCost, 0, ',', '.'),
-                        'budget' => 'Rp '.number_format($budgetValue, 0, ',', '.'),
-                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
-                    ];
-                }
-            }
-        }
-
-        if (! empty($budgetErrors)) {
-            $errorMessage = 'Budget validation failed. The following items exceed their budget values:';
-            Log::error('Budget validation error in update transaction', ['errors' => $budgetErrors]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $errorMessage,
-                'budget_errors' => $budgetErrors,
-            ], 422);
-        }
-
         try {
-            $transaction = Transaction::with(['approvalRequest.details'])->findOrFail($id);
+            $result = $this->submissionService->updateTransaction((int) $id, $request->all());
 
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 422);
 
-            // Check if transaction can be edited (no approver has approved yet)
-            $hasApproved = false;
-            if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
-                $hasApproved = $transaction->approvalRequest->details
-                    ->where('status', 'approved')
-                    ->isNotEmpty();
-            }
-
-            if ($hasApproved) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction cannot be edited because it has already been approved by one or more approvers.',
-                ], 403);
-            }
-
-            DB::beginTransaction();
-
-            $estimatedAmount = 0;
-
-            // Calculate total estimated amount
-            foreach ($request->items as $item) {
-                $estimatedAmount += $item['quantity'] * $item['price'];
-            }
-
-            // Get unit info
-            $unit = Unit::find($request->items[0]['unit_id']);
-
-            // Update transaction
-            $transaction->update([
-                'transaction_date' => $request->transaction_date,
-                'planned_usage_date' => $request->planned_usage_date,
-                'job_level_id' => $request->job_level_id,
-                'job_position_id' => $request->job_position_id,
-                'program_id' => $request->program_id,
-                'purpose' => $request->purpose,
-                'estimated_amount' => $estimatedAmount,
-                'urgency' => $request->urgency,
-                'unit_id' => $unit->id ?? 0,
-                'unit_name' => $unit->name ?? '',
-            ]);
-
-            // Delete old details
-            $transaction->details()->delete();
-
-            // Create new transaction details
-            foreach ($request->items as $item) {
-                $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->find($item['budget_id']);
-                $unit = Unit::find($item['unit_id']);
-                $total = $item['quantity'] * $item['price'];
-
-                TransactionDetail::create([
-                    'transaction_id' => $transaction->id,
-                    'budget_id' => $budgetItem->id,
-                    'budget_name' => $budgetItem->description ?? '',
-                    'goods_service_name' => $item['goods_service_name'],
-                    'balance' => $budgetItem->total ?? 0,
-                    'estimated_price' => $item['price'],
-                    'estimated_quantity' => $item['quantity'],
-                    'estimated_total' => $total,
-                    'fix_price' => 0,
-                    'fix_quantity' => 0,
-                    'fix_total' => 0,
-                    'unit_id' => $unit->id,
-                    'unit_name' => $unit->name,
-                    'remark' => $item['remark'] ?? '',
-                    'urgency' => $request->urgency,
-                    'status' => 0,
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction updated successfully',
-                'data' => $transaction->load('details'),
-            ]);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error updating transaction: '.$e->getMessage());
 
             return response()->json([
@@ -655,40 +205,13 @@ class SubmissionController extends Controller
     public function destroy($id)
     {
         try {
-            $transaction = Transaction::findOrFail($id);
+            $result = $this->submissionService->deleteTransaction((int) $id);
 
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 403);
 
-            // Check if transaction can be deleted (only status 0 - Submission)
-            if ($transaction->status != 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction cannot be deleted',
-                ], 403);
-            }
-
-            DB::beginTransaction();
-
-            // Delete details
-            $transaction->details()->delete();
-
-            // Delete transaction
-            $transaction->delete();
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction deleted successfully',
-            ]);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Error deleting transaction: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -697,22 +220,16 @@ class SubmissionController extends Controller
         }
     }
 
+    /* ========================
+        BUDGET / DROPDOWN
+    ======================== */
+
     public function getBudgetInfo($budgetId)
     {
         try {
-            $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->findOrFail($budgetId);
+            $result = $this->submissionService->getBudgetInfo((int) $budgetId);
 
-            $balanceResult = $this->budgetLedgerService->getBudgetBalance($budgetId);
-            $currentBalance = $balanceResult['success'] ? $balanceResult['data']['current_balance'] : $budgetItem->total;
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'budget_value' => $currentBalance,
-                    'budget_name' => $budgetItem->description,
-                    'budget_code' => $budgetItem->budget_code,
-                ],
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -721,81 +238,15 @@ class SubmissionController extends Controller
         }
     }
 
-    public function user_create()
-    {
-        $title = 'Submission Users Create';
-
-        return view('pages.submission.user_create', compact('title'));
-    }
-
-    public function approval()
-    {
-        $title = 'Approval Submission';
-        $userId = Auth::user()->id; // employee.id
-
-        // Get summary data (employment.employee_id = employee.id)
-        $employment = Employment::where('employee_id', $userId)->get();
-        $newSubmission = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_SUBMISSION)->count();
-        $progress = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PROGRESS)->count();
-        $paid = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_PAID)->count();
-        $completion = Transaction::where('user_id', $userId)->where('status', Transaction::STATUS_COMPLETED)->count();
-        $totalSubmission = Transaction::where('user_id', $userId)->count();
-
-        // Get filter data
-        $years = Transaction::selectRaw('YEAR(transaction_date) as year')
-            ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year');
-
-        $statuses = [
-            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
-            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
-            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
-            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
-            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
-            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
-            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
-        ];
-
-        // Get dropdown data for modal
-        $jobLevels = JobLevel::all();
-        $jobPositions = JobPosition::all();
-        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
-        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
-        $units = Unit::all();
-
-        return view('pages.submission.approval', compact(
-            'title',
-            'newSubmission',
-            'progress',
-            'paid',
-            'completion',
-            'totalSubmission',
-            'years',
-            'statuses',
-            'jobLevels',
-            'jobPositions',
-            'workplans',
-            'budgetCodes',
-            'units',
-            'employment'
-        ));
-    }
-
     /**
      * Get job positions filtered by job level
      */
     public function getJobPositions($jobLevelId)
     {
         try {
-            $jobPositions = JobPosition::where('job_level_id', $jobLevelId)
-                ->orderBy('job_position_name')
-                ->get(['id', 'job_position_name']);
+            $result = $this->submissionService->getJobPositionsByLevel((int) $jobLevelId);
 
-            return response()->json([
-                'success' => true,
-                'data' => $jobPositions,
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -806,73 +257,15 @@ class SubmissionController extends Controller
 
     /**
      * Get programs (KPI Workplans) based on job level
-     * If job level indicates 'section', get section KPIs
-     * If job level indicates 'department', get department KPIs
      */
     public function getPrograms($jobLevelId)
     {
         try {
-            // Get job level to determine kpi_type
-            $jobLevel = JobLevel::find($jobLevelId);
+            $result = $this->submissionService->getProgramsByJobLevel((int) $jobLevelId);
 
-            if (! $jobLevel) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Job level not found',
-                ], 404);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 404);
 
-            // Determine kpi_type based on job level name or a specific field
-            // You may need to adjust this logic based on your business rules
-            $jobLevelName = strtolower($jobLevel->job_level_name);
-
-            // If job level contains 'section' -> kpi_type = 'section'
-            // If job level contains 'department' or 'manager' -> kpi_type = 'department'
-            $kpiType = null;
-            if (str_contains($jobLevelName, 'section') || str_contains($jobLevelName, 'staff')) {
-                $kpiType = 'section';
-            } elseif (str_contains($jobLevelName, 'department') || str_contains($jobLevelName, 'manager') || str_contains($jobLevelName, 'head')) {
-                $kpiType = 'department';
-            }
-
-            if (! $kpiType) {
-                // Default to both if cannot determine
-                $workplans = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
-                    ->orderBy('year', 'desc')
-                    ->orderBy('activity')
-                    ->get();
-            } else {
-                $workplans = KPIWorkPlan::where('kpi_type', $kpiType)
-                    ->with(['kpiDepartment.department', 'kpiSection.section'])
-                    ->orderBy('year', 'desc')
-                    ->orderBy('activity')
-                    ->get();
-            }
-
-            // Format the data
-            $formattedWorkplans = $workplans->map(function ($workplan) {
-                $label = $workplan->activity.' ('.$workplan->year.')';
-
-                if ($workplan->kpi_type === 'department' && $workplan->kpiDepartment) {
-                    $label .= ' - '.($workplan->kpiDepartment->department->department_name ?? '');
-                } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
-                    $label .= ' - '.($workplan->kpiSection->section->section_name ?? '');
-                }
-
-                return [
-                    'id' => $workplan->id,
-                    'activity' => $workplan->activity,
-                    'year' => $workplan->year,
-                    'kpi_type' => $workplan->kpi_type,
-                    'label' => $label,
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => $formattedWorkplans,
-                'kpi_type' => $kpiType,
-            ]);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -887,32 +280,9 @@ class SubmissionController extends Controller
     public function getBudgetItems($programId)
     {
         try {
-            $budgetItems = WorkplanBudgetItem::where('kpi_workplan_id', $programId)
-                ->approved() // Filter by approved status
-                ->with(['budgetCodeRelation', 'category'])
-                ->orderBy('description')
-                ->get();
+            $result = $this->submissionService->getBudgetItemsByProgram((int) $programId);
 
-            // Format the data
-            $formattedItems = $budgetItems->map(function ($item) {
-                $balanceResult = $this->budgetLedgerService->getBudgetBalance($item->id);
-                $currentBalance = $balanceResult['success'] ? $balanceResult['data']['current_balance'] : $item->total;
-
-                return [
-                    'id' => $item->id,
-                    'description' => $item->description,
-                    'stock_code' => $item->stock_code,
-                    'budget_code' => $item->budget_code,
-                    'category_name' => $item->category->category_name ?? '',
-                    'total' => $currentBalance,
-                    'label' => $item->description.' ('.($item->stock_code ?? $item->budget_code).')',
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => $formattedItems,
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -921,6 +291,10 @@ class SubmissionController extends Controller
         }
     }
 
+    /* ========================
+        APPROVAL ACTIONS
+    ======================== */
+
     /**
      * Approve transaction using dynamic approval system
      */
@@ -928,7 +302,7 @@ class SubmissionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'comments' => 'nullable|string|max:500',
-            'detail_id' => 'nullable|integer', // ApprovalRequestDetail ID for new system
+            'detail_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -940,72 +314,16 @@ class SubmissionController extends Controller
         }
 
         try {
-            $user = Auth::user();
-            $employment = $user->employment;
+            $result = $this->submissionService->processApprovalAction(
+                (int) $id,
+                'approve',
+                $request->input('comments')
+            );
 
-            if (! $employment) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Employment data not found',
-                ], 404);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 400);
 
-            // Try to find pending approval using new dynamic system
-            $approvalRequest = ApprovalRequest::where('reference_id', $id)
-                ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
-                ->where('status', 'pending')
-                ->first();
-
-            if ($approvalRequest) {
-                // Use new dynamic approval system
-                $pendingDetail = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
-                    ->where('employment_id', $employment->id)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if (! $pendingDetail) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Anda tidak memiliki akses untuk approval ini atau approval sudah diproses.',
-                    ], 404);
-                }
-
-                // Check if this is the next in sequence
-                $nextPending = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
-                    ->where('status', 'pending')
-                    ->orderBy('level_sequence')
-                    ->first();
-
-                if ($nextPending && $nextPending->id !== $pendingDetail->id) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Menunggu approval dari level sebelumnya.',
-                    ], 400);
-                }
-
-                // Process using new service
-                $result = $this->approvalTransactionService->processApproval(
-                    $pendingDetail->id,
-                    'approve',
-                    $employment->id,
-                    $request->comments
-                );
-
-                return response()->json([
-                    'success' => $result['success'],
-                    'message' => $result['message'],
-                    'data' => $result,
-                ]);
-            }
-
-            // If no approval system found
-            return response()->json([
-                'success' => false,
-                'message' => 'Approval system not configured for this transaction',
-            ], 404);
-
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
-            DB::rollBack();
             $this->logService->create($e->getMessage(), [
                 'Class' => SubmissionController::class,
                 'Function' => 'approve',
@@ -1038,72 +356,16 @@ class SubmissionController extends Controller
         }
 
         try {
-            $user = Auth::user();
-            $employment = $user->employment;
+            $result = $this->submissionService->processApprovalAction(
+                (int) $id,
+                'reject',
+                $request->input('comments')
+            );
 
-            if (! $employment) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Employment data not found',
-                ], 404);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 400);
 
-            // Try to find pending approval using new dynamic system
-            $approvalRequest = ApprovalRequest::where('reference_id', $id)
-                ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
-                ->where('status', 'pending')
-                ->first();
-
-            if ($approvalRequest) {
-                // Use new dynamic approval system
-                $pendingDetail = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
-                    ->where('employment_id', $employment->id)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if (! $pendingDetail) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Anda tidak memiliki akses untuk reject ini atau approval sudah diproses.',
-                    ], 404);
-                }
-
-                // Check if this is the next in sequence
-                $nextPending = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
-                    ->where('status', 'pending')
-                    ->orderBy('level_sequence')
-                    ->first();
-
-                if ($nextPending && $nextPending->id !== $pendingDetail->id) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Menunggu approval dari level sebelumnya.',
-                    ], 400);
-                }
-
-                // Process using new service
-                $result = $this->approvalTransactionService->processApproval(
-                    $pendingDetail->id,
-                    'reject',
-                    $employment->id,
-                    $request->comments
-                );
-
-                return response()->json([
-                    'success' => $result['success'],
-                    'message' => $result['message'],
-                    'data' => $result,
-                ]);
-            }
-
-            // If no approval system found
-            return response()->json([
-                'success' => false,
-                'message' => 'Approval system not configured for this transaction',
-            ], 404);
-
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error rejecting transaction: '.$e->getMessage());
 
             return response()->json([
@@ -1116,62 +378,11 @@ class SubmissionController extends Controller
     public function getBadgeInfo($id)
     {
         try {
-            $transaction = Transaction::findOrFail($id);
+            $result = $this->submissionService->getApprovalBadgeHtml((int) $id);
 
-            // Try to get timeline from new dynamic approval system first
-            $timelineResult = $this->approvalTransactionService->getApprovalTimeline($id);
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 404);
 
-            if ($timelineResult['success'] && ! empty($timelineResult['data'])) {
-                $data = [];
-
-                foreach ($timelineResult['data'] as $item) {
-                    $iconClass = $item['badge_class'] ?? 'bg-secondary';
-                    $badgeClass = $item['badge_class'] ?? 'bg-secondary';
-
-                    // Determine if this is a pending item
-                    $isPending = ($item['status'] ?? '') === 'pending';
-
-                    if ($isPending) {
-                        $data[] = '<div class="tt-item">
-                            <div class="tt-icon bg-light">
-                                <span class="tt-dot"></span>
-                            </div>
-                            <div class="tt-content">
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="fw-semibold"></div>
-                                    <span class="badge rounded-pill bg-light text-muted">Pending</span>
-                                </div>
-                                <div class="small mt-1 text-muted">'.htmlspecialchars($item['label'] ?? '').' by <span class="fw-semibold">'.htmlspecialchars($item['approver_name'] ?? 'Waiting').'</span></div>
-                            </div>
-                        </div>';
-                    } else {
-                        $data[] = '<div class="tt-item">
-                            <div class="tt-icon '.$iconClass.'">
-                                <span class="tt-dot"></span>
-                            </div>
-                            <div class="tt-content">
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <div class="fw-semibold">'.htmlspecialchars($item['date'] ?? '').'</div>
-                                    <span class="badge rounded-pill '.$badgeClass.' text-white">'.htmlspecialchars($item['label'] ?? '').'</span>
-                                </div>
-                                <div class="small mt-1">'.htmlspecialchars($item['description'] ?? '').'</div>
-                            </div>
-                        </div>';
-                    }
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'data' => implode('', $data),
-                ]);
-            }
-
-            // If no approval request found
-            return response()->json([
-                'success' => false,
-                'message' => 'No approval timeline found for this transaction',
-            ], 404);
-
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
             Log::error('Error fetching badge info: '.$e->getMessage());
 
@@ -1184,47 +395,12 @@ class SubmissionController extends Controller
 
     public function viewPdf($id)
     {
-        $transaction = Transaction::where('id', $id)->get();
-        // dd($transaction);
-        // $transactionApproval = TransactionApproval::where('transaction_id', $id)->orderBy('sequence_order', 'asc')->get();
-        $transactionApproval = $this->approvalTransactionService->getApprovalTimeline($id);
+        $data = $this->submissionService->generatePdfData((int) $id);
 
-        $qrText_Proposedby = "Proposed by ".$transaction[0]->user_name.", Date: ".date("d M Y H:i:s", strtotime($transaction[0]->created_at));
-        $qrText = 'APPROVED|TX-';
-
-        // Buat QR object
-        $qrCode = new QrCode(
-            data: $qrText,
-            encoding: new Encoding('UTF-8'),
-            size: 300,
-            margin: 10
-        );
-
-        // Writer PNG (pakai GD, bukan Imagick)
-        $writer = new PngWriter();
-
-        // Generate hasil
-        $result = $writer->write($qrCode);
-
-        // PNG binary → base64 (DOMPDF friendly)
-        $qr = base64_encode($result->getString());
-
-        $data = [
-            'transaction' => $transaction,
-            'transactionApproval' => $transactionApproval,
-            'qrStaff'    => $qr,
-            'qrFinance'    => $qr,
-            'qrDivision'    => $qr,
-            'qrManager'    => $qr,
-            'qrPresident'    => $qr,
-            'qrFinanceDirector'    => $qr,
-        ];
         $pdf = Pdf::loadView('pages.submission.pdf', $data)
-                  ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'portrait');
 
-        // STREAM = preview di browser
         return $pdf->stream('budget-proposal-preview.pdf');
-        // return view('pages.submission.pdf', compact('transaction', 'transactionApproval', 'qr'));   
     }
 
     /**
@@ -1233,7 +409,7 @@ class SubmissionController extends Controller
     public function getApprovalStatus($id)
     {
         try {
-            $result = $this->approvalTransactionService->getApprovalStatus($id);
+            $result = $this->approvalTransactionService->getApprovalStatus((int) $id);
 
             return response()->json($result);
         } catch (\Exception $e) {
@@ -1295,12 +471,9 @@ class SubmissionController extends Controller
                 ], 404);
             }
 
-            $year = $request->input('year');
-
-            // Use service to get counts
             $result = $this->approvalTransactionService->getApprovalCounts(
                 $employment->id,
-                ['year' => $year]
+                ['year' => $request->input('year')]
             );
 
             return response()->json($result);
@@ -1330,21 +503,14 @@ class SubmissionController extends Controller
                 ], 404);
             }
 
-            $status = $request->input('status'); // pending, approved, rejected
-            $year = $request->input('year');
-            $search = $request->input('search');
-            $page = $request->input('page', 1);
-            $perPage = $request->input('per_page', 10);
-
-            // Use service to get approval items
             $result = $this->approvalTransactionService->getApprovalItemsByStatus(
                 $employment->id,
-                $status,
+                $request->input('status'),
                 [
-                    'year' => $year,
-                    'search' => $search,
-                    'page' => $page,
-                    'per_page' => $perPage,
+                    'year' => $request->input('year'),
+                    'search' => $request->input('search'),
+                    'page' => $request->input('page', 1),
+                    'per_page' => $request->input('per_page', 10),
                 ]
             );
 
@@ -1366,19 +532,11 @@ class SubmissionController extends Controller
     public function cancelApproval($id)
     {
         try {
-            $transaction = Transaction::findOrFail($id);
+            $result = $this->submissionService->cancelApprovalRequest((int) $id);
 
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 403);
 
-            $result = $this->approvalTransactionService->cancelApproval($id);
-
-            return response()->json($result);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
             Log::error('Error cancelling approval: '.$e->getMessage());
 
@@ -1395,27 +553,11 @@ class SubmissionController extends Controller
     public function resubmitForApproval($id)
     {
         try {
-            $transaction = Transaction::findOrFail($id);
+            $result = $this->submissionService->resubmitForApproval((int) $id);
 
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 400);
 
-            // Check if transaction can be resubmitted (status is pending/cancelled)
-            if (! in_array($transaction->status, [Transaction::STATUS_PENDING, Transaction::STATUS_CANCELLED])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction cannot be resubmitted in current status',
-                ], 400);
-            }
-
-            $result = $this->approvalTransactionService->submitForApproval($id);
-
-            return response()->json($result);
+            return response()->json($result, $statusCode);
         } catch (\Exception $e) {
             Log::error('Error resubmitting for approval: '.$e->getMessage());
 
@@ -1426,7 +568,9 @@ class SubmissionController extends Controller
         }
     }
 
-    // ==================== LPJ METHODS ====================
+    /* ========================
+        LPJ METHODS
+    ======================== */
 
     /**
      * Get LPJ form data for a transaction
@@ -1471,19 +615,8 @@ class SubmissionController extends Controller
         }
 
         try {
-            $transaction = Transaction::findOrFail($id);
-
-            // Check if user owns this transaction
-            if ($transaction->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                ], 403);
-            }
-
             $data = $request->only(['submission_date', 'realization_date', 'items']);
 
-            // Handle file upload
             if ($request->hasFile('proof_of_payment')) {
                 $data['proof_of_payment'] = $request->file('proof_of_payment');
             }

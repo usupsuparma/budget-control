@@ -1,0 +1,863 @@
+<?php
+
+namespace App\Services\SubmissionService;
+
+use App\Models\ApprovalRequest;
+use App\Models\ApprovalRequestDetail;
+use App\Models\Employment;
+use App\Models\JobLevel;
+use App\Models\JobPosition;
+use App\Models\KPIWorkPlan;
+use App\Models\Transaction;
+use App\Models\TransactionDetail;
+use App\Models\Unit;
+use App\Models\WorkplanBudgetItem;
+use App\Services\ApprovalTransactionService\ApprovalTransactionService;
+use App\Services\BudgetLedgerService\BudgetLedgerService;
+use App\Services\LogService\LogService;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class SubmissionServiceImpl implements SubmissionService
+{
+    public function __construct(
+        private readonly Transaction $model,
+        private readonly ApprovalTransactionService $approvalTransactionService,
+        private readonly BudgetLedgerService $budgetLedgerService,
+        private readonly LogService $logService,
+    ) {}
+
+    /* ========================
+        VIEW / PAGE DATA
+    ======================== */
+
+    public function getUserPageData(): array
+    {
+        $userId = Auth::id();
+        $employee = Auth::user();
+        $employment = $employee->employment;
+
+        $newSubmission = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_SUBMISSION)->count();
+        $progress = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PROGRESS)->count();
+        $paid = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PAID)->count();
+        $completion = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_COMPLETED)->count();
+        $totalSubmission = $this->model->where('user_id', $userId)->count();
+
+        $years = $this->model->selectRaw('YEAR(transaction_date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        $statuses = [
+            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
+            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
+            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
+            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
+            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
+            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
+        ];
+
+        $jobLevels = JobLevel::all();
+        $jobPositions = JobPosition::all();
+        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
+        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
+        $units = Unit::all();
+
+        return compact(
+            'newSubmission', 'progress', 'paid', 'completion', 'totalSubmission',
+            'years', 'statuses', 'jobLevels', 'jobPositions', 'workplans',
+            'budgetCodes', 'units', 'employment',
+        );
+    }
+
+    public function getApprovalPageData(): array
+    {
+        $userId = Auth::id();
+        $employment = Employment::where('employee_id', $userId)->get();
+
+        $newSubmission = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_SUBMISSION)->count();
+        $progress = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PROGRESS)->count();
+        $paid = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PAID)->count();
+        $completion = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_COMPLETED)->count();
+        $totalSubmission = $this->model->where('user_id', $userId)->count();
+
+        $years = $this->model->selectRaw('YEAR(transaction_date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        $statuses = [
+            ['value' => Transaction::STATUS_SUBMISSION, 'label' => 'Submission'],
+            ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
+            ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
+            ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
+            ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
+            ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
+        ];
+
+        $jobLevels = JobLevel::all();
+        $jobPositions = JobPosition::all();
+        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
+        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
+        $units = Unit::all();
+
+        return compact(
+            'newSubmission', 'progress', 'paid', 'completion', 'totalSubmission',
+            'years', 'statuses', 'jobLevels', 'jobPositions', 'workplans',
+            'budgetCodes', 'units', 'employment',
+        );
+    }
+
+    /* ========================
+        SUMMARY / DATA
+    ======================== */
+
+    public function getSummary(array $filters = []): array
+    {
+        $userId = Auth::id();
+        $yearFilter = ! empty($filters['year']) && $filters['year'] !== 'all';
+        $year = $filters['year'] ?? null;
+
+        $requestCount = $this->model->where('user_id', $userId)
+            ->whereIn('status', [
+                Transaction::STATUS_SUBMISSION,
+                Transaction::STATUS_PROGRESS,
+                Transaction::STATUS_APPROVED,
+            ])
+            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->count();
+
+        $paid = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PAID)
+            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->count();
+
+        $completion = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_COMPLETED)
+            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->count();
+
+        $rejected = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_REJECTED)
+            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->count();
+
+        $totalSubmission = $this->model->where('user_id', $userId)->count();
+
+        return [
+            'success' => true,
+            'data' => compact('requestCount', 'paid', 'completion', 'rejected', 'totalSubmission'),
+        ];
+    }
+
+    public function getTransactions(array $filters = []): array
+    {
+        $userId = Auth::id();
+        $user = Auth::user();
+        $employment = $user->employment;
+        $employmentId = $employment ? $employment->id : null;
+
+        $query = $this->model->query()
+            ->where('user_id', $userId)
+            ->with([
+                'details',
+                'approvalRequest.details' => fn ($q) => $q->orderBy('level_sequence'),
+                'lpjSubmission',
+            ]);
+
+        // Filter by year
+        $year = $filters['year'] ?? null;
+        if ($year && $year !== '' && $year !== 'all') {
+            $query->whereYear('transaction_date', $year);
+        }
+
+        // Filter by status
+        $status = $filters['status'] ?? null;
+        if ($status === 'request') {
+            $query->whereIn('status', [0, 1, 2]);
+        } elseif ($status !== null && $status !== '' && $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $perPage = $filters['per_page'] ?? 10;
+        $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Add approval flags to each transaction
+        $transactions->getCollection()->transform(function ($transaction) use ($employmentId) {
+            $transaction->can_approve = false;
+            $transaction->pending_approval = null;
+
+            // Determine can_edit: editable if no approver has approved yet
+            $hasApproved = $this->hasAnyApproverApproved($transaction);
+            $transaction->can_edit = ! $hasApproved;
+
+            // Check dynamic approval system
+            if ($employmentId && $transaction->approvalRequest) {
+                $request = $transaction->approvalRequest;
+                if ($request->status === 'pending') {
+                    $nextPending = $request->details
+                        ->where('status', 'pending')
+                        ->sortBy('level_sequence')
+                        ->first();
+
+                    if ($nextPending && $nextPending->employment_id == $employmentId) {
+                        $transaction->can_approve = true;
+                        $transaction->pending_approval_detail = $nextPending;
+                    }
+                }
+
+                $transaction->approval_progress = [
+                    'current_level' => $request->current_level,
+                    'total_levels' => $request->total_levels,
+                    'status' => $request->status,
+                    'current_phase' => $request->current_phase,
+                ];
+            }
+
+            return $transaction;
+        });
+
+        return [
+            'success' => true,
+            'data' => $transactions,
+        ];
+    }
+
+    /* ========================
+        TRANSACTION DETAIL
+    ======================== */
+
+    public function getTransactionDetail(int $id): array
+    {
+        $transaction = $this->model->with([
+            'details',
+            'approvalRequest.details' => fn ($query) => $query->orderBy('phase')->orderBy('level_sequence'),
+            'jobLevel',
+            'jobPosition',
+            'unit',
+        ])->findOrFail($id);
+
+        $user = Auth::user();
+        $isOwner = $transaction->user_id == $user->id;
+        $isApprover = false;
+        $canApprove = false;
+
+        // Check if user is an approver
+        if (! $isOwner && $user->employment) {
+            $employmentId = $user->employment->id;
+
+            $approvalDetail = ApprovalRequestDetail::whereHas('request', function ($q) use ($id) {
+                $q->where('reference_id', $id)
+                    ->whereHas('module', fn ($mq) => $mq->where('table_name', 'transactions'));
+            })
+                ->where('employment_id', $employmentId)
+                ->first();
+
+            if ($approvalDetail) {
+                $isApprover = true;
+                $canApprove = $approvalDetail->status === 'pending';
+            }
+        }
+
+        if (! $isOwner && ! $isApprover) {
+            return [
+                'success' => false,
+                'message' => 'Unauthorized access',
+                'status_code' => 403,
+            ];
+        }
+
+        $transactionArray = $transaction->toArray();
+        $transactionArray['can_approve'] = $canApprove;
+
+        // Determine can_edit
+        $hasApproved = $this->hasAnyApproverApproved($transaction);
+        $transactionArray['can_edit'] = ! $hasApproved;
+
+        // Determine status_approval
+        if ($transaction->approvalRequest) {
+            $transactionArray['status_approval'] = $transaction->approvalRequest->status;
+        } else {
+            $statusMap = [
+                0 => 'pending', 1 => 'pending', 2 => 'pending',
+                3 => 'pending', 4 => 'pending', 5 => 'pending',
+                6 => 'rejected', 7 => 'approved', 8 => 'approved',
+                -1 => 'cancelled',
+            ];
+            $transactionArray['status_approval'] = $statusMap[$transaction->status] ?? 'pending';
+        }
+
+        return [
+            'success' => true,
+            'data' => $transactionArray,
+        ];
+    }
+
+    /* ========================
+        CRUD OPERATIONS
+    ======================== */
+
+    public function createTransaction(array $data): array
+    {
+        // Validate budget items
+        $budgetErrors = $this->validateBudgetItems($data['items']);
+        if (! empty($budgetErrors)) {
+            return [
+                'success' => false,
+                'message' => 'Budget validation failed. The following items exceed their budget values:',
+                'budget_errors' => $budgetErrors,
+                'status_code' => 422,
+            ];
+        }
+
+        return DB::transaction(function () use ($data) {
+            $user = Auth::user();
+            $estimatedAmount = 0;
+
+            foreach ($data['items'] as $item) {
+                $estimatedAmount += $item['quantity'] * $item['price'];
+            }
+
+            $unit = Unit::find($data['items'][0]['unit_id']);
+
+            $transaction = $this->model->create([
+                'transaction_date' => $data['transaction_date'],
+                'planned_usage_date' => $data['planned_usage_date'] ?? null,
+                'user_id' => $user->id,
+                'user_name' => $user->first_name . ' ' . $user->last_name,
+                'unit_id' => $unit->id ?? 0,
+                'unit_name' => $unit->unit ?? '',
+                'job_level_id' => $data['job_level_id'],
+                'job_position_id' => $data['job_position_id'],
+                'program_id' => $data['program_id'],
+                'purpose' => $data['purpose'],
+                'estimated_amount' => $estimatedAmount,
+                'actual_amount' => 0,
+                'urgency' => $data['urgency'],
+                'status' => Transaction::STATUS_PENDING,
+            ]);
+
+            $this->createTransactionDetails($transaction->id, $data['items'], $data['urgency']);
+
+            // Submit for approval
+            $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
+
+            if (! $approvalResult['success']) {
+                Log::warning('Failed to submit for approval: ' . $approvalResult['message']);
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Transaction created successfully' . ($approvalResult['success']
+                    ? ' and submitted for approval.'
+                    : '. Note: ' . $approvalResult['message']),
+                'data' => $transaction->load(['details', 'approvalRequest.details']),
+                'approval' => $approvalResult,
+            ];
+        });
+    }
+
+    public function updateTransaction(int $id, array $data): array
+    {
+        // Validate budget items
+        $budgetErrors = $this->validateBudgetItems($data['items']);
+        if (! empty($budgetErrors)) {
+            return [
+                'success' => false,
+                'message' => 'Budget validation failed. The following items exceed their budget values:',
+                'budget_errors' => $budgetErrors,
+                'status_code' => 422,
+            ];
+        }
+
+        $transaction = $this->model->with(['approvalRequest.details'])->findOrFail($id);
+
+        // Ownership check
+        if ($transaction->user_id != Auth::id()) {
+            return [
+                'success' => false,
+                'message' => 'Unauthorized access',
+                'status_code' => 403,
+            ];
+        }
+
+        // Edit guard: no approver has approved yet
+        if ($this->hasAnyApproverApproved($transaction)) {
+            return [
+                'success' => false,
+                'message' => 'Transaction cannot be edited because it has already been approved by one or more approvers.',
+                'status_code' => 403,
+            ];
+        }
+
+        return DB::transaction(function () use ($transaction, $data) {
+            $estimatedAmount = 0;
+            foreach ($data['items'] as $item) {
+                $estimatedAmount += $item['quantity'] * $item['price'];
+            }
+
+            $unit = Unit::find($data['items'][0]['unit_id']);
+
+            $transaction->update([
+                'transaction_date' => $data['transaction_date'],
+                'planned_usage_date' => $data['planned_usage_date'] ?? null,
+                'job_level_id' => $data['job_level_id'],
+                'job_position_id' => $data['job_position_id'],
+                'program_id' => $data['program_id'],
+                'purpose' => $data['purpose'],
+                'estimated_amount' => $estimatedAmount,
+                'urgency' => $data['urgency'],
+                'unit_id' => $unit->id ?? 0,
+                'unit_name' => $unit->name ?? '',
+            ]);
+
+            // Replace details
+            $transaction->details()->delete();
+            $this->createTransactionDetails($transaction->id, $data['items'], $data['urgency']);
+
+            return [
+                'success' => true,
+                'message' => 'Transaction updated successfully',
+                'data' => $transaction->load('details'),
+            ];
+        });
+    }
+
+    public function deleteTransaction(int $id): array
+    {
+        $transaction = $this->model->findOrFail($id);
+
+        // Ownership check
+        if ($transaction->user_id != Auth::id()) {
+            return [
+                'success' => false,
+                'message' => 'Unauthorized access',
+                'status_code' => 403,
+            ];
+        }
+
+        // Status guard: only Submission (0)
+        if ($transaction->status != 0) {
+            return [
+                'success' => false,
+                'message' => 'Transaction cannot be deleted',
+                'status_code' => 403,
+            ];
+        }
+
+        return DB::transaction(function () use ($transaction) {
+            $transaction->details()->delete();
+            $transaction->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Transaction deleted successfully',
+            ];
+        });
+    }
+
+    /* ========================
+        BUDGET / DROPDOWN
+    ======================== */
+
+    public function getBudgetInfo(int $budgetId): array
+    {
+        $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->findOrFail($budgetId);
+
+        $balanceResult = $this->budgetLedgerService->getBudgetBalance($budgetId);
+        $currentBalance = $balanceResult['success']
+            ? $balanceResult['data']['current_balance']
+            : $budgetItem->total;
+
+        return [
+            'success' => true,
+            'data' => [
+                'budget_value' => $currentBalance,
+                'budget_name' => $budgetItem->description,
+                'budget_code' => $budgetItem->budget_code,
+            ],
+        ];
+    }
+
+    public function getJobPositionsByLevel(int $jobLevelId): array
+    {
+        $jobPositions = JobPosition::where('job_level_id', $jobLevelId)
+            ->orderBy('job_position_name')
+            ->get(['id', 'job_position_name']);
+
+        return [
+            'success' => true,
+            'data' => $jobPositions,
+        ];
+    }
+
+    public function getProgramsByJobLevel(int $jobLevelId): array
+    {
+        $jobLevel = JobLevel::find($jobLevelId);
+
+        if (! $jobLevel) {
+            return [
+                'success' => false,
+                'message' => 'Job level not found',
+                'status_code' => 404,
+            ];
+        }
+
+        $jobLevelName = strtolower($jobLevel->job_level_name);
+
+        $kpiType = null;
+        if (str_contains($jobLevelName, 'section') || str_contains($jobLevelName, 'staff')) {
+            $kpiType = 'section';
+        } elseif (str_contains($jobLevelName, 'department') || str_contains($jobLevelName, 'manager') || str_contains($jobLevelName, 'head')) {
+            $kpiType = 'department';
+        }
+
+        $query = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
+            ->orderBy('year', 'desc')
+            ->orderBy('activity');
+
+        if ($kpiType) {
+            $query->where('kpi_type', $kpiType);
+        }
+
+        $workplans = $query->get();
+
+        $formattedWorkplans = $workplans->map(function ($workplan) {
+            $label = $workplan->activity . ' (' . $workplan->year . ')';
+
+            if ($workplan->kpi_type === 'department' && $workplan->kpiDepartment) {
+                $label .= ' - ' . ($workplan->kpiDepartment->department->department_name ?? '');
+            } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
+                $label .= ' - ' . ($workplan->kpiSection->section->section_name ?? '');
+            }
+
+            return [
+                'id' => $workplan->id,
+                'activity' => $workplan->activity,
+                'year' => $workplan->year,
+                'kpi_type' => $workplan->kpi_type,
+                'label' => $label,
+            ];
+        });
+
+        return [
+            'success' => true,
+            'data' => $formattedWorkplans,
+            'kpi_type' => $kpiType,
+        ];
+    }
+
+    public function getBudgetItemsByProgram(int $programId): array
+    {
+        $budgetItems = WorkplanBudgetItem::where('kpi_workplan_id', $programId)
+            ->approved()
+            ->with(['budgetCodeRelation', 'category'])
+            ->orderBy('description')
+            ->get();
+
+        $formattedItems = $budgetItems->map(function ($item) {
+            $balanceResult = $this->budgetLedgerService->getBudgetBalance($item->id);
+            $currentBalance = $balanceResult['success']
+                ? $balanceResult['data']['current_balance']
+                : $item->total;
+
+            return [
+                'id' => $item->id,
+                'description' => $item->description,
+                'stock_code' => $item->stock_code,
+                'budget_code' => $item->budget_code,
+                'category_name' => $item->category->category_name ?? '',
+                'total' => $currentBalance,
+                'label' => $item->description . ' (' . ($item->stock_code ?? $item->budget_code) . ')',
+            ];
+        });
+
+        return [
+            'success' => true,
+            'data' => $formattedItems,
+        ];
+    }
+
+    public function validateBudgetItems(array $items): array
+    {
+        $budgetErrors = [];
+
+        foreach ($items as $index => $item) {
+            $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
+
+            if ($budgetItem) {
+                $totalItemCost = $item['quantity'] * $item['price'];
+                $budgetValue = $budgetItem->total ?? 0;
+
+                if ($totalItemCost > $budgetValue) {
+                    $budgetErrors[] = [
+                        'item' => $item['goods_service_name'] ?? 'Item ' . ($index + 1),
+                        'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
+                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
+                    ];
+                }
+            }
+        }
+
+        return $budgetErrors;
+    }
+
+    /* ========================
+        APPROVAL ACTIONS
+    ======================== */
+
+    public function processApprovalAction(int $transactionId, string $action, ?string $comments = null): array
+    {
+        $user = Auth::user();
+        $employment = $user->employment;
+
+        if (! $employment) {
+            return [
+                'success' => false,
+                'message' => 'Employment data not found',
+                'status_code' => 404,
+            ];
+        }
+
+        $approvalRequest = ApprovalRequest::where('reference_id', $transactionId)
+            ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $approvalRequest) {
+            return [
+                'success' => false,
+                'message' => 'Approval system not configured for this transaction',
+                'status_code' => 404,
+            ];
+        }
+
+        $pendingDetail = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+            ->where('employment_id', $employment->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $pendingDetail) {
+            $label = $action === 'approve' ? 'approval' : 'reject';
+
+            return [
+                'success' => false,
+                'message' => "Anda tidak memiliki akses untuk {$label} ini atau approval sudah diproses.",
+                'status_code' => 404,
+            ];
+        }
+
+        // Check sequence
+        $nextPending = ApprovalRequestDetail::where('request_id', $approvalRequest->id)
+            ->where('status', 'pending')
+            ->orderBy('level_sequence')
+            ->first();
+
+        if ($nextPending && $nextPending->id !== $pendingDetail->id) {
+            return [
+                'success' => false,
+                'message' => 'Menunggu approval dari level sebelumnya.',
+                'status_code' => 400,
+            ];
+        }
+
+        return $this->approvalTransactionService->processApproval(
+            $pendingDetail->id,
+            $action,
+            $employment->id,
+            $comments
+        );
+    }
+
+    public function cancelApprovalRequest(int $transactionId): array
+    {
+        $transaction = $this->model->findOrFail($transactionId);
+
+        if ($transaction->user_id != Auth::id()) {
+            return [
+                'success' => false,
+                'message' => 'Unauthorized access',
+                'status_code' => 403,
+            ];
+        }
+
+        return $this->approvalTransactionService->cancelApproval($transactionId);
+    }
+
+    public function resubmitForApproval(int $transactionId): array
+    {
+        $transaction = $this->model->findOrFail($transactionId);
+
+        if ($transaction->user_id != Auth::id()) {
+            return [
+                'success' => false,
+                'message' => 'Unauthorized access',
+                'status_code' => 403,
+            ];
+        }
+
+        if (! in_array($transaction->status, [Transaction::STATUS_PENDING, Transaction::STATUS_CANCELLED])) {
+            return [
+                'success' => false,
+                'message' => 'Transaction cannot be resubmitted in current status',
+                'status_code' => 400,
+            ];
+        }
+
+        return $this->approvalTransactionService->submitForApproval($transactionId);
+    }
+
+    /* ========================
+        BADGE / PDF
+    ======================== */
+
+    public function getApprovalBadgeHtml(int $transactionId): array
+    {
+        $this->model->findOrFail($transactionId);
+
+        $timelineResult = $this->approvalTransactionService->getApprovalTimeline($transactionId);
+
+        if (! $timelineResult['success'] || empty($timelineResult['data'])) {
+            return [
+                'success' => false,
+                'message' => 'No approval timeline found for this transaction',
+                'status_code' => 404,
+            ];
+        }
+
+        $data = [];
+        foreach ($timelineResult['data'] as $item) {
+            $iconClass = $item['badge_class'] ?? 'bg-secondary';
+            $badgeClass = $item['badge_class'] ?? 'bg-secondary';
+            $isPending = ($item['status'] ?? '') === 'pending';
+
+            if ($isPending) {
+                $data[] = '<div class="tt-item">
+                    <div class="tt-icon bg-light">
+                        <span class="tt-dot"></span>
+                    </div>
+                    <div class="tt-content">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="fw-semibold"></div>
+                            <span class="badge rounded-pill bg-light text-muted">Pending</span>
+                        </div>
+                        <div class="small mt-1 text-muted">' . htmlspecialchars($item['label'] ?? '') . ' by <span class="fw-semibold">' . htmlspecialchars($item['approver_name'] ?? 'Waiting') . '</span></div>
+                    </div>
+                </div>';
+            } else {
+                $data[] = '<div class="tt-item">
+                    <div class="tt-icon ' . $iconClass . '">
+                        <span class="tt-dot"></span>
+                    </div>
+                    <div class="tt-content">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="fw-semibold">' . htmlspecialchars($item['date'] ?? '') . '</div>
+                            <span class="badge rounded-pill ' . $badgeClass . ' text-white">' . htmlspecialchars($item['label'] ?? '') . '</span>
+                        </div>
+                        <div class="small mt-1">' . htmlspecialchars($item['description'] ?? '') . '</div>
+                    </div>
+                </div>';
+            }
+        }
+
+        return [
+            'success' => true,
+            'data' => implode('', $data),
+        ];
+    }
+
+    public function generatePdfData(int $id): array
+    {
+        $transaction = $this->model->where('id', $id)->get();
+        $transactionApproval = $this->approvalTransactionService->getApprovalTimeline($id);
+
+        $qrText_Proposedby = 'Proposed by ' . $transaction[0]->user_name . ', Date: ' . date('d M Y H:i:s', strtotime($transaction[0]->created_at));
+        $qrText = 'APPROVED|TX-';
+
+        $qrCode = new QrCode(
+            data: $qrText,
+            encoding: new Encoding('UTF-8'),
+            size: 300,
+            margin: 10
+        );
+
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+        $qr = base64_encode($result->getString());
+
+        return [
+            'transaction' => $transaction,
+            'transactionApproval' => $transactionApproval,
+            'qrStaff' => $qr,
+            'qrFinance' => $qr,
+            'qrDivision' => $qr,
+            'qrManager' => $qr,
+            'qrPresident' => $qr,
+            'qrFinanceDirector' => $qr,
+        ];
+    }
+
+    /* ========================
+        PRIVATE HELPERS
+    ======================== */
+
+    /**
+     * Check if any approver has already approved the transaction.
+     */
+    private function hasAnyApproverApproved(Transaction $transaction): bool
+    {
+        if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
+            return $transaction->approvalRequest->details
+                ->where('status', 'approved')
+                ->isNotEmpty();
+        }
+
+        return false;
+    }
+
+    /**
+     * Create transaction detail records for given items.
+     */
+    private function createTransactionDetails(int $transactionId, array $items, string $urgency): void
+    {
+        foreach ($items as $item) {
+            $budgetItem = WorkplanBudgetItem::with('budgetCodeRelation')->find($item['budget_id']);
+            $unit = Unit::find($item['unit_id']);
+            $total = $item['quantity'] * $item['price'];
+
+            TransactionDetail::create([
+                'transaction_id' => $transactionId,
+                'budget_id' => $budgetItem->id,
+                'budget_name' => $budgetItem->description ?? '',
+                'goods_service_name' => $item['goods_service_name'],
+                'balance' => $budgetItem->total ?? 0,
+                'estimated_price' => $item['price'],
+                'estimated_quantity' => $item['quantity'],
+                'estimated_total' => $total,
+                'fix_price' => 0,
+                'fix_quantity' => 0,
+                'fix_total' => 0,
+                'unit_id' => $unit->id,
+                'unit_name' => $unit->name,
+                'remark' => $item['remark'] ?? '',
+                'urgency' => $urgency,
+                'status' => 0,
+            ]);
+        }
+    }
+}

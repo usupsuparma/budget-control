@@ -14,6 +14,8 @@ use App\Services\BudgetLedgerService\BudgetLedgerServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
+use App\Services\SubmissionService\SubmissionService;
+use App\Services\SubmissionService\SubmissionServiceImpl;
 
 class CustomServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,7 @@ class CustomServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(LogService::class, LogServiceImpl::class);
+        $this->app->bind(SubmissionService::class, SubmissionServiceImpl::class);
         $this->app->bind(LpjService::class, LpjServiceImpl::class);
         $this->app->bind(ApprovalTransactionService::class, ApprovalTransactionServiceImpl::class);
         $this->app->bind(VerificationBudgetService::class, VerificationBudgetServiceImpl::class);

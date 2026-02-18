@@ -1,9 +1,9 @@
 @extends('layouts.master')
 
-@section('title', 'Budget Resume | Budget Control')
+@section('title', 'Budget Control | Budget Control')
 
 @section('title-sub', 'Budget Control')
-@section('pagetitle', 'Budget Resume')
+@section('pagetitle', 'Budget Control')
 @section('css')
     <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <style>
@@ -180,10 +180,12 @@
                                             </td>
                                             <td colspan="3"><strong>TOTAL {{ strtoupper($divisionName) }}</strong></td>
                                             <td class="text-end">
-                                                <strong>{{ number_format($divisionTotalBudget, 2) }}</strong></td>
+                                                <strong>{{ number_format($divisionTotalBudget, 2) }}</strong>
+                                            </td>
                                             <td class="text-end"><strong>0.00</strong></td>
                                             <td class="text-end">
-                                                <strong>{{ number_format($divisionTotalBudget, 2) }}</strong></td>
+                                                <strong>{{ number_format($divisionTotalBudget, 2) }}</strong>
+                                            </td>
                                             @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                 @php
                                                     $monthBudget = collect($items)->sum("months.$month");

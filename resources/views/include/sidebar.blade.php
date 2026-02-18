@@ -129,7 +129,7 @@
                         data-bs-toggle="collapse">
 
                         <i class="bi bi-currency-exchange pe-nav-icon"></i>
-                        <span class="pe-nav-content">Budget Control</span>
+                        <span class="pe-nav-content">Budget</span>
                         <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                     </a>
 
@@ -160,7 +160,7 @@
                         <li class="pe-slide-item">
                             <a href="{{ route('budget-resume.index') }}"
                                 class="pe-nav-link {{ Request::is('budget-resume*') ? 'active' : '' }}">
-                                <i class="bi bi-wallet2"></i> Budget Resume
+                                <i class="bi bi-wallet2"></i> Budget Control
                             </a>
                         </li>
 

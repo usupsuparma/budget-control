@@ -201,6 +201,15 @@ class SubmissionController extends Controller
                 $transaction->can_approve = false;
                 $transaction->pending_approval = null;
 
+                // Determine can_edit: editable if no approver has approved yet
+                $hasApproved = false;
+                if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
+                    $hasApproved = $transaction->approvalRequest->details
+                        ->where('status', 'approved')
+                        ->isNotEmpty();
+                }
+                $transaction->can_edit = !$hasApproved;
+
                 // Check new dynamic approval system if employmentId exists
                 if ($employmentId && $transaction->approvalRequest) {
                     $request = $transaction->approvalRequest;
@@ -251,6 +260,7 @@ class SubmissionController extends Controller
 
         $validator = Validator::make($request->all(), [
             'transaction_date' => 'required|date',
+            'planned_usage_date' => 'nullable|date|after_or_equal:today',
             'job_level_id' => 'required',
             'job_position_id' => 'required',
             'program_id' => 'required',
@@ -322,6 +332,7 @@ class SubmissionController extends Controller
             // Create transaction
             $transaction = Transaction::create([
                 'transaction_date' => $request->transaction_date,
+                'planned_usage_date' => $request->planned_usage_date,
                 'user_id' => $user->id,
                 'user_name' => $user->first_name.' '.$user->last_name,
                 'unit_id' => $unit->id ?? 0,
@@ -440,6 +451,15 @@ class SubmissionController extends Controller
             $transactionArray = $transaction->toArray();
             $transactionArray['can_approve'] = $canApprove;
 
+            // Determine can_edit: editable if no approver has approved yet
+            $hasApproved = false;
+            if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
+                $hasApproved = $transaction->approvalRequest->details
+                    ->where('status', 'approved')
+                    ->isNotEmpty();
+            }
+            $transactionArray['can_edit'] = !$hasApproved;
+
             // Determine status_approval based on approval request
             if ($transaction->approvalRequest) {
                 $transactionArray['status_approval'] = $transaction->approvalRequest->status;
@@ -478,6 +498,7 @@ class SubmissionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'transaction_date' => 'required|date',
+            'planned_usage_date' => 'nullable|date|after_or_equal:today',
             'job_level_id' => 'required',
             'job_position_id' => 'required',
             'program_id' => 'required',
@@ -533,7 +554,7 @@ class SubmissionController extends Controller
         }
 
         try {
-            $transaction = Transaction::findOrFail($id);
+            $transaction = Transaction::with(['approvalRequest.details'])->findOrFail($id);
 
             // Check if user owns this transaction
             if ($transaction->user_id != Auth::id()) {
@@ -543,11 +564,18 @@ class SubmissionController extends Controller
                 ], 403);
             }
 
-            // Check if transaction can be edited (only status 0 - Submission)
-            if ($transaction->status != 0) {
+            // Check if transaction can be edited (no approver has approved yet)
+            $hasApproved = false;
+            if ($transaction->approvalRequest && $transaction->approvalRequest->details) {
+                $hasApproved = $transaction->approvalRequest->details
+                    ->where('status', 'approved')
+                    ->isNotEmpty();
+            }
+
+            if ($hasApproved) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Transaction cannot be edited',
+                    'message' => 'Transaction cannot be edited because it has already been approved by one or more approvers.',
                 ], 403);
             }
 
@@ -566,6 +594,7 @@ class SubmissionController extends Controller
             // Update transaction
             $transaction->update([
                 'transaction_date' => $request->transaction_date,
+                'planned_usage_date' => $request->planned_usage_date,
                 'job_level_id' => $request->job_level_id,
                 'job_position_id' => $request->job_position_id,
                 'program_id' => $request->program_id,

@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Transaction extends Model
 {
     use SoftDeletes;
-    
+
     protected $fillable = [
         'transaction_date',
+        'planned_usage_date',
         'user_id',
         'user_name',
         'unit_id',
@@ -22,7 +23,7 @@ class Transaction extends Model
         'estimated_amount',
         'actual_amount',
         'urgency',
-        'status',// Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
+        'status', // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
         'threshold_id',
         'current_approval_level',
         'required_approval_levels',
@@ -46,15 +47,20 @@ class Transaction extends Model
         'required_approval_levels' => 'integer',
     ];
 
-    // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled	
+    // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
     const STATUS_SUBMISSION = 0;
-    const STATUS_PROGRESS = 1;
-    const STATUS_APPROVED = 2;
-    const STATUS_PAID = 3;
-    const STATUS_COMPLETED = 4;
-    const STATUS_REJECTED = 5;
-    const STATUS_CANCELLED = -1;
 
+    const STATUS_PROGRESS = 1;
+
+    const STATUS_APPROVED = 2;
+
+    const STATUS_PAID = 3;
+
+    const STATUS_COMPLETED = 4;
+
+    const STATUS_REJECTED = 5;
+
+    const STATUS_CANCELLED = -1;
 
     // Legacy transaction workflow status constants (still in use for 'status' field)
     const STATUS_PENDING = 0;  // Used for draft/pending transactions
@@ -65,14 +71,20 @@ class Transaction extends Model
 
     // Approval Status constants (dynamic approval system for 'status_approval' field)
     const APPROVAL_STATUS_PENDING = 'pending';
+
     const APPROVAL_STATUS_IN_PROGRESS = 'in_progress';
+
     const APPROVAL_STATUS_APPROVED = 'approved';
+
     const APPROVAL_STATUS_REJECTED = 'rejected';
+
     const APPROVAL_STATUS_CANCELLED = 'cancelled';
 
     // Urgency constants
     const URGENCY_LOW = 'low';
+
     const URGENCY_MEDIUM = 'medium';
+
     const URGENCY_HIGH = 'high';
 
     // Relationships
@@ -82,7 +94,7 @@ class Transaction extends Model
     public function approvalRequest()
     {
         return $this->hasOne(ApprovalRequest::class, 'reference_id')
-            ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'));
+            ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'));
     }
 
     /**
@@ -97,7 +109,7 @@ class Transaction extends Model
             'request_id', // Foreign key on ApprovalRequestDetail
             'id', // Local key on Transaction
             'id' // Local key on ApprovalRequest
-        )->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
+        )->whereHas('request.module', fn ($q) => $q->where('table_name', 'transactions'));
     }
 
     public function details()
@@ -138,7 +150,7 @@ class Transaction extends Model
      */
     public function canSubmitLpj(): bool
     {
-        return $this->status === self::STATUS_PAID && !$this->lpjSubmission;
+        return $this->status === self::STATUS_PAID && ! $this->lpjSubmission;
     }
 
     /**
@@ -158,7 +170,6 @@ class Transaction extends Model
     }
 
     // Scopes
-    
 
     public function scopeRejected($query)
     {
@@ -190,23 +201,22 @@ class Transaction extends Model
     {
         return $this->current_approval_level >= $this->required_approval_levels;
     }
-    
 
     public function getApprovalProgress()
     {
         if ($this->required_approval_levels == 0) {
             return 0;
         }
+
         return round(($this->current_approval_level / $this->required_approval_levels) * 100);
     }
-
 
     /**
      * Get approval status label (dynamic approval system)
      */
     public function getApprovalStatusLabel(): string
     {
-        return match($this->status_approval) {
+        return match ($this->status_approval) {
             self::APPROVAL_STATUS_PENDING => 'Pending Approval',
             self::APPROVAL_STATUS_IN_PROGRESS => 'In Progress',
             self::APPROVAL_STATUS_APPROVED => 'Approved',
@@ -221,7 +231,7 @@ class Transaction extends Model
      */
     public function getApprovalStatusBadgeClass(): string
     {
-        return match($this->status_approval) {
+        return match ($this->status_approval) {
             self::APPROVAL_STATUS_PENDING => 'warning',
             self::APPROVAL_STATUS_IN_PROGRESS => 'info',
             self::APPROVAL_STATUS_APPROVED => 'success',
@@ -265,7 +275,7 @@ class Transaction extends Model
 
     public function getUrgencyLabel()
     {
-        return match($this->urgency) {
+        return match ($this->urgency) {
             self::URGENCY_LOW => 'Low',
             self::URGENCY_MEDIUM => 'Medium',
             self::URGENCY_HIGH => 'High',
@@ -275,7 +285,7 @@ class Transaction extends Model
 
     public function getUrgencyBadgeClass()
     {
-        return match($this->urgency) {
+        return match ($this->urgency) {
             self::URGENCY_LOW => 'success',
             self::URGENCY_MEDIUM => 'warning',
             self::URGENCY_HIGH => 'danger',

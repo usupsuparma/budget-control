@@ -35,10 +35,10 @@
 
 ### Core
 
--   **Framework**: Laravel 12.x
--   **PHP**: ^8.2
--   **Frontend**: Blade + Livewire 3.x
--   **Database**: MySQL/MariaDB
+- **Framework**: Laravel 12.x
+- **PHP**: ^8.2
+- **Frontend**: Blade + Livewire 3.x
+- **Database**: MySQL/MariaDB
 
 ### Key Packages (JANGAN GANTI tanpa approval)
 
@@ -62,13 +62,13 @@ app/
 ├── Exports/          # Maatwebsite export classes
 ├── Helpers/          # Global helper functions (autoloaded)
 ├── Http/
-│   └── Controllers/  # Satu controller per resource
+│   └── Controllers/  # Satu controller per resource (orchestrator ONLY)
 ├── Imports/          # Maatwebsite import classes
 ├── Jobs/             # Queue jobs
 ├── Livewire/         # Livewire components
 ├── Models/           # Eloquent models
 ├── Providers/        # Service providers (termasuk CustomServiceProvider)
-└── Services/         # Business logic layer
+└── Services/         # Business logic layer — SEMUA logika bisnis ada di sini
     ├── {ServiceName}/
     │   ├── {ServiceName}Service.php     # Interface (kontrak)
     │   └── {ServiceName}ServiceImpl.php # Implementation
@@ -82,12 +82,30 @@ resources/views/
 └── pages/            # Main page views per module
 ```
 
+---
+
+### ⚡ Prinsip Utama: Controller = Orchestrator, Service = Executor
+
+> [!IMPORTANT]
+> **Controller TIDAK BOLEH mengandung business logic apapun.**  
+> Controller hanya boleh:
+>
+> 1. Menerima HTTP request
+> 2. Memvalidasi input
+> 3. Memanggil service
+> 4. Mengembalikan response
+>
+> **Semua logika** — termasuk operasi CRUD, kalkulasi, kondisi bisnis, dan query kompleks — **WAJIB** berada di Service Layer.
+
+---
+
 ### Pattern yang WAJIB Diikuti
 
 #### 1. Controller Pattern (Orchestrator Only)
 
-> [!IMPORTANT]
-> Controller **HANYA** berfungsi sebagai orchestrator. Semua business logic **WAJIB** didelegasikan ke Service Layer.
+Controller hanya bertanggung jawab atas alur HTTP. Tidak ada logika bisnis, tidak ada query model langsung.
+
+##### ✅ BENAR — Controller sebagai Orchestrator
 
 ```php
 use App\Services\ExampleService\ExampleService;
@@ -98,51 +116,146 @@ class ExampleController extends Controller
         private readonly ExampleService $exampleService
     ) {}
 
-    // 1. View methods (return view)
-    public function index() { }
-    public function create() { }
-    public function edit($id) { }
+    /* ========================
+        VIEW METHODS
+    ======================== */
 
-    // 2. API/Data methods (return JSON)
-    public function getData(Request $request) { }  // untuk DataTables
-    public function data() { }                     // alternatif naming
+    public function index()
+    {
+        return view('pages.example.index');
+    }
 
-    // 3. CRUD methods - delegate ke service
+    public function create()
+    {
+        return view('pages.example.create');
+    }
+
+    public function edit($id)
+    {
+        $data = $this->exampleService->findById($id);
+        return view('pages.example.edit', compact('data'));
+    }
+
+    /* ========================
+        DATA / DATATABLES
+    ======================== */
+
+    public function getData(Request $request)
+    {
+        return $this->exampleService->getDataTable($request);
+    }
+
+    /* ========================
+        CRUD ACTIONS
+    ======================== */
+
     public function store(Request $request)
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'amount'      => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+        ]);
+
+        // Delegasikan ke service — controller tidak tahu cara membuat record
         $result = $this->exampleService->create($validated);
-        return response()->json(['success' => true, 'data' => $result]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil disimpan.',
+            'data'    => $result,
+        ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'amount'      => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+        ]);
+
+        // Delegasikan ke service
         $result = $this->exampleService->update($id, $validated);
-        return response()->json(['success' => true, 'data' => $result]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil diperbarui.',
+            'data'    => $result,
+        ]);
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
+        // Delegasikan ke service
         $this->exampleService->delete($id);
-        return response()->json(['success' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil dihapus.',
+        ]);
     }
 
-    // 4. Action methods - delegate ke service
-    public function approve($id)
+    /* ========================
+        APPROVAL ACTIONS
+    ======================== */
+
+    public function approve(int $id)
     {
         $this->exampleService->approve($id);
-        return response()->json(['success' => true]);
+
+        return response()->json(['success' => true, 'message' => 'Disetujui.']);
+    }
+
+    public function reject(Request $request, int $id)
+    {
+        $validated = $request->validate(['reason' => 'required|string']);
+
+        $this->exampleService->reject($id, $validated['reason']);
+
+        return response()->json(['success' => true, 'message' => 'Ditolak.']);
     }
 }
 ```
+
+##### ❌ SALAH — Controller mengandung business logic (DILARANG KERAS)
+
+```php
+// ❌ JANGAN LAKUKAN INI — violates orchestrator pattern
+public function store(Request $request)
+{
+    // ❌ Query model langsung di controller
+    $exists = Example::where('name', $request->name)->exists();
+    if ($exists) {
+        return response()->json(['success' => false, 'message' => 'Sudah ada.'], 422);
+    }
+
+    // ❌ Business logic (kalkulasi, kondisi) di controller
+    $amount = $request->amount;
+    if ($amount > 1000000) {
+        $request->merge(['requires_approval' => true]);
+    }
+
+    // ❌ Operasi DB langsung di controller
+    $data = Example::create($request->all());
+
+    // ❌ Multiple model operations tanpa service
+    $data->histories()->create(['action' => 'created', 'user_id' => auth()->id()]);
+
+    return response()->json(['success' => true, 'data' => $data]);
+}
+```
+
+> **Aturan sederhana:** Jika kamu menulis `Model::`, `DB::`, `if (bisnis condition)`, atau kalkulasi apapun di controller — **pindahkan ke service.**
 
 ---
 
 #### 2. Service Layer Pattern (Business Logic)
 
 > [!IMPORTANT]
-> Ini adalah **WAJIB** pattern untuk semua fitur baru. Generate service menggunakan:
+> Semua CRUD, kalkulasi, kondisi bisnis, query kompleks, dan operasi multi-step **WAJIB** diimplementasikan di sini.
+>
+> Generate service menggunakan:
 >
 > ```bash
 > php artisan make:service {ServiceName}
@@ -163,23 +276,45 @@ app/Services/
 
 ##### Interface (Kontrak)
 
+Setiap service **WAJIB** memiliki interface. Controller depend pada interface, bukan concrete implementation.
+
 ```php
 <?php
 
 namespace App\Services\ExampleService;
 
+use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
+
 /**
  * Service interface for Example operations.
  *
- * Kontrak ini mendefinisikan semua method yang HARUS diimplementasikan.
+ * Kontrak ini mendefinisikan semua method CRUD dan business operations.
  * Controller akan depend pada interface ini, bukan implementasi langsung.
  */
 interface ExampleService
 {
     /**
-     * Create a new resource.
+     * Get all resources dengan optional filters.
      *
-     * @param array $data Validated input data
+     * @param array $filters
+     * @return Collection
+     */
+    public function getAll(array $filters = []): Collection;
+
+    /**
+     * Get resource by ID. Throw exception jika tidak ditemukan.
+     *
+     * @param int $id
+     * @return mixed
+     */
+    public function findById(int $id): mixed;
+
+    /**
+     * Create a new resource.
+     * Business rules (validasi duplikat, auto-assignment, dll) ditangani di sini.
+     *
+     * @param array $data Validated input dari controller
      * @return mixed Created resource
      */
     public function create(array $data): mixed;
@@ -187,39 +322,50 @@ interface ExampleService
     /**
      * Update an existing resource.
      *
-     * @param int $id Resource ID
-     * @param array $data Validated input data
+     * @param int   $id
+     * @param array $data Validated input dari controller
      * @return mixed Updated resource
      */
     public function update(int $id, array $data): mixed;
 
     /**
-     * Delete a resource (soft delete preferred).
+     * Soft delete a resource.
      *
-     * @param int $id Resource ID
-     * @return bool Success status
+     * @param int $id
+     * @return bool
      */
     public function delete(int $id): bool;
 
     /**
-     * Get resource by ID.
+     * Provide DataTable response untuk Yajra.
      *
-     * @param int $id Resource ID
-     * @return mixed Resource or null
+     * @param Request $request
+     * @return mixed DataTable response
      */
-    public function findById(int $id): mixed;
+    public function getDataTable(Request $request): mixed;
 
     /**
-     * Get all resources with optional filters.
+     * Approve a resource (ubah status + trigger side effects).
      *
-     * @param array $filters Optional filters
-     * @return \Illuminate\Support\Collection
+     * @param int $id
+     * @return mixed
      */
-    public function getAll(array $filters = []): \Illuminate\Support\Collection;
+    public function approve(int $id): mixed;
+
+    /**
+     * Reject a resource dengan alasan.
+     *
+     * @param int    $id
+     * @param string $reason
+     * @return mixed
+     */
+    public function reject(int $id, string $reason): mixed;
 }
 ```
 
 ##### Implementation (Logika Bisnis)
+
+Semua business logic, query, dan operasi multi-step ada di sini.
 
 ```php
 <?php
@@ -227,22 +373,60 @@ interface ExampleService
 namespace App\Services\ExampleService;
 
 use App\Models\Example;
-use App\Services\ExampleService\ExampleService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 class ExampleServiceImpl implements ExampleService
 {
     public function __construct(
         private readonly Example $model,
-        // Inject dependencies lain di sini jika perlu
+        // Inject dependency lain jika perlu (e.g., NotificationService)
     ) {}
+
+    public function getAll(array $filters = []): Collection
+    {
+        $query = $this->model->query()->with(['relasi1', 'relasi2']);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['year'])) {
+            $query->whereYear('created_at', $filters['year']);
+        }
+
+        return $query->get();
+    }
+
+    public function findById(int $id): mixed
+    {
+        return $this->model->with(['relasi1', 'relasi2'])->findOrFail($id);
+    }
 
     public function create(array $data): mixed
     {
         return DB::transaction(function () use ($data) {
-            // Business logic di sini
-            return $this->model->create($data);
+            // Business rule: set default values jika perlu
+            $data['status']     = Example::STATUS_PENDING;
+            $data['created_by'] = Auth::id();
+
+            // Business rule: tentukan apakah butuh approval
+            if ($data['amount'] > 1_000_000) {
+                $data['requires_approval'] = true;
+            }
+
+            $resource = $this->model->create($data);
+
+            // Side effect: simpan history
+            $resource->histories()->create([
+                'action'  => 'created',
+                'user_id' => Auth::id(),
+            ]);
+
+            return $resource->load('relasi1');
         });
     }
 
@@ -250,39 +434,98 @@ class ExampleServiceImpl implements ExampleService
     {
         return DB::transaction(function () use ($id, $data) {
             $resource = $this->findById($id);
+
+            // Business rule: jika amount berubah, reset approval status
+            if (isset($data['amount']) && $data['amount'] !== $resource->amount) {
+                $data['status'] = Example::STATUS_PENDING;
+            }
+
             $resource->update($data);
-            return $resource->fresh();
+
+            $resource->histories()->create([
+                'action'  => 'updated',
+                'user_id' => Auth::id(),
+            ]);
+
+            return $resource->fresh('relasi1');
         });
     }
 
     public function delete(int $id): bool
     {
-        $resource = $this->findById($id);
-        return $resource->delete();
+        return DB::transaction(function () use ($id) {
+            $resource = $this->findById($id);
+
+            // Business rule: tidak bisa hapus jika sudah approved
+            if ($resource->status === Example::STATUS_APPROVED) {
+                throw new \Exception('Data yang sudah disetujui tidak dapat dihapus.');
+            }
+
+            $resource->histories()->create([
+                'action'  => 'deleted',
+                'user_id' => Auth::id(),
+            ]);
+
+            return $resource->delete(); // SoftDelete
+        });
     }
 
-    public function findById(int $id): mixed
+    public function getDataTable(Request $request): mixed
     {
-        return $this->model->findOrFail($id);
-    }
+        $query = $this->model->with('relasi1')
+            ->select('examples.*');
 
-    public function getAll(array $filters = []): Collection
-    {
-        $query = $this->model->query();
-
-        // Apply filters
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+        // Apply filter dari request
+        if ($request->filled('filter_status')) {
+            $query->where('status', $request->filter_status);
         }
 
-        return $query->get();
+        return DataTables::of($query)
+            ->addColumn('status_badge', fn($row) => $row->getStatusBadgeClass())
+            ->addColumn('action', fn($row) => view('pages.example._action', compact('row'))->render())
+            ->rawColumns(['status_badge', 'action'])
+            ->make(true);
+    }
+
+    public function approve(int $id): mixed
+    {
+        return DB::transaction(function () use ($id) {
+            $resource = $this->findById($id);
+
+            $resource->update([
+                'status'      => Example::STATUS_APPROVED,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+
+            // Trigger notification, event, dll
+            // event(new ExampleApproved($resource));
+
+            return $resource->fresh();
+        });
+    }
+
+    public function reject(int $id, string $reason): mixed
+    {
+        return DB::transaction(function () use ($id, $reason) {
+            $resource = $this->findById($id);
+
+            $resource->update([
+                'status'      => Example::STATUS_REJECTED,
+                'rejected_by' => Auth::id(),
+                'rejected_at' => now(),
+                'reject_reason' => $reason,
+            ]);
+
+            return $resource->fresh();
+        });
     }
 }
 ```
 
 ##### Service Binding (Dependency Injection)
 
-Service binding dilakukan di `CustomServiceProvider`:
+Service binding dilakukan di `CustomServiceProvider`. **Setiap service baru WAJIB didaftarkan di sini.**
 
 ```php
 <?php
@@ -293,35 +536,41 @@ use Illuminate\Support\ServiceProvider;
 
 class CustomServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        // Binding Interface ke Implementation
         $this->app->bind(
             \App\Services\ExampleService\ExampleService::class,
             \App\Services\ExampleService\ExampleServiceImpl::class
         );
 
+        $this->app->bind(
+            \App\Services\ApprovalService\ApprovalService::class,
+            \App\Services\ApprovalService\ApprovalServiceImpl::class
+        );
+
         // Tambahkan binding lain di sini
     }
 
-    public function boot()
-    {
-        //
-    }
+    public function boot(): void {}
 }
 ```
 
 ##### Service Guidelines
 
-| Rule                                     | Deskripsi                                            |
-| ---------------------------------------- | ---------------------------------------------------- |
-| **Single Responsibility**                | Satu service = satu domain/aggregate                 |
-| **Interface First**                      | Selalu definisikan interface sebelum implementation  |
-| **Dependency Injection**                 | Inject via constructor, jangan pakai `app()` helper  |
-| **Transaction Safety**                   | Gunakan `DB::transaction()` untuk operasi multi-step |
-| **Exception Handling**                   | Throw custom exception untuk error bisnis            |
-| **Return Types**                         | Selalu definisikan return type di interface          |
-| **No Direct Model Access in Controller** | Controller tidak boleh query model langsung          |
+| Rule                                     | Deskripsi                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| **Single Responsibility**                | Satu service = satu domain/aggregate                                  |
+| **Interface First**                      | Selalu definisikan interface sebelum implementation                   |
+| **All CRUD in Service**                  | create/read/update/delete **HANYA** di service, bukan controller      |
+| **All Business Logic in Service**        | Kalkulasi, kondisi, validasi bisnis **HANYA** di service              |
+| **Dependency Injection**                 | Inject via constructor, jangan pakai `app()` helper                   |
+| **Transaction Safety**                   | Gunakan `DB::transaction()` untuk semua operasi multi-step            |
+| **Exception Handling**                   | Throw exception untuk error bisnis, tangkap di controller jika perlu  |
+| **Return Types**                         | Selalu definisikan return type di interface                           |
+| **No Direct Model Access in Controller** | Controller **tidak boleh** memanggil `Model::` apapun secara langsung |
+| **No DB Queries in Controller**          | Controller **tidak boleh** menggunakan `DB::` secara langsung         |
+
+---
 
 #### 3. Model Pattern
 
@@ -331,24 +580,44 @@ class Example extends Model
     use SoftDeletes;  // WAJIB untuk data penting
 
     protected $fillable = [...];
-    protected $casts = [...];
+    protected $casts    = [...];
 
     // 1. Constants untuk status/enum
-    const STATUS_PENDING = 0;
+    const STATUS_PENDING  = 0;
     const STATUS_APPROVED = 1;
+    const STATUS_REJECTED = 2;
 
     // 2. Relationships
-    public function parent() { }
-    public function children() { }
+    public function parent()   { return $this->belongsTo(Parent::class); }
+    public function children() { return $this->hasMany(Child::class); }
+    public function histories(){ return $this->morphMany(History::class, 'historyable'); }
 
     // 3. Scopes
-    public function scopePending($query) { }
-    public function scopeByYear($query, $year) { }
+    public function scopePending($query) { return $query->where('status', self::STATUS_PENDING); }
+    public function scopeByYear($query, $year) { return $query->whereYear('created_at', $year); }
 
-    // 4. Helper methods
-    public function isPending() { }
-    public function getStatusLabel() { }
-    public function getStatusBadgeClass() { }
+    // 4. Helper methods (boleh di model, bukan business logic)
+    public function isPending(): bool   { return $this->status === self::STATUS_PENDING; }
+    public function isApproved(): bool  { return $this->status === self::STATUS_APPROVED; }
+
+    public function getStatusLabel(): string
+    {
+        return match($this->status) {
+            self::STATUS_PENDING  => 'Pending',
+            self::STATUS_APPROVED => 'Approved',
+            self::STATUS_REJECTED => 'Rejected',
+            default               => 'Unknown',
+        };
+    }
+
+    public function getStatusBadgeClass(): string
+    {
+        return match($this->status) {
+            self::STATUS_APPROVED => '<span class="badge bg-success">Approved</span>',
+            self::STATUS_REJECTED => '<span class="badge bg-danger">Rejected</span>',
+            default               => '<span class="badge bg-warning">Pending</span>',
+        };
+    }
 }
 ```
 
@@ -359,14 +628,20 @@ class Example extends Model
 return response()->json([
     'success' => true,
     'message' => 'Operation successful',
-    'data' => $data
+    'data'    => $data,
 ]);
 
-// Error
+// Error validasi
 return response()->json([
     'success' => false,
-    'message' => 'Error message',
-    'errors' => $validator->errors()  // jika ada
+    'message' => 'Validasi gagal.',
+    'errors'  => $validator->errors(),
+], 422);
+
+// Error bisnis (dari service exception)
+return response()->json([
+    'success' => false,
+    'message' => $e->getMessage(),
 ], 422);
 ```
 
@@ -380,6 +655,7 @@ return response()->json([
 | --------------- | ----------------------- | ---------------------------------------- |
 | **Model**       | PascalCase, Singular    | `Transaction`, `KPIWorkPlan`             |
 | **Controller**  | PascalCase + Controller | `TransactionController`                  |
+| **Service**     | PascalCase + Service    | `TransactionService`, `ApprovalService`  |
 | **Table**       | snake_case, Plural      | `transactions`, `kpi_workplans`          |
 | **Column**      | snake_case              | `created_at`, `user_id`                  |
 | **Migration**   | snake_case, descriptive | `create_transactions_table`              |
@@ -392,27 +668,33 @@ return response()->json([
 
 ```php
 // Pattern: {module}.{action} atau {module}.{sub}.{action}
-Route::get('/', [Controller::class, 'index'])->name('transaction.index');
-Route::post('/', [Controller::class, 'store'])->name('transaction.store');
-Route::get('/data', [Controller::class, 'getData'])->name('transaction.data');
+Route::get('/',          [Controller::class, 'index'])->name('transaction.index');
+Route::get('/create',    [Controller::class, 'create'])->name('transaction.create');
+Route::post('/',         [Controller::class, 'store'])->name('transaction.store');
+Route::get('/{id}/edit', [Controller::class, 'edit'])->name('transaction.edit');
+Route::put('/{id}',      [Controller::class, 'update'])->name('transaction.update');
+Route::delete('/{id}',   [Controller::class, 'destroy'])->name('transaction.destroy');
+Route::get('/data',      [Controller::class, 'getData'])->name('transaction.data');
 Route::post('/{id}/approve', [Controller::class, 'approve'])->name('transaction.approve');
+Route::post('/{id}/reject',  [Controller::class, 'reject'])->name('transaction.reject');
 ```
 
 ### Comments
 
 ```php
-// WAJIB: DocBlock untuk method kompleks
+// WAJIB: DocBlock untuk method kompleks di service
 /**
- * Calculate approval chain based on amount threshold
+ * Calculate approval chain based on amount threshold.
+ * Setiap threshold memiliki approver yang berbeda (lihat tabel budget_thresholds).
  *
  * @param int $transactionId
- * @return array
+ * @return array Ordered list of approver user IDs
  */
-public function createApprovalChain($transactionId) { }
+public function buildApprovalChain(int $transactionId): array { }
 
-// Section markers untuk controller besar
+// Section markers untuk service/controller besar
 /* ========================
-    APPROVAL ACTIONS
+    APPROVAL OPERATIONS
 ======================== */
 ```
 
@@ -468,7 +750,8 @@ $('#dataTable').DataTable({
     ajax: {
         url: '{{ route("module.data") }}',
         data: function(d) {
-            d.filter_year = $('#filter_year').val();
+            d.filter_year   = $('#filter_year').val();
+            d.filter_status = $('#filter_status').val();
         }
     },
     columns: [...]
@@ -490,7 +773,6 @@ $('#dataTable').DataTable({
 ### Currency Formatting
 
 ```javascript
-// Gunakan pattern ini untuk format currency
 function formatCurrency(amount) {
     return new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -508,10 +790,6 @@ function formatCurrency(amount) {
 > [!IMPORTANT]
 > Budget Control menggunakan **Spatie Laravel Permission** sebagai **satu-satunya** sistem untuk role & permission management.
 
-#### Best Practices
-
-**✅ GUNAKAN Spatie untuk semua role & permission:**
-
 ```php
 // Permission checking
 if ($employee->can('transaction.create')) { }
@@ -519,20 +797,13 @@ if ($employee->can('transaction.create')) { }
 // Role checking
 if ($employee->hasRole('admin')) { }
 
-// Middleware
+// Middleware pada route
 Route::middleware('role:admin')->group(function () { });
 Route::middleware('permission:transaction.view')->group(function () { });
 
-// Assign role
+// Assign / sync role
 $employee->assignRole('editor');
-
-// Sync roles (replace all)
 $employee->syncRoles(['editor', 'writer']);
-
-// Get role name untuk display
-$roleName = $employee->getPrimaryRoleName(); // helper method
-// atau
-$roleName = $employee->roles->first()?->name ?? 'No Role';
 ```
 
 ### Permission Middleware
@@ -546,9 +817,7 @@ Route::prefix('transaction')
     });
 ```
 
-### Permission Naming
-
-Pattern: `{module}.{action}`
+### Permission Naming — Pattern: `{module}.{action}`
 
 ```
 transaction.view
@@ -560,25 +829,22 @@ transaction.approve
 
 ### Input Validation
 
+Validasi **WAJIB** dilakukan di controller menggunakan `$request->validate()` sebelum data dikirim ke service.
+
 ```php
-// WAJIB validasi di controller
-$validator = Validator::make($request->all(), [
-    'amount' => 'required|numeric|min:0',
+$validated = $request->validate([
+    'amount'      => 'required|numeric|min:0',
     'description' => 'required|string|max:255',
 ]);
 
-if ($validator->fails()) {
-    return response()->json([
-        'success' => false,
-        'errors' => $validator->errors()
-    ], 422);
-}
+// Kirim $validated ke service — BUKAN $request->all()
+$result = $this->exampleService->create($validated);
 ```
 
 ### XSS Prevention
 
--   Blade: Gunakan `{{ }}` bukan `{!! !!}` kecuali terpaksa
--   Jika harus raw HTML: Sanitize dengan `strip_tags()` atau HTMLPurifier
+- Blade: Gunakan `{{ }}` bukan `{!! !!}` kecuali terpaksa
+- Jika harus raw HTML: Sanitize dengan `strip_tags()` atau HTMLPurifier
 
 ---
 
@@ -588,30 +854,29 @@ if ($validator->fails()) {
 
 ```
 tests/
-├── Feature/    # Integration tests
-└── Unit/       # Unit tests untuk services/helpers
+├── Feature/    # Integration tests (Controller → Service → DB)
+└── Unit/       # Unit tests untuk service methods secara terisolasi
 ```
 
 ### Running Tests
 
 ```bash
-# Semua test
 php artisan test
-
-# Specific file
-php artisan test tests/Feature/TransactionTest.php
-
-# Dengan filter
-php artisan test --filter=ApprovalServiceTest
+php artisan test tests/Unit/ExampleServiceTest.php
+php artisan test --filter=ExampleServiceTest
 ```
 
 ### Test Naming
 
 ```php
 // Pattern: test_{action}_{condition}
-public function test_create_transaction_with_valid_data()
-public function test_approval_fails_without_permission()
+public function test_create_sets_pending_status_by_default()
+public function test_create_sets_requires_approval_when_amount_exceeds_threshold()
+public function test_delete_throws_exception_when_already_approved()
+public function test_approve_updates_status_and_records_approver()
 ```
+
+> **Catatan:** Karena business logic ada di service, unit test **WAJIB** menguji service secara langsung — bukan melalui HTTP.
 
 ---
 
@@ -623,17 +888,18 @@ public function test_approval_fails_without_permission()
 {type}: {description}
 
 Types:
-- feat: Fitur baru
-- fix: Bug fix
+- feat:     Fitur baru
+- fix:      Bug fix
 - refactor: Refactoring tanpa ubah behaviour
-- docs: Dokumentasi
-- style: Formatting, missing semicolons, etc.
-- test: Adding/fixing tests
-- chore: Maintenance tasks
+- docs:     Dokumentasi
+- style:    Formatting, missing semicolons, etc.
+- test:     Adding/fixing tests
+- chore:    Maintenance tasks
 
 Contoh:
 feat: add dynamic approval threshold configuration
 fix: correct budget calculation for Q4
+refactor: move approval logic from controller to ApprovalService
 ```
 
 ### Branch Naming
@@ -642,19 +908,15 @@ fix: correct budget calculation for Q4
 feature/{issue-number}-{short-description}
 bugfix/{issue-number}-{short-description}
 hotfix/{short-description}
-
-Contoh:
-feature/123-approval-delegation
-bugfix/456-incorrect-budget-total
 ```
 
 ### Pre-Deployment Checklist
 
--   [ ] `composer install --no-dev`
--   [ ] `php artisan config:cache`
--   [ ] `php artisan route:cache`
--   [ ] `php artisan view:cache`
--   [ ] `php artisan migrate --force`
+- [ ] `composer install --no-dev`
+- [ ] `php artisan config:cache`
+- [ ] `php artisan route:cache`
+- [ ] `php artisan view:cache`
+- [ ] `php artisan migrate --force`
 
 ---
 
@@ -662,6 +924,8 @@ bugfix/456-incorrect-budget-total
 
 > [!CAUTION]
 > Pelanggaran rules berikut = **Reject PR tanpa review**
+
+### Umum
 
 1. ❌ **JANGAN** commit langsung ke `main` branch
 2. ❌ **JANGAN** hapus migration yang sudah di-production
@@ -672,6 +936,17 @@ bugfix/456-incorrect-budget-total
 7. ❌ **JANGAN** gunakan raw SQL tanpa binding untuk user input
 8. ❌ **JANGAN** hapus SoftDeletes dari model yang sudah ada
 
+### Architecture (CRUD & Service Layer)
+
+9. ❌ **JANGAN** menulis query `Model::` apapun di dalam controller
+10. ❌ **JANGAN** menulis `DB::` apapun di dalam controller
+11. ❌ **JANGAN** menulis kondisi bisnis (`if amount > X`, `if status == Y`) di controller
+12. ❌ **JANGAN** melakukan operasi multi-step tanpa `DB::transaction()` di service
+13. ❌ **JANGAN** membuat service tanpa interface-nya
+14. ❌ **JANGAN** inject `ServiceImpl` langsung ke controller — selalu inject Interface
+15. ❌ **JANGAN** lupa mendaftarkan service binding baru di `CustomServiceProvider`
+16. ❌ **JANGAN** menaruh logika DataTables di controller — delegate ke service method
+
 ---
 
 ## 📌 Quick Reference
@@ -680,34 +955,48 @@ bugfix/456-incorrect-budget-total
 
 ```bash
 # Development
-composer dev                    # Start all services (server, queue, logs, vite)
-php artisan serve               # Start server only
-npm run dev                     # Start Vite
+composer dev                     # Start all services (server, queue, logs, vite)
+php artisan serve                # Start server only
+npm run dev                      # Start Vite
 
 # Database
-php artisan migrate             # Run migrations
-php artisan migrate:fresh --seed # Reset and reseed DB
+php artisan migrate
+php artisan migrate:fresh --seed
 php artisan db:seed --class=SeederName
 
 # Cache
-php artisan optimize:clear      # Clear all caches
+php artisan optimize:clear
 
 # Testing
-php artisan test                # Run all tests
+php artisan test
 ```
 
 ### Useful Artisan
 
 ```bash
 php artisan make:controller NameController
-php artisan make:model Name -m       # with migration
-php artisan make:service ServiceName # Service interface + implementation + binding
+php artisan make:model Name -m           # with migration
+php artisan make:service ServiceName     # Service interface + implementation + binding
 php artisan make:livewire Name
 php artisan make:export NameExport
 php artisan permission:create-role admin
 ```
 
+### Checklist Membuat Fitur Baru
+
+```
+[ ] Buat migration + model  (php artisan make:model Name -m)
+[ ] Buat service             (php artisan make:service NameService)
+[ ] Implementasikan CRUD di  NameServiceImpl.php
+[ ] Daftarkan binding di     CustomServiceProvider
+[ ] Buat controller          (inject NameService interface saja)
+[ ] Controller hanya         validate → call service → return response
+[ ] Tambahkan routes dengan  permission middleware
+[ ] Buat views               (extend layouts/app.blade.php)
+[ ] Tulis unit test untuk    NameServiceImpl
+```
+
 ---
 
-**Last Updated**: 2026-01-06  
+**Last Updated**: 2026-02-18  
 **Maintained By**: Development Team

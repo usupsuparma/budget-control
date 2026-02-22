@@ -435,12 +435,12 @@
                                     value="{{ optional($employment ?? null)->job_position_id }}">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Date <span class="text-danger">*</span></label>
+                                <label class="form-label">Request Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="transactionDate" name="transaction_date"
                                     value="{{ date('Y-m-d') }}" required readonly>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Planned Usage Date</label>
+                                <label class="form-label">Usage Date</label>
                                 <input type="date" class="form-control" id="plannedUsageDate"
                                     name="planned_usage_date">
                             </div>

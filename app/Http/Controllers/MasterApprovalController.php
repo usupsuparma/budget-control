@@ -725,6 +725,7 @@ class MasterApprovalController extends Controller
                             : 'Default (All Division)',
                         'step_sequence' => $config->step_sequence,
                         'job_level_name' => $config->job_level_name,
+                        'threshold_amount' => $config->threshold_amount ?? 0,
                     ];
                 });
 
@@ -752,6 +753,7 @@ class MasterApprovalController extends Controller
             'division_id' => 'nullable|exists:division,id',
             'step_sequence' => 'required|integer|min:1',
             'job_level_name' => 'required|string|max:100',
+            'threshold_amount' => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -787,6 +789,7 @@ class MasterApprovalController extends Controller
                 'division_id' => $request->division_id,
                 'step_sequence' => $request->step_sequence,
                 'job_level_name' => $request->job_level_name,
+                'threshold_amount' => $request->threshold_amount ?? 0,
             ]);
 
             return response()->json([
@@ -813,6 +816,7 @@ class MasterApprovalController extends Controller
             'division_id' => 'nullable|exists:division,id',
             'step_sequence' => 'required|integer|min:1',
             'job_level_name' => 'required|string|max:100',
+            'threshold_amount' => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -850,6 +854,7 @@ class MasterApprovalController extends Controller
                 'division_id' => $request->division_id,
                 'step_sequence' => $request->step_sequence,
                 'job_level_name' => $request->job_level_name,
+                'threshold_amount' => $request->threshold_amount ?? 0,
             ]);
 
             return response()->json([

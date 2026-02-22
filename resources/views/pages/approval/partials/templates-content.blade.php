@@ -159,14 +159,15 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th width="5%">Step</th>
-                                        <th width="30%">Division</th>
-                                        <th width="45%">Job Level Name</th>
+                                        <th width="25%">Division</th>
+                                        <th width="30%">Job Level Name</th>
+                                        <th width="20%">Threshold Amount</th>
                                         <th width="20%">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="upplineConfigsTableBody">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">
+                                        <td colspan="5" class="text-center text-muted">
                                             <small>No configurations yet. Click "Add Level Configuration" to start.</small>
                                         </td>
                                     </tr>
@@ -245,12 +246,29 @@
                         <small class="text-muted">Pilih level jabatan yang diperlukan untuk approval</small>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="upplineconfig_threshold_amount" class="form-label">
+                            Threshold Amount
+                            <small class="text-muted">(Optional - Minimum amount for this level)</small>
+                        </label>
+                        <input type="text" class="form-control currency-input" 
+                               id="upplineconfig_threshold_amount" 
+                               name="threshold_amount" 
+                               placeholder="0">
+                        <small class="text-muted">
+                            <i class="ri-information-line"></i> 
+                            Level ini hanya akan dilibatkan jika nominal pengajuan >= threshold ini.
+                            Kosongkan atau isi 0 jika tidak menggunakan threshold.
+                        </small>
+                    </div>
+
                     <div class="alert alert-info small">
                         <i class="ri-lightbulb-line me-1"></i>
                         <strong>Contoh Konfigurasi:</strong>
                         <ul class="mb-0 mt-1">
                             <li><strong>IT Division (khusus):</strong> Step 1: Section, Step 2: Department, Step 3: Division, Step 4: Director</li>
                             <li><strong>Default (umum):</strong> Step 1: Section, Step 2: Department, Step 3: Division</li>
+                            <li><strong>Dengan Threshold:</strong> Manager (threshold: 1jt), Director (threshold: 5jt), CEO (threshold: 10jt)</li>
                         </ul>
                     </div>
                 </div>

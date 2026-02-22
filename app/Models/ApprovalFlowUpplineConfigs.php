@@ -16,12 +16,14 @@ class ApprovalFlowUpplineConfigs extends Model
         "division_id",
         "step_sequence",
         "job_level_name",
+        "threshold_amount",
     ];
 
     protected $casts = [
         'step_sequence' => 'integer',
         'template_id' => 'integer',
         'division_id' => 'integer',
+        'threshold_amount' => 'integer',
     ];
 
     // ========== RELATIONSHIPS ==========

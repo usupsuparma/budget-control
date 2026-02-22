@@ -1183,7 +1183,7 @@
             if (data.length === 0) {
                 tbody.append(`
                     <tr>
-                        <td colspan="4" class="text-center text-muted">
+                        <td colspan="5" class="text-center text-muted">
                             <small>No configurations yet. Click "Add Level Configuration" to start.</small>
                         </td>
                     </tr>
@@ -1195,6 +1195,10 @@
                 const divisionBadge = config.division_id ?
                     `<span class="badge bg-primary">${config.division_name}</span>` :
                     `<span class="badge bg-secondary">Default (All Divisions)</span>`;
+                
+                const thresholdDisplay = config.threshold_amount && config.threshold_amount > 0 ?
+                    `<span class="badge bg-info">Rp ${formatThousand(config.threshold_amount)}</span>` :
+                    `<span class="text-muted">-</span>`;
 
                 tbody.append(`
                     <tr>
@@ -1203,6 +1207,7 @@
                         </td>
                         <td>${divisionBadge}</td>
                         <td><strong>${config.job_level_name}</strong></td>
+                        <td>${thresholdDisplay}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-warning me-1" onclick="editUpplineConfig(${config.id})">
                                 <i class="ri-edit-line"></i>
@@ -1230,6 +1235,7 @@
             $('#upplineconfig-id').val('');
             $('#upplineconfig-template-id').val(templateId);
             $('#upplineconfig_step_sequence').val(1);
+            $('#upplineconfig_threshold_amount').val('');
 
             loadDivisions();
             $('#upplineConfigModal').modal('show');
@@ -1252,6 +1258,13 @@
                             $('#upplineconfig_division_id').val(config.division_id || '');
                             $('#upplineconfig_step_sequence').val(config.step_sequence);
                             $('#upplineconfig_job_level_name').val(config.job_level_name);
+                            
+                            // Populate threshold_amount with formatted value
+                            if (config.threshold_amount && config.threshold_amount > 0) {
+                                $('#upplineconfig_threshold_amount').val(formatThousand(config.threshold_amount));
+                            } else {
+                                $('#upplineconfig_threshold_amount').val('');
+                            }
 
                             loadDivisions();
 
@@ -1272,6 +1285,7 @@
                 division_id: $('#upplineconfig_division_id').val() || null,
                 step_sequence: $('#upplineconfig_step_sequence').val(),
                 job_level_name: $('#upplineconfig_job_level_name').val(),
+                threshold_amount: parseThousand($('#upplineconfig_threshold_amount').val()) || 0,
             };
 
             const configId = $('#upplineconfig-id').val();

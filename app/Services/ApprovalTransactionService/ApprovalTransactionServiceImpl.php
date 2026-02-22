@@ -214,7 +214,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
         // Phase 1: Uppline Chain (if enabled)
         if ($template->use_uppline_chain) {
-            $upplineApprovers = $this->resolveUplineApprovers($template->id, $requesterEmployment, $divisionId);
+            $upplineApprovers = $this->resolveUplineApprovers($template, $requesterEmployment, $divisionId, $amount);
 
             Log::info('Phase 1: Uppline Chain', [
                 'count' => count($upplineApprovers),
@@ -254,27 +254,20 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
     /**
      * Resolve uppline chain approvers based on ApprovalFlowUpplineConfigs.
+     * Supports threshold-based filtering: only include approvers where amount >= threshold_amount.
      */
-    protected function resolveUplineApprovers(int $templateId, Employment $requesterEmployment, ?int $divisionId): array
+    protected function resolveUplineApprovers(ApprovalFlowTemplate $template, Employment $requesterEmployment, ?int $divisionId, mixed $amount): array
     {
         // Step 1: Get uppline config (specific division first, then default)
-        $upplineConfigs = $this->getUpplineConfigs($templateId, $divisionId);
+        $upplineConfigs = $this->getUpplineConfigs($template->id, $divisionId);
 
         if ($upplineConfigs->isEmpty()) {
             Log::info('No uppline config found', [
-                'template_id' => $templateId,
+                'template_id' => $template->id,
                 'division_id' => $divisionId,
             ]);
             return [];
         }
-
-        // Extract required job level names from config (ordered by step_sequence)
-        $requiredJobLevels = $upplineConfigs->pluck('job_level_name')->toArray();
-
-        Log::info('Required job levels from config', [
-            'job_levels' => $requiredJobLevels,
-            'division_id' => $divisionId,
-        ]);
 
         // Step 2: Build recursive uppline chain from requester
         $upplineChain = $this->buildRecursiveUpplineChain($requesterEmployment);
@@ -283,9 +276,22 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             'chain' => $upplineChain,
         ]);
 
-        // Step 3: Match uppline chain with required job levels
+        // Step 3: Match uppline chain with required job levels (with threshold filtering)
         $approvers = [];
-        foreach ($requiredJobLevels as $jobLevelName) {
+        foreach ($upplineConfigs as $config) {
+            $jobLevelName = $config->job_level_name;
+            $thresholdAmount = $config->threshold_amount ?? 0;
+
+            // Check threshold if use_threshold is enabled
+            if ($template->use_threshold && $amount < $thresholdAmount) {
+                Log::info('Skipping uppline approver due to threshold', [
+                    'job_level' => $jobLevelName,
+                    'threshold_amount' => $thresholdAmount,
+                    'request_amount' => $amount,
+                ]);
+                continue;
+            }
+
             // Find uppline with matching job_level_name
             $matchedUppline = collect($upplineChain)->first(function ($uppline) use ($jobLevelName) {
                 return strtolower($uppline['job_level_name'] ?? '') === strtolower($jobLevelName);
@@ -300,6 +306,9 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 Log::info('Matched uppline approver', [
                     'job_level' => $jobLevelName,
                     'approver' => $matchedUppline,
+                    'threshold_checked' => $template->use_threshold,
+                    'threshold_amount' => $thresholdAmount,
+                    'request_amount' => $amount,
                 ]);
             } else {
                 Log::info('No uppline found for job level, skipping', [

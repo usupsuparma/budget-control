@@ -356,7 +356,7 @@ function renderItemRowForTable(item) {
         <td style="font-size: 10px;">${item.cost_center || "-"}</td>
         <td style="font-size: 10px;">${item.beg_balance || "-"}</td>
         <td style="font-size: 10px;">${item.supplier_name || "-"}</td>
-        <td style="font-size: 10px;">${item.cons_rate || "-"}</td>
+        <td style="font-size: 10px; display:none;">${item.cons_rate || "-"}</td>
         <td style="font-size: 10px;">${item.unit_name || "-"}</td>
     `;
 

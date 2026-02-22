@@ -514,7 +514,7 @@
                                                         <th rowspan="2">Cost Center</th>
                                                         <th rowspan="2">Beg Balance</th>
                                                         <th rowspan="2">Supplier</th>
-                                                        <th rowspan="2">Cons Rate</th>
+                                                        <th rowspan="2" style="display:none;">Cons Rate</th>
                                                         <th rowspan="2">Unit</th>
                                                         <th colspan="12" class="month-header text-center">Qty</th>
                                                         <th rowspan="2">Unit Price</th>
@@ -715,7 +715,7 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3" style="display:none;">
                                 <label for="consRate" class="form-label fw-bold">Const Rate</label>
                                 <input type="text" class="form-control" id="consRate" name="cons_rate">
                             </div>
@@ -1645,7 +1645,7 @@
                         <tr><td class="text-muted">Cost Center</td><td>${item.cost_center || '-'}</td></tr>
                         <tr><td class="text-muted">Supplier</td><td>${item.supplier_name || '-'}</td></tr>
                         <tr><td class="text-muted">Unit</td><td>${item.unit_name || '-'}</td></tr>
-                        <tr><td class="text-muted">Cons Rate</td><td>${item.cons_rate || '-'}</td></tr>
+                        <tr style="display:none;"><td class="text-muted">Cons Rate</td><td>${item.cons_rate || '-'}</td></tr>
                     </table>
                 </div>
             </div>

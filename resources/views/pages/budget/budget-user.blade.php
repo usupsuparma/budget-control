@@ -705,7 +705,7 @@
 
                             <div class="mb-3">
                                 <label for="begBalance" class="form-label fw-bold">Beg Balance</label>
-                                <input type="text" class="form-control" id="begBalance" name="beg_balance">
+                                <input type="number" class="form-control" id="begBalance" name="beg_balance">
                             </div>
 
                             <div class="mb-3">

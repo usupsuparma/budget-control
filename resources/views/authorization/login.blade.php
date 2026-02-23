@@ -31,6 +31,30 @@
             box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
+
+        /* Password toggle button styling */
+        #togglePassword {
+            border-color: #dee2e6 !important;
+            color: #6c757d !important;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #togglePassword:hover {
+            background-color: #f8f9fa;
+            color: #495057 !important;
+        }
+
+        #togglePassword:active,
+        #togglePassword:focus {
+            background-color: #e9ecef !important;
+            border-color: #dee2e6 !important;
+            box-shadow: none;
+        }
+
+        .input-group .form-control:focus ~ #togglePassword {
+            border-color: #86b7fe;
+        }
     </style>
 </head>
 
@@ -64,7 +88,12 @@
 
                     <div class="mb-3">
                         <label class="form-label">Password *</label>
-                        <input type="password" name="password" class="form-control" required placeholder="Enter your password">
+                        <div class="input-group">
+                            <input type="password" id="passwordInput" name="password" class="form-control" required placeholder="Enter your password">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye" id="passwordIcon"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mb-3 form-check">
@@ -84,6 +113,24 @@
         </div>
 
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordIcon = document.getElementById('passwordIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.classList.remove('fa-eye');
+                passwordIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                passwordIcon.classList.remove('fa-eye-slash');
+                passwordIcon.classList.add('fa-eye');
+            }
+        });
+    </script>
 
 </body>
 

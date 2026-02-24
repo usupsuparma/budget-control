@@ -14,7 +14,7 @@ class WorkplanBudgetItem extends Model
         'kpi_workplan_id',
         'budget_category_id',
         'description',
-        'stock_code',
+        'budget_code',
         'budget_code',
         'product_line',
         'cost_center',
@@ -83,7 +83,7 @@ class WorkplanBudgetItem extends Model
 
     public function budgetCodeRelation()
     {
-        return $this->belongsTo(BudgetCode::class, 'budget_code', 'stock_code');
+        return $this->belongsTo(BudgetCode::class, 'budget_code', 'budget_code');
     }
 
     public function approver()
@@ -181,8 +181,22 @@ class WorkplanBudgetItem extends Model
     public function getActiveMonthsCount(): int
     {
         $count = 0;
-        foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                  'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month) {
+        foreach (
+            [
+                'jan',
+                'feb',
+                'mar',
+                'apr',
+                'may',
+                'jun',
+                'jul',
+                'aug',
+                'sep',
+                'oct',
+                'nov',
+                'dec'
+            ] as $month
+        ) {
             if ($this->{"activity_$month"} > 0) {
                 $count++;
             }
@@ -193,8 +207,22 @@ class WorkplanBudgetItem extends Model
     public function getTotalActivityQuantity(): int
     {
         $total = 0;
-        foreach (['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                  'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as $month) {
+        foreach (
+            [
+                'jan',
+                'feb',
+                'mar',
+                'apr',
+                'may',
+                'jun',
+                'jul',
+                'aug',
+                'sep',
+                'oct',
+                'nov',
+                'dec'
+            ] as $month
+        ) {
             $total += $this->{"activity_$month"};
         }
         return $total;

@@ -73,9 +73,19 @@ class SubmissionServiceImpl implements SubmissionService
         $units = Unit::all();
 
         return compact(
-            'newSubmission', 'progress', 'paid', 'completion', 'totalSubmission',
-            'years', 'statuses', 'jobLevels', 'jobPositions', 'workplans',
-            'budgetCodes', 'units', 'employment',
+            'newSubmission',
+            'progress',
+            'paid',
+            'completion',
+            'totalSubmission',
+            'years',
+            'statuses',
+            'jobLevels',
+            'jobPositions',
+            'workplans',
+            'budgetCodes',
+            'units',
+            'employment',
         );
     }
 
@@ -116,9 +126,19 @@ class SubmissionServiceImpl implements SubmissionService
         $units = Unit::all();
 
         return compact(
-            'newSubmission', 'progress', 'paid', 'completion', 'totalSubmission',
-            'years', 'statuses', 'jobLevels', 'jobPositions', 'workplans',
-            'budgetCodes', 'units', 'employment',
+            'newSubmission',
+            'progress',
+            'paid',
+            'completion',
+            'totalSubmission',
+            'years',
+            'statuses',
+            'jobLevels',
+            'jobPositions',
+            'workplans',
+            'budgetCodes',
+            'units',
+            'employment',
         );
     }
 
@@ -138,22 +158,22 @@ class SubmissionServiceImpl implements SubmissionService
                 Transaction::STATUS_PROGRESS,
                 Transaction::STATUS_APPROVED,
             ])
-            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
         $paid = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_PAID)
-            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
         $completion = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_COMPLETED)
-            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
         $rejected = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_REJECTED)
-            ->when($yearFilter, fn ($q) => $q->whereYear('transaction_date', $year))
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
         $totalSubmission = $this->model->where('user_id', $userId)->count();
@@ -175,7 +195,7 @@ class SubmissionServiceImpl implements SubmissionService
             ->where('user_id', $userId)
             ->with([
                 'details',
-                'approvalRequest.details' => fn ($q) => $q->orderBy('level_sequence'),
+                'approvalRequest.details' => fn($q) => $q->orderBy('level_sequence'),
                 'lpjSubmission',
             ]);
 
@@ -245,7 +265,7 @@ class SubmissionServiceImpl implements SubmissionService
     {
         $transaction = $this->model->with([
             'details',
-            'approvalRequest.details' => fn ($query) => $query->orderBy('phase')->orderBy('level_sequence'),
+            'approvalRequest.details' => fn($query) => $query->orderBy('phase')->orderBy('level_sequence'),
             'jobLevel',
             'jobPosition',
             'unit',
@@ -262,7 +282,7 @@ class SubmissionServiceImpl implements SubmissionService
 
             $approvalDetail = ApprovalRequestDetail::whereHas('request', function ($q) use ($id) {
                 $q->where('reference_id', $id)
-                    ->whereHas('module', fn ($mq) => $mq->where('table_name', 'transactions'));
+                    ->whereHas('module', fn($mq) => $mq->where('table_name', 'transactions'));
             })
                 ->where('employment_id', $employmentId)
                 ->first();
@@ -293,9 +313,15 @@ class SubmissionServiceImpl implements SubmissionService
             $transactionArray['status_approval'] = $transaction->approvalRequest->status;
         } else {
             $statusMap = [
-                0 => 'pending', 1 => 'pending', 2 => 'pending',
-                3 => 'pending', 4 => 'pending', 5 => 'pending',
-                6 => 'rejected', 7 => 'approved', 8 => 'approved',
+                0 => 'pending',
+                1 => 'pending',
+                2 => 'pending',
+                3 => 'pending',
+                4 => 'pending',
+                5 => 'pending',
+                6 => 'rejected',
+                7 => 'approved',
+                8 => 'approved',
                 -1 => 'cancelled',
             ];
             $transactionArray['status_approval'] = $statusMap[$transaction->status] ?? 'pending';
@@ -578,11 +604,10 @@ class SubmissionServiceImpl implements SubmissionService
             return [
                 'id' => $item->id,
                 'description' => $item->description,
-                'stock_code' => $item->stock_code,
                 'budget_code' => $item->budget_code,
                 'category_name' => $item->category->category_name ?? '',
                 'total' => $currentBalance,
-                'label' => $item->description . ' (' . ($item->stock_code ?? $item->budget_code) . ')',
+                'label' => $item->description . ' (' . $item->budget_code . ')',
             ];
         });
 
@@ -635,7 +660,7 @@ class SubmissionServiceImpl implements SubmissionService
         }
 
         $approvalRequest = ApprovalRequest::where('reference_id', $transactionId)
-            ->whereHas('module', fn ($q) => $q->where('table_name', 'transactions'))
+            ->whereHas('module', fn($q) => $q->where('table_name', 'transactions'))
             ->where('status', 'pending')
             ->first();
 
@@ -841,8 +866,14 @@ class SubmissionServiceImpl implements SubmissionService
         $units = Unit::all();
 
         return compact(
-            'dueDateCount', 'years', 'jobLevels', 'jobPositions', 
-            'workplans', 'budgetCodes', 'units', 'employment'
+            'dueDateCount',
+            'years',
+            'jobLevels',
+            'jobPositions',
+            'workplans',
+            'budgetCodes',
+            'units',
+            'employment'
         );
     }
 
@@ -860,7 +891,7 @@ class SubmissionServiceImpl implements SubmissionService
             ->whereDoesntHave('lpjSubmission')
             ->with([
                 'details',
-                'approvalRequest.details' => fn ($q) => $q->orderBy('level_sequence'),
+                'approvalRequest.details' => fn($q) => $q->orderBy('level_sequence'),
                 'lpjSubmission',
             ]);
 

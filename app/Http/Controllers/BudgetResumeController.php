@@ -8,6 +8,8 @@ use App\Models\BudgetCategory;
 use App\Models\Division;
 use App\Models\BudgetCode;
 use App\Models\KPIWorkPlan;
+use App\Models\Transaction;
+use App\Models\TransactionDetail;
 use Illuminate\Support\Facades\DB;
 
 class BudgetResumeController extends Controller
@@ -71,8 +73,25 @@ class BudgetResumeController extends Controller
 
         $budgetItems = $query->get();
 
+        // Fetch Submissions (Transactions with status 3 or 4)
+        $budgetItemIds = $budgetItems->pluck('id');
+        $submissions = TransactionDetail::join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->whereIn('transaction_details.budget_id', $budgetItemIds)
+            ->whereIn('transactions.status', [Transaction::STATUS_PAID, Transaction::STATUS_COMPLETED])
+            ->whereYear('transactions.transaction_date', $year)
+            ->whereNull('transactions.deleted_at')
+            ->whereNull('transaction_details.deleted_at')
+            ->select(
+                'transaction_details.budget_id',
+                DB::raw('MONTH(transactions.transaction_date) as month'),
+                DB::raw('SUM(transaction_details.estimated_total) as total_submission')
+            )
+            ->groupBy('transaction_details.budget_id', 'month')
+            ->get()
+            ->groupBy('budget_id');
+
         // Group and organize data
-        $budgetData = $this->organizeBudgetData($budgetItems);
+        $budgetData = $this->organizeBudgetData($budgetItems, $submissions);
 
         return view('pages.budget.budget-resume', compact(
             'title', 
@@ -88,7 +107,7 @@ class BudgetResumeController extends Controller
         ));
     }
 
-    private function organizeBudgetData($budgetItems)
+    private function organizeBudgetData($budgetItems, $submissions = [])
     {
         $organized = [];
 
@@ -110,11 +129,30 @@ class BudgetResumeController extends Controller
                 $organized[$divisionName] = [];
             }
 
+            // Map submissions for this item
+            $itemSubmissions = $submissions[$item->id] ?? collect();
+            $submissionByMonth = [
+                'JAN' => $itemSubmissions->where('month', 1)->sum('total_submission'),
+                'FEB' => $itemSubmissions->where('month', 2)->sum('total_submission'),
+                'MAR' => $itemSubmissions->where('month', 3)->sum('total_submission'),
+                'APR' => $itemSubmissions->where('month', 4)->sum('total_submission'),
+                'MAY' => $itemSubmissions->where('month', 5)->sum('total_submission'),
+                'JUN' => $itemSubmissions->where('month', 6)->sum('total_submission'),
+                'JUL' => $itemSubmissions->where('month', 7)->sum('total_submission'),
+                'AUG' => $itemSubmissions->where('month', 8)->sum('total_submission'),
+                'SEP' => $itemSubmissions->where('month', 9)->sum('total_submission'),
+                'OCT' => $itemSubmissions->where('month', 10)->sum('total_submission'),
+                'NOV' => $itemSubmissions->where('month', 11)->sum('total_submission'),
+                'DEC' => $itemSubmissions->where('month', 12)->sum('total_submission'),
+            ];
+            $totalSubmission = array_sum($submissionByMonth);
+
             $organized[$divisionName][] = [
                 'category_name' => $categoryName,
                 'budget_code' => $item->budget_code ?? '-',
                 'budget_name' => $item->description ?? $workplan->activity ?? '-',
                 'total' => $item->total ?? 0,
+                'total_submission' => $totalSubmission,
                 'months' => [
                     'JAN' => $item->activity_jan ?? 0,
                     'FEB' => $item->activity_feb ?? 0,
@@ -129,6 +167,7 @@ class BudgetResumeController extends Controller
                     'NOV' => $item->activity_nov ?? 0,
                     'DEC' => $item->activity_dec ?? 0,
                 ],
+                'submission_months' => $submissionByMonth,
             ];
         }
 

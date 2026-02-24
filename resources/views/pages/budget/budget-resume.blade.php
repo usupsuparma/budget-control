@@ -140,30 +140,32 @@
                                         <th rowspan="2" class="text-center" style="min-width: 120px;">CATEGORY</th>
                                         <th rowspan="2" class="text-center" style="min-width: 100px;">BUDGET CODE</th>
                                         <th rowspan="2" class="text-center" style="min-width: 200px;">BUDGET NAME</th>
-                                        <th colspan="3" class="text-center">BUDGET TOTAL</th>
-                                        <th colspan="3" class="text-center month-header">JAN</th>
-                                        <th colspan="3" class="text-center month-header">FEB</th>
-                                        <th colspan="3" class="text-center month-header">MAR</th>
-                                        <th colspan="3" class="text-center month-header">APR</th>
-                                        <th colspan="3" class="text-center month-header">MAY</th>
-                                        <th colspan="3" class="text-center month-header">JUN</th>
-                                        <th colspan="3" class="text-center month-header">JUL</th>
-                                        <th colspan="3" class="text-center month-header">AUG</th>
-                                        <th colspan="3" class="text-center month-header">SEP</th>
-                                        <th colspan="3" class="text-center month-header">OCT</th>
-                                        <th colspan="3" class="text-center month-header">NOV</th>
-                                        <th colspan="3" class="text-center month-header">DEC</th>
+                                        <th colspan="4" class="text-center">BUDGET TOTAL</th>
+                                        <th colspan="4" class="text-center month-header">JAN</th>
+                                        <th colspan="4" class="text-center month-header">FEB</th>
+                                        <th colspan="4" class="text-center month-header">MAR</th>
+                                        <th colspan="4" class="text-center month-header">APR</th>
+                                        <th colspan="4" class="text-center month-header">MAY</th>
+                                        <th colspan="4" class="text-center month-header">JUN</th>
+                                        <th colspan="4" class="text-center month-header">JUL</th>
+                                        <th colspan="4" class="text-center month-header">AUG</th>
+                                        <th colspan="4" class="text-center month-header">SEP</th>
+                                        <th colspan="4" class="text-center month-header">OCT</th>
+                                        <th colspan="4" class="text-center month-header">NOV</th>
+                                        <th colspan="4" class="text-center month-header">DEC</th>
                                     </tr>
                                     <tr>
                                         <!-- BUDGET TOTAL -->
                                         <th class="text-center">AMOUNT</th>
                                         <th class="text-center">REALIZATION</th>
+                                        <th class="text-center">SUBMISSION</th>
                                         <th class="text-center">BALANCE</th>
 
                                         <!-- Repeat for each month -->
                                         @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                             <th class="text-center">BUDGET</th>
                                             <th class="text-center">REALIZATION</th>
+                                            <th class="text-center">SUBMISSION</th>
                                             <th class="text-center">BALANCE</th>
                                         @endforeach
                                     </tr>
@@ -172,6 +174,7 @@
                                     @forelse($budgetData as $divisionName => $items)
                                         @php
                                             $divisionTotalBudget = collect($items)->sum('total');
+                                            $divisionTotalSubmission = collect($items)->sum('total_submission');
                                         @endphp
 
                                         <!-- Division Header Row -->
@@ -184,15 +187,20 @@
                                             </td>
                                             <td class="text-end"><strong>0.00</strong></td>
                                             <td class="text-end">
-                                                <strong>{{ number_format($divisionTotalBudget, 2) }}</strong>
+                                                <strong>{{ number_format($divisionTotalSubmission, 2) }}</strong>
+                                            </td>
+                                            <td class="text-end">
+                                                <strong>{{ number_format($divisionTotalBudget - $divisionTotalSubmission, 2) }}</strong>
                                             </td>
                                             @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                 @php
                                                     $monthBudget = collect($items)->sum("months.$month");
+                                                    $monthSubmission = collect($items)->sum("submission_months.$month");
                                                 @endphp
                                                 <td class="text-end">{{ number_format($monthBudget, 0) }}</td>
                                                 <td class="text-end">0</td>
-                                                <td class="text-end">{{ number_format($monthBudget, 0) }}</td>
+                                                <td class="text-end">{{ number_format($monthSubmission, 0) }}</td>
+                                                <td class="text-end">{{ number_format($monthBudget - $monthSubmission, 0) }}</td>
                                             @endforeach
                                         </tr>
 
@@ -204,20 +212,23 @@
                                                 <td>{{ $item['budget_name'] }}</td>
                                                 <td class="text-end">{{ number_format($item['total'], 2) }}</td>
                                                 <td class="text-end">0.00</td>
-                                                <td class="text-end">{{ number_format($item['total'], 2) }}</td>
+                                                <td class="text-end">{{ number_format($item['total_submission'], 2) }}</td>
+                                                <td class="text-end">{{ number_format($item['total'] - $item['total_submission'], 2) }}</td>
 
                                                 @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                     <td class="text-end">{{ number_format($item['months'][$month], 0) }}
                                                     </td>
                                                     <td class="text-end">0</td>
-                                                    <td class="text-end">{{ number_format($item['months'][$month], 0) }}
+                                                    <td class="text-end">{{ number_format($item['submission_months'][$month], 0) }}
+                                                    </td>
+                                                    <td class="text-end">{{ number_format($item['months'][$month] - $item['submission_months'][$month], 0) }}
                                                     </td>
                                                 @endforeach
                                             </tr>
                                         @endforeach
                                     @empty
                                         <tr>
-                                            <td colspan="43" class="text-center py-4">
+                                            <td colspan="56" class="text-center py-4">
                                                 <div class="text-muted">
                                                     <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                                                     <p class="mt-2">No budget data available for the selected filters.

@@ -92,13 +92,20 @@
                             <h6 class="text-muted text-uppercase small">Master Setup</h6>
                         </div>
                         <ul class="nav nav-pills flex-column" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" data-bs-toggle="tab" href="#modules" role="tab">
+                            {{-- 
+                                HIDE MODULES TAB FOR NOW
+                                To show it again:
+                                1. Uncomment the <li> below
+                                2. Remove 'active' class from the Templates tab below
+                                3. Set 'active' class back to this link
+                            --}}
+                            {{-- <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#modules" role="tab">
                                     <i class="ri-apps-line me-2"></i> Modules
                                 </a>
-                            </li>
+                            </li> --}}
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#templates" role="tab">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#templates" role="tab">
                                     <i class="ri-flow-chart me-2"></i> Templates
                                 </a>
                             </li>
@@ -113,10 +120,17 @@
                     <!-- RIGHT CONTENT -->
                     <div class="col-md-10">
                         <div class="tab-content pt-3">
-                            <div class="tab-pane fade show active" id="modules">
+                            {{-- 
+                                HIDE MODULES CONTENT FOR NOW 
+                                To show it again:
+                                1. Uncomment the div below
+                                2. Remove 'show active' class from the Templates pane below
+                                3. Set 'show active' class back to this pane
+                            --}}
+                            {{-- <div class="tab-pane fade" id="modules">
                                 @include('pages.approval.partials.modules-content')
-                            </div>
-                            <div class="tab-pane fade" id="templates">
+                            </div> --}}
+                            <div class="tab-pane fade show active" id="templates">
                                 @include('pages.approval.partials.templates-content')
                             </div>
                             <div class="tab-pane fade" id="flowdetails">
@@ -137,13 +151,17 @@
 
     <script>
         // ========== GLOBAL VARIABLES ==========
-        let isEditMode = false;
+        let moduleEditMode = false;
+        let templateEditMode = false;
+        let flowDetailEditMode = false;
+        let upplineConfigEditMode = false;
         let selectedTemplateId = null;
         let employmentsData = [];
 
         $(document).ready(function() {
-            // Load modules on page load
-            loadModules();
+            // Load templates on page load (Modules is hidden)
+            loadTemplates();
+            loadModulesForDropdown();
 
             // Handle tab changes
             $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
@@ -336,7 +354,7 @@
         }
 
         function showAddModuleModal() {
-            isEditMode = false;
+            moduleEditMode = false;
             $('#moduleModalTitle').text('Tambah Module');
             $('#moduleForm')[0].reset();
             $('#module-id').val('');
@@ -353,7 +371,7 @@
                     if (response.success) {
                         const item = response.data.find(m => m.id === id);
                         if (item) {
-                            isEditMode = true;
+                            moduleEditMode = true;
                             $('#moduleModalTitle').text('Edit Module');
                             $('#module-id').val(item.id);
                             $('#module_name').val(item.module_name);
@@ -381,7 +399,7 @@
             let url = '{{ route('approval.modules.store') }}';
             let method = 'POST';
 
-            if (isEditMode && moduleId) {
+            if (moduleEditMode && moduleId) {
                 url = `{{ url('approval/modules/update') }}/${moduleId}`;
                 method = 'POST';
                 data._method = 'PUT';
@@ -462,7 +480,7 @@
         // ========== TEMPLATES FUNCTIONS ==========
 
         function loadModulesForDropdown(callback) {
-            const excludeTemplateId = isEditMode ? $('#template-id').val() : null;
+            const excludeTemplateId = templateEditMode ? $('#template-id').val() : null;
 
             $.ajax({
                 url: '{{ route('approval.templates.modules') }}',
@@ -569,7 +587,7 @@
         }
 
         function showAddTemplateModal() {
-            isEditMode = false;
+            templateEditMode = false;
             $('#templateModalTitle').text('Tambah Template');
             $('#templateForm')[0].reset();
             $('#template-id').val('');
@@ -604,7 +622,7 @@
                     if (response.success) {
                         const item = response.data.find(t => t.id === id);
                         if (item) {
-                            isEditMode = true;
+                            templateEditMode = true;
 
                             // Populate form first
                             $('#templateModalTitle').text('Edit Template');
@@ -672,7 +690,7 @@
             let url = '{{ route('approval.templates.store') }}';
             let method = 'POST';
 
-            if (isEditMode && templateId) {
+            if (templateEditMode && templateId) {
                 // EDIT MODE: Don't send module_id (module cannot be changed)
                 url = `{{ url('approval/templates/update') }}/${templateId}`;
                 method = 'POST';
@@ -975,7 +993,7 @@
                 return;
             }
 
-            isEditMode = false;
+            flowDetailEditMode = false;
             selectedTemplateId = templateId;
             $('#flowDetailModalTitle').text('Tambah Approver');
             $('#flowDetailForm')[0].reset();
@@ -995,7 +1013,7 @@
                     if (response.success) {
                         const item = response.data.find(d => d.id === id);
                         if (item) {
-                            isEditMode = true;
+                            flowDetailEditMode = true;
                             $('#flowDetailModalTitle').text('Edit Approver');
                             $('#flowdetail-id').val(item.id);
                             $('#flowdetail_template_id').val(item.template_id);
@@ -1024,7 +1042,7 @@
             let url = '{{ route('approval.flowdetails.store') }}';
             let method = 'POST';
 
-            if (isEditMode && detailId) {
+            if (flowDetailEditMode && detailId) {
                 url = `{{ url('approval/flow-details/update') }}/${detailId}`;
                 method = 'POST';
                 data._method = 'PUT';
@@ -1229,7 +1247,7 @@
                 return;
             }
 
-            isEditMode = false;
+            upplineConfigEditMode = false;
             $('#upplineConfigModalTitle').text('Add Level Configuration');
             $('#upplineConfigForm')[0].reset();
             $('#upplineconfig-id').val('');
@@ -1251,7 +1269,7 @@
                     if (response.success) {
                         const config = response.data.find(c => c.id === id);
                         if (config) {
-                            isEditMode = true;
+                            upplineConfigEditMode = true;
                             $('#upplineConfigModalTitle').text('Edit Level Configuration');
                             $('#upplineconfig-id').val(config.id);
                             $('#upplineconfig-template-id').val(config.template_id);
@@ -1292,7 +1310,7 @@
             let url = '{{ route('approval.upplineconfigs.store') }}';
             let method = 'POST';
 
-            if (isEditMode && configId) {
+            if (upplineConfigEditMode && configId) {
                 url = `{{ url('approval/uppline-configs/update') }}/${configId}`;
                 method = 'POST'; // Use POST with _method for Laravel
                 data._method = 'PUT'; // Laravel method spoofing

@@ -150,4 +150,19 @@ interface SubmissionService
      * @return array ['success' => bool, 'message' => string]
      */
     public function resubmitForApproval(int $transactionId): array;
+
+    /**
+     * Get summary counts and dropdown data for the budget due date page.
+     *
+     * @return array Page data for due date view
+     */
+    public function getDueDatePageData(): array;
+
+    /**
+     * Get paginated transactions that are past their due date and haven't submitted LPJ.
+     *
+     * @param  array  $filters  ['year', 'per_page']
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function getDueDateTransactions(array $filters = []): array;
 }

@@ -40,6 +40,33 @@ class SubmissionController extends Controller
         return view('pages.submission.user_create', compact('title'));
     }
 
+    public function dueDate()
+    {
+        $title = 'Budget Due Date';
+        $data = $this->submissionService->getDueDatePageData();
+
+        return view('pages.submission.due_date', array_merge(compact('title'), $data));
+    }
+
+    public function getDueDateData(Request $request)
+    {
+        try {
+            $result = $this->submissionService->getDueDateTransactions([
+                'year' => $request->input('year'),
+                'per_page' => $request->input('per_page', 10),
+            ]);
+
+            return response()->json($result);
+        } catch (\Throwable $th) {
+            Log::error('Error fetching due date transactions: '.$th->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching due date transactions: '.$th->getMessage(),
+            ], 500);
+        }
+    }
+
     public function approval()
     {
         $title = 'Approval Submission';

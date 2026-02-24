@@ -711,6 +711,11 @@ Route::middleware('auth')->group(function () {
                 Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
                     ->name('userSubmission.budget.info');
 
+                Route::get('/due-date', [SubmissionController::class, 'dueDate'])
+                    ->name('userSubmission.dueDate');
+                Route::get('/due-date-data', [SubmissionController::class, 'getDueDateData'])
+                    ->name('userSubmission.dueDateData');
+
                 Route::prefix('{id}')->group(function () {
                     Route::post('/approve', [SubmissionController::class, 'approve'])
                         ->name('userSubmission.approve');

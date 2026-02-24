@@ -816,6 +816,78 @@ class SubmissionServiceImpl implements SubmissionService
         PRIVATE HELPERS
     ======================== */
 
+    public function getDueDatePageData(): array
+    {
+        $userId = Auth::id();
+        $employee = Auth::user();
+        $employment = $employee->employment;
+
+        // Current user's overdue transactions (Paid but no LPJ and date passed)
+        $dueDateCount = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PAID)
+            ->where('transaction_date', '<', now()->toDateString())
+            ->whereDoesntHave('lpjSubmission')
+            ->count();
+
+        $years = $this->model->selectRaw('YEAR(transaction_date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        $jobLevels = JobLevel::all();
+        $jobPositions = JobPosition::all();
+        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
+        $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
+        $units = Unit::all();
+
+        return compact(
+            'dueDateCount', 'years', 'jobLevels', 'jobPositions', 
+            'workplans', 'budgetCodes', 'units', 'employment'
+        );
+    }
+
+    public function getDueDateTransactions(array $filters = []): array
+    {
+        $userId = Auth::id();
+        $user = Auth::user();
+        $employment = $user->employment;
+        $employmentId = $employment ? $employment->id : null;
+
+        $query = $this->model->query()
+            ->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_PAID)
+            ->where('transaction_date', '<', now()->toDateString())
+            ->whereDoesntHave('lpjSubmission')
+            ->with([
+                'details',
+                'approvalRequest.details' => fn ($q) => $q->orderBy('level_sequence'),
+                'lpjSubmission',
+            ]);
+
+        // Filter by year
+        $year = $filters['year'] ?? null;
+        if ($year && $year !== '' && $year !== 'all') {
+            $query->whereYear('transaction_date', $year);
+        }
+
+        $perPage = $filters['per_page'] ?? 10;
+        $transactions = $query->orderBy('transaction_date', 'asc')->paginate($perPage);
+
+        // Add approval flags to each transaction (similar to getTransactions)
+        $transactions->getCollection()->transform(function ($transaction) use ($employmentId) {
+            $transaction->can_approve = false;
+            $transaction->pending_approval = null;
+            $transaction->can_edit = false; // Usually PAID cannot be edited
+
+            return $transaction;
+        });
+
+        return [
+            'success' => true,
+            'data' => $transactions,
+        ];
+    }
+
     /**
      * Check if any approver has already approved the transaction.
      */

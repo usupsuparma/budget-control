@@ -125,7 +125,7 @@
             @can('budget.view')
                 <li class="pe-slide pe-has-sub">
                     <a href="#collapseInvoices"
-                        class="pe-nav-link {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('pengajuan.anggaran*') ? 'active' : '' }}"
+                        class="pe-nav-link {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') ? 'active' : '' }}"
                         data-bs-toggle="collapse">
 
                         <i class="bi bi-currency-exchange pe-nav-icon"></i>
@@ -133,7 +133,7 @@
                         <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                     </a>
 
-                    <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') ? 'show' : '' }}"
+                    <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') ? 'show' : '' }}"
                         id="collapseInvoices">
                         <li class="pe-slide-item">
                             <a href="{{ route('workplan.index') }}"
@@ -161,6 +161,13 @@
                             <a href="{{ route('budget-resume.index') }}"
                                 class="pe-nav-link {{ Request::is('budget-resume*') ? 'active' : '' }}">
                                 <i class="bi bi-wallet2"></i> Budget Control
+                            </a>
+                        </li>
+
+                        <li class="pe-slide-item">
+                            <a href="{{ route('userSubmission.dueDate') }}"
+                                class="pe-nav-link {{ Request::is('admission/user/due-date*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar-x"></i> Budget Due Date
                             </a>
                         </li>
 

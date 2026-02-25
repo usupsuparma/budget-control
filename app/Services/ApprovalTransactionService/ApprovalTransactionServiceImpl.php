@@ -14,6 +14,7 @@ use App\Models\Transaction;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
+use App\Services\NotificationService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,11 +24,13 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 {
     protected BudgetLedgerService $budgetLedgerService;
     protected LogService $logService;
+    protected NotificationService $notificationService;
 
-    public function __construct(BudgetLedgerService $budgetLedgerService, LogService $logService)
+    public function __construct(BudgetLedgerService $budgetLedgerService, LogService $logService, NotificationService $notificationService)
     {
         $this->budgetLedgerService = $budgetLedgerService;
         $this->logService = $logService;
+        $this->notificationService = $notificationService;
     }
     /**
      * Submit a transaction for approval.
@@ -176,6 +179,15 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             ]);
 
             DB::commit();
+
+            // Notify first approver
+            $firstApprover = $approvalChain[0];
+            $this->notificationService->sendToEmployment(
+                $firstApprover['employment_id'],
+                'approval',
+                'Permintaan Approval Transaksi',
+                "Ada permintaan approval baru untuk Transaksi: {$transaction->purpose} senilai " . number_format($transaction->estimated_amount, 0, ',', '.')
+            );
 
             return [
                 'success' => true,
@@ -625,6 +637,14 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                         'error' => $mutationResult['message'],
                     ], 'warning');
                 }
+
+                // Notify requester that transaction is fully approved
+                $this->notificationService->sendToEmployment(
+                    $request->requester_id,
+                    'approval',
+                    'Transaksi Disetujui',
+                    "Transaksi Anda: {$transaction->purpose} telah disetujui sepenuhnya."
+                );
             }
 
             return [
@@ -649,6 +669,21 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     'transaction_id' => $transaction->id,
                     'current_approval_level' => $detail->level_sequence + 1,
                 ], 'info');
+
+                // Notify next approver
+                $nextApprover = ApprovalRequestDetail::where('request_id', $request->id)
+                    ->where('status', 'pending')
+                    ->orderBy('level_sequence')
+                    ->first();
+                
+                if ($nextApprover) {
+                    $this->notificationService->sendToEmployment(
+                        $nextApprover->employment_id,
+                        'approval',
+                        'Permintaan Approval Transaksi',
+                        "Ada permintaan approval baru untuk Transaksi: {$transaction->purpose}"
+                    );
+                }
             }
 
             return [
@@ -690,6 +725,14 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 'status_approval' => Transaction::APPROVAL_STATUS_REJECTED,
                 'rejection_reason' => $comments,
             ]);
+
+            // Notify requester that transaction is rejected
+            $this->notificationService->sendToEmployment(
+                $request->requester_id,
+                'approval',
+                'Transaksi Ditolak',
+                "Transaksi Anda: {$transaction->purpose} telah ditolak oleh {$detail->employment_name}."
+            );
         }
 
         return [

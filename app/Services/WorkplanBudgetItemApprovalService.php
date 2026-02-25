@@ -19,10 +19,12 @@ use Illuminate\Support\Facades\Log;
 class WorkplanBudgetItemApprovalService
 {
     protected BudgetLedgerService $budgetLedgerService;
+    protected NotificationService $notificationService;
 
-    public function __construct(BudgetLedgerService $budgetLedgerService)
+    public function __construct(BudgetLedgerService $budgetLedgerService, NotificationService $notificationService)
     {
         $this->budgetLedgerService = $budgetLedgerService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -160,6 +162,15 @@ class WorkplanBudgetItemApprovalService
             $item->update(['status' => 'pending']);
 
             DB::commit();
+
+            // Notify first approver
+            $firstApprover = $approvalChain[0];
+            $this->notificationService->sendToEmployment(
+                $firstApprover['employment_id'],
+                'approval',
+                'Permintaan Approval Workplan Budget',
+                "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.')
+            );
 
             return [
                 'success' => true,
@@ -630,6 +641,14 @@ class WorkplanBudgetItemApprovalService
                         'error' => $mutationResult['message'],
                     ]);
                 }
+
+                // Notify requester that item is fully approved
+                $this->notificationService->sendToEmployment(
+                    $request->requester_id,
+                    'approval',
+                    'Workplan Budget Disetujui',
+                    "Workplan Budget Item Anda: {$item->description} telah disetujui sepenuhnya."
+                );
             }
 
             return [
@@ -643,6 +662,22 @@ class WorkplanBudgetItemApprovalService
                 'current_level' => $detail->level_sequence + 1,
                 'status' => 'pending',
             ]);
+
+            // Notify next approver
+            $nextApprover = ApprovalRequestDetail::where('request_id', $request->id)
+                ->where('status', 'pending')
+                ->orderBy('level_sequence')
+                ->first();
+            
+            if ($nextApprover) {
+                $item = WorkplanBudgetItem::find($request->reference_id);
+                $this->notificationService->sendToEmployment(
+                    $nextApprover->employment_id,
+                    'approval',
+                    'Permintaan Approval Workplan Budget',
+                    "Ada permintaan approval baru untuk Workplan Budget Item: " . ($item->description ?? 'N/A')
+                );
+            }
 
             return [
                 'success' => true,
@@ -682,6 +717,14 @@ class WorkplanBudgetItemApprovalService
                 'status' => 'rejected',
                 'approval_notes' => $comments,
             ]);
+
+            // Notify requester that item is rejected
+            $this->notificationService->sendToEmployment(
+                $request->requester_id,
+                'approval',
+                'Workplan Budget Ditolak',
+                "Workplan Budget Item Anda: {$item->description} telah ditolak oleh {$detail->employment_name}."
+            );
         }
 
         return [

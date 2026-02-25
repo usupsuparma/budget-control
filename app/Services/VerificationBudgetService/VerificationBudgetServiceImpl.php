@@ -9,6 +9,7 @@ use App\Models\WorkplanBudgetApprover;
 use App\Models\WorkplanBudgetItem;
 use App\Models\WorkplanBudgetVerification;
 use App\Services\WorkplanBudgetItemApprovalService;
+use App\Services\NotificationService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,10 +18,12 @@ use Illuminate\Support\Facades\Log;
 class VerificationBudgetServiceImpl implements VerificationBudgetService
 {
     protected WorkplanBudgetItemApprovalService $approvalService;
+    protected NotificationService $notificationService;
 
-    public function __construct(WorkplanBudgetItemApprovalService $approvalService)
+    public function __construct(WorkplanBudgetItemApprovalService $approvalService, NotificationService $notificationService)
     {
         $this->approvalService = $approvalService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -84,6 +87,14 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                     'verifier_id' => $verifierId,
                     'is_executor' => false,
                 ]);
+
+                // Notify each verifier
+                $this->notificationService->send(
+                    $verifierId,
+                    'verification',
+                    'Permintaan Verifikasi Budget',
+                    "Ada item budget baru yang perlu diverifikasi: {$item->description}"
+                );
             }
 
             // Update item status

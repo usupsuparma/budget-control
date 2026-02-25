@@ -966,6 +966,24 @@ Route::middleware('auth')->group(function () {
         });
 
     /* ========================
+        NOTIFICATIONS
+    ======================== */
+    Route::prefix('notifications')->group(function () {
+        Route::get('/user-notifications', [\App\Http\Controllers\NotificationController::class, 'getUserNotifications'])->name('notifications.user');
+        Route::post('/mark-as-read/{id}', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+
+        Route::get('/monitoring', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.monitoring');
+        Route::get('/monitoring/data', [\App\Http\Controllers\NotificationController::class, 'data'])->name('notifications.monitoring.data');
+        Route::delete('/monitoring/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.monitoring.destroy');
+
+        Route::get('/categories', [\App\Http\Controllers\NotificationCategoryController::class, 'index'])->name('notifications.categories');
+        Route::get('/categories/data', [\App\Http\Controllers\NotificationCategoryController::class, 'data'])->name('notifications.categories.data');
+        Route::post('/categories', [\App\Http\Controllers\NotificationCategoryController::class, 'store'])->name('notifications.categories.store');
+        Route::delete('/categories/{id}', [\App\Http\Controllers\NotificationCategoryController::class, 'destroy'])->name('notifications.categories.destroy');
+    });
+
+    /* ========================
         MASTER
     ======================== */
 

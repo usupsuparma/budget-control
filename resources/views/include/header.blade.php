@@ -33,7 +33,90 @@
                         <i class="bi bi-moon-stars"></i>
                     </button>
                 </div>
-                <div class="dropdown pe-dropdown-mega d-none d-md-block">
+
+                <!-- Notifications -->
+                <div class="dropdown pe-dropdown-mega">
+                    <button class="header-btn btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBtn">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notificationCount">
+                            0
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border-0" style="width: 350px; max-height: 500px; overflow-y: auto;">
+                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
+                            <h6 class="mb-0 fw-bold">Notifications</h6>
+                            <a href="javascript:void(0)" class="fs-12 text-primary" id="markAllRead">Mark all as read</a>
+                        </div>
+                        <div id="notificationList">
+                            <!-- Loaded via AJAX -->
+                            <div class="p-4 text-center">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-top text-center bg-light">
+                            <a href="{{ route('notifications.monitoring') }}" class="fs-12 text-muted">View All Monitoring</a>
+                        </div>
+                        </div>
+                    </div>
+                    
+                    @push('scripts')
+                    <script>
+                    $(document).ready(function() {
+                        function loadNotifications() {
+                            $.ajax({
+                                url: "{{ route('notifications.user') }}",
+                                type: "GET",
+                                success: function(response) {
+                                    $('#notificationList').html(response.html);
+                                    if (response.unread_count > 0) {
+                                        $('#notificationCount').text(response.unread_count).removeClass('d-none');
+                                    } else {
+                                        $('#notificationCount').addClass('d-none');
+                                    }
+                                }
+                            });
+                        }
+                    
+                        // Initial load
+                        loadNotifications();
+                    
+                        // Refresh every 30 seconds
+                        setInterval(loadNotifications, 30000);
+                    
+                        $('#notificationBtn').on('click', function() {
+                            loadNotifications();
+                        });
+                    
+                        $(document).on('click', '.notification-item', function() {
+                            var id = $(this).data('id');
+                            var $this = $(this);
+                            $.ajax({
+                                url: "{{ url('notifications/mark-as-read') }}/" + id,
+                                type: "POST",
+                                data: { _token: "{{ csrf_token() }}" },
+                                success: function() {
+                                    $this.removeClass('fw-bold border-start border-primary border-4').addClass('bg-light');
+                                    $this.find('h6').removeClass('text-dark').addClass('text-muted');
+                                    loadNotifications();
+                                }
+                            });
+                        });
+                    
+                        $('#markAllRead').on('click', function(e) {
+                            e.stopPropagation();
+                            $.ajax({
+                                url: "{{ route('notifications.readAll') }}",
+                                type: "POST",
+                                data: { _token: "{{ csrf_token() }}" },
+                                success: function() {
+                                    loadNotifications();
+                                }
+                            });
+                        });
+                    });
+                    </script>
+                    @endpush
+                                    <div class="dropdown pe-dropdown-mega d-none d-md-block">
                     <button class="header-profile-btn btn gap-1 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="header-btn btn position-relative">
                             <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image" class="img-fluid rounded-circle">

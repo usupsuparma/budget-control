@@ -197,7 +197,7 @@ class AuthorizationController extends Controller
     public function rolePermissions($id)
     {
         $role = Role::find($id);
-        $permissions = Permission::all();
+        $permissions = Permission::with('modul')->get();
 
         return response()->json([
             'role' => $role,

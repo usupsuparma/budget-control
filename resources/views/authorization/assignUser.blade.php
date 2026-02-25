@@ -522,33 +522,51 @@ $(document).ready(function() {
                 // Group permissions by module
                 let grouped = {};
                 res.permissions.forEach(p => {
-                    let moduleName = p.modul_menu_name || p.name.split('.')[0] || 'General';
+                    let moduleName = (p.modul && p.modul.modul_name) ? p.modul.modul_name : (p.modul_menu_name || p.name.split('.')[0] || 'General');
+                    let menuName = (p.modul && p.modul.menu_name) ? p.modul.menu_name : '';
+                    
                     if (!grouped[moduleName]) {
-                        grouped[moduleName] = [];
+                        grouped[moduleName] = {};
                     }
-                    grouped[moduleName].push(p);
+                    
+                    let key = menuName || 'General';
+                    if (!grouped[moduleName][key]) {
+                        grouped[moduleName][key] = [];
+                    }
+                    grouped[moduleName][key].push(p);
                 });
 
                 // Build HTML
                 for (let module in grouped) {
-                    html += `<div class="col-12 mb-3">
-                        <h6 class="fw-bold text-secondary border-bottom pb-1">${module}</h6>
-                        <div class="row">`;
+                    html += `<div class="col-12 mb-4">
+                        <h5 class="fw-bold text-primary border-bottom pb-2 mb-3 bg-light p-2 rounded">
+                            <i class="bi bi-folder2-open me-2"></i>${module}
+                        </h5>
+                        <div class="ms-3">`;
                     
-                    grouped[module].forEach(p => {
-                        let checked = res.selected.includes(p.name) ? 'checked' : '';
-                        html += `
-                            <div class="col-md-4 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input permissionCheck" type="checkbox"
-                                        value="${p.name}" id="perm_${p.id}" ${checked}>
-                                    <label class="form-check-label" for="perm_${p.id}">
-                                        <code class="small">${p.name}</code>
-                                    </label>
+                    for (let menu in grouped[module]) {
+                        if (menu !== 'General') {
+                            html += `<h6 class="fw-bold text-secondary mb-2 mt-3"><i class="bi bi-chevron-right small me-1"></i>${menu}</h6>`;
+                        }
+                        
+                        html += `<div class="row ms-2">`;
+                        grouped[module][menu].forEach(p => {
+                            let checked = res.selected.includes(p.name) ? 'checked' : '';
+                            html += `
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input permissionCheck" type="checkbox"
+                                            value="${p.name}" id="perm_${p.id}" ${checked}>
+                                        <label class="form-check-label" for="perm_${p.id}">
+                                            <span class="fs-13">${p.modul_menu_name || p.name}</span><br>
+                                            <code class="x-small text-muted" style="font-size: 10px;">${p.name}</code>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                    });
+                            `;
+                        });
+                        html += `</div>`;
+                    }
                     
                     html += '</div></div>';
                 }

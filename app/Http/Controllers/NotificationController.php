@@ -8,9 +8,31 @@ use Yajra\DataTables\Facades\DataTables;
 
 class NotificationController extends Controller
 {
-    public function index()
+    public function monitoring()
     {
         return view('notifications.monitoring.index');
+    }
+
+    public function index()
+    {
+        $employeeId = auth()->id();
+        $notifications = Notification::with('category')
+            ->where(function($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId)
+                      ->orWhereNull('employee_id');
+            })
+            ->latest()
+            ->paginate(15);
+            
+        // Check read status for each notification
+        foreach ($notifications as $notification) {
+            $notification->is_read = $notification->reads()
+                ->where('employee_id', $employeeId)
+                ->where('is_read', true)
+                ->exists();
+        }
+
+        return view('notifications.index', compact('notifications', 'employeeId'));
     }
 
     public function data()

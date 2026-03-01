@@ -971,12 +971,13 @@ Route::middleware('auth')->group(function () {
         NOTIFICATIONS
     ======================== */
     Route::prefix('notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/user-notifications', [\App\Http\Controllers\NotificationController::class, 'getUserNotifications'])->name('notifications.user');
         Route::post('/mark-as-read/{id}', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::post('/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
         Route::middleware('permission:setting.notification.view')->group(function () {
-            Route::get('/monitoring', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.monitoring');
+            Route::get('/monitoring', [\App\Http\Controllers\NotificationController::class, 'monitoring'])->name('notifications.monitoring');
             Route::get('/monitoring/data', [\App\Http\Controllers\NotificationController::class, 'data'])->name('notifications.monitoring.data');
             Route::delete('/monitoring/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.monitoring.destroy');
         });

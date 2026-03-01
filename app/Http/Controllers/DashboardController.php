@@ -46,7 +46,28 @@ class DashboardController extends Controller
             ->orderBy('nama_dokumen')
             ->get();
 
-        return view('pages.dash-executive', compact('title','policies'));
+        $notifications = [];
+        if (Auth::guard('employee')->check()) {
+            $employeeId = Auth::guard('employee')->id();
+            $notifications = Notification::with('category')
+                ->where(function($query) use ($employeeId) {
+                    $query->where('employee_id', $employeeId)
+                          ->orWhereNull('employee_id');
+                })
+                ->latest()
+                ->take(5)
+                ->get();
+                
+            // Check read status for each notification
+            foreach ($notifications as $notification) {
+                $notification->is_read = $notification->reads()
+                    ->where('employee_id', $employeeId)
+                    ->where('is_read', true)
+                    ->exists();
+            }
+        }
+
+        return view('pages.dash-executive', compact('title','policies', 'notifications'));
     }
 
     public function executivePoliciesByYear(Request $request)

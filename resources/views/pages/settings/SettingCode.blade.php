@@ -23,8 +23,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#productLine" role="tab">
-                                <i class="fas fa-user-tie me-2"></i> Product Line
+                            <a class="nav-link" data-bs-toggle="tab" href="#stockCode" role="tab">
+                                <i class="fas fa-barcode me-2"></i> Stock Code
                             </a>
                         </li>
                         <li class="nav-item">
@@ -44,6 +44,9 @@
                             @include('pages.settings.budgetCode')
                         </div>
                         <div class="tab-pane fade" id="stockCode">
+                            @include('pages.settings.stockCode')
+                        </div>
+                        <div class="tab-pane fade" id="productLine">
                             {{-- @include('pages.settings.productLine') --}}
                         </div>
 

@@ -1303,6 +1303,14 @@ Route::middleware('auth')->group(function () {
         ->get('/code', [SettingCodeController::class, 'index'])
         ->name('code.index');
 
+    Route::prefix('stock-code')->middleware('permission:setting.code.view')->group(function () {
+        Route::get('/data', [SettingCodeController::class, 'getStockCodeData'])->name('stock-code.data');
+        Route::post('/', [SettingCodeController::class, 'storeStockCode'])->name('stock-code.store');
+        Route::get('/{id}/edit', [SettingCodeController::class, 'editStockCode'])->name('stock-code.edit');
+        Route::put('/{id}', [SettingCodeController::class, 'updateStockCode'])->name('stock-code.update');
+        Route::delete('/{id}', [SettingCodeController::class, 'destroyStockCode'])->name('stock-code.destroy');
+    });
+
     Route::middleware('permission:setting.production.view')
         ->get('/setting.production', [SettingProductionController::class, 'index'])
         ->name('setting.production.index');

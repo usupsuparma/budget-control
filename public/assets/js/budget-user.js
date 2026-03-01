@@ -6,6 +6,7 @@
 let selectedDivisionId = null;
 let selectedYear = null;
 let budgetCodesData = [];
+let stockCodesData = [];
 let allWorkplans = [];
 let programIdChoices = null;
 let currentEmploymentId = null; // Current user's employment ID for approval authorization
@@ -179,6 +180,7 @@ function refreshBudgetItems() {
 
                 allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
+                stockCodesData = response.stockCodes || [];
                 allItemsData = response.data || [];
                 currentEmploymentId = response.currentEmploymentId;
 
@@ -231,6 +233,7 @@ function loadAllBudgetItems() {
             if (response.success) {
                 allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
+                stockCodesData = response.stockCodes || [];
                 allItemsData = response.data || []; // Store for detail lookup
                 currentEmploymentId = response.currentEmploymentId; // Store for authorization
 
@@ -466,6 +469,7 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
 
                 // Store budget codes
                 budgetCodesData = response.budgetCodes || [];
+                stockCodesData = response.stockCodes || [];
 
                 // Render items
                 renderAllItems(response.data || []);
@@ -495,6 +499,7 @@ function openAddItemModalWithWorkplan(workplanId) {
     // Load all dropdown data
     loadBudgetCategories();
     loadBudgetCodes();
+    loadStockCodes();
     loadCostCenters();
     loadSuppliers();
     loadUnits();
@@ -518,6 +523,7 @@ function openAddItemModal() {
     // Load all dropdown data
     loadBudgetCategories();
     loadBudgetCodes();
+    loadStockCodes();
     loadCostCenters();
     loadSuppliers();
     loadUnits();
@@ -552,6 +558,7 @@ function editItemFromWorkplan(itemId, workplanId) {
             hideLoading();
             if (response.success) {
                 budgetCodesData = response.budgetCodes || [];
+                stockCodesData = response.stockCodes || [];
 
                 const item = response.data.find((i) => i.id === itemId);
                 if (item) {
@@ -562,6 +569,7 @@ function editItemFromWorkplan(itemId, workplanId) {
                     // Load all dropdown data
                     loadBudgetCategories();
                     loadBudgetCodes();
+                    loadStockCodes();
                     loadCostCenters();
                     loadSuppliers();
                     loadUnits();
@@ -605,6 +613,7 @@ function editItem(itemId) {
             hideLoading();
             if (response.success) {
                 budgetCodesData = response.budgetCodes || [];
+                stockCodesData = response.stockCodes || [];
 
                 const item = response.data.find((i) => i.id === itemId);
                 if (item) {
@@ -616,6 +625,7 @@ function editItem(itemId) {
                     Promise.all([
                         loadBudgetCategoriesAsync(),
                         loadBudgetCodesAsync(),
+                        loadStockCodesAsync(),
                         loadCostCentersAsync(),
                         loadSuppliersAsync(),
                         loadUnitsAsync(),
@@ -654,7 +664,12 @@ function populateItemForm(item) {
     $("#itemId").val(item.id);
     $("#budgetCategoryId").val(item.budget_category_id);
     $("#description").val(item.description);
-    $("#stockCode").val(item.stock_code);
+
+    // Set Stock Code using Choices
+    const stockCodeSelect = document.getElementById("stockCode");
+    if (stockCodeSelect.choicesInstance && item.stock_code) {
+        stockCodeSelect.choicesInstance.setChoiceByValue(item.stock_code);
+    }
 
     // Set category_type radio button
     if (item.category_type) {
@@ -758,6 +773,12 @@ function resetItemForm() {
     if (budgetCodeSelect && budgetCodeSelect.choicesInstance) {
         budgetCodeSelect.choicesInstance.destroy();
         budgetCodeSelect.choicesInstance = null;
+    }
+
+    const stockCodeSelect = document.getElementById("stockCode");
+    if (stockCodeSelect && stockCodeSelect.choicesInstance) {
+        stockCodeSelect.choicesInstance.destroy();
+        stockCodeSelect.choicesInstance = null;
     }
 
     const costCenterSelect = document.getElementById("costCenter");
@@ -1097,8 +1118,8 @@ function loadBudgetCodes() {
     select.innerHTML = '<option value="">Select Budget Code</option>';
     budgetCodesData.forEach((code) => {
         const option = document.createElement("option");
-        option.value = code.stock_code;
-        option.textContent = `${code.stock_code} - ${code.name}`;
+        option.value = code.budget_code;
+        option.textContent = `${code.budget_code} - ${code.name}`;
         option.setAttribute("data-incharge", code.inchargeCode || "");
         select.appendChild(option);
     });
@@ -1130,6 +1151,60 @@ function loadBudgetCodes() {
                 costCenterSelect.choicesInstance.setChoiceByValue(
                     inchargeCode || "",
                 );
+            }
+        });
+}
+
+/**
+ * Load stock codes (from StockCode table) as searchable dropdown
+ */
+function loadStockCodes() {
+    const select = document.getElementById("stockCode");
+
+    // Destroy existing Choices instance if it exists
+    if (select.choicesInstance) {
+        select.choicesInstance.destroy();
+    }
+
+    // Clear and populate options
+    select.innerHTML = '<option value="">Select Stock Code</option>';
+    stockCodesData.forEach((code) => {
+        const option = document.createElement("option");
+        option.value = code.stock_code;
+        option.textContent = `${code.stock_code} - ${code.name}`;
+        option.setAttribute("data-budget-code", code.budget_code || "");
+        option.setAttribute("data-unit", code.unit || "");
+        select.appendChild(option);
+    });
+
+    // Initialize Choices.js for searchable dropdown
+    const choices = new Choices(select, {
+        searchEnabled: true,
+        searchChoices: true,
+        searchPlaceholderValue: "Search stock code...",
+        itemSelectText: "Click to select",
+        noResultsText: "No stock codes found",
+        shouldSort: false,
+        removeItemButton: false,
+    });
+
+    select.choicesInstance = choices;
+
+    // Bind change event: auto-fill budget code when stock code is selected
+    $(select)
+        .off("change")
+        .on("change", function () {
+            const selectedOption = $(this).find("option:selected");
+            const budgetCode = selectedOption.data("budget-code");
+
+            // Auto-fill budget code if available
+            if (budgetCode) {
+                const budgetCodeSelect = document.getElementById("budgetCode");
+                if (budgetCodeSelect.choicesInstance) {
+                    budgetCodeSelect.choicesInstance.setChoiceByValue(
+                        budgetCode,
+                    );
+                }
             }
         });
 }
@@ -1185,8 +1260,8 @@ function loadBudgetCodesAsync() {
         select.innerHTML = '<option value="">Select Budget Code</option>';
         budgetCodesData.forEach((code) => {
             const option = document.createElement("option");
-            option.value = code.stock_code;
-            option.textContent = `${code.stock_code} - ${code.name}`;
+            option.value = code.budget_code;
+            option.textContent = `${code.budget_code} - ${code.name}`;
             option.setAttribute("data-incharge", code.inchargeCode || "");
             select.appendChild(option);
         });
@@ -1218,6 +1293,64 @@ function loadBudgetCodesAsync() {
                     costCenterSelect.choicesInstance.setChoiceByValue(
                         inchargeCode || "",
                     );
+                }
+            });
+
+        resolve();
+    });
+}
+
+/**
+ * Async version of loadStockCodes - returns a Promise
+ */
+function loadStockCodesAsync() {
+    return new Promise((resolve) => {
+        const select = document.getElementById("stockCode");
+
+        // Destroy existing Choices instance if it exists
+        if (select.choicesInstance) {
+            select.choicesInstance.destroy();
+        }
+
+        // Clear and populate options
+        select.innerHTML = '<option value="">Select Stock Code</option>';
+        stockCodesData.forEach((code) => {
+            const option = document.createElement("option");
+            option.value = code.stock_code;
+            option.textContent = `${code.stock_code} - ${code.name}`;
+            option.setAttribute("data-budget-code", code.budget_code || "");
+            option.setAttribute("data-unit", code.unit || "");
+            select.appendChild(option);
+        });
+
+        // Initialize Choices.js for searchable dropdown
+        const choices = new Choices(select, {
+            searchEnabled: true,
+            searchChoices: true,
+            searchPlaceholderValue: "Search stock code...",
+            itemSelectText: "Click to select",
+            noResultsText: "No stock codes found",
+            shouldSort: false,
+            removeItemButton: false,
+        });
+
+        select.choicesInstance = choices;
+
+        // Bind change event: auto-fill budget code when stock code is selected
+        $(select)
+            .off("change")
+            .on("change", function () {
+                const selectedOption = $(this).find("option:selected");
+                const budgetCode = selectedOption.data("budget-code");
+
+                if (budgetCode) {
+                    const budgetCodeSelect =
+                        document.getElementById("budgetCode");
+                    if (budgetCodeSelect.choicesInstance) {
+                        budgetCodeSelect.choicesInstance.setChoiceByValue(
+                            budgetCode,
+                        );
+                    }
                 }
             });
 
@@ -2022,7 +2155,7 @@ function approveItem(detailId, itemId) {
                         );
                         $("#approvalTimelineModal").modal("hide");
                         // Refresh approval tab if open
-                        if (typeof loadPendingApprovalItems === 'function') {
+                        if (typeof loadPendingApprovalItems === "function") {
                             loadPendingApprovalItems();
                         }
                         // Refresh budget items if loaded
@@ -2083,7 +2216,10 @@ function confirmReject() {
                 showToast(response.message || "Item rejected", "success");
                 $("#rejectCommentModal").modal("hide");
                 // Refresh approval tab if rejection came from there
-                if (window._rejectFromApprovalTab && typeof loadPendingApprovalItems === 'function') {
+                if (
+                    window._rejectFromApprovalTab &&
+                    typeof loadPendingApprovalItems === "function"
+                ) {
                     loadPendingApprovalItems();
                     window._rejectFromApprovalTab = false;
                 }

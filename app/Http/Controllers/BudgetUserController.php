@@ -7,6 +7,7 @@ use App\Models\BudgetCode;
 use App\Models\KPIWorkPlan;
 use App\Models\KPIDivision;
 use App\Models\Division;
+use App\Models\StockCode;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,15 +107,16 @@ class BudgetUserController extends Controller
             $workplanIds = $workplans->pluck('id')->toArray();
 
             $items = WorkplanBudgetItem::with([
-                    'category', 
-                    'budgetCodeRelation', 
-                    'approver', 
-                    'workplan',
-                    'approvalRequest.details.employment.employee',
-                    'verificationCandidates.verifier',
-                    'verifications',
-                    'executor.verifier'
-                ])
+                'category',
+                'budgetCodeRelation',
+                'stockCodeRelation',
+                'approver',
+                'workplan',
+                'approvalRequest.details.employment.employee',
+                'verificationCandidates.verifier',
+                'verifications',
+                'executor.verifier'
+            ])
                 ->whereIn('kpi_workplan_id', $workplanIds)
                 ->orderBy('kpi_workplan_id')
                 ->orderBy('sort_order')
@@ -130,7 +132,13 @@ class BudgetUserController extends Controller
 
             // Get available budget codes
             $budgetCodes = BudgetCode::active()
-                ->select('id', 'stock_code', 'name', 'inchargeCode')
+                ->select('id', 'budget_code', 'name', 'inchargeCode')
+                ->orderBy('budget_code')
+                ->get();
+
+            // Get available stock codes
+            $stockCodes = StockCode::where('active', 1)
+                ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
                 ->orderBy('stock_code')
                 ->get();
 
@@ -140,6 +148,7 @@ class BudgetUserController extends Controller
                 'workplans' => $workplans,
                 'totalWorkplans' => $workplans->count(),
                 'budgetCodes' => $budgetCodes,
+                'stockCodes' => $stockCodes,
                 'currentEmploymentId' => $currentEmploymentId
             ]);
         } catch (\Exception $e) {
@@ -227,6 +236,30 @@ class BudgetUserController extends Controller
     }
 
     /**
+     * Get stock codes
+     */
+    public function getStockCodes(Request $request)
+    {
+        try {
+            $stockCodes = StockCode::where('active', 1)
+                ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
+                ->orderBy('stock_code')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $stockCodes
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading stock codes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load stock codes'
+            ], 500);
+        }
+    }
+
+    /**
      * Get units
      */
     public function getUnits(Request $request)
@@ -297,9 +330,9 @@ class BudgetUserController extends Controller
             $validated['sort_order'] = ($maxOrder ?? 0) + 1;
 
             $item = WorkplanBudgetItem::create($validated);
-            $item->load(['category', 'budgetCodeRelation', 'workplan']);
+            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation', 'workplan']);
 
-             $workplan = $item->workplan;
+            $workplan = $item->workplan;
             if ($workplan) {
                 $workplan->updateBudgetFromItems();
             }
@@ -367,7 +400,7 @@ class BudgetUserController extends Controller
             ]);
 
             $item->update($validated);
-            $item->load(['category', 'budgetCodeRelation', 'workplan']);
+            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation', 'workplan']);
 
             // Update parent workplan budget
             $workplan = $item->workplan;
@@ -597,10 +630,10 @@ class BudgetUserController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
-            // Get available budget codes - select only stock_code and inchargeCode
+            // Get available budget codes - select only budget_code and inchargeCode
             $budgetCodes = BudgetCode::active()
-                ->select('id', 'stock_code', 'name', 'inchargeCode')
-                ->orderBy('stock_code')
+                ->select('id', 'budget_code', 'name', 'inchargeCode')
+                ->orderBy('budget_code')
                 ->get();
 
             return response()->json([
@@ -662,7 +695,7 @@ class BudgetUserController extends Controller
             $validated['sort_order'] = ($maxOrder ?? 0) + 1;
 
             $item = WorkplanBudgetItem::create($validated);
-            $item->load(['category', 'budgetCodeRelation']);
+            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation']);
 
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);
@@ -731,7 +764,7 @@ class BudgetUserController extends Controller
             ]);
 
             $item->update($validated);
-            $item->load(['category', 'budgetCodeRelation']);
+            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation']);
 
             // Update parent workplan budget
             $workplan = KPIWorkPlan::find($workplanId);

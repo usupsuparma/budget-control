@@ -869,6 +869,8 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.suppliers');
             Route::get('/units', [BudgetUserController::class, 'getUnits'])
                 ->name('budget-user.units');
+            Route::get('/stock-codes', [BudgetUserController::class, 'getStockCodes'])
+                ->name('budget-user.stock-codes');
 
             // Workplans dropdown for department and section
             Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])

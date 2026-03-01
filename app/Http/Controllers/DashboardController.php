@@ -15,8 +15,8 @@ class DashboardController extends Controller
         $title = 'Dashboard';
         
         $notifications = [];
-        if (Auth::guard('employee')->check()) {
-            $employeeId = Auth::guard('employee')->id();
+        if (Auth::check()) {
+            $employeeId = Auth::id();
             $notifications = Notification::with('category')
                 ->where(function($query) use ($employeeId) {
                     $query->where('employee_id', $employeeId)
@@ -47,8 +47,8 @@ class DashboardController extends Controller
             ->get();
 
         $notifications = [];
-        if (Auth::guard('employee')->check()) {
-            $employeeId = Auth::guard('employee')->id();
+        if (Auth::check()) {
+            $employeeId = Auth::id();
             $notifications = Notification::with('category')
                 ->where(function($query) use ($employeeId) {
                     $query->where('employee_id', $employeeId)

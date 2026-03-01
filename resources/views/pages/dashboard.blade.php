@@ -10,6 +10,55 @@
 <!-- Begin page -->
 <div id="layout-wrapper">
 
+    @if(!empty($notifications) && count($notifications) > 0)
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bell me-2"></i>Notifications</h6>
+                    <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach($notifications as $notif)
+                        <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                            <div class="flex-shrink-0">
+                                @php
+                                    $bgColor = 'bg-primary';
+                                    $icon = 'bi-info-circle';
+                                    if($notif->category) {
+                                        switch(strtolower($notif->category->name)) {
+                                            case 'approval': $bgColor = 'bg-warning'; $icon = 'bi-check2-circle'; break;
+                                            case 'system': $bgColor = 'bg-danger'; $icon = 'bi-cpu'; break;
+                                            case 'info': $bgColor = 'bg-info'; $icon = 'bi-info-lg'; break;
+                                        }
+                                    }
+                                @endphp
+                                <div class="h-40px w-40px d-flex justify-content-center align-items-center rounded-circle {{ $bgColor }} text-white">
+                                    <i class="bi {{ $icon }}"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-1 {{ !$notif->is_read ? 'fw-bold' : 'text-muted' }}">{{ $notif->title }}</h6>
+                                    <small class="text-muted">{{ $notif->created_at->diffForHumans() }}</small>
+                                </div>
+                                <p class="mb-0 text-muted fs-13 text-truncate" style="max-width: 500px;">{{ $notif->details }}</p>
+                            </div>
+                            @if(!$notif->is_read)
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-primary rounded-pill p-1"><span class="visually-hidden">New</span></span>
+                            </div>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="row">
         <div class="col-xxl-5">
             <div class="row">

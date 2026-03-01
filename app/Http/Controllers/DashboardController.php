@@ -4,14 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyPolicy;
 use App\Models\WorkplanBudgetItem;
+use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
         $title = 'Dashboard';
-        return view('pages.dashboard', compact('title'));
+        
+        $notifications = [];
+        if (Auth::guard('employee')->check()) {
+            $employeeId = Auth::guard('employee')->id();
+            $notifications = Notification::with('category')
+                ->where(function($query) use ($employeeId) {
+                    $query->where('employee_id', $employeeId)
+                          ->orWhereNull('employee_id');
+                })
+                ->latest()
+                ->take(5)
+                ->get();
+                
+            // Check read status for each notification
+            foreach ($notifications as $notification) {
+                $notification->is_read = $notification->reads()
+                    ->where('employee_id', $employeeId)
+                    ->where('is_read', true)
+                    ->exists();
+            }
+        }
+
+        return view('pages.dashboard', compact('title', 'notifications'));
     }
     public function executive(Request $request)
     {

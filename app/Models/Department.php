@@ -13,6 +13,7 @@ class Department extends Model
         'division_id',
         'name',
         'status',
+        'code',
     ];
 
     public function division()

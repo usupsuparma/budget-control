@@ -89,7 +89,7 @@ Route::middleware('auth')->group(function () {
             ->name('dash.executive');
     });
     Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'executive'])
+        Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');   // <- WAJIB ADA
     });
     Route::get('/dash-executive/policies', [DashboardController::class, 'executivePoliciesByYear'])

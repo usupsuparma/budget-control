@@ -696,6 +696,12 @@ Route::middleware('auth')->group(function () {
                 Route::get('/summary', [SubmissionController::class, 'getSummary'])
                     ->name('userSubmission.summary');
 
+                Route::get('/template', [SubmissionController::class, 'downloadTemplate'])
+                    ->name('userSubmission.template');
+
+                Route::post('/import', [SubmissionController::class, 'import'])
+                    ->name('userSubmission.import');
+
                 Route::post('/store', [SubmissionController::class, 'store'])
                     ->name('userSubmission.store');
 

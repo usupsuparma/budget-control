@@ -595,6 +595,45 @@ class SubmissionController extends Controller
         }
     }
 
+    public function downloadTemplate()
+    {
+        try {
+            return $this->submissionService->downloadTemplate();
+        } catch (\Exception $e) {
+            Log::error('Error downloading template: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Error downloading template.');
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid file format. Please upload an Excel file.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $result = $this->submissionService->importTransactions($request->file('file'));
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error importing transactions: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error importing transactions: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     /* ========================
         LPJ METHODS
     ======================== */

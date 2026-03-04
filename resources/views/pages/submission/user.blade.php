@@ -184,7 +184,13 @@
                     <i class="ri-filter-line"></i> Filter
                 </button>
             </div>
-            <div class="col-md-3 d-flex align-items-end justify-content-end">
+            <div class="col-md-3 d-flex align-items-end justify-content-end gap-2">
+                <a href="{{ route('userSubmission.template') }}" class="btn btn-outline-info">
+                    <i class="ri-download-line"></i> Template
+                </a>
+                <button type="button" class="btn btn-outline-primary" id="btnImport">
+                    <i class="ri-upload-line"></i> Import
+                </button>
                 @if (isset($employment->job_level_id) && in_array($employment->job_level_id, [3, 4]))
                 <button type="button" class="btn btn-success" id="btnAddData">
                     <i class="ri-add-line"></i> Add Data
@@ -382,6 +388,43 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- === IMPORT MODAL === --}}
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="importModalLabel">Import Submissions from Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        Please use the provided template to ensure the correct format.
+                        <a href="{{ route('userSubmission.template') }}" class="fw-bold">Download Template here</a>.
+                    </div>
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Choose Excel File (.xlsx, .xls, .csv)</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx, .xls, .csv" required>
+                    </div>
+                    <div id="importResults" class="d-none">
+                        <hr>
+                        <h6>Import Results:</h6>
+                        <div id="importMessage" class="alert mb-2"></div>
+                        <ul id="importErrors" class="text-danger small"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" id="btnDoImport">
+                        <i class="ri-upload-line me-1"></i> Start Import
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1025,6 +1068,69 @@
             $('#submissionModalLabel').text('Add Submission');
             $('#submissionModal').modal('show');
             addItemRow();
+        });
+
+        // Import button
+        $('#btnImport').on('click', function() {
+            $('#importForm')[0].reset();
+            $('#importResults').addClass('d-none');
+            $('#importModal').modal('show');
+        });
+
+        // Import form submit
+        $('#importForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const btn = $('#btnDoImport');
+            const originalHtml = btn.html();
+            
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Importing...');
+            
+            $.ajax({
+                url: `{{ route('userSubmission.import') }}`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    btn.prop('disabled', false).html(originalHtml);
+                    
+                    $('#importResults').removeClass('d-none');
+                    const msgDiv = $('#importMessage');
+                    const errorList = $('#importErrors');
+                    
+                    msgDiv.removeClass('alert-success alert-danger').addClass(response.success ? 'alert-success' : 'alert-danger').text(response.message);
+                    errorList.empty();
+                    
+                    if (response.errors && response.errors.length > 0) {
+                        response.errors.forEach(err => {
+                            errorList.append(`<li>${err}</li>`);
+                        });
+                    }
+                    
+                    if (response.success) {
+                        loadData();
+                        loadSummary();
+                        showAlert(response.message, 'success');
+                        // setTimeout(() => $('#importModal').modal('hide'), 3000);
+                    }
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).html(originalHtml);
+                    let message = 'An error occurred during import.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    
+                    $('#importResults').removeClass('d-none');
+                    $('#importMessage').removeClass('alert-success').addClass('alert-danger').text(message);
+                    $('#importErrors').empty();
+                }
+            });
         });
 
         // Add item row button

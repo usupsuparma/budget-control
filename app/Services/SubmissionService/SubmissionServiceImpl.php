@@ -2,25 +2,28 @@
 
 namespace App\Services\SubmissionService;
 
-use App\Models\ApprovalRequest;
-use App\Models\ApprovalRequestDetail;
-use App\Models\Employment;
-use App\Models\JobLevel;
-use App\Models\JobPosition;
+use App\Models\WorkplanBudgetItem;
+use App\Models\Unit;
 use App\Models\KPIWorkPlan;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
-use App\Models\Unit;
-use App\Models\WorkplanBudgetItem;
+use App\Models\JobLevel;
+use App\Models\JobPosition;
+use App\Models\Employment;
+use App\Models\ApprovalRequest;
+use App\Models\ApprovalRequestDetail;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
+use App\Exports\SubmissionTemplateExport;
+use App\Imports\SubmissionImport;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SubmissionServiceImpl implements SubmissionService
 {
@@ -994,11 +997,176 @@ class SubmissionServiceImpl implements SubmissionService
                 'fix_quantity' => 0,
                 'fix_total' => 0,
                 'unit_id' => $unit->id,
-                'unit_name' => $unit->name,
+                'unit_name' => $unit->unit ?? $unit->name ?? '',
                 'remark' => $item['remark'] ?? '',
                 'urgency' => $urgency,
                 'status' => 0,
             ]);
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new SubmissionTemplateExport(), 'submission_template.xlsx');
+    }
+
+    public function importTransactions($file): array
+    {
+        try {
+            $collections = Excel::toCollection(new SubmissionImport(), $file);
+            $rows = $collections->first();
+
+            if ($rows->isEmpty()) {
+                return [
+                    'success' => false,
+                    'message' => 'The uploaded file is empty.',
+                ];
+            }
+
+            $user = Auth::user();
+            $employment = $user->employment;
+
+            if (!$employment) {
+                return [
+                    'success' => false,
+                    'message' => 'User employment data not found. Cannot proceed with import.',
+                ];
+            }
+
+            // Group rows by Ref No, Date, Program, Purpose, Urgency
+            $groupedTransactions = [];
+            foreach ($rows as $index => $row) {
+                // Skip if essential fields are missing
+                if (empty($row['program_name']) || empty($row['budget_code'])) {
+                    continue;
+                }
+
+                $refNo = $row['ref_no'] ?? 'default';
+                $progName = trim($row['program_name']);
+                $purpose = trim($row['purpose'] ?? 'Imported Submission');
+                $urgency = trim($row['urgency'] ?? 'Low');
+                $transDate = !empty($row['transaction_date_yyyy_mm_dd']) ? $row['transaction_date_yyyy_mm_dd'] : date('Y-m-d');
+                $plannedDate = !empty($row['planned_usage_date_yyyy_mm_dd']) ? $row['planned_usage_date_yyyy_mm_dd'] : null;
+
+                $groupKey = "{$refNo}_{$progName}_{$purpose}_{$urgency}_{$transDate}";
+
+                if (!isset($groupedTransactions[$groupKey])) {
+                    $groupedTransactions[$groupKey] = [
+                        'transaction_date' => $transDate,
+                        'planned_usage_date' => $plannedDate,
+                        'program_name' => $progName,
+                        'purpose' => $purpose,
+                        'urgency' => $urgency,
+                        'items' => []
+                    ];
+                }
+
+                $groupedTransactions[$groupKey]['items'][] = [
+                    'goods_service_name' => $row['item_name'] ?? 'Item ' . (count($groupedTransactions[$groupKey]['items']) + 1),
+                    'budget_code' => trim($row['budget_code']),
+                    'unit_name' => trim($row['unit'] ?? 'Pcs'),
+                    'quantity' => (float)($row['quantity'] ?? 1),
+                    'price' => (float)($row['price'] ?? 0),
+                    'remark' => $row['remark'] ?? '',
+                ];
+            }
+
+            if (empty($groupedTransactions)) {
+                return [
+                    'success' => false,
+                    'message' => 'No valid transaction data found in the file.',
+                ];
+            }
+
+            $results = [
+                'created' => 0,
+                'errors' => [],
+            ];
+
+            foreach ($groupedTransactions as $key => $transData) {
+                try {
+                    $result = DB::transaction(function () use ($transData, $user, $employment) {
+                        // 1. Find Program (KPIWorkPlan)
+                        $program = KPIWorkPlan::where('activity', $transData['program_name'])
+                            ->where('year', date('Y', strtotime($transData['transaction_date'])))
+                            ->first();
+
+                        if (!$program) {
+                            throw new \Exception("Program '{$transData['program_name']}' for year " . date('Y', strtotime($transData['transaction_date'])) . " not found.");
+                        }
+
+                        // 2. Prepare items with IDs
+                        $preparedItems = [];
+                        foreach ($transData['items'] as $item) {
+                            // Find Budget Item
+                            $budgetItem = WorkplanBudgetItem::where('budget_code', $item['budget_code'])
+                                ->where('kpi_workplan_id', $program->id)
+                                ->approved() // Only approved budget items
+                                ->first();
+
+                            if (!$budgetItem) {
+                                throw new \Exception("Budget code '{$item['budget_code']}' not found (or not approved) in program '{$transData['program_name']}'.");
+                            }
+
+                            // Find Unit
+                            $unit = Unit::where('unit', 'like', $item['unit_name'])->first();
+                            if (!$unit) {
+                                // Default to first unit if not found or throw error? Let's throw error for data integrity.
+                                throw new \Exception("Unit '{$item['unit_name']}' not found.");
+                            }
+
+                            $preparedItems[] = [
+                                'budget_id' => $budgetItem->id,
+                                'unit_id' => $unit->id,
+                                'goods_service_name' => $item['goods_service_name'],
+                                'quantity' => $item['quantity'],
+                                'price' => $item['price'],
+                                'remark' => $item['remark'],
+                            ];
+                        }
+
+                        // 3. Create Transaction using existing service logic logic
+                        $transactionData = [
+                            'transaction_date' => $transData['transaction_date'],
+                            'planned_usage_date' => $transData['planned_usage_date'],
+                            'job_level_id' => $employment->job_level_id,
+                            'job_position_id' => $employment->job_position_id,
+                            'program_id' => $program->id,
+                            'purpose' => $transData['purpose'],
+                            'urgency' => $transData['urgency'],
+                            'items' => $preparedItems,
+                        ];
+
+                        $createResult = $this->createTransaction($transactionData);
+
+                        if (!$createResult['success']) {
+                            throw new \Exception($createResult['message']);
+                        }
+
+                        return true;
+                    });
+
+                    if ($result) {
+                        $results['created']++;
+                    }
+                } catch (\Exception $e) {
+                    $results['errors'][] = "Row group '{$transData['program_name']}': " . $e->getMessage();
+                }
+            }
+
+            return [
+                'success' => $results['created'] > 0,
+                'message' => "Import completed. {$results['created']} transactions created." . (count($results['errors']) > 0 ? " Some errors occurred." : ""),
+                'errors' => $results['errors'],
+                'data' => $results,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Import Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error processing Excel file: ' . $e->getMessage(),
+            ];
         }
     }
 }

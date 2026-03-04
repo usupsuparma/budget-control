@@ -1160,6 +1160,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
             // Add submission entry
             $timeline[] = [
+                'reference_number' => $request->reference_number,
                 'type' => 'submission',
                 'status' => 'completed',
                 'label' => 'Submission',
@@ -1189,6 +1190,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     $phaseLabel = $detail->phase === 'uppline' ? 'Uppline Chain' : 'Master Flow';
 
                     $timeline[] = [
+                        'reference_number' => $request->reference_number,
                         'type' => 'approval',
                         'status' => $detail->status,
                         'phase' => $detail->phase,

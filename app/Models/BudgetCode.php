@@ -10,7 +10,7 @@ class BudgetCode extends Model
     protected $guarded = [];
 
     protected $fillable = [
-        'stock_code',
+        'budget_code',
         'name',
         'active_flag',
         'user_no',

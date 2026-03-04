@@ -89,7 +89,7 @@ Route::middleware('auth')->group(function () {
             ->name('dash.executive');
     });
     Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'executive'])
+        Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');   // <- WAJIB ADA
     });
     Route::get('/dash-executive/policies', [DashboardController::class, 'executivePoliciesByYear'])
@@ -869,6 +869,8 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.suppliers');
             Route::get('/units', [BudgetUserController::class, 'getUnits'])
                 ->name('budget-user.units');
+            Route::get('/stock-codes', [BudgetUserController::class, 'getStockCodes'])
+                ->name('budget-user.stock-codes');
 
             // Workplans dropdown for department and section
             Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])
@@ -969,12 +971,13 @@ Route::middleware('auth')->group(function () {
         NOTIFICATIONS
     ======================== */
     Route::prefix('notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/user-notifications', [\App\Http\Controllers\NotificationController::class, 'getUserNotifications'])->name('notifications.user');
         Route::post('/mark-as-read/{id}', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::post('/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
         Route::middleware('permission:setting.notification.view')->group(function () {
-            Route::get('/monitoring', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.monitoring');
+            Route::get('/monitoring', [\App\Http\Controllers\NotificationController::class, 'monitoring'])->name('notifications.monitoring');
             Route::get('/monitoring/data', [\App\Http\Controllers\NotificationController::class, 'data'])->name('notifications.monitoring.data');
             Route::delete('/monitoring/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.monitoring.destroy');
         });
@@ -1300,6 +1303,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.code.view')
         ->get('/code', [SettingCodeController::class, 'index'])
         ->name('code.index');
+
+    Route::prefix('stock-code')->middleware('permission:setting.code.view')->group(function () {
+        Route::get('/data', [SettingCodeController::class, 'getStockCodeData'])->name('stock-code.data');
+        Route::post('/', [SettingCodeController::class, 'storeStockCode'])->name('stock-code.store');
+        Route::get('/{id}/edit', [SettingCodeController::class, 'editStockCode'])->name('stock-code.edit');
+        Route::put('/{id}', [SettingCodeController::class, 'updateStockCode'])->name('stock-code.update');
+        Route::delete('/{id}', [SettingCodeController::class, 'destroyStockCode'])->name('stock-code.destroy');
+    });
 
     Route::middleware('permission:setting.production.view')
         ->get('/setting.production', [SettingProductionController::class, 'index'])

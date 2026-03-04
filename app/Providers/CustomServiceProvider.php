@@ -11,6 +11,8 @@ use App\Services\LpjService\LpjService;
 use App\Services\LpjService\LpjServiceImpl;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\BudgetLedgerService\BudgetLedgerServiceImpl;
+use App\Services\StockCodeService\StockCodeService;
+use App\Services\StockCodeService\StockCodeServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -32,6 +34,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(ApprovalTransactionService::class, ApprovalTransactionServiceImpl::class);
         $this->app->bind(VerificationBudgetService::class, VerificationBudgetServiceImpl::class);
         $this->app->bind(BudgetLedgerService::class, BudgetLedgerServiceImpl::class);
+        $this->app->bind(StockCodeService::class, StockCodeServiceImpl::class);
     }
 
     /**

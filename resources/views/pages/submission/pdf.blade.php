@@ -143,7 +143,7 @@
                 Date: {{ date("d M Y H:i:s",strtotime($transaction[0]->created_at)) }}<br>
                 By: {{ $transaction[0]->user_name }}<br><br>
                 <div class="xs center">
-                    <img src="data:image/png;base64,{{ $qrStaff ?? '' }}" class="qr">
+                    <img src="data:image/png;base64,{{ $qrSubmission ?? '' }}" class="qr">
                     <br>
                     {{ $transaction[0]->jobPosition->job_position_name }}
                 </div>
@@ -155,7 +155,7 @@
                 Date:<br>
                 By:<br><br>
                 <div class="xs center">
-                    <img src="data:image/png;base64,{{ $qrFinance ?? '' }}" class="qr"><br>
+                    <img src="data:image/png;base64,{{ $qrApprovals[0]['qr'] ?? '' }}" class="qr"><br>
                     Finance Staff
                 </div>
             </td>
@@ -170,13 +170,22 @@
         <tr>
             <!-- PROGRAM APPROVAL 2 -->
             <td>
-                Date:<br>
-                By:<br><br>
+                @php
+                    $highestByPhase = collect($qrApprovals)
+                                            ->groupBy('phase')
+                                            ->map(function ($items) {
+                                                return $items->sortByDesc('level')->first();
+                                            })
+                                            ->values()
+                                            ->toArray();
+                @endphp 
+                Date: {{ $highestByPhase[0]['date'] }}<br>
+                By: {{ $highestByPhase[0]['approver_name'] }}<br><br>
                 <div class="xs center">
-                    <img src="data:image/png;base64,{{ $qrDivision ?? '' }}" class="qr"><br>
+                    <img src="data:image/png;base64,{{ $highestByPhase[0]['qr'] ?? '' }}" class="qr"><br>
                     Department/Division/Directorate
                 </div>
-                <div class="xs center">Approved / Not **</div>
+                <div class="xs center">Approved **</div>
             </td>
 
             <!-- BUDGET APPROVAL 2 -->
@@ -184,7 +193,7 @@
                 Date:<br>
                 By:<br><br>
                 <div class="xs center bold">
-                    <img src="data:image/png;base64,{{ $qrManager ?? '' }}" class="qr"><br>
+                    <img src="data:image/png;base64,{{ $qrApprovals[0]['qr'] ?? '' }}" class="qr"><br>
                     Dadan Hadiana
                 </div>
                 <div class="xs center">Finance Division Manager</div>
@@ -206,7 +215,7 @@
                 Date:<br>
                 By:<br><br>
                 <div class="xs center">
-                    <img src="data:image/png;base64,{{ $qrPresident ?? '' }}" class="qr"><br>
+                    <img src="data:image/png;base64,{{ $qrApprovals[0]['qr'] ?? '' }}" class="qr"><br>
                     President Director
                 </div>
                 <div class="xs center">Approved / Not **</div>
@@ -215,7 +224,7 @@
                 Date:<br>
                 By:<br><br>
                 <div class="xs center">
-                    <img src="data:image/png;base64,{{ $qrFinanceDirector ?? '' }}" class="qr"><br>
+                    <img src="data:image/png;base64,{{ $qrApprovals[0]['qr'] ?? '' }}" class="qr"><br>
                     Finance Director
                 </div>
                 <div class="xs center">Approved / Not **</div>

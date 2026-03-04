@@ -14,7 +14,7 @@ class WorkplanBudgetItem extends Model
         'kpi_workplan_id',
         'budget_category_id',
         'description',
-        'budget_code',
+        'stock_code',
         'budget_code',
         'product_line',
         'cost_center',
@@ -83,7 +83,14 @@ class WorkplanBudgetItem extends Model
 
     public function budgetCodeRelation()
     {
+        // WorkplanBudgetItem.budget_code → BudgetCode.budget_code (identifier column)
         return $this->belongsTo(BudgetCode::class, 'budget_code', 'budget_code');
+    }
+
+    public function stockCodeRelation()
+    {
+        // WorkplanBudgetItem.stock_code → StockCode.stock_code
+        return $this->belongsTo(StockCode::class, 'stock_code', 'stock_code');
     }
 
     public function approver()

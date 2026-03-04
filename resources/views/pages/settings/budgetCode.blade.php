@@ -28,7 +28,7 @@
 
             <div class="modal-header">
                 <h5>Add Budget Code</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <form id="createBudgetForm">
@@ -38,7 +38,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label>Stock Code</label>
-                            <input type="text" name="stock_code" class="form-control">
+                            <input type="text" name="budget_code" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label>Name</label>
@@ -76,7 +76,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button class="btn btn-primary" id="saveBudget">Save</button>
                 </div>
 
@@ -93,7 +93,7 @@
 
             <div class="modal-header">
                 <h5>Edit Budget Code</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <form id="editBudgetForm">
@@ -107,7 +107,7 @@
 
                         <div class="col-md-6">
                             <label>Stock Code</label>
-                            <input type="text" name="stock_code" id="edit_stock_code" class="form-control">
+                            <input type="text" name="budget_code" id="edit_budget_code" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label>Name</label>
@@ -145,7 +145,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button class="btn btn-primary">Update</button>
                 </div>
 
@@ -167,8 +167,8 @@
             serverSide: true,
             ajax: "{{ route('budgetCode.data') }}",
             columns: [{
-                    data: 'stock_code',
-                    name: 'stock_code'
+                    data: 'budget_code',
+                    name: 'budget_code'
                 },
                 {
                     data: 'name',
@@ -221,7 +221,7 @@
 
             $.get("{{ url('budgetCode') }}/" + id + "/edit", function(data) {
                 $('#edit_id').val(data.id);
-                $('#edit_stock_code').val(data.stock_code);
+                $('#edit_budget_code').val(data.budget_code);
                 $('#edit_name').val(data.name);
                 $('#edit_user_no').val(data.user_no);
                 $('#edit_goods_code').val(data.goods_code);

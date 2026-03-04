@@ -19,7 +19,7 @@ class BudgetCodeController extends Controller
 
         $query = BudgetCode::select([
             'id',
-            'stock_code',
+            'budget_code',
             'name',
             'inchargeCode',
             'remarks',
@@ -51,7 +51,7 @@ class BudgetCodeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'stock_code' => 'required|string|max:100',
+            'budget_code' => 'required|string|max:100',
             'name' => 'required|string|max:255',
             'active_flag' => 'nullable|integer',
             'user_no' => 'nullable|integer',
@@ -83,7 +83,7 @@ class BudgetCodeController extends Controller
         $code = BudgetCode::findOrFail($id);
 
         $validated = $request->validate([
-            'stock_code' => 'required|string|max:100',
+            'budget_code' => 'required|string|max:100',
             'name' => 'required|string|max:255',
             'active_flag' => 'nullable|integer',
             'user_no' => 'nullable|integer',

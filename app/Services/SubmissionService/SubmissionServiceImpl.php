@@ -811,9 +811,57 @@ class SubmissionServiceImpl implements SubmissionService
         $transaction = $this->model->where('id', $id)->get();
         $transactionApproval = $this->approvalTransactionService->getApprovalTimeline($id);
 
-        $qrText_Proposedby = 'Proposed by ' . $transaction[0]->user_name . ', Date: ' . date('d M Y H:i:s', strtotime($transaction[0]->created_at));
-        $qrText = 'APPROVED|TX-';
+        $qrSubmission = null;
+        $qrApprovals = [];
+        
+        if ($transactionApproval['success'] && !empty($transactionApproval['data'])) {
 
+            foreach ($transactionApproval['data'] as $item) {
+
+                /**
+                 * 1️⃣ QR UNTUK SUBMISSION
+                 */
+                if ($item['type'] === 'submission') {
+
+                    $qrText = 'Ref Number : '.$item['reference_number'].' | '.
+                            'Proposed by | ' .
+                            $item['date'];
+
+                    $qrSubmission = $this->generateQR($qrText);
+                }
+
+                /**
+                 * 2️⃣ QR UNTUK APPROVAL (HANYA YANG APPROVED)
+                 */
+                if ($item['type'] === 'approval' && $item['status'] === 'approved') {
+
+                    $qrText = 'Ref Number : '.$item['reference_number'].' | '.
+                            'APPROVED | ' .
+                            $item['approver_name'] . ' | ' .
+                            $item['label'] . ' | ' .
+                            $item['date'];
+
+                    $qrApprovals[] = [
+                        'approver_name' => $item['approver_name'],
+                        'level' => $item['level'],
+                        'phase' => $item['phase'],
+                        'date' => $item['date'],
+                        'qr' => $this->generateQR($qrText)
+                    ];
+                }
+            }
+        }
+
+        return [
+            'transaction' => $transaction,
+            'transactionApproval' => $transactionApproval,
+            'qrSubmission' => $qrSubmission,
+            'qrApprovals' => $qrApprovals,
+        ];
+    }
+
+    public function generateQR(string $qrText): string
+    {
         $qrCode = new QrCode(
             data: $qrText,
             encoding: new Encoding('UTF-8'),
@@ -823,18 +871,8 @@ class SubmissionServiceImpl implements SubmissionService
 
         $writer = new PngWriter();
         $result = $writer->write($qrCode);
-        $qr = base64_encode($result->getString());
 
-        return [
-            'transaction' => $transaction,
-            'transactionApproval' => $transactionApproval,
-            'qrStaff' => $qr,
-            'qrFinance' => $qr,
-            'qrDivision' => $qr,
-            'qrManager' => $qr,
-            'qrPresident' => $qr,
-            'qrFinanceDirector' => $qr,
-        ];
+        return base64_encode($result->getString());
     }
 
     /* ========================

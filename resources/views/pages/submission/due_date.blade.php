@@ -61,7 +61,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1">
-                                    <h6 class="text-muted mb-1 fw-bold">Overdue LPJ</h6>
+                                    <h6 class="text-muted mb-1 fw-bold">Overdue Transaksi</h6>
                                     <h4 class="mb-0 fw-extrabold text-danger" id="dueDateCountText">{{ $dueDateCount }}</h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -70,7 +70,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-muted mt-2 mb-0 small">Transactions past due date but no LPJ</p>
+                            <p class="text-muted mt-2 mb-0 small">Submission > H+2 / LPJ > H+7</p>
                         </div>
                     </div>
                 </div>
@@ -105,7 +105,7 @@
                 <div class="card card-h-100">
                     <div class="card-header bg-white">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="ri-calendar-todo-line me-2 text-danger"></i>Daftar Transaksi Overdue LPJ</h5>
+                            <h5 class="mb-0"><i class="ri-calendar-todo-line me-2 text-danger"></i>Daftar Transaksi Overdue Submission & LPJ</h5>
                         </div>
                     </div>
                     <div class="card-body">
@@ -411,6 +411,12 @@
             } else {
                 data.data.forEach((item, index) => {
                     const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
+                    const lpjButton = item.status === 3 ? `
+                        <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
+                            <i class="ri-file-text-line"></i> LPJ
+                        </button>
+                    ` : '';
+
                     html += `
                         <tr>
                             <td>${rowNumber}</td>
@@ -424,9 +430,7 @@
                                     <button type="button" class="btn btn-info" onclick="viewSubmission(${item.id})" title="View Detail">
                                         <i class="ri-eye-line"></i>
                                     </button>
-                                    <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
-                                        <i class="ri-file-text-line"></i> LPJ
-                                    </button>
+                                    ${lpjButton}
                                 </div>
                             </td>
                         </tr>
@@ -509,7 +513,24 @@
 
         function formatDate(dateString) { const date = new Date(dateString); return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }); }
         function formatCurrency(number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number); }
-        function getStatusBadge(status, id) { return `<span onclick="getbadgeinfo(${id})" class="badge bg-success badge-status sts">Paid</span>`; }
+        
+        function getStatusBadge(status, id) { 
+            let badgeClass = 'bg-secondary';
+            let label = 'Unknown';
+            
+            switch(status) {
+                case 0: badgeClass = 'bg-warning'; label = 'Submission'; break;
+                case 1: badgeClass = 'bg-info'; label = 'Progress'; break;
+                case 2: badgeClass = 'bg-primary'; label = 'Approved'; break;
+                case 3: badgeClass = 'bg-success'; label = 'Paid'; break;
+                case 4: badgeClass = 'bg-dark'; label = 'Completed'; break;
+                case 5: badgeClass = 'bg-danger'; label = 'Rejected'; break;
+                case -1: badgeClass = 'bg-secondary'; label = 'Cancelled'; break;
+            }
+            
+            return `<span onclick="getbadgeinfo(${id})" class="badge ${badgeClass} badge-status sts">${label}</span>`; 
+        }
+
         function getbadgeinfo(id) { $.ajax({ url: "{{ route('userSubmission.badgeinfo', ':id') }}".replace(':id', id), type: 'GET', success: function(r) { $("#timeline").html(r.data); $("#trackingModal").modal('show'); } }); }
         function showAlert(m, t) { Swal.fire({ icon: t === 'success' ? 'success' : 'error', title: t === 'success' ? 'Success!' : 'Error!', text: m, timer: 3000 }); }
 

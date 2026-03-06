@@ -888,11 +888,25 @@ class SubmissionServiceImpl implements SubmissionService
         $employee = Auth::user();
         $employment = $employee->employment;
 
-        // Current user's overdue transactions (Paid but no LPJ and date passed)
+        // Current user's overdue transactions 
+        // 1. Submissions (Submission, Progress, Approved) past H+2
+        // 2. LPJ (Paid but no LPJ) past H+7
         $dueDateCount = $this->model->where('user_id', $userId)
-            ->where('status', Transaction::STATUS_PAID)
-            ->where('transaction_date', '<', now()->toDateString())
-            ->whereDoesntHave('lpjSubmission')
+            ->where(function($q) {
+                $q->where(function($sq) {
+                    $sq->whereIn('status', [
+                        Transaction::STATUS_SUBMISSION, 
+                        Transaction::STATUS_PROGRESS, 
+                        Transaction::STATUS_APPROVED
+                    ])
+                    ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
+                })
+                ->orWhere(function($sq) {
+                    $sq->where('status', Transaction::STATUS_PAID)
+                       ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
+                       ->whereDoesntHave('lpjSubmission');
+                });
+            })
             ->count();
 
         $years = $this->model->selectRaw('YEAR(transaction_date) as year')
@@ -927,9 +941,21 @@ class SubmissionServiceImpl implements SubmissionService
 
         $query = $this->model->query()
             ->where('user_id', $userId)
-            ->where('status', Transaction::STATUS_PAID)
-            ->where('transaction_date', '<', now()->toDateString())
-            ->whereDoesntHave('lpjSubmission')
+            ->where(function($q) {
+                $q->where(function($sq) {
+                    $sq->whereIn('status', [
+                        Transaction::STATUS_SUBMISSION, 
+                        Transaction::STATUS_PROGRESS, 
+                        Transaction::STATUS_APPROVED
+                    ])
+                    ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
+                })
+                ->orWhere(function($sq) {
+                    $sq->where('status', Transaction::STATUS_PAID)
+                       ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
+                       ->whereDoesntHave('lpjSubmission');
+                });
+            })
             ->with([
                 'details',
                 'approvalRequest.details' => fn($q) => $q->orderBy('level_sequence'),
@@ -945,11 +971,11 @@ class SubmissionServiceImpl implements SubmissionService
         $perPage = $filters['per_page'] ?? 10;
         $transactions = $query->orderBy('transaction_date', 'asc')->paginate($perPage);
 
-        // Add approval flags to each transaction (similar to getTransactions)
+        // Add approval flags to each transaction
         $transactions->getCollection()->transform(function ($transaction) use ($employmentId) {
             $transaction->can_approve = false;
             $transaction->pending_approval = null;
-            $transaction->can_edit = false; // Usually PAID cannot be edited
+            $transaction->can_edit = false;
 
             return $transaction;
         });

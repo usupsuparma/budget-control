@@ -1266,6 +1266,7 @@ function _populateStockCodeSelect(data) {
         option.textContent = `${code.stock_code} - ${code.name}`;
         option.setAttribute("data-budget-code", code.budget_code || "");
         option.setAttribute("data-unit", code.unit || "");
+        option.setAttribute("data-product-line", code.product_line || "");
         select.appendChild(option);
     });
 
@@ -1286,6 +1287,7 @@ function _populateStockCodeSelect(data) {
         .on("change", function () {
             const selectedOption = $(this).find("option:selected");
             const budgetCode = selectedOption.data("budget-code");
+            const productLine = selectedOption.data("product-line");
 
             if (budgetCode) {
                 const budgetCodeSelect = document.getElementById("budgetCode");
@@ -1294,6 +1296,10 @@ function _populateStockCodeSelect(data) {
                         budgetCode,
                     );
                 }
+            }
+
+            if (productLine) {
+                $("#productLine").val(productLine);
             }
         });
 }

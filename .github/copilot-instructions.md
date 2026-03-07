@@ -198,6 +198,79 @@ class YourService
 - **Standard Context:** Always include `'class' => __CLASS__` and `'function' => __FUNCTION__` in the `$context` array to easily trace the origin of the log entry. Add other relevant data to the context, such as IDs, user information, or input parameters, but **never sensitive data**.
 - **Appropriate Level:** Use the correct log level (`info`, `warning`, `error`, `debug`, `notice`, `critical`, `alert`, `emergency`) to reflect the severity of the event.
 
+### Controller as Orchestrator (MANDATORY — CRITICAL)
+
+Controllers MUST NOT contain any business logic. A controller's only job is: **receive request → validate → call service → return response**.
+
+**Layer responsibility:**
+
+| Layer          | Responsibility                                                                   |
+| -------------- | -------------------------------------------------------------------------------- |
+| **Controller** | Receive request, input validation, call service method(s), return JSON/view      |
+| **Service**    | All business logic, rules, calculations, DB transactions, multi-model operations |
+| **Model**      | Schema definition, relationships, scopes, attribute helpers                      |
+
+**✅ Correct controller pattern:**
+
+```php
+public function store(Request $request)
+{
+    // 1. Validate input only
+    $validated = $request->validate([
+        'name'   => 'required|string|max:255',
+        'amount' => 'required|numeric|min:0',
+    ]);
+
+    // 2. Delegate ALL logic to service
+    try {
+        $result = $this->submissionService->create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data created successfully.',
+            'data'    => $result,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'data'    => null,
+        ], 500);
+    }
+}
+```
+
+**❌ Forbidden patterns (auto-reject):**
+
+```php
+// ❌ WRONG — Direct model query in controller
+$transaction = Transaction::where('user_id', auth()->id())->get();
+
+// ❌ WRONG — Business rule / condition in controller
+if ($request->amount > $user->budget_limit) {
+    return response()->json(['success' => false, 'message' => 'Budget exceeded']);
+}
+
+// ❌ WRONG — Direct model mutation in controller
+Transaction::create($request->all());
+
+// ❌ WRONG — DB query or calculation in controller
+$total = DB::table('transactions')->sum('amount');
+
+// ❌ WRONG — Multi-step logic in controller (belongs in service with DB::transaction)
+$transaction = Transaction::create([...]);
+ApprovalRequest::create(['transaction_id' => $transaction->id, ...]);
+BudgetLedger::decrement('balance', $request->amount);
+```
+
+**What NEVER belongs in a controller:**
+
+- `Model::where(...)`, `Model::find(...)`, `DB::table(...)` — use service
+- Business conditions (`if ($user->role === ...)`, budget checks, threshold logic) — use service
+- Data transformation or calculations — use service
+- `DB::transaction(...)` blocks — use service
+- Direct `->create()`, `->update()`, `->delete()` on models — use service
+
 ### JSON Response & Controller AJAX Standard
 
 All controller methods that return JSON (AJAX endpoints) MUST follow this standard:
@@ -570,18 +643,19 @@ php artisan test --filter=ApprovalServiceTest
 
 ## Critical Rules (Auto-Reject if Violated)
 
-1. **NO direct Model queries in Controllers** - Always delegate to Services
-2. **NO business logic in Controllers** - Controllers are orchestrators only
-3. **SoftDeletes required** on: `transactions`, `approvals`, `workplans`, `budget_items`, audit-critical tables
-4. **Permission middleware** on all protected routes: `->middleware('permission:module.action')`
-5. **DB transactions** for multi-step operations: `DB::transaction(function() {...})`
-6. **NO hardcoded IDs** - Use config, seeded data, or relationships
-7. **Validate all inputs** before passing to services
-8. **NO raw SQL** for user input - Use query builder with bindings
-9. **Try-catch required** on all AJAX controller methods that return `response()->json()`
-10. **`success` key required** in all JSON AJAX responses: `['success' => bool, 'message' => ..., 'data' => ...]`
-11. **Always use `route()` helper** in Blade templates - never hardcode URL strings
-12. **Always eager load** relationships in DataTable queries (`->with([...])`) to prevent N+1
+1. **NO direct Model queries in Controllers** - Always delegate to Services (`Model::where(...)`, `Model::find(...)`, `DB::table(...)` forbidden in controllers)
+2. **NO business logic in Controllers** - Controllers are orchestrators only; conditions, calculations, and transformations belong in Services
+3. **NO `DB::transaction()` in Controllers** - Multi-step operations with rollback must be wrapped inside Service methods
+4. **SoftDeletes required** on: `transactions`, `approvals`, `workplans`, `budget_items`, audit-critical tables
+5. **Permission middleware** on all protected routes: `->middleware('permission:module.action')`
+6. **DB transactions** for multi-step operations: `DB::transaction(function() {...})` inside Services
+7. **NO hardcoded IDs** - Use config, seeded data, or relationships
+8. **Validate all inputs** in controller before passing to services
+9. **NO raw SQL** for user input - Use query builder with bindings
+10. **Try-catch required** on all AJAX controller methods that return `response()->json()`
+11. **`success` key required** in all JSON AJAX responses: `['success' => bool, 'message' => ..., 'data' => ...]`
+12. **Always use `route()` helper** in Blade templates - never hardcode URL strings
+13. **Always eager load** relationships in DataTable queries (`->with([...])`) to prevent N+1
 
 ## Technology Stack
 
@@ -643,10 +717,12 @@ Route::post('/{id}/approve', [Controller::class, 'approve'])->name('module.appro
 3. Not using DB transactions for approval chain creation
 4. Modifying approval templates without considering in-flight requests (they use snapshots)
 5. Accessing models directly in controllers instead of through services
-6. Using Bootstrap 4 `data-toggle`/`data-target` instead of Bootstrap 5 `data-bs-toggle`/`data-bs-target`
-7. Hardcoding URLs in Blade JS (e.g. `` `/module/${id}` ``) instead of using `route()` with `.replace(':id', id)`
-8. Forgetting `rawColumns()` in DataTables when action column contains HTML
-9. Missing try-catch in AJAX controller methods causing unhandled 500 errors returned as HTML
-10. Using `FromCollection` on large dataset exports — use `FromQuery` to prevent memory exhaustion
-11. Using native `alert()` instead of `Swal.fire()` for AJAX feedback
-12. Missing `success` key in JSON response — Blade AJAX handlers check `response.success`, not just HTTP status
+6. Writing business conditions (`if/else` rules, budget checks) inside controllers — move to service
+7. Placing `DB::transaction()` in the controller — it belongs inside the service method
+8. Using Bootstrap 4 `data-toggle`/`data-target` instead of Bootstrap 5 `data-bs-toggle`/`data-bs-target`
+9. Hardcoding URLs in Blade JS (e.g. `` `/module/${id}` ``) instead of using `route()` with `.replace(':id', id)`
+10. Forgetting `rawColumns()` in DataTables when action column contains HTML
+11. Missing try-catch in AJAX controller methods causing unhandled 500 errors returned as HTML
+12. Using `FromCollection` on large dataset exports — use `FromQuery` to prevent memory exhaustion
+13. Using native `alert()` instead of `Swal.fire()` for AJAX feedback
+14. Missing `success` key in JSON response — Blade AJAX handlers check `response.success`, not just HTTP status

@@ -133,6 +133,25 @@ class BudgetUserController extends Controller
     }
 
     /**
+     * Get budget codes filtered by logged-in user's department(s)
+     */
+    public function getBudgetCodes(Request $request)
+    {
+        try {
+            $result = $this->budgetUserService->getBudgetCodes();
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error loading budget codes: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load budget codes',
+            ], 500);
+        }
+    }
+
+    /**
      * Get stock codes
      */
     public function getStockCodes(Request $request)

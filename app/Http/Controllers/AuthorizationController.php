@@ -12,7 +12,9 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
+use SessionHandler;
 
 class AuthorizationController extends Controller
 {
@@ -41,20 +43,21 @@ class AuthorizationController extends Controller
 
             $employment2 = Employment::where('employee_id', $userId)->firstOrFail(); // employee_id is now FK to employee.id
 
-            $uplinesTopDown = $employment2->uplineEmployeesTopDown([1,2,3,4]);
+            $uplinesTopDown = $employment2->uplineEmployeesTopDown([1, 2, 3, 4]);
 
             $dam = array();
             foreach ($uplinesTopDown as $upline) {
                 $dam[] = array(
-                    "id" =>  $upline->id, 
-                    "employee_id" =>  $upline->employee_id, 
-                    "level" => $upline->upline_job_level_id, 
-                    "fname" => $upline->first_name, 
+                    "id" =>  $upline->id,
+                    "employee_id" =>  $upline->employee_id,
+                    "level" => $upline->upline_job_level_id,
+                    "fname" => $upline->first_name,
                     "lname" => $upline->last_name
                 );
             }
             session()->put('uplines_top_down', $dam);
 
+            session()->put('department_codes', $employment2->getDepartmentCodes());
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }

@@ -48,7 +48,14 @@ interface BudgetUserService
     public function getSuppliers(): array;
 
     /**
-     * Get active stock codes.
+     * Get active budget codes filtered by the logged-in user's department(s).
+     *
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function getBudgetCodes(): array;
+
+    /**
+     * Get active stock codes filtered by the logged-in user's department(s).
      *
      * @return array ['success' => bool, 'data' => mixed]
      */

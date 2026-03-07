@@ -870,6 +870,8 @@ Route::middleware('auth')->group(function () {
             // Dropdown data endpoints
             Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
                 ->name('budget-user.budget-categories');
+            Route::get('/budget-codes', [BudgetUserController::class, 'getBudgetCodes'])
+                ->name('budget-user.budget-codes');
             Route::get('/cost-centers', [BudgetUserController::class, 'getCostCenters'])
                 ->name('budget-user.cost-centers');
             Route::get('/suppliers', [BudgetUserController::class, 'getSuppliers'])

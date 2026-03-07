@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\WorkplanBudgetItem;
 use App\Services\LogService\LogService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class BudgetUserServiceImpl implements BudgetUserService
 {
@@ -77,8 +78,11 @@ class BudgetUserServiceImpl implements BudgetUserService
             $currentEmploymentId = $employee->employment->id;
         }
 
+        $deptCodes = session('department_codes', []);
+
         $budgetCodes = BudgetCode::active()
             ->select('id', 'budget_code', 'name', 'inchargeCode')
+            ->when(! empty($deptCodes), fn($q) => $q->whereIn('inchargeCode', $deptCodes))
             ->orderBy('budget_code')
             ->get();
 
@@ -106,54 +110,113 @@ class BudgetUserServiceImpl implements BudgetUserService
 
     public function getBudgetCategories(): array
     {
-        $categories = BudgetCategory::whereNull('parent_id')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['id', 'name', 'code']);
+        $categories = Cache::remember('budget_categories_dropdown', 3600, function () {
+            return BudgetCategory::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(['id', 'name', 'code']);
+        });
 
         return ['success' => true, 'data' => $categories];
     }
 
     public function getCostCenters(): array
     {
-        $costCenters = BudgetCode::whereNotNull('inchargeCode')
-            ->where('inchargeCode', '!=', '')
-            ->distinct()
-            ->pluck('inchargeCode')
-            ->sort()
-            ->values();
+        $deptCodes = session('department_codes', []);
+        $cacheKey  = 'cost_centers_' . md5(implode(',', $deptCodes));
+
+        $costCenters = Cache::remember($cacheKey, 3600, function () use ($deptCodes) {
+            $query = BudgetCode::whereNotNull('inchargeCode')
+                ->where('inchargeCode', '!=', '');
+
+            if (! empty($deptCodes)) {
+                $query->whereIn('inchargeCode', $deptCodes);
+            }
+
+            return $query->distinct()
+                ->pluck('inchargeCode')
+                ->sort()
+                ->values();
+        });
 
         return ['success' => true, 'data' => $costCenters];
     }
 
     public function getSuppliers(): array
     {
-        $suppliers = Supplier::whereNotNull('supplier')
-            ->where('supplier', '!=', '')
-            ->select('id', 'supplier')
-            ->orderBy('supplier')
-            ->get();
+        $suppliers = Cache::remember('suppliers_dropdown', 3600, function () {
+            return Supplier::whereNotNull('supplier')
+                ->where('supplier', '!=', '')
+                ->select('id', 'supplier')
+                ->orderBy('supplier')
+                ->get();
+        });
 
         return ['success' => true, 'data' => $suppliers];
     }
 
+    public function getBudgetCodes(): array
+    {
+        $deptCodes = session('department_codes', []);
+        $cacheKey  = 'budget_codes_depts_' . md5(implode(',', $deptCodes));
+
+        $budgetCodes = Cache::remember($cacheKey, 3600, function () use ($deptCodes) {
+            $query = BudgetCode::active()
+                ->select('id', 'budget_code', 'name', 'inchargeCode')
+                ->orderBy('budget_code');
+
+            if (! empty($deptCodes)) {
+                $query->whereIn('inchargeCode', $deptCodes);
+            }
+
+            return $query->get();
+        });
+
+        return ['success' => true, 'data' => $budgetCodes];
+    }
+
     public function getStockCodes(): array
     {
-        $stockCodes = StockCode::where('active', 1)
-            ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
-            ->orderBy('stock_code')
-            ->get();
+        $deptCodes = session('department_codes', []);
+
+        if (! empty($deptCodes)) {
+            $cacheKey = 'stock_codes_depts_' . md5(implode(',', $deptCodes));
+            $filtered = Cache::remember($cacheKey, 3600, function () use ($deptCodes) {
+                $allowedBudgetCodes = BudgetCode::active()
+                    ->whereIn('inchargeCode', $deptCodes)
+                    ->pluck('budget_code');
+
+                return StockCode::where('active', 1)
+                    ->whereIn('budget_code', $allowedBudgetCodes)
+                    ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
+                    ->orderBy('stock_code')
+                    ->get();
+            });
+
+            if ($filtered->isNotEmpty()) {
+                return ['success' => true, 'data' => $filtered];
+            }
+        }
+
+        $stockCodes = Cache::remember('stock_codes_all', 3600, function () {
+            return StockCode::where('active', 1)
+                ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
+                ->orderBy('stock_code')
+                ->get();
+        });
 
         return ['success' => true, 'data' => $stockCodes];
     }
 
     public function getUnits(): array
     {
-        $units = Unit::whereNotNull('unit')
-            ->where('unit', '!=', '')
-            ->select('id', 'unit')
-            ->orderBy('unit')
-            ->get();
+        $units = Cache::remember('units_dropdown', 3600, function () {
+            return Unit::whereNotNull('unit')
+                ->where('unit', '!=', '')
+                ->select('id', 'unit')
+                ->orderBy('unit')
+                ->get();
+        });
 
         return ['success' => true, 'data' => $units];
     }

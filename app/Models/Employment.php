@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+// Org-unit models used by getDepartmentCodes()
+use App\Models\Department;
+use App\Models\Division;
+use App\Models\Section;
+
 class Employment extends Model
 {
     use SoftDeletes;
@@ -92,7 +97,7 @@ class Employment extends Model
         );
     }
 
-    public function uplineEmployeesTopDown(array $levels = [1,2,3,4]): Collection
+    public function uplineEmployeesTopDown(array $levels = [1, 2, 3, 4]): Collection
     {
         $employees = collect();
         $visited = []; // Track visited employee IDs to prevent circular references
@@ -154,7 +159,69 @@ class Employment extends Model
         // Top-down: level 1 paling atas
         return $employees
             ->unique('id')
-            ->sortBy(fn ($e) => (int) $e->upline_job_level_id)
+            ->sortBy(fn($e) => (int) $e->upline_job_level_id)
             ->values();
+    }
+
+    /**
+     * Resolve the department code(s) for this employment based on job position structure.
+     *
+     * Uses job_position.structure_id + job_level_id to traverse the org hierarchy:
+     *   L1 Director  → structure_id = director.id  → all dept codes in divisions under that director
+     *   L2 Division  → structure_id = division.id  → all dept codes in that division
+     *   L3 Department→ structure_id = department.id → that department's code
+     *   L4+ (Section / Staff / Non-Staff) → structure_id = section.id → parent department's code
+     *
+     * Returns an array of department code strings (empty array if unresolvable).
+     */
+    public function getDepartmentCodes(): array
+    {
+        $jobPosition = $this->jobPosition;
+
+        if (! $jobPosition || ! $jobPosition->structure_id) {
+            Log::warning('getDepartmentCodes: no job_position or structure_id', [
+                'employment_id' => $this->id,
+                'employee_id'   => $this->employee_id,
+            ]);
+            return [];
+        }
+
+        $levelId     = (int) $jobPosition->job_level_id;
+        $structureId = (int) $jobPosition->structure_id;
+
+        switch ($levelId) {
+            case 1: // Director → all departments across divisions under this director
+                $divisionIds = Division::where('director_id', $structureId)->pluck('id');
+                return Department::whereIn('division_id', $divisionIds)
+                    ->whereNotNull('code')
+                    ->where('code', '!=', '')
+                    ->pluck('code')
+                    ->values()
+                    ->toArray();
+
+            case 2: // Division → all departments in this division
+                return Department::where('division_id', $structureId)
+                    ->whereNotNull('code')
+                    ->where('code', '!=', '')
+                    ->pluck('code')
+                    ->values()
+                    ->toArray();
+
+            case 3: // Department → direct code
+                $dept = Department::find($structureId);
+                return ($dept && $dept->code) ? [$dept->code] : [];
+
+            default: // Section (4), Staff (12), Non-Staff (13) → via section → department
+                $section = Section::find($structureId);
+                if (! $section || ! $section->department) {
+                    Log::warning('getDepartmentCodes: section or department not found', [
+                        'employment_id' => $this->id,
+                        'level_id'      => $levelId,
+                        'structure_id'  => $structureId,
+                    ]);
+                    return [];
+                }
+                return ($section->department->code) ? [$section->department->code] : [];
+        }
     }
 }

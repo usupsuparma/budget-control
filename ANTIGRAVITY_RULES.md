@@ -1,1002 +1,652 @@
-# ANTIGRAVITY_RULES.md - Budget Control Project
+# Budget Control AI Coding Agent Instructions
 
-> **"Kitab Undang-Undang"** untuk project Budget Control.  
-> Setiap kontributor (manusia/AI) **WAJIB** mematuhi rules ini tanpa pengecualian.
+## Project Overview
 
----
+Budget Control is a Laravel 12 enterprise application for budget management, KPI tracking, and approval workflows with two-phase dynamic approval system (uppline chain → master flow with threshold-based routing).
 
-## 📋 Daftar Isi
+## Critical Architecture Patterns
 
-1. [Project Identity](#-project-identity)
-2. [Tech Stack](#-tech-stack)
-3. [Architecture Rules](#-architecture-rules)
-4. [Code Conventions](#-code-conventions)
-5. [Database Conventions](#-database-conventions)
-6. [Frontend Conventions](#-frontend-conventions)
-7. [Security Rules](#-security-rules)
-8. [Testing Guidelines](#-testing-guidelines)
-9. [Git & Deployment](#-git--deployment)
+### Service Layer Pattern (MANDATORY)
 
----
+All business logic MUST use the Interface + Implementation pattern. Controllers are orchestrators only.
 
-## 🎯 Project Identity
-
-| Key                 | Value                                                 |
-| ------------------- | ----------------------------------------------------- |
-| **Nama**            | Budget Control                                        |
-| **Tujuan**          | Sistem manajemen anggaran, KPI, dan approval workflow |
-| **Domain**          | Finance / Enterprise Resource Planning                |
-| **Bahasa Kode**     | English                                               |
-| **Bahasa Komentar** | English preferred, Indonesia allowed                  |
-
----
-
-## 🛠️ Tech Stack
-
-### Core
-
-- **Framework**: Laravel 12.x
-- **PHP**: ^8.2
-- **Frontend**: Blade + Livewire 3.x
-- **Database**: MySQL/MariaDB
-
-### Key Packages (JANGAN GANTI tanpa approval)
-
-| Package                               | Versi | Fungsi                 |
-| ------------------------------------- | ----- | ---------------------- |
-| `spatie/laravel-permission`           | ^6.23 | RBAC                   |
-| `yajra/laravel-datatables-oracle`     | ^12.6 | Server-side DataTables |
-| `maatwebsite/excel`                   | ^3.1  | Excel import/export    |
-| `barryvdh/laravel-dompdf`             | ^3.1  | PDF generation         |
-| `livewire/livewire`                   | ^3.6  | Reactive components    |
-| `power-components/livewire-powergrid` | ^6.6  | DataGrid               |
-
----
-
-## 🏗️ Architecture Rules
-
-### Directory Structure
+**Directory structure:**
 
 ```
-app/
-├── Exports/          # Maatwebsite export classes
-├── Helpers/          # Global helper functions (autoloaded)
-├── Http/
-│   └── Controllers/  # Satu controller per resource (orchestrator ONLY)
-├── Imports/          # Maatwebsite import classes
-├── Jobs/             # Queue jobs
-├── Livewire/         # Livewire components
-├── Models/           # Eloquent models
-├── Providers/        # Service providers (termasuk CustomServiceProvider)
-└── Services/         # Business logic layer — SEMUA logika bisnis ada di sini
-    ├── {ServiceName}/
-    │   ├── {ServiceName}Service.php     # Interface (kontrak)
-    │   └── {ServiceName}ServiceImpl.php # Implementation
-    └── ...
-
-resources/views/
-├── components/       # Blade components
-├── include/          # Partial views (sidebar, header, etc.)
-├── layouts/          # Layout templates
-├── livewire/         # Livewire component views
-└── pages/            # Main page views per module
+app/Services/{ServiceName}/
+├── {ServiceName}Service.php       # Interface (contract)
+└── {ServiceName}ServiceImpl.php   # Implementation (logic)
 ```
 
----
+**Generate new services:**
 
-### ⚡ Prinsip Utama: Controller = Orchestrator, Service = Executor
+```bash
+php artisan make:service ServiceName
+```
 
-> [!IMPORTANT]
-> **Controller TIDAK BOLEH mengandung business logic apapun.**  
-> Controller hanya boleh:
->
-> 1. Menerima HTTP request
-> 2. Memvalidasi input
-> 3. Memanggil service
-> 4. Mengembalikan response
->
-> **Semua logika** — termasuk operasi CRUD, kalkulasi, kondisi bisnis, dan query kompleks — **WAJIB** berada di Service Layer.
-
----
-
-### Pattern yang WAJIB Diikuti
-
-#### 1. Controller Pattern (Orchestrator Only)
-
-Controller hanya bertanggung jawab atas alur HTTP. Tidak ada logika bisnis, tidak ada query model langsung.
-
-##### ✅ BENAR — Controller sebagai Orchestrator
+**Binding in `app/Providers/CustomServiceProvider.php`:**
 
 ```php
-use App\Services\ExampleService\ExampleService;
+$this->app->bind(
+    \App\Services\ExampleService\ExampleService::class,
+    \App\Services\ExampleService\ExampleServiceImpl::class
+);
+```
 
-class ExampleController extends Controller
+**Controller pattern:**
+
+- NO direct model queries in controllers
+- ALL business logic delegates to injected service interfaces
+- Return JSON for AJAX: `['success' => bool, 'message' => string, 'data' => mixed]`
+
+### Approval System Architecture
+
+Two-phase sequential approval with immutable snapshots:
+
+1. **Phase 1: Uppline Chain** - Follows `users.uppline_id` recursively until NULL
+2. **Phase 2: Master Flow** - Threshold-based (`amount <= threshold`) or all-levels mode
+
+**Key tables:**
+
+- `approval_modules` - Registered modules (transactions, budget, lpj)
+- `approval_flow_templates` - Flow rules per module
+- `approval_flow_details` - Level configurations (threshold, sequence)
+- `approval_requests` - Active approval instances (immutable snapshot)
+- `approval_request_details` - Per-level approval status
+
+**Rules:**
+
+- Template changes don't affect in-flight approvals (snapshot at creation)
+- Sequential approval: Level N must approve before Level N+1
+- Threshold logic: Skip levels where `amount > threshold` of next level
+
+See [documentasi/APPROVAL_SYSTEM.md](../documentasi/APPROVAL_SYSTEM.md) for flow diagrams.
+
+### Import/Export Pattern
+
+Uses `maatwebsite/excel` with dedicated classes in `app/Imports/` and `app/Exports/`:
+
+- Imports: Implement `ToModel`, `WithHeadingRow`, `WithValidation`
+- Exports: Use `FromQuery` (preferred for large data — prevents OOM) or `FromCollection` for small sets
+- Implement `WithHeadings` and `WithMapping` on all exports
+- Queue large operations: `->queue()` method
+- Multi-sheet exports: Implement `WithMultipleSheets` with dedicated Sheet classes in `app/Exports/Sheets/`
+- See: `MarketingPlanImport.php`, `SubmissionTemplateExport.php`
+
+**Preferred export pattern (large datasets):**
+
+```php
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\Exportable;
+
+class TransactionsExport implements FromQuery, WithHeadings
 {
-    public function __construct(
-        private readonly ExampleService $exampleService
-    ) {}
+    use Exportable;
 
-    /* ========================
-        VIEW METHODS
-    ======================== */
-
-    public function index()
+    public function query()
     {
-        return view('pages.example.index');
+        // Returns query builder (NOT ->get() or ::all()) to prevent memory exhaustion
+        return Transaction::query()->with('user', 'unit');
     }
 
-    public function create()
+    public function headings(): array
     {
-        return view('pages.example.create');
-    }
-
-    public function edit($id)
-    {
-        $data = $this->exampleService->findById($id);
-        return view('pages.example.edit', compact('data'));
-    }
-
-    /* ========================
-        DATA / DATATABLES
-    ======================== */
-
-    public function getData(Request $request)
-    {
-        return $this->exampleService->getDataTable($request);
-    }
-
-    /* ========================
-        CRUD ACTIONS
-    ======================== */
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'amount'      => 'required|numeric|min:0',
-            'description' => 'nullable|string',
-        ]);
-
-        // Delegasikan ke service — controller tidak tahu cara membuat record
-        $result = $this->exampleService->create($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil disimpan.',
-            'data'    => $result,
-        ]);
-    }
-
-    public function update(Request $request, int $id)
-    {
-        $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'amount'      => 'required|numeric|min:0',
-            'description' => 'nullable|string',
-        ]);
-
-        // Delegasikan ke service
-        $result = $this->exampleService->update($id, $validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil diperbarui.',
-            'data'    => $result,
-        ]);
-    }
-
-    public function destroy(int $id)
-    {
-        // Delegasikan ke service
-        $this->exampleService->delete($id);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil dihapus.',
-        ]);
-    }
-
-    /* ========================
-        APPROVAL ACTIONS
-    ======================== */
-
-    public function approve(int $id)
-    {
-        $this->exampleService->approve($id);
-
-        return response()->json(['success' => true, 'message' => 'Disetujui.']);
-    }
-
-    public function reject(Request $request, int $id)
-    {
-        $validated = $request->validate(['reason' => 'required|string']);
-
-        $this->exampleService->reject($id, $validated['reason']);
-
-        return response()->json(['success' => true, 'message' => 'Ditolak.']);
+        return ['ID', 'Date', 'User', 'Unit', 'Amount', 'Status'];
     }
 }
 ```
 
-##### ❌ SALAH — Controller mengandung business logic (DILARANG KERAS)
+### Livewire Components
+
+Uses Livewire 3 with PowerGrid for data tables:
+
+- Force Bootstrap 5 in `boot()`: `config(['livewire-powergrid.framework' => 'bootstrap5'])`
+- Example: `app/Livewire/EmployeeTable.php`
+- Views in `resources/views/livewire/`
+
+### DataTables Standard
+
+All server-side data tables use `yajra/laravel-datatables-oracle`. The DataTable query MUST use eager loading to prevent N+1 queries.
+
+**Controller method pattern:**
 
 ```php
-// ❌ JANGAN LAKUKAN INI — violates orchestrator pattern
-public function store(Request $request)
+public function getData(Request $request)
 {
-    // ❌ Query model langsung di controller
-    $exists = Example::where('name', $request->name)->exists();
-    if ($exists) {
-        return response()->json(['success' => false, 'message' => 'Sudah ada.'], 422);
-    }
+    $query = Transaction::with(['user', 'unit', 'approvalRequest'])
+        ->select('transactions.*');
 
-    // ❌ Business logic (kalkulasi, kondisi) di controller
-    $amount = $request->amount;
-    if ($amount > 1000000) {
-        $request->merge(['requires_approval' => true]);
-    }
-
-    // ❌ Operasi DB langsung di controller
-    $data = Example::create($request->all());
-
-    // ❌ Multiple model operations tanpa service
-    $data->histories()->create(['action' => 'created', 'user_id' => auth()->id()]);
-
-    return response()->json(['success' => true, 'data' => $data]);
+    return DataTables::of($query)
+        ->addColumn('action', function ($row) {
+            return '
+                <button class="btn btn-sm btn-outline-primary edit-btn" data-id="' . $row->id . '">
+                    <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="' . $row->id . '">
+                    <i class="bi bi-trash"></i>
+                </button>
+            ';
+        })
+        ->rawColumns(['action', 'status_badge'])
+        ->make(true);
 }
 ```
 
-> **Aturan sederhana:** Jika kamu menulis `Model::`, `DB::`, `if (bisnis condition)`, atau kalkulasi apapun di controller — **pindahkan ke service.**
+**Rules:**
 
----
+- Always use `->with([...])` on DataTable queries to avoid N+1 queries
+- Use `->select('table.*')` when joining to avoid column name collisions
+- `rawColumns()` must list every column that outputs HTML
+- DataTable endpoint route: `Route::get('/data', ...)->name('module.data')`
 
-#### 2. Service Layer Pattern (Business Logic)
+### Logging Pattern
 
-> [!IMPORTANT]
-> Semua CRUD, kalkulasi, kondisi bisnis, query kompleks, dan operasi multi-step **WAJIB** diimplementasikan di sini.
->
-> Generate service menggunakan:
->
-> ```bash
-> php artisan make:service {ServiceName}
-> ```
+All significant actions and processes within services MUST be logged using the `LogService`. This provides essential traceability and debugging capabilities.
 
-##### Directory Structure
-
-```
-app/Services/
-├── ExampleService/
-│   ├── ExampleService.php         # Interface (kontrak)
-│   └── ExampleServiceImpl.php     # Implementation (logika bisnis)
-├── ApprovalService/
-│   ├── ApprovalService.php
-│   └── ApprovalServiceImpl.php
-└── ...
-```
-
-##### Interface (Kontrak)
-
-Setiap service **WAJIB** memiliki interface. Controller depend pada interface, bukan concrete implementation.
+**Usage:**
+Inject `LogService` into your class constructor:
 
 ```php
-<?php
+use App\Services\LogService\LogService;
 
-namespace App\Services\ExampleService;
-
-use Illuminate\Support\Collection;
-use Illuminate\Http\Request;
-
-/**
- * Service interface for Example operations.
- *
- * Kontrak ini mendefinisikan semua method CRUD dan business operations.
- * Controller akan depend pada interface ini, bukan implementasi langsung.
- */
-interface ExampleService
+class YourService
 {
-    /**
-     * Get all resources dengan optional filters.
-     *
-     * @param array $filters
-     * @return Collection
-     */
-    public function getAll(array $filters = []): Collection;
+    protected $logService;
 
-    /**
-     * Get resource by ID. Throw exception jika tidak ditemukan.
-     *
-     * @param int $id
-     * @return mixed
-     */
-    public function findById(int $id): mixed;
-
-    /**
-     * Create a new resource.
-     * Business rules (validasi duplikat, auto-assignment, dll) ditangani di sini.
-     *
-     * @param array $data Validated input dari controller
-     * @return mixed Created resource
-     */
-    public function create(array $data): mixed;
-
-    /**
-     * Update an existing resource.
-     *
-     * @param int   $id
-     * @param array $data Validated input dari controller
-     * @return mixed Updated resource
-     */
-    public function update(int $id, array $data): mixed;
-
-    /**
-     * Soft delete a resource.
-     *
-     * @param int $id
-     * @return bool
-     */
-    public function delete(int $id): bool;
-
-    /**
-     * Provide DataTable response untuk Yajra.
-     *
-     * @param Request $request
-     * @return mixed DataTable response
-     */
-    public function getDataTable(Request $request): mixed;
-
-    /**
-     * Approve a resource (ubah status + trigger side effects).
-     *
-     * @param int $id
-     * @return mixed
-     */
-    public function approve(int $id): mixed;
-
-    /**
-     * Reject a resource dengan alasan.
-     *
-     * @param int    $id
-     * @param string $reason
-     * @return mixed
-     */
-    public function reject(int $id, string $reason): mixed;
-}
-```
-
-##### Implementation (Logika Bisnis)
-
-Semua business logic, query, dan operasi multi-step ada di sini.
-
-```php
-<?php
-
-namespace App\Services\ExampleService;
-
-use App\Models\Example;
-use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\Facades\DataTables;
-
-class ExampleServiceImpl implements ExampleService
-{
-    public function __construct(
-        private readonly Example $model,
-        // Inject dependency lain jika perlu (e.g., NotificationService)
-    ) {}
-
-    public function getAll(array $filters = []): Collection
+    public function __construct(LogService $logService)
     {
-        $query = $this->model->query()->with(['relasi1', 'relasi2']);
-
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (!empty($filters['year'])) {
-            $query->whereYear('created_at', $filters['year']);
-        }
-
-        return $query->get();
+        $this->logService = $logService;
     }
 
-    public function findById(int $id): mixed
+    public function someMethod($data)
     {
-        return $this->model->with(['relasi1', 'relasi2'])->findOrFail($id);
-    }
-
-    public function create(array $data): mixed
-    {
-        return DB::transaction(function () use ($data) {
-            // Business rule: set default values jika perlu
-            $data['status']     = Example::STATUS_PENDING;
-            $data['created_by'] = Auth::id();
-
-            // Business rule: tentukan apakah butuh approval
-            if ($data['amount'] > 1_000_000) {
-                $data['requires_approval'] = true;
-            }
-
-            $resource = $this->model->create($data);
-
-            // Side effect: simpan history
-            $resource->histories()->create([
-                'action'  => 'created',
-                'user_id' => Auth::id(),
-            ]);
-
-            return $resource->load('relasi1');
-        });
-    }
-
-    public function update(int $id, array $data): mixed
-    {
-        return DB::transaction(function () use ($id, $data) {
-            $resource = $this->findById($id);
-
-            // Business rule: jika amount berubah, reset approval status
-            if (isset($data['amount']) && $data['amount'] !== $resource->amount) {
-                $data['status'] = Example::STATUS_PENDING;
-            }
-
-            $resource->update($data);
-
-            $resource->histories()->create([
-                'action'  => 'updated',
-                'user_id' => Auth::id(),
-            ]);
-
-            return $resource->fresh('relasi1');
-        });
-    }
-
-    public function delete(int $id): bool
-    {
-        return DB::transaction(function () use ($id) {
-            $resource = $this->findById($id);
-
-            // Business rule: tidak bisa hapus jika sudah approved
-            if ($resource->status === Example::STATUS_APPROVED) {
-                throw new \Exception('Data yang sudah disetujui tidak dapat dihapus.');
-            }
-
-            $resource->histories()->create([
-                'action'  => 'deleted',
-                'user_id' => Auth::id(),
-            ]);
-
-            return $resource->delete(); // SoftDelete
-        });
-    }
-
-    public function getDataTable(Request $request): mixed
-    {
-        $query = $this->model->with('relasi1')
-            ->select('examples.*');
-
-        // Apply filter dari request
-        if ($request->filled('filter_status')) {
-            $query->where('status', $request->filter_status);
-        }
-
-        return DataTables::of($query)
-            ->addColumn('status_badge', fn($row) => $row->getStatusBadgeClass())
-            ->addColumn('action', fn($row) => view('pages.example._action', compact('row'))->render())
-            ->rawColumns(['status_badge', 'action'])
-            ->make(true);
-    }
-
-    public function approve(int $id): mixed
-    {
-        return DB::transaction(function () use ($id) {
-            $resource = $this->findById($id);
-
-            $resource->update([
-                'status'      => Example::STATUS_APPROVED,
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-            ]);
-
-            // Trigger notification, event, dll
-            // event(new ExampleApproved($resource));
-
-            return $resource->fresh();
-        });
-    }
-
-    public function reject(int $id, string $reason): mixed
-    {
-        return DB::transaction(function () use ($id, $reason) {
-            $resource = $this->findById($id);
-
-            $resource->update([
-                'status'      => Example::STATUS_REJECTED,
-                'rejected_by' => Auth::id(),
-                'rejected_at' => now(),
-                'reject_reason' => $reason,
-            ]);
-
-            return $resource->fresh();
-        });
-    }
-}
-```
-
-##### Service Binding (Dependency Injection)
-
-Service binding dilakukan di `CustomServiceProvider`. **Setiap service baru WAJIB didaftarkan di sini.**
-
-```php
-<?php
-
-namespace App\Providers;
-
-use Illuminate\Support\ServiceProvider;
-
-class CustomServiceProvider extends ServiceProvider
-{
-    public function register(): void
-    {
-        $this->app->bind(
-            \App\Services\ExampleService\ExampleService::class,
-            \App\Services\ExampleService\ExampleServiceImpl::class
+        // Log an informational message
+        $this->logService->create(
+            'Processing some data in someMethod.',
+            [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'data_id' => $data->id ?? null, // Example: Log a relevant ID
+                'user_id' => auth()->id(),      // Example: Log the authenticated user ID
+            ],
+            'info'
         );
 
-        $this->app->bind(
-            \App\Services\ApprovalService\ApprovalService::class,
-            \App\Services\ApprovalService\ApprovalServiceImpl::class
-        );
+        // ... business logic ...
 
-        // Tambahkan binding lain di sini
-    }
-
-    public function boot(): void {}
-}
-```
-
-##### Service Guidelines
-
-| Rule                                     | Deskripsi                                                             |
-| ---------------------------------------- | --------------------------------------------------------------------- |
-| **Single Responsibility**                | Satu service = satu domain/aggregate                                  |
-| **Interface First**                      | Selalu definisikan interface sebelum implementation                   |
-| **All CRUD in Service**                  | create/read/update/delete **HANYA** di service, bukan controller      |
-| **All Business Logic in Service**        | Kalkulasi, kondisi, validasi bisnis **HANYA** di service              |
-| **Dependency Injection**                 | Inject via constructor, jangan pakai `app()` helper                   |
-| **Transaction Safety**                   | Gunakan `DB::transaction()` untuk semua operasi multi-step            |
-| **Exception Handling**                   | Throw exception untuk error bisnis, tangkap di controller jika perlu  |
-| **Return Types**                         | Selalu definisikan return type di interface                           |
-| **No Direct Model Access in Controller** | Controller **tidak boleh** memanggil `Model::` apapun secara langsung |
-| **No DB Queries in Controller**          | Controller **tidak boleh** menggunakan `DB::` secara langsung         |
-
----
-
-#### 3. Model Pattern
-
-```php
-class Example extends Model
-{
-    use SoftDeletes;  // WAJIB untuk data penting
-
-    protected $fillable = [...];
-    protected $casts    = [...];
-
-    // 1. Constants untuk status/enum
-    const STATUS_PENDING  = 0;
-    const STATUS_APPROVED = 1;
-    const STATUS_REJECTED = 2;
-
-    // 2. Relationships
-    public function parent()   { return $this->belongsTo(Parent::class); }
-    public function children() { return $this->hasMany(Child::class); }
-    public function histories(){ return $this->morphMany(History::class, 'historyable'); }
-
-    // 3. Scopes
-    public function scopePending($query) { return $query->where('status', self::STATUS_PENDING); }
-    public function scopeByYear($query, $year) { return $query->whereYear('created_at', $year); }
-
-    // 4. Helper methods (boleh di model, bukan business logic)
-    public function isPending(): bool   { return $this->status === self::STATUS_PENDING; }
-    public function isApproved(): bool  { return $this->status === self::STATUS_APPROVED; }
-
-    public function getStatusLabel(): string
-    {
-        return match($this->status) {
-            self::STATUS_PENDING  => 'Pending',
-            self::STATUS_APPROVED => 'Approved',
-            self::STATUS_REJECTED => 'Rejected',
-            default               => 'Unknown',
-        };
-    }
-
-    public function getStatusBadgeClass(): string
-    {
-        return match($this->status) {
-            self::STATUS_APPROVED => '<span class="badge bg-success">Approved</span>',
-            self::STATUS_REJECTED => '<span class="badge bg-danger">Rejected</span>',
-            default               => '<span class="badge bg-warning">Pending</span>',
-        };
+        // Log a warning
+        if (empty($data)) {
+            $this->logService->create(
+                'Attempted to process empty data.',
+                [
+                    'class' => __CLASS__,
+                    'function' => __FUNCTION__,
+                    'input' => request()->all() // Example: Log problematic input
+                ],
+                'warning'
+            );
+        }
     }
 }
 ```
 
-#### 4. Response Pattern (untuk AJAX)
+**Guidelines:**
+
+- **Exclude Credentials:** NEVER log sensitive information such as passwords, API keys, tokens, or any other credentials. Filter out sensitive data from context arrays.
+- **Relevant Message:** Ensure the `message` string clearly describes the event being logged.
+- **Standard Context:** Always include `'class' => __CLASS__` and `'function' => __FUNCTION__` in the `$context` array to easily trace the origin of the log entry. Add other relevant data to the context, such as IDs, user information, or input parameters, but **never sensitive data**.
+- **Appropriate Level:** Use the correct log level (`info`, `warning`, `error`, `debug`, `notice`, `critical`, `alert`, `emergency`) to reflect the severity of the event.
+
+### JSON Response & Controller AJAX Standard
+
+All controller methods that return JSON (AJAX endpoints) MUST follow this standard:
+
+**Required JSON format:**
 
 ```php
 // Success
 return response()->json([
     'success' => true,
-    'message' => 'Operation successful',
-    'data'    => $data,
+    'message' => 'Data saved successfully.',
+    'data'    => $result,
 ]);
 
-// Error validasi
+// Error / Failure
 return response()->json([
     'success' => false,
-    'message' => 'Validasi gagal.',
-    'errors'  => $validator->errors(),
-], 422);
-
-// Error bisnis (dari service exception)
-return response()->json([
-    'success' => false,
-    'message' => $e->getMessage(),
-], 422);
+    'message' => 'Error description.',
+    'data'    => null,
+], 422); // or 500
 ```
 
----
-
-## 📝 Code Conventions
-
-### Naming Conventions
-
-| Item            | Convention              | Contoh                                   |
-| --------------- | ----------------------- | ---------------------------------------- |
-| **Model**       | PascalCase, Singular    | `Transaction`, `KPIWorkPlan`             |
-| **Controller**  | PascalCase + Controller | `TransactionController`                  |
-| **Service**     | PascalCase + Service    | `TransactionService`, `ApprovalService`  |
-| **Table**       | snake_case, Plural      | `transactions`, `kpi_workplans`          |
-| **Column**      | snake_case              | `created_at`, `user_id`                  |
-| **Migration**   | snake_case, descriptive | `create_transactions_table`              |
-| **Route name**  | kebab-case dengan dot   | `transaction.store`, `budget.user.index` |
-| **View folder** | kebab-case              | `resources/views/pages/work-plan/`       |
-| **Variable**    | camelCase               | `$totalAmount`, `$pendingApprovals`      |
-| **Constant**    | UPPER_SNAKE_CASE        | `STATUS_PENDING`                         |
-
-### Route Naming Convention
+**Mandatory try-catch for all AJAX methods:**
 
 ```php
-// Pattern: {module}.{action} atau {module}.{sub}.{action}
-Route::get('/',          [Controller::class, 'index'])->name('transaction.index');
-Route::get('/create',    [Controller::class, 'create'])->name('transaction.create');
-Route::post('/',         [Controller::class, 'store'])->name('transaction.store');
-Route::get('/{id}/edit', [Controller::class, 'edit'])->name('transaction.edit');
-Route::put('/{id}',      [Controller::class, 'update'])->name('transaction.update');
-Route::delete('/{id}',   [Controller::class, 'destroy'])->name('transaction.destroy');
-Route::get('/data',      [Controller::class, 'getData'])->name('transaction.data');
-Route::post('/{id}/approve', [Controller::class, 'approve'])->name('transaction.approve');
-Route::post('/{id}/reject',  [Controller::class, 'reject'])->name('transaction.reject');
-```
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+    ]);
 
-### Comments
+    try {
+        $result = $this->exampleService->create($validated);
 
-```php
-// WAJIB: DocBlock untuk method kompleks di service
-/**
- * Calculate approval chain based on amount threshold.
- * Setiap threshold memiliki approver yang berbeda (lihat tabel budget_thresholds).
- *
- * @param int $transactionId
- * @return array Ordered list of approver user IDs
- */
-public function buildApprovalChain(int $transactionId): array { }
-
-// Section markers untuk service/controller besar
-/* ========================
-    APPROVAL OPERATIONS
-======================== */
-```
-
----
-
-## 💾 Database Conventions
-
-### Migration Rules
-
-1. **Prefix Timestamp**: Ikuti format Laravel `YYYY_MM_DD_HHMMSS`
-2. **Naming**: `{action}_{columns}_to_{table}_table.php`
-3. **Reversible**: Selalu implementasi `down()` method
-4. **Nullable**: Default NULL untuk optional fields
-
-### Foreign Key Naming
-
-```php
-// Pattern: {table}_{column}_foreign
-$table->foreign('user_id')
-    ->references('id')
-    ->on('users')
-    ->onDelete('cascade');
-```
-
-### Soft Deletes
-
-**WAJIB** untuk tabel: `transactions`, `approvals`, `workplans`, `budget_items`, dan semua tabel yang butuh audit trail.
-
-### Index Naming
-
-```php
-// Pattern: {table}_{columns}_index
-$table->index(['status', 'created_at'], 'transactions_status_created_index');
-```
-
----
-
-## 🎨 Frontend Conventions
-
-### Blade Views
-
-1. **Layout**: Extend dari `layouts/app.blade.php`
-2. **Partials**: `@include('include.component')` untuk reusable parts
-3. **Stack**: Gunakan `@push('scripts')` untuk page-specific JS
-
-### DataTables Pattern
-
-```javascript
-// Gunakan Yajra DataTables dengan server-side processing
-$('#dataTable').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-        url: '{{ route("module.data") }}',
-        data: function(d) {
-            d.filter_year   = $('#filter_year').val();
-            d.filter_status = $('#filter_status').val();
-        }
-    },
-    columns: [...]
-});
-```
-
-### Modal Pattern
-
-```html
-<!-- Modal wrapper di setiap page yang butuh -->
-<div class="modal fade" id="modalForm" tabindex="-1">
-    <!-- Form content -->
-</div>
-
-<!-- Trigger -->
-<button data-bs-toggle="modal" data-bs-target="#modalForm">Add</button>
-```
-
-### Currency Formatting
-
-```javascript
-function formatCurrency(amount) {
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-    }).format(amount);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data created successfully.',
+            'data'    => $result,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create data: ' . $e->getMessage(),
+            'data'    => null,
+        ], 500);
+    }
 }
 ```
 
----
+**Rules:**
 
-## 🔐 Security Rules
+- NEVER return JSON without a `success` boolean key from AJAX endpoints
+- NEVER let exceptions bubble unhandled in AJAX methods
+- Use `$request->validate()` for simple validation; use `Validator::make()` for complex conditional rules
+- Log errors in the catch block via `Log::error()` or the injected `LogService`
 
-### Role & Permission Management
+### Blade URL Convention
 
-> [!IMPORTANT]
-> Budget Control menggunakan **Spatie Laravel Permission** sebagai **satu-satunya** sistem untuk role & permission management.
+In Blade templates and inline JavaScript, **always** use the `route()` helper. Never hardcode URL paths.
 
-```php
-// Permission checking
-if ($employee->can('transaction.create')) { }
+**Patterns:**
 
-// Role checking
-if ($employee->hasRole('admin')) { }
+```blade
+{{-- Static route --}}
+let url = "{{ route('module.store') }}";
 
-// Middleware pada route
-Route::middleware('role:admin')->group(function () { });
-Route::middleware('permission:transaction.view')->group(function () { });
+{{-- Route with dynamic ID (for AJAX) --}}
+let url = "{{ route('module.update', ':id') }}".replace(':id', id);
 
-// Assign / sync role
-$employee->assignRole('editor');
-$employee->syncRoles(['editor', 'writer']);
+{{-- HTML form action --}}
+<form action="{{ route('module.store') }}" method="POST">
+
+{{-- HTML href --}}
+<a href="{{ route('module.index') }}">Back</a>
+
+{{-- HTML href with model ID --}}
+<a href="{{ route('module.edit', $item->id) }}">Edit</a>
 ```
 
-### Permission Middleware
+**Why `.replace(':id', id)` pattern?**
+`route()` is server-side PHP; it cannot receive a JavaScript variable directly. The pattern `route('module.update', ':id')` renders `/module/:id` server-side, then `.replace(':id', id)` substitutes the JS value at runtime.
 
-```php
-// WAJIB pada setiap route yang butuh akses kontrol
-Route::prefix('transaction')
-    ->middleware('permission:transaction.view')
-    ->group(function () {
-        // routes here
+**What NOT to do:**
+
+```blade
+{{-- ❌ WRONG --}}
+let url = '/module/' + id;
+let url = `/module/${id}`;
+```
+
+### AJAX & SweetAlert2 Standard
+
+SweetAlert2 (`Swal`) is globally available. All AJAX calls in Blade views MUST use it for user feedback.
+
+**Standard AJAX pattern:**
+
+```javascript
+$.ajax({
+    url: "{{ route('module.store') }}",
+    method: "POST",
+    data: formData,
+    processData: false,
+    contentType: false,
+    headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+    beforeSend: function () {
+        Swal.fire({
+            title: "Menyimpan...",
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+        });
+    },
+    success: function (response) {
+        if (response.success) {
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil",
+                text: response.message,
+                timer: 1500,
+                showConfirmButton: false,
+            }).then(() => {
+                /* e.g. reload table, close modal */
+            });
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Gagal",
+                text: response.message,
+            });
+        }
+    },
+    error: function (xhr) {
+        let message = "Terjadi kesalahan pada server.";
+        if (xhr.status === 422) {
+            message = xhr.responseJSON?.message ?? "Input tidak valid.";
+            Swal.fire({ icon: "warning", title: "Validasi", text: message });
+        } else {
+            message = xhr.responseJSON?.message ?? message;
+            Swal.fire({ icon: "error", title: "Error", text: message });
+        }
+    },
+});
+```
+
+**Standard DELETE confirmation pattern:**
+
+```javascript
+function deleteRecord(id) {
+    let url = "{{ route('module.destroy', ':id') }}".replace(":id", id);
+    Swal.fire({
+        title: "Hapus data ini?",
+        text: "Data yang dihapus tidak dapat dikembalikan!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Ya, Hapus!",
+        cancelButtonText: "Batal",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: url,
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                        "content",
+                    ),
+                },
+                beforeSend: () =>
+                    Swal.fire({
+                        title: "Menghapus...",
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading(),
+                    }),
+                success: (response) => {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Dihapus!",
+                            timer: 1200,
+                            showConfirmButton: false,
+                        }).then(() => table.ajax.reload());
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: response.message,
+                        });
+                    }
+                },
+                error: (xhr) =>
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: xhr.responseJSON?.message ?? "Server error.",
+                    }),
+            });
+        }
     });
+}
 ```
 
-### Permission Naming — Pattern: `{module}.{action}`
+**`beforeSend` title convention:**
+| Context | Title |
+|---------|-------|
+| Create / Update | `'Menyimpan...'` |
+| Delete | `'Menghapus...'` |
+| Processing | `'Memproses...'` |
+| Loading data | `'Memuat data...'` |
+| Upload file | `'Mengupload...'` |
 
+**SweetAlert2 icon convention:**
+| Condition | `icon` | `title` |
+|-----------|--------|--------|
+| `response.success === true` | `'success'` | `'Berhasil'` |
+| `response.success === false` | `'error'` | `'Gagal'` |
+| HTTP 422 validation | `'warning'` | `'Validasi'` |
+| HTTP 500 server error | `'error'` | `'Error'` |
+| Confirm destructive action | `'warning'` | `'Konfirmasi'` |
+
+**What NOT to do:**
+
+- ❌ Never use native `alert()` or `confirm()` for user feedback
+- ❌ Never show a success alert on an error condition
+- ❌ Never skip `beforeSend` loading state on AJAX calls
+
+### Modal Standard (Bootstrap 5)
+
+All modals use Bootstrap 5 attributes (`data-bs-*`). Follow this structure:
+
+**Form modal template:**
+
+```blade
+<div class="modal fade" id="modalFeatureName" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-lg me-1"></i>Add Feature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="featureForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Field One</label>
+                            <input type="text" name="field_one" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Field Two</label>
+                            <input type="text" name="field_two" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 ```
-transaction.view
-transaction.create
-transaction.edit
-transaction.delete
-transaction.approve
+
+**Modal rules:**
+
+- Use `data-bs-toggle="modal"` and `data-bs-target="#modalId"` (Bootstrap 5, NOT `data-toggle`)
+- Use `data-bs-dismiss="modal"` on close buttons
+- Use native Bootstrap 5 `btn-close` for the X button in the header
+- `modal-lg` for forms with multiple fields; `modal-md` (default) for simple confirmations
+- `modal-dialog-centered` for vertical centering
+- Close button in footer: `btn btn-light`
+- Submit button in footer: `btn btn-primary`
+- Always place `modal-footer` **inside** the `<form>` tag so the submit button works
+- For file uploads: add `enctype="multipart/form-data"` to the form
+
+**Form layout rules inside modal:**
+
+- 2 fields per row: `col-md-6`
+- Full-width field (textarea, file, long text): `col-12`
+- Use `row g-3` as the container inside `modal-body`
+- Select dropdowns: always include `<option value="">-- Pilih --</option>` as placeholder
+
+**Icon convention (modal header title):**
+| Purpose | Icon |
+|---------|------|
+| Add / Create | `bi bi-plus-lg` |
+| Edit / Update | `bi bi-pencil-square` |
+| Delete | `bi bi-trash` |
+| View / Detail | `bi bi-eye` |
+| Upload | `bi bi-upload` |
+
+### Action Button Standard
+
+Follow consistent button classes across all views:
+
+**Card header (Add/New button):**
+
+```blade
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i> Add New
+</button>
 ```
 
-### Input Validation
-
-Validasi **WAJIB** dilakukan di controller menggunakan `$request->validate()` sebelum data dikirim ke service.
+**DataTable action column (Edit / Delete):**
 
 ```php
-$validated = $request->validate([
-    'amount'      => 'required|numeric|min:0',
-    'description' => 'required|string|max:255',
-]);
-
-// Kirim $validated ke service — BUKAN $request->all()
-$result = $this->exampleService->create($validated);
+// In Controller's addColumn('action', ...)
+'<button class="btn btn-sm btn-outline-primary edit-btn" data-id="' . $row->id . '">
+    <i class="bi bi-pencil-square"></i>
+</button>
+<button class="btn btn-sm btn-outline-danger delete-btn" data-id="' . $row->id . '">
+    <i class="bi bi-trash"></i>
+</button>'
 ```
 
-### XSS Prevention
+**Button class reference:**
+| Action | Class | Icon |
+|--------|-------|------|
+| Add (card header) | `btn btn-primary` | `bi bi-plus-lg` |
+| Edit (table row) | `btn btn-sm btn-outline-primary` | `bi bi-pencil-square` |
+| Delete (table row) | `btn btn-sm btn-outline-danger` | `bi bi-trash` |
+| View/Detail (table row) | `btn btn-sm btn-outline-info` | `bi bi-eye` |
+| Modal Close / Cancel | `btn btn-light` | — |
+| Modal Save / Submit | `btn btn-primary` | — |
+| Modal Delete Confirm | `btn btn-danger` | `bi bi-trash` |
 
-- Blade: Gunakan `{{ }}` bukan `{!! !!}` kecuali terpaksa
-- Jika harus raw HTML: Sanitize dengan `strip_tags()` atau HTMLPurifier
+## Development Workflow
 
----
-
-## 🧪 Testing Guidelines
-
-### Test Location
-
-```
-tests/
-├── Feature/    # Integration tests (Controller → Service → DB)
-└── Unit/       # Unit tests untuk service methods secara terisolasi
-```
-
-### Running Tests
+### Starting Development
 
 ```bash
-php artisan test
-php artisan test tests/Unit/ExampleServiceTest.php
-php artisan test --filter=ExampleServiceTest
+composer dev  # Runs server, queue, logs, vite concurrently
+# OR separately:
+php artisan serve
+php artisan queue:listen --tries=1
+npm run dev
 ```
 
-### Test Naming
-
-```php
-// Pattern: test_{action}_{condition}
-public function test_create_sets_pending_status_by_default()
-public function test_create_sets_requires_approval_when_amount_exceeds_threshold()
-public function test_delete_throws_exception_when_already_approved()
-public function test_approve_updates_status_and_records_approver()
-```
-
-> **Catatan:** Karena business logic ada di service, unit test **WAJIB** menguji service secara langsung — bukan melalui HTTP.
-
----
-
-## 📦 Git & Deployment
-
-### Commit Message Format
-
-```
-{type}: {description}
-
-Types:
-- feat:     Fitur baru
-- fix:      Bug fix
-- refactor: Refactoring tanpa ubah behaviour
-- docs:     Dokumentasi
-- style:    Formatting, missing semicolons, etc.
-- test:     Adding/fixing tests
-- chore:    Maintenance tasks
-
-Contoh:
-feat: add dynamic approval threshold configuration
-fix: correct budget calculation for Q4
-refactor: move approval logic from controller to ApprovalService
-```
-
-### Branch Naming
-
-```
-feature/{issue-number}-{short-description}
-bugfix/{issue-number}-{short-description}
-hotfix/{short-description}
-```
-
-### Pre-Deployment Checklist
-
-- [ ] `composer install --no-dev`
-- [ ] `php artisan config:cache`
-- [ ] `php artisan route:cache`
-- [ ] `php artisan view:cache`
-- [ ] `php artisan migrate --force`
-
----
-
-## ⚠️ LARANGAN (Hard Rules)
-
-> [!CAUTION]
-> Pelanggaran rules berikut = **Reject PR tanpa review**
-
-### Umum
-
-1. ❌ **JANGAN** commit langsung ke `main` branch
-2. ❌ **JANGAN** hapus migration yang sudah di-production
-3. ❌ **JANGAN** store password/secret di code (gunakan `.env`)
-4. ❌ **JANGAN** bypass permission middleware
-5. ❌ **JANGAN** gunakan `dd()` atau `var_dump()` di production code
-6. ❌ **JANGAN** hardcode ID (user_id, role_id, etc.)
-7. ❌ **JANGAN** gunakan raw SQL tanpa binding untuk user input
-8. ❌ **JANGAN** hapus SoftDeletes dari model yang sudah ada
-
-### Architecture (CRUD & Service Layer)
-
-9. ❌ **JANGAN** menulis query `Model::` apapun di dalam controller
-10. ❌ **JANGAN** menulis `DB::` apapun di dalam controller
-11. ❌ **JANGAN** menulis kondisi bisnis (`if amount > X`, `if status == Y`) di controller
-12. ❌ **JANGAN** melakukan operasi multi-step tanpa `DB::transaction()` di service
-13. ❌ **JANGAN** membuat service tanpa interface-nya
-14. ❌ **JANGAN** inject `ServiceImpl` langsung ke controller — selalu inject Interface
-15. ❌ **JANGAN** lupa mendaftarkan service binding baru di `CustomServiceProvider`
-16. ❌ **JANGAN** menaruh logika DataTables di controller — delegate ke service method
-
----
-
-## 📌 Quick Reference
-
-### Common Commands
+### Database Operations
 
 ```bash
-# Development
-composer dev                     # Start all services (server, queue, logs, vite)
-php artisan serve                # Start server only
-npm run dev                      # Start Vite
-
-# Database
 php artisan migrate
-php artisan migrate:fresh --seed
+php artisan migrate:fresh --seed  # Reset with seeding
 php artisan db:seed --class=SeederName
-
-# Cache
-php artisan optimize:clear
-
-# Testing
-php artisan test
 ```
 
-### Useful Artisan
+### Testing
 
 ```bash
-php artisan make:controller NameController
-php artisan make:model Name -m           # with migration
-php artisan make:service ServiceName     # Service interface + implementation + binding
-php artisan make:livewire Name
-php artisan make:export NameExport
-php artisan permission:create-role admin
+php artisan test                           # All tests
+php artisan test tests/Feature/TransactionTest.php
+php artisan test --filter=ApprovalServiceTest
 ```
 
-### Checklist Membuat Fitur Baru
+## Naming Conventions
 
+| Item        | Convention              | Example                                  |
+| ----------- | ----------------------- | ---------------------------------------- |
+| Model       | PascalCase, Singular    | `Transaction`, `KPIWorkPlan`             |
+| Controller  | PascalCase + Controller | `TransactionController`                  |
+| Table       | snake_case, plural      | `transactions`, `kpi_workplans`          |
+| Route name  | kebab-case with dot     | `transaction.store`, `budget.user.index` |
+| View folder | kebab-case              | `pages/work-plan/`                       |
+| Variable    | camelCase               | `$totalAmount`, `$pendingApprovals`      |
+| Constant    | UPPER_SNAKE_CASE        | `STATUS_PENDING`                         |
+
+## Critical Rules (Auto-Reject if Violated)
+
+1. **NO direct Model queries in Controllers** - Always delegate to Services
+2. **NO business logic in Controllers** - Controllers are orchestrators only
+3. **SoftDeletes required** on: `transactions`, `approvals`, `workplans`, `budget_items`, audit-critical tables
+4. **Permission middleware** on all protected routes: `->middleware('permission:module.action')`
+5. **DB transactions** for multi-step operations: `DB::transaction(function() {...})`
+6. **NO hardcoded IDs** - Use config, seeded data, or relationships
+7. **Validate all inputs** before passing to services
+8. **NO raw SQL** for user input - Use query builder with bindings
+9. **Try-catch required** on all AJAX controller methods that return `response()->json()`
+10. **`success` key required** in all JSON AJAX responses: `['success' => bool, 'message' => ..., 'data' => ...]`
+11. **Always use `route()` helper** in Blade templates - never hardcode URL strings
+12. **Always eager load** relationships in DataTable queries (`->with([...])`) to prevent N+1
+
+## Technology Stack
+
+- **Framework:** Laravel 12, PHP 8.2+
+- **Frontend:** Blade + Bootstrap 5 + jQuery 3.7 + SweetAlert2 + Livewire 3 + Tailwind 4 (via Vite)
+- **Database:** MySQL/MariaDB
+- **Key Packages:**
+    - `spatie/laravel-permission` (^6.23) - RBAC
+    - `yajra/laravel-datatables-oracle` (^12.6) - Server-side DataTables
+    - `maatwebsite/excel` (^3.1) - Excel import/export
+    - `power-components/livewire-powergrid` (^6.6) - DataGrid
+- **Icons:** Bootstrap Icons (`bi bi-*`) and Remix Icons (`ri-*`)
+- **Note:** Bootstrap 5 & SweetAlert2 are loaded as static assets (not npm). jQuery is available globally.
+
+## Permission Helper
+
+Global helper at `app/Helpers/PermissionHelper.php` (autoloaded):
+
+```php
+PermissionHelper::registerMenuPermission('transaction');
+// Creates: transaction.view, .create, .edit, .delete
 ```
-[ ] Buat migration + model  (php artisan make:model Name -m)
-[ ] Buat service             (php artisan make:service NameService)
-[ ] Implementasikan CRUD di  NameServiceImpl.php
-[ ] Daftarkan binding di     CustomServiceProvider
-[ ] Buat controller          (inject NameService interface saja)
-[ ] Controller hanya         validate → call service → return response
-[ ] Tambahkan routes dengan  permission middleware
-[ ] Buat views               (extend layouts/app.blade.php)
-[ ] Tulis unit test untuk    NameServiceImpl
+
+## Model Pattern
+
+```php
+class Example extends Model {
+    use SoftDeletes;  // Required for important data
+
+    // 1. Constants for status/enum
+    const STATUS_PENDING = 0;
+
+    // 2. Relationships
+    // 3. Scopes: scopePending(), scopeByYear()
+    // 4. Helpers: isPending(), getStatusLabel(), getStatusBadgeClass()
+}
 ```
 
----
+## Route Pattern
 
-**Last Updated**: 2026-02-18  
-**Maintained By**: Development Team
+```php
+Route::get('/', [Controller::class, 'index'])->name('module.index');
+Route::post('/', [Controller::class, 'store'])->name('module.store');
+Route::get('/data', [Controller::class, 'getData'])->name('module.data');  // DataTables endpoint
+Route::post('/{id}/approve', [Controller::class, 'approve'])->name('module.approve');
+```
+
+## Additional Documentation
+
+- **Full coding rules:** [ANTIGRAVITY_RULES.md](../ANTIGRAVITY_RULES.md) - Comprehensive standards
+- **Approval system:** [documentasi/APPROVAL_SYSTEM.md](../documentasi/APPROVAL_SYSTEM.md)
+- **Workplan module:** [documentasi/WORKPLAN_MODULE.md](../documentasi/WORKPLAN_MODULE.md)
+- **Employee ID generator:** [documentasi/EMPLOYEE_ID_GENERATOR.md](../documentasi/EMPLOYEE_ID_GENERATOR.md)
+
+## Common Pitfalls
+
+1. Forgetting to bind service interface in `CustomServiceProvider`
+2. Using Livewire without forcing Bootstrap 5 config
+3. Not using DB transactions for approval chain creation
+4. Modifying approval templates without considering in-flight requests (they use snapshots)
+5. Accessing models directly in controllers instead of through services
+6. Using Bootstrap 4 `data-toggle`/`data-target` instead of Bootstrap 5 `data-bs-toggle`/`data-bs-target`
+7. Hardcoding URLs in Blade JS (e.g. `` `/module/${id}` ``) instead of using `route()` with `.replace(':id', id)`
+8. Forgetting `rawColumns()` in DataTables when action column contains HTML
+9. Missing try-catch in AJAX controller methods causing unhandled 500 errors returned as HTML
+10. Using `FromCollection` on large dataset exports — use `FromQuery` to prevent memory exhaustion
+11. Using native `alert()` instead of `Swal.fire()` for AJAX feedback
+12. Missing `success` key in JSON response — Blade AJAX handlers check `response.success`, not just HTTP status

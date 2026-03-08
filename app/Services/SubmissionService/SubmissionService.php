@@ -165,4 +165,19 @@ interface SubmissionService
      * @return array ['success' => bool, 'data' => mixed]
      */
     public function getDueDateTransactions(array $filters = []): array;
+
+    /**
+     * Import transactions from Excel file.
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @return array ['success' => bool, 'message' => string, 'data' => mixed]
+     */
+    public function importTransactions($file): array;
+
+    /**
+     * Download Excel template for transaction import.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function downloadTemplate();
 }

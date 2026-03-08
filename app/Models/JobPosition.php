@@ -17,4 +17,9 @@ class JobPosition extends Model
         "structure_name",
         "status",
     ];
+
+    public function jobLevel()
+    {
+        return $this->belongsTo(JobLevel::class, 'job_level_id');
+    }
 }

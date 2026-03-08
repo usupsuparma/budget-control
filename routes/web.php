@@ -696,6 +696,12 @@ Route::middleware('auth')->group(function () {
                 Route::get('/summary', [SubmissionController::class, 'getSummary'])
                     ->name('userSubmission.summary');
 
+                Route::get('/template', [SubmissionController::class, 'downloadTemplate'])
+                    ->name('userSubmission.template');
+
+                Route::post('/import', [SubmissionController::class, 'import'])
+                    ->name('userSubmission.import');
+
                 Route::post('/store', [SubmissionController::class, 'store'])
                     ->name('userSubmission.store');
 
@@ -711,6 +717,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/budget/{id}', [SubmissionController::class, 'getBudgetInfo'])
                     ->name('userSubmission.budget.info');
 
+                // admission/user/due-date
                 Route::get('/due-date', [SubmissionController::class, 'dueDate'])
                     ->name('userSubmission.dueDate');
                 Route::get('/due-date-data', [SubmissionController::class, 'getDueDateData'])
@@ -863,6 +870,8 @@ Route::middleware('auth')->group(function () {
             // Dropdown data endpoints
             Route::get('/budget-categories', [BudgetUserController::class, 'getBudgetCategories'])
                 ->name('budget-user.budget-categories');
+            Route::get('/budget-codes', [BudgetUserController::class, 'getBudgetCodes'])
+                ->name('budget-user.budget-codes');
             Route::get('/cost-centers', [BudgetUserController::class, 'getCostCenters'])
                 ->name('budget-user.cost-centers');
             Route::get('/suppliers', [BudgetUserController::class, 'getSuppliers'])

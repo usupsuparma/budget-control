@@ -2,36 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BudgetCategory;
-use App\Models\BudgetCode;
-use App\Models\KPIWorkPlan;
-use App\Models\KPIDivision;
-use App\Models\Division;
-use App\Models\StockCode;
-use App\Models\WorkplanBudgetItem;
+use App\Services\BudgetUserService\BudgetUserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 
 class BudgetUserController extends Controller
 {
+    protected BudgetUserService $budgetUserService;
+
+    public function __construct(BudgetUserService $budgetUserService)
+    {
+        $this->budgetUserService = $budgetUserService;
+    }
+
     /**
      * Display budget user page
      */
     public function index(Request $request)
     {
-        // Get unique divisions from KPI Division
-        $kpiDivisions = KPIDivision::with('division')
-            ->select('division_id')
-            ->distinct()
-            ->get();
+        $result    = $this->budgetUserService->getDivisions();
+        $divisions = $result['data'];
+        $years     = range(date('Y') + 2, date('Y') - 5);
 
-        $divisions = $kpiDivisions->map(function ($kpi) {
-            return $kpi->division;
-        })->filter()->unique('id')->values();
-
-        $years = range(date('Y') + 2, date('Y') - 5);
         return view('pages.budget.budget-user', compact('years', 'divisions'));
     }
 
@@ -41,24 +33,15 @@ class BudgetUserController extends Controller
     public function getDivisions(Request $request)
     {
         try {
-            $kpiDivisions = KPIDivision::with('division')
-                ->select('division_id')
-                ->distinct()
-                ->get();
+            $result = $this->budgetUserService->getDivisions();
 
-            $divisions = $kpiDivisions->map(function ($kpi) {
-                return $kpi->division;
-            })->filter()->unique('id')->values();
-
-            return response()->json([
-                'success' => true,
-                'data' => $divisions
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading divisions: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load divisions: ' . $e->getMessage()
+                'message' => 'Failed to load divisions: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -70,92 +53,24 @@ class BudgetUserController extends Controller
     {
         try {
             $divisionId = $request->input('division_id');
-            $year = $request->input('year');
+            $year       = $request->input('year');
 
-            if (!$divisionId || !$year) {
+            if (! $divisionId || ! $year) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Division and Year are required'
+                    'message' => 'Division and Year are required',
                 ], 400);
             }
 
-            // Get all workplans for this division and year
-            $workplans = KPIWorkPlan::with([
-                'kpiDepartment' => function ($query) {
-                    $query->with(['department', 'kpiDivision']);
-                },
-                'kpiSection' => function ($query) {
-                    $query->with(['section.department']);
-                }
-            ])
-                ->where('year', $year)
-                ->where(function ($query) use ($divisionId) {
-                    // Get department-level workplans
-                    $query->whereHas('kpiDepartment.kpiDivision', function ($q) use ($divisionId) {
-                        $q->where('division_id', $divisionId);
-                    })
-                        // OR get section-level workplans
-                        ->orWhere(function ($q) use ($divisionId) {
-                            $q->whereHas('kpiSection.section.department', function ($deptQuery) use ($divisionId) {
-                                $deptQuery->where('division_id', $divisionId);
-                            });
-                        });
-                })
-                ->get();
+            $result = $this->budgetUserService->getAllItems((int) $divisionId, (int) $year);
 
-            // Get all budget items from these workplans WITH approval data
-            $workplanIds = $workplans->pluck('id')->toArray();
-
-            $items = WorkplanBudgetItem::with([
-                'category',
-                'budgetCodeRelation',
-                'stockCodeRelation',
-                'approver',
-                'workplan',
-                'approvalRequest.details.employment.employee',
-                'verificationCandidates.verifier',
-                'verifications',
-                'executor.verifier'
-            ])
-                ->whereIn('kpi_workplan_id', $workplanIds)
-                ->orderBy('kpi_workplan_id')
-                ->orderBy('sort_order')
-                ->get();
-
-            // Get current user's employment_id for authorization check
-            // Note: Auth::user() returns Employee model (see config/auth.php)
-            $currentEmploymentId = null;
-            $employee = Auth::user();
-            if ($employee && $employee->employment) {
-                $currentEmploymentId = $employee->employment->id;
-            }
-
-            // Get available budget codes
-            $budgetCodes = BudgetCode::active()
-                ->select('id', 'budget_code', 'name', 'inchargeCode')
-                ->orderBy('budget_code')
-                ->get();
-
-            // Get available stock codes
-            $stockCodes = StockCode::where('active', 1)
-                ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
-                ->orderBy('stock_code')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $items,
-                'workplans' => $workplans,
-                'totalWorkplans' => $workplans->count(),
-                'budgetCodes' => $budgetCodes,
-                'stockCodes' => $stockCodes,
-                'currentEmploymentId' => $currentEmploymentId
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading all items: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load items: ' . $e->getMessage()
+                'message' => 'Failed to load items: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -166,20 +81,15 @@ class BudgetUserController extends Controller
     public function getBudgetCategories(Request $request)
     {
         try {
-            $categories = BudgetCategory::whereNull('parent_id')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->get(['id', 'name', 'code']);
+            $result = $this->budgetUserService->getBudgetCategories();
 
-            return response()->json([
-                'success' => true,
-                'data' => $categories
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading budget categories: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load budget categories'
+                'message' => 'Failed to load budget categories',
             ], 500);
         }
     }
@@ -190,22 +100,15 @@ class BudgetUserController extends Controller
     public function getCostCenters(Request $request)
     {
         try {
-            $costCenters = BudgetCode::whereNotNull('inchargeCode')
-                ->where('inchargeCode', '!=', '')
-                ->distinct()
-                ->pluck('inchargeCode')
-                ->sort()
-                ->values();
+            $result = $this->budgetUserService->getCostCenters();
 
-            return response()->json([
-                'success' => true,
-                'data' => $costCenters
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading cost centers: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load cost centers'
+                'message' => 'Failed to load cost centers',
             ], 500);
         }
     }
@@ -216,21 +119,34 @@ class BudgetUserController extends Controller
     public function getSuppliers(Request $request)
     {
         try {
-            $suppliers = \App\Models\Supplier::whereNotNull('supplier')
-                ->where('supplier', '!=', '')
-                ->select('id', 'supplier')
-                ->orderBy('supplier')
-                ->get();
+            $result = $this->budgetUserService->getSuppliers();
 
-            return response()->json([
-                'success' => true,
-                'data' => $suppliers
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading suppliers: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load suppliers'
+                'message' => 'Failed to load suppliers',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get budget codes filtered by logged-in user's department(s)
+     */
+    public function getBudgetCodes(Request $request)
+    {
+        try {
+            $result = $this->budgetUserService->getBudgetCodes();
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error loading budget codes: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load budget codes',
             ], 500);
         }
     }
@@ -241,20 +157,15 @@ class BudgetUserController extends Controller
     public function getStockCodes(Request $request)
     {
         try {
-            $stockCodes = StockCode::where('active', 1)
-                ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
-                ->orderBy('stock_code')
-                ->get();
+            $result = $this->budgetUserService->getStockCodes();
 
-            return response()->json([
-                'success' => true,
-                'data' => $stockCodes
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading stock codes: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load stock codes'
+                'message' => 'Failed to load stock codes',
             ], 500);
         }
     }
@@ -265,21 +176,15 @@ class BudgetUserController extends Controller
     public function getUnits(Request $request)
     {
         try {
-            $units = \App\Models\Unit::whereNotNull('unit')
-                ->where('unit', '!=', '')
-                ->select('id', 'unit')
-                ->orderBy('unit')
-                ->get();
+            $result = $this->budgetUserService->getUnits();
 
-            return response()->json([
-                'success' => true,
-                'data' => $units
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading units: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load units'
+                'message' => 'Failed to load units',
             ], 500);
         }
     }
@@ -291,62 +196,46 @@ class BudgetUserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'kpi_workplan_id' => 'required|exists:kpi_workplans,id',
-                'budget_category_id' => 'required|exists:budget_categories,id',
-                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
-                'description' => 'required|string',
-                'stock_code' => 'nullable|string|max:50',
-                'budget_code' => 'nullable|string|max:50',
-                'product_line' => 'nullable|string|max:100',
-                'cost_center' => 'nullable|string|max:50',
-                'beg_balance' => 'nullable|string|max:100',
-                'supplier_id' => 'nullable|integer',
-                'supplier_name' => 'nullable|string|max:255',
-                'cons_rate' => 'nullable|string|max:100',
-                'unit_id' => 'nullable|integer',
-                'unit_name' => 'nullable|string|max:50',
-                'total' => 'nullable|numeric',
-                'price_estimation' => 'nullable|numeric',
+                'kpi_workplan_id'              => 'required|exists:kpi_workplans,id',
+                'budget_category_id'           => 'required|exists:budget_categories,id',
+                'category_type'                => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'description'                  => 'required|string',
+                'stock_code'                   => 'nullable|string|max:50',
+                'budget_code'                  => 'nullable|string|max:50',
+                'product_line'                 => 'nullable|string|max:100',
+                'cost_center'                  => 'nullable|string|max:50',
+                'beg_balance'                  => 'nullable|string|max:100',
+                'supplier_id'                  => 'nullable|integer',
+                'supplier_name'                => 'nullable|string|max:255',
+                'cons_rate'                    => 'nullable|string|max:100',
+                'unit_id'                      => 'nullable|integer',
+                'unit_name'                    => 'nullable|string|max:50',
+                'total'                        => 'nullable|numeric',
+                'price_estimation'             => 'nullable|numeric',
                 'price_estimation_description' => 'nullable|string|max:255',
-                'activity_jan' => 'nullable|integer|min:0',
-                'activity_feb' => 'nullable|integer|min:0',
-                'activity_mar' => 'nullable|integer|min:0',
-                'activity_apr' => 'nullable|integer|min:0',
-                'activity_may' => 'nullable|integer|min:0',
-                'activity_jun' => 'nullable|integer|min:0',
-                'activity_jul' => 'nullable|integer|min:0',
-                'activity_aug' => 'nullable|integer|min:0',
-                'activity_sep' => 'nullable|integer|min:0',
-                'activity_oct' => 'nullable|integer|min:0',
-                'activity_nov' => 'nullable|integer|min:0',
-                'activity_dec' => 'nullable|integer|min:0',
+                'activity_jan'                 => 'nullable|integer|min:0',
+                'activity_feb'                 => 'nullable|integer|min:0',
+                'activity_mar'                 => 'nullable|integer|min:0',
+                'activity_apr'                 => 'nullable|integer|min:0',
+                'activity_may'                 => 'nullable|integer|min:0',
+                'activity_jun'                 => 'nullable|integer|min:0',
+                'activity_jul'                 => 'nullable|integer|min:0',
+                'activity_aug'                 => 'nullable|integer|min:0',
+                'activity_sep'                 => 'nullable|integer|min:0',
+                'activity_oct'                 => 'nullable|integer|min:0',
+                'activity_nov'                 => 'nullable|integer|min:0',
+                'activity_dec'                 => 'nullable|integer|min:0',
             ]);
 
-            $validated['status'] = 'draft';
+            $result = $this->budgetUserService->createItem($validated);
 
-            // Set sort order
-            $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $validated['kpi_workplan_id'])
-                ->max('sort_order');
-            $validated['sort_order'] = ($maxOrder ?? 0) + 1;
-
-            $item = WorkplanBudgetItem::create($validated);
-            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation', 'workplan']);
-
-            $workplan = $item->workplan;
-            if ($workplan) {
-                $workplan->updateBudgetFromItems();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Budget item created successfully',
-                'data' => $item
-            ]);
+            return response()->json($result, $result['success'] ? 200 : 422);
         } catch (\Exception $e) {
             Log::error('Error creating item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create item: ' . $e->getMessage()
+                'message' => 'Failed to create item: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -357,67 +246,47 @@ class BudgetUserController extends Controller
     public function updateItem(Request $request, $itemId)
     {
         try {
-            $item = WorkplanBudgetItem::findOrFail($itemId);
-
-            // Check if item can be edited
-            if (!$item->canBeEdited()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This item cannot be edited in its current status'
-                ], 403);
-            }
-
             $validated = $request->validate([
-                'kpi_workplan_id' => 'nullable|exists:kpi_workplans,id',
-                'budget_category_id' => 'nullable|exists:budget_categories,id',
-                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
-                'description' => 'required|string',
-                'stock_code' => 'nullable|string|max:50',
-                'budget_code' => 'nullable|string|max:50',
-                'product_line' => 'nullable|string|max:100',
-                'cost_center' => 'nullable|string|max:50',
-                'beg_balance' => 'nullable|string|max:100',
-                'supplier_id' => 'nullable|integer',
-                'supplier_name' => 'nullable|string|max:255',
-                'cons_rate' => 'nullable|string|max:100',
-                'unit_id' => 'nullable|integer',
-                'unit_name' => 'nullable|string|max:50',
-                'total' => 'nullable|numeric',
-                'price_estimation' => 'nullable|numeric',
+                'kpi_workplan_id'              => 'nullable|exists:kpi_workplans,id',
+                'budget_category_id'           => 'nullable|exists:budget_categories,id',
+                'category_type'                => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'description'                  => 'required|string',
+                'stock_code'                   => 'nullable|string|max:50',
+                'budget_code'                  => 'nullable|string|max:50',
+                'product_line'                 => 'nullable|string|max:100',
+                'cost_center'                  => 'nullable|string|max:50',
+                'beg_balance'                  => 'nullable|string|max:100',
+                'supplier_id'                  => 'nullable|integer',
+                'supplier_name'                => 'nullable|string|max:255',
+                'cons_rate'                    => 'nullable|string|max:100',
+                'unit_id'                      => 'nullable|integer',
+                'unit_name'                    => 'nullable|string|max:50',
+                'total'                        => 'nullable|numeric',
+                'price_estimation'             => 'nullable|numeric',
                 'price_estimation_description' => 'nullable|string|max:255',
-                'activity_jan' => 'nullable|integer|min:0',
-                'activity_feb' => 'nullable|integer|min:0',
-                'activity_mar' => 'nullable|integer|min:0',
-                'activity_apr' => 'nullable|integer|min:0',
-                'activity_may' => 'nullable|integer|min:0',
-                'activity_jun' => 'nullable|integer|min:0',
-                'activity_jul' => 'nullable|integer|min:0',
-                'activity_aug' => 'nullable|integer|min:0',
-                'activity_sep' => 'nullable|integer|min:0',
-                'activity_oct' => 'nullable|integer|min:0',
-                'activity_nov' => 'nullable|integer|min:0',
-                'activity_dec' => 'nullable|integer|min:0',
+                'activity_jan'                 => 'nullable|integer|min:0',
+                'activity_feb'                 => 'nullable|integer|min:0',
+                'activity_mar'                 => 'nullable|integer|min:0',
+                'activity_apr'                 => 'nullable|integer|min:0',
+                'activity_may'                 => 'nullable|integer|min:0',
+                'activity_jun'                 => 'nullable|integer|min:0',
+                'activity_jul'                 => 'nullable|integer|min:0',
+                'activity_aug'                 => 'nullable|integer|min:0',
+                'activity_sep'                 => 'nullable|integer|min:0',
+                'activity_oct'                 => 'nullable|integer|min:0',
+                'activity_nov'                 => 'nullable|integer|min:0',
+                'activity_dec'                 => 'nullable|integer|min:0',
             ]);
 
-            $item->update($validated);
-            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation', 'workplan']);
+            $result = $this->budgetUserService->updateItem((int) $itemId, $validated);
 
-            // Update parent workplan budget
-            $workplan = $item->workplan;
-            if ($workplan) {
-                $workplan->updateBudgetFromItems();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Item updated successfully',
-                'data' => $item
-            ]);
+            return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
             Log::error('Error updating item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update item: ' . $e->getMessage()
+                'message' => 'Failed to update item: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -428,33 +297,15 @@ class BudgetUserController extends Controller
     public function destroyItem(Request $request, $itemId)
     {
         try {
-            $item = WorkplanBudgetItem::findOrFail($itemId);
+            $result = $this->budgetUserService->deleteItem((int) $itemId);
 
-            // Check if item can be edited (deleted)
-            if (!$item->canBeEdited()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This item cannot be deleted in its current status'
-                ], 403);
-            }
-
-            $workplan = $item->workplan;
-            $item->delete();
-
-            // Update parent workplan budget
-            if ($workplan) {
-                $workplan->updateBudgetFromItems();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Budget item deleted successfully'
-            ]);
+            return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
             Log::error('Error deleting item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete item: ' . $e->getMessage()
+                'message' => 'Failed to delete item: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -466,55 +317,24 @@ class BudgetUserController extends Controller
     {
         try {
             $divisionId = $request->input('division_id');
-            $year = $request->input('year');
+            $year       = $request->input('year');
 
-            if (!$divisionId || !$year) {
+            if (! $divisionId || ! $year) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Division and year are required'
+                    'message' => 'Division and year are required',
                 ], 400);
             }
 
-            // Get workplans for department and section only
-            $workplans = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
-                ->where('year', $year)
-                ->whereIn('kpi_type', ['department', 'section'])
-                ->get()
-                ->filter(function ($workplan) use ($divisionId) {
-                    if ($workplan->kpi_type === 'department') {
-                        return $workplan->kpiDepartment &&
-                            $workplan->kpiDepartment->department &&
-                            $workplan->kpiDepartment->department->division_id == $divisionId;
-                    } else if ($workplan->kpi_type === 'section') {
-                        return $workplan->kpiSection &&
-                            $workplan->kpiSection->section &&
-                            $workplan->kpiSection->section->department &&
-                            $workplan->kpiSection->section->department->division_id == $divisionId;
-                    }
-                    return false;
-                })
-                ->values()
-                ->map(function ($workplan) {
-                    return [
-                        'id' => $workplan->id,
-                        'activity' => $workplan->activity,
-                        'kpi_type' => $workplan->kpi_type,
-                        'kpi_name' => $workplan->kpi_type === 'department'
-                            ? ($workplan->kpiDepartment->department->name ?? '-')
-                            : ($workplan->kpiSection->section->name ?? '-'),
-                        'year' => $workplan->year
-                    ];
-                });
+            $result = $this->budgetUserService->getWorkplansDropdown((int) $divisionId, (int) $year);
 
-            return response()->json([
-                'success' => true,
-                'data' => $workplans
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading workplans dropdown: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load workplans: ' . $e->getMessage()
+                'message' => 'Failed to load workplans: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -526,59 +346,24 @@ class BudgetUserController extends Controller
     {
         try {
             $divisionId = $request->input('division_id');
-            $year = $request->input('year');
+            $year       = $request->input('year');
 
-            if (!$divisionId || !$year) {
+            if (! $divisionId || ! $year) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Division and Year are required'
+                    'message' => 'Division and Year are required',
                 ], 400);
             }
 
-            // Get workplans based on division and year
-            $workplans = KPIWorkPlan::with([
-                'kpiDepartment' => function ($query) {
-                    $query->with(['department', 'kpiDivision']);
-                },
-                'kpiSection' => function ($query) {
-                    $query->with(['section', 'kpiDepartment.kpiDivision']);
-                }
-            ])
-                ->where('year', $year)
-                ->where(function ($query) use ($divisionId) {
-                    // For department workplans (kpi_type = 'department')
-                    $query->where(function ($q) use ($divisionId) {
-                        $q->where('kpi_type', 'department')
-                            ->whereHas('kpiDepartment', function ($dept) use ($divisionId) {
-                                $dept->whereHas('kpiDivision', function ($div) use ($divisionId) {
-                                    $div->where('division_id', $divisionId);
-                                });
-                            });
-                    })
-                        // For section workplans (kpi_type = 'section')
-                        ->orWhere(function ($q) use ($divisionId) {
-                            $q->where('kpi_type', 'section')
-                                ->whereHas('kpiSection', function ($sect) use ($divisionId) {
-                                    $sect->whereHas('kpiDepartment', function ($dept) use ($divisionId) {
-                                        $dept->whereHas('kpiDivision', function ($div) use ($divisionId) {
-                                            $div->where('division_id', $divisionId);
-                                        });
-                                    });
-                                });
-                        });
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $result = $this->budgetUserService->getWorkplans((int) $divisionId, (int) $year);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error loading workplans: ' . $e->getMessage());
 
             return response()->json([
-                'success' => true,
-                'data' => $workplans
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error loading workplans: ' . $e->getMessage(), ['BudgetUserController', 'getWorkplans']);
-            return response()->json([
                 'success' => false,
-                'message' => 'Failed to load workplans: ' . $e->getMessage()
+                'message' => 'Failed to load workplans: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -589,29 +374,15 @@ class BudgetUserController extends Controller
     public function getCategories(Request $request, $workplanId)
     {
         try {
-            $workplan = KPIWorkPlan::findOrFail($workplanId);
+            $result = $this->budgetUserService->getCategoriesByWorkplan((int) $workplanId);
 
-            // Get parent categories (level 1) with their children (level 2)
-            $categories = BudgetCategory::with(['children' => function ($query) {
-                $query->where('level', 2)
-                    ->where('is_active', true)
-                    ->orderBy('sort_order');
-            }])
-                ->where('level', 1)
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $categories,
-                'workplan' => $workplan
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading categories: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load categories: ' . $e->getMessage()
+                'message' => 'Failed to load categories: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -622,30 +393,16 @@ class BudgetUserController extends Controller
     public function getItems(Request $request, $workplanId)
     {
         try {
-            $categoryId = $request->input('category_id');
+            $categoryId = $request->input('category_id') ? (int) $request->input('category_id') : null;
+            $result     = $this->budgetUserService->getItemsByWorkplan((int) $workplanId, $categoryId);
 
-            $items = WorkplanBudgetItem::with(['category', 'budgetCodeRelation', 'approver'])
-                ->where('kpi_workplan_id', $workplanId)
-                ->where('budget_category_id', $categoryId)
-                ->orderBy('sort_order')
-                ->get();
-
-            // Get available budget codes - select only budget_code and inchargeCode
-            $budgetCodes = BudgetCode::active()
-                ->select('id', 'budget_code', 'name', 'inchargeCode')
-                ->orderBy('budget_code')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $items,
-                'budgetCodes' => $budgetCodes
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error loading items: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load items: ' . $e->getMessage()
+                'message' => 'Failed to load items: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -657,62 +414,43 @@ class BudgetUserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'budget_category_id' => 'required|exists:budget_categories,id',
-                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
-                'description' => 'required|string',
-                'stock_code' => 'nullable|string|max:50',
-                'budget_code' => 'nullable|string|max:50',
-                'product_line' => 'nullable|string|max:100',
-                'cost_center' => 'nullable|string|max:50',
-                'beg_balance' => 'nullable|string|max:100',
-                'cons_rate' => 'nullable|string|max:100',
-                'unit' => 'nullable|string|max:50',
-                'total' => 'nullable|numeric',
-                'price_estimation' => 'nullable|numeric',
+                'budget_category_id'           => 'required|exists:budget_categories,id',
+                'category_type'                => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'description'                  => 'required|string',
+                'stock_code'                   => 'nullable|string|max:50',
+                'budget_code'                  => 'nullable|string|max:50',
+                'product_line'                 => 'nullable|string|max:100',
+                'cost_center'                  => 'nullable|string|max:50',
+                'beg_balance'                  => 'nullable|string|max:100',
+                'cons_rate'                    => 'nullable|string|max:100',
+                'unit'                         => 'nullable|string|max:50',
+                'total'                        => 'nullable|numeric',
+                'price_estimation'             => 'nullable|numeric',
                 'price_estimation_description' => 'nullable|string|max:255',
-                'activity_jan' => 'nullable|integer|min:0|max:1000',
-                'activity_feb' => 'nullable|integer|min:0|max:1000',
-                'activity_mar' => 'nullable|integer|min:0|max:1000',
-                'activity_apr' => 'nullable|integer|min:0|max:1000',
-                'activity_may' => 'nullable|integer|min:0|max:1000',
-                'activity_jun' => 'nullable|integer|min:0|max:1000',
-                'activity_jul' => 'nullable|integer|min:0|max:1000',
-                'activity_aug' => 'nullable|integer|min:0|max:1000',
-                'activity_sep' => 'nullable|integer|min:0|max:1000',
-                'activity_oct' => 'nullable|integer|min:0|max:1000',
-                'activity_nov' => 'nullable|integer|min:0|max:1000',
-                'activity_dec' => 'nullable|integer|min:0|max:1000',
-                'notes' => 'nullable|string',
+                'activity_jan'                 => 'nullable|integer|min:0|max:1000',
+                'activity_feb'                 => 'nullable|integer|min:0|max:1000',
+                'activity_mar'                 => 'nullable|integer|min:0|max:1000',
+                'activity_apr'                 => 'nullable|integer|min:0|max:1000',
+                'activity_may'                 => 'nullable|integer|min:0|max:1000',
+                'activity_jun'                 => 'nullable|integer|min:0|max:1000',
+                'activity_jul'                 => 'nullable|integer|min:0|max:1000',
+                'activity_aug'                 => 'nullable|integer|min:0|max:1000',
+                'activity_sep'                 => 'nullable|integer|min:0|max:1000',
+                'activity_oct'                 => 'nullable|integer|min:0|max:1000',
+                'activity_nov'                 => 'nullable|integer|min:0|max:1000',
+                'activity_dec'                 => 'nullable|integer|min:0|max:1000',
+                'notes'                        => 'nullable|string',
             ]);
 
-            $validated['kpi_workplan_id'] = $workplanId;
-            $validated['status'] = 'draft';
+            $result = $this->budgetUserService->createItemForWorkplan((int) $workplanId, $validated);
 
-            // Set sort order
-            $maxOrder = WorkplanBudgetItem::where('kpi_workplan_id', $workplanId)
-                ->where('budget_category_id', $validated['budget_category_id'])
-                ->max('sort_order');
-            $validated['sort_order'] = ($maxOrder ?? 0) + 1;
-
-            $item = WorkplanBudgetItem::create($validated);
-            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation']);
-
-            // Update parent workplan budget
-            $workplan = KPIWorkPlan::find($workplanId);
-            if ($workplan) {
-                $workplan->updateBudgetFromItems();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Budget item created successfully',
-                'data' => $item
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error creating item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create item: ' . $e->getMessage()
+                'message' => 'Failed to create item: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -723,65 +461,44 @@ class BudgetUserController extends Controller
     public function update(Request $request, $workplanId, $itemId)
     {
         try {
-            $item = WorkplanBudgetItem::where('kpi_workplan_id', $workplanId)
-                ->findOrFail($itemId);
-
-            // Check if item can be edited
-            if (!$item->canBeEdited()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This item cannot be edited because it has been approved'
-                ], 403);
-            }
-
             $validated = $request->validate([
-                'budget_category_id' => 'required|exists:budget_categories,id',
-                'category_type' => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
-                'description' => 'required|string',
-                'stock_code' => 'nullable|string|max:50',
-                'budget_code' => 'nullable|string|max:50',
-                'product_line' => 'nullable|string|max:100',
-                'cost_center' => 'nullable|string|max:50',
-                'beg_balance' => 'nullable|string|max:100',
-                'cons_rate' => 'nullable|string|max:100',
-                'unit' => 'nullable|string|max:50',
-                'total' => 'nullable|numeric',
-                'price_estimation' => 'nullable|numeric',
+                'budget_category_id'           => 'required|exists:budget_categories,id',
+                'category_type'                => 'required|in:Routine,Carry Over,Turn Around,Multi Year',
+                'description'                  => 'required|string',
+                'stock_code'                   => 'nullable|string|max:50',
+                'budget_code'                  => 'nullable|string|max:50',
+                'product_line'                 => 'nullable|string|max:100',
+                'cost_center'                  => 'nullable|string|max:50',
+                'beg_balance'                  => 'nullable|string|max:100',
+                'cons_rate'                    => 'nullable|string|max:100',
+                'unit'                         => 'nullable|string|max:50',
+                'total'                        => 'nullable|numeric',
+                'price_estimation'             => 'nullable|numeric',
                 'price_estimation_description' => 'nullable|string|max:255',
-                'activity_jan' => 'nullable|integer|min:0|max:1000',
-                'activity_feb' => 'nullable|integer|min:0|max:1000',
-                'activity_mar' => 'nullable|integer|min:0|max:1000',
-                'activity_apr' => 'nullable|integer|min:0|max:1000',
-                'activity_may' => 'nullable|integer|min:0|max:1000',
-                'activity_jun' => 'nullable|integer|min:0|max:1000',
-                'activity_jul' => 'nullable|integer|min:0|max:1000',
-                'activity_aug' => 'nullable|integer|min:0|max:1000',
-                'activity_sep' => 'nullable|integer|min:0|max:1000',
-                'activity_oct' => 'nullable|integer|min:0|max:1000',
-                'activity_nov' => 'nullable|integer|min:0|max:1000',
-                'activity_dec' => 'nullable|integer|min:0|max:1000',
-                'notes' => 'nullable|string',
+                'activity_jan'                 => 'nullable|integer|min:0|max:1000',
+                'activity_feb'                 => 'nullable|integer|min:0|max:1000',
+                'activity_mar'                 => 'nullable|integer|min:0|max:1000',
+                'activity_apr'                 => 'nullable|integer|min:0|max:1000',
+                'activity_may'                 => 'nullable|integer|min:0|max:1000',
+                'activity_jun'                 => 'nullable|integer|min:0|max:1000',
+                'activity_jul'                 => 'nullable|integer|min:0|max:1000',
+                'activity_aug'                 => 'nullable|integer|min:0|max:1000',
+                'activity_sep'                 => 'nullable|integer|min:0|max:1000',
+                'activity_oct'                 => 'nullable|integer|min:0|max:1000',
+                'activity_nov'                 => 'nullable|integer|min:0|max:1000',
+                'activity_dec'                 => 'nullable|integer|min:0|max:1000',
+                'notes'                        => 'nullable|string',
             ]);
 
-            $item->update($validated);
-            $item->load(['category', 'budgetCodeRelation', 'stockCodeRelation']);
+            $result = $this->budgetUserService->updateItemForWorkplan((int) $workplanId, (int) $itemId, $validated);
 
-            // Update parent workplan budget
-            $workplan = KPIWorkPlan::find($workplanId);
-            if ($workplan) {
-                $workplan->updateBudgetFromItems();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Budget item updated successfully',
-                'data' => $item
-            ]);
+            return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
             Log::error('Error updating item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update item: ' . $e->getMessage()
+                'message' => 'Failed to update item: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -792,34 +509,15 @@ class BudgetUserController extends Controller
     public function destroy(Request $request, $workplanId, $itemId)
     {
         try {
-            $item = WorkplanBudgetItem::where('kpi_workplan_id', $workplanId)
-                ->findOrFail($itemId);
+            $result = $this->budgetUserService->deleteItemForWorkplan((int) $workplanId, (int) $itemId);
 
-            // Check if item can be edited (deleted)
-            if (!$item->canBeEdited()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This item cannot be deleted because it has been approved'
-                ], 403);
-            }
-
-            $item->delete();
-
-            // Update parent workplan budget
-            $workplan = KPIWorkPlan::find($workplanId);
-            if ($workplan) {
-                $workplan->updateBudgetTotal();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Budget item deleted successfully'
-            ]);
+            return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
             Log::error('Error deleting item: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete item: ' . $e->getMessage()
+                'message' => 'Failed to delete item: ' . $e->getMessage(),
             ], 500);
         }
     }

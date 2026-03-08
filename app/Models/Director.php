@@ -8,4 +8,9 @@ class Director extends Model
 {
     protected $table = 'director';
     protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'code',
+        'status',
+    ];
 }

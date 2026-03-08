@@ -496,18 +496,29 @@ function openAddItemModalWithWorkplan(workplanId) {
     );
     $("#itemId").val("");
 
-    // Load all dropdown data
-    loadBudgetCategories();
-    loadBudgetCodes();
-    loadStockCodes();
-    loadCostCenters();
-    loadSuppliers();
-    loadUnits();
+    Swal.fire({
+        title: "Memuat data...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
 
-    // Load workplans and set the selected one
-    loadWorkplansForDropdownWithSelection(workplanId);
-
-    $("#itemModal").modal("show");
+    Promise.all([
+        loadBudgetCategoriesAsync(),
+        loadBudgetCodesAsync(),
+        loadStockCodesAsync(),
+        loadCostCentersAsync(),
+        loadSuppliersAsync(),
+        loadUnitsAsync(),
+        loadWorkplansForDropdownWithSelectionAsync(workplanId),
+    ])
+        .then(() => {
+            Swal.close();
+            $("#itemModal").modal("show");
+        })
+        .catch(() => {
+            Swal.close();
+            $("#itemModal").modal("show");
+        });
 }
 
 /**
@@ -520,141 +531,119 @@ function openAddItemModal() {
     );
     $("#itemId").val("");
 
-    // Load all dropdown data
-    loadBudgetCategories();
-    loadBudgetCodes();
-    loadStockCodes();
-    loadCostCenters();
-    loadSuppliers();
-    loadUnits();
+    Swal.fire({
+        title: "Memuat data...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
 
-    // Check if there's a workplan_id from URL parameter
-    if (typeof paramWorkplanId !== "undefined" && paramWorkplanId) {
-        // Load workplans with pre-selection
-        loadWorkplansForDropdownWithSelection(paramWorkplanId);
-    } else {
-        // Load workplans without pre-selection
-        loadWorkplansForDropdown();
-    }
+    const workplanLoader =
+        typeof paramWorkplanId !== "undefined" && paramWorkplanId
+            ? loadWorkplansForDropdownWithSelectionAsync(paramWorkplanId)
+            : loadWorkplansForDropdownAsync();
 
-    $("#itemModal").modal("show");
+    Promise.all([
+        loadBudgetCategoriesAsync(),
+        loadBudgetCodesAsync(),
+        loadStockCodesAsync(),
+        loadCostCentersAsync(),
+        loadSuppliersAsync(),
+        loadUnitsAsync(),
+        workplanLoader,
+    ])
+        .then(() => {
+            Swal.close();
+            $("#itemModal").modal("show");
+        })
+        .catch(() => {
+            Swal.close();
+            $("#itemModal").modal("show");
+        });
 }
 
 /**
  * Edit item from workplan (with pre-loaded data)
  */
 function editItemFromWorkplan(itemId, workplanId) {
-    showLoading();
+    const item = allItemsData.find((i) => i.id === itemId);
 
-    // Find item from loaded data
-    $.ajax({
-        url: "/budget-user/items/all",
-        method: "GET",
-        data: {
-            division_id: selectedDivisionId,
-            year: selectedYear,
-        },
-        success: function (response) {
-            hideLoading();
-            if (response.success) {
-                budgetCodesData = response.budgetCodes || [];
-                stockCodesData = response.stockCodes || [];
+    if (!item) {
+        showToast("Item not found", "error");
+        return;
+    }
 
-                const item = response.data.find((i) => i.id === itemId);
-                if (item) {
-                    $("#itemModalLabel").html(
-                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
-                    );
+    $("#itemModalLabel").html(
+        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
+    );
 
-                    // Load all dropdown data
-                    loadBudgetCategories();
-                    loadBudgetCodes();
-                    loadStockCodes();
-                    loadCostCenters();
-                    loadSuppliers();
-                    loadUnits();
-
-                    // Load workplans with the current workplan selected
-                    loadWorkplansForDropdownWithSelection(workplanId);
-
-                    // Wait a bit for data to load before populating
-                    setTimeout(() => {
-                        populateItemForm(item);
-                    }, 800);
-
-                    $("#itemModal").modal("show");
-                } else {
-                    showToast("Item not found", "error");
-                }
-            }
-        },
-        error: function (xhr) {
-            hideLoading();
-            showToast("Error loading item data", "error");
-        },
+    Swal.fire({
+        title: "Memuat data...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
     });
+
+    Promise.all([
+        loadBudgetCategoriesAsync(),
+        loadBudgetCodesAsync(),
+        loadStockCodesAsync(),
+        loadCostCentersAsync(),
+        loadSuppliersAsync(),
+        loadUnitsAsync(),
+        loadWorkplansForDropdownWithSelectionAsync(workplanId),
+    ])
+        .then(() => {
+            populateItemForm(item);
+            Swal.close();
+            $("#itemModal").modal("show");
+        })
+        .catch(() => {
+            populateItemForm(item);
+            Swal.close();
+            $("#itemModal").modal("show");
+        });
 }
 
 /**
  * Edit item
  */
 function editItem(itemId) {
-    showLoading();
+    const item = allItemsData.find((i) => i.id === itemId);
 
-    // Find item from loaded data
-    $.ajax({
-        url: "/budget-user/items/all",
-        method: "GET",
-        data: {
-            division_id: selectedDivisionId,
-            year: selectedYear,
-        },
-        success: function (response) {
-            hideLoading();
-            if (response.success) {
-                budgetCodesData = response.budgetCodes || [];
-                stockCodesData = response.stockCodes || [];
+    if (!item) {
+        showToast("Item not found", "error");
+        return;
+    }
 
-                const item = response.data.find((i) => i.id === itemId);
-                if (item) {
-                    $("#itemModalLabel").html(
-                        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
-                    );
+    $("#itemModalLabel").html(
+        '<i class="bi bi-pencil me-2"></i>Edit Budget Item',
+    );
 
-                    // Load all dropdown data using Promise.all to wait for completion
-                    Promise.all([
-                        loadBudgetCategoriesAsync(),
-                        loadBudgetCodesAsync(),
-                        loadStockCodesAsync(),
-                        loadCostCentersAsync(),
-                        loadSuppliersAsync(),
-                        loadUnitsAsync(),
-                        loadWorkplansForDropdownWithSelectionAsync(
-                            item.kpi_workplan_id,
-                        ),
-                    ])
-                        .then(() => {
-                            // Populate form after all dropdowns are loaded
-                            populateItemForm(item);
-                        })
-                        .catch((error) => {
-                            console.error(
-                                "Error loading dropdown data:",
-                                error,
-                            );
-                            // Still try to populate with whatever data loaded
-                            populateItemForm(item);
-                        });
-
-                    $("#itemModal").modal("show");
-                }
-            }
-        },
-        error: function (xhr) {
-            hideLoading();
-            showToast("Error loading item data", "error");
-        },
+    Swal.fire({
+        title: "Memuat data...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
     });
+
+    Promise.all([
+        loadBudgetCategoriesAsync(),
+        loadBudgetCodesAsync(),
+        loadStockCodesAsync(),
+        loadCostCentersAsync(),
+        loadSuppliersAsync(),
+        loadUnitsAsync(),
+        loadWorkplansForDropdownWithSelectionAsync(item.kpi_workplan_id),
+    ])
+        .then(() => {
+            populateItemForm(item);
+            Swal.close();
+            $("#itemModal").modal("show");
+        })
+        .catch((error) => {
+            console.error("Error loading dropdown data:", error);
+            populateItemForm(item);
+            Swal.close();
+            $("#itemModal").modal("show");
+        });
 }
 
 /**
@@ -1104,19 +1093,103 @@ function loadWorkplansForDropdown() {
 }
 
 /**
- * Load budget codes
+ * Async version of loadWorkplansForDropdown (no pre-selection) - returns a Promise
  */
-function loadBudgetCodes() {
+function loadWorkplansForDropdownAsync() {
+    return new Promise((resolve, reject) => {
+        if (!selectedDivisionId || !selectedYear) {
+            resolve();
+            return;
+        }
+
+        $.ajax({
+            url: "/budget-user/workplans/dropdown",
+            method: "GET",
+            data: {
+                division_id: selectedDivisionId,
+                year: selectedYear,
+            },
+            success: function (response) {
+                if (response.success) {
+                    const select = document.getElementById("programId");
+
+                    if (programIdChoices) {
+                        programIdChoices.destroy();
+                    }
+
+                    programIdChoices = new Choices(select, {
+                        searchEnabled: true,
+                        searchPlaceholderValue: "Search work plan...",
+                        itemSelectText: "Click to select",
+                        shouldSort: false,
+                        removeItemButton: false,
+                        placeholder: true,
+                        placeholderValue: "Select work plan",
+                    });
+
+                    programIdChoices.clearChoices();
+                    programIdChoices.setChoices(
+                        [
+                            {
+                                value: "",
+                                label: "Select Work Plan...",
+                                selected: true,
+                                disabled: false,
+                            },
+                        ],
+                        "value",
+                        "label",
+                        true,
+                    );
+
+                    if (response.data && response.data.length > 0) {
+                        const choices = response.data.map((workplan) => {
+                            const typeLabel =
+                                workplan.kpi_type === "department"
+                                    ? "Department"
+                                    : "Section";
+                            const typeBadge =
+                                workplan.kpi_type === "department"
+                                    ? "🏢"
+                                    : "📋";
+                            return {
+                                value: workplan.id.toString(),
+                                label: `${typeBadge} [${typeLabel}] ${workplan.activity}`,
+                                customProperties: {
+                                    kpi_type: workplan.kpi_type,
+                                },
+                            };
+                        });
+                        programIdChoices.setChoices(
+                            choices,
+                            "value",
+                            "label",
+                            false,
+                        );
+                    }
+                }
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading workplans:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
+    });
+}
+
+/**
+ * Populate the budgetCode Choices.js select from the given data array
+ */
+function _populateBudgetCodeSelect(data) {
     const select = document.getElementById("budgetCode");
 
-    // Destroy existing Choices instance if it exists
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
     }
 
-    // Clear and populate options
     select.innerHTML = '<option value="">Select Budget Code</option>';
-    budgetCodesData.forEach((code) => {
+    data.forEach((code) => {
         const option = document.createElement("option");
         option.value = code.budget_code;
         option.textContent = `${code.budget_code} - ${code.name}`;
@@ -1124,7 +1197,6 @@ function loadBudgetCodes() {
         select.appendChild(option);
     });
 
-    // Initialize Choices.js for searchable dropdown
     const choices = new Choices(select, {
         searchEnabled: true,
         searchChoices: true,
@@ -1137,7 +1209,6 @@ function loadBudgetCodes() {
 
     select.choicesInstance = choices;
 
-    // Bind change event to populate cost_center
     $(select)
         .off("change")
         .on("change", function () {
@@ -1145,7 +1216,6 @@ function loadBudgetCodes() {
             const inchargeCode = selectedOption.data("incharge");
             $("#costCenter").val(inchargeCode || "");
 
-            // Update Cost Center Choices if it exists
             const costCenterSelect = document.getElementById("costCenter");
             if (costCenterSelect.choicesInstance) {
                 costCenterSelect.choicesInstance.setChoiceByValue(
@@ -1156,28 +1226,50 @@ function loadBudgetCodes() {
 }
 
 /**
- * Load stock codes (from StockCode table) as searchable dropdown
+ * Load budget codes
  */
-function loadStockCodes() {
+function loadBudgetCodes() {
+    if (budgetCodesData.length > 0) {
+        _populateBudgetCodeSelect(budgetCodesData);
+        return;
+    }
+
+    $.ajax({
+        url: "/budget-user/budget-codes",
+        method: "GET",
+        success: function (response) {
+            if (response.success) {
+                budgetCodesData = response.data || [];
+                _populateBudgetCodeSelect(budgetCodesData);
+            }
+        },
+        error: function (xhr) {
+            console.error("Error loading budget codes:", xhr.responseJSON);
+        },
+    });
+}
+
+/**
+ * Populate the stockCode Choices.js select from the given data array
+ */
+function _populateStockCodeSelect(data) {
     const select = document.getElementById("stockCode");
 
-    // Destroy existing Choices instance if it exists
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
     }
 
-    // Clear and populate options
     select.innerHTML = '<option value="">Select Stock Code</option>';
-    stockCodesData.forEach((code) => {
+    data.forEach((code) => {
         const option = document.createElement("option");
         option.value = code.stock_code;
         option.textContent = `${code.stock_code} - ${code.name}`;
         option.setAttribute("data-budget-code", code.budget_code || "");
         option.setAttribute("data-unit", code.unit || "");
+        option.setAttribute("data-product-line", code.product_line || "");
         select.appendChild(option);
     });
 
-    // Initialize Choices.js for searchable dropdown
     const choices = new Choices(select, {
         searchEnabled: true,
         searchChoices: true,
@@ -1190,14 +1282,13 @@ function loadStockCodes() {
 
     select.choicesInstance = choices;
 
-    // Bind change event: auto-fill budget code when stock code is selected
     $(select)
         .off("change")
         .on("change", function () {
             const selectedOption = $(this).find("option:selected");
             const budgetCode = selectedOption.data("budget-code");
+            const productLine = selectedOption.data("product-line");
 
-            // Auto-fill budget code if available
             if (budgetCode) {
                 const budgetCodeSelect = document.getElementById("budgetCode");
                 if (budgetCodeSelect.choicesInstance) {
@@ -1206,7 +1297,35 @@ function loadStockCodes() {
                     );
                 }
             }
+
+            if (productLine) {
+                $("#productLine").val(productLine);
+            }
         });
+}
+
+/**
+ * Load stock codes (from StockCode table) as searchable dropdown
+ */
+function loadStockCodes() {
+    if (stockCodesData.length > 0) {
+        _populateStockCodeSelect(stockCodesData);
+        return;
+    }
+
+    $.ajax({
+        url: "/budget-user/stock-codes",
+        method: "GET",
+        success: function (response) {
+            if (response.success) {
+                stockCodesData = response.data || [];
+                _populateStockCodeSelect(stockCodesData);
+            }
+        },
+        error: function (xhr) {
+            console.error("Error loading stock codes:", xhr.responseJSON);
+        },
+    });
 }
 
 /**
@@ -1248,55 +1367,28 @@ function loadBudgetCategoriesAsync() {
  * Async version of loadBudgetCodes - returns a Promise
  */
 function loadBudgetCodesAsync() {
-    return new Promise((resolve) => {
-        const select = document.getElementById("budgetCode");
-
-        // Destroy existing Choices instance if it exists
-        if (select.choicesInstance) {
-            select.choicesInstance.destroy();
+    return new Promise((resolve, reject) => {
+        if (budgetCodesData.length > 0) {
+            _populateBudgetCodeSelect(budgetCodesData);
+            resolve();
+            return;
         }
 
-        // Clear and populate options
-        select.innerHTML = '<option value="">Select Budget Code</option>';
-        budgetCodesData.forEach((code) => {
-            const option = document.createElement("option");
-            option.value = code.budget_code;
-            option.textContent = `${code.budget_code} - ${code.name}`;
-            option.setAttribute("data-incharge", code.inchargeCode || "");
-            select.appendChild(option);
-        });
-
-        // Initialize Choices.js for searchable dropdown
-        const choices = new Choices(select, {
-            searchEnabled: true,
-            searchChoices: true,
-            searchPlaceholderValue: "Search budget code...",
-            itemSelectText: "Click to select",
-            noResultsText: "No budget codes found",
-            shouldSort: false,
-            removeItemButton: false,
-        });
-
-        select.choicesInstance = choices;
-
-        // Bind change event to populate cost_center
-        $(select)
-            .off("change")
-            .on("change", function () {
-                const selectedOption = $(this).find("option:selected");
-                const inchargeCode = selectedOption.data("incharge");
-                $("#costCenter").val(inchargeCode || "");
-
-                // Update Cost Center Choices if it exists
-                const costCenterSelect = document.getElementById("costCenter");
-                if (costCenterSelect.choicesInstance) {
-                    costCenterSelect.choicesInstance.setChoiceByValue(
-                        inchargeCode || "",
-                    );
+        $.ajax({
+            url: "/budget-user/budget-codes",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    budgetCodesData = response.data || [];
+                    _populateBudgetCodeSelect(budgetCodesData);
                 }
-            });
-
-        resolve();
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading budget codes:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
     });
 }
 
@@ -1304,57 +1396,28 @@ function loadBudgetCodesAsync() {
  * Async version of loadStockCodes - returns a Promise
  */
 function loadStockCodesAsync() {
-    return new Promise((resolve) => {
-        const select = document.getElementById("stockCode");
-
-        // Destroy existing Choices instance if it exists
-        if (select.choicesInstance) {
-            select.choicesInstance.destroy();
+    return new Promise((resolve, reject) => {
+        if (stockCodesData.length > 0) {
+            _populateStockCodeSelect(stockCodesData);
+            resolve();
+            return;
         }
 
-        // Clear and populate options
-        select.innerHTML = '<option value="">Select Stock Code</option>';
-        stockCodesData.forEach((code) => {
-            const option = document.createElement("option");
-            option.value = code.stock_code;
-            option.textContent = `${code.stock_code} - ${code.name}`;
-            option.setAttribute("data-budget-code", code.budget_code || "");
-            option.setAttribute("data-unit", code.unit || "");
-            select.appendChild(option);
-        });
-
-        // Initialize Choices.js for searchable dropdown
-        const choices = new Choices(select, {
-            searchEnabled: true,
-            searchChoices: true,
-            searchPlaceholderValue: "Search stock code...",
-            itemSelectText: "Click to select",
-            noResultsText: "No stock codes found",
-            shouldSort: false,
-            removeItemButton: false,
-        });
-
-        select.choicesInstance = choices;
-
-        // Bind change event: auto-fill budget code when stock code is selected
-        $(select)
-            .off("change")
-            .on("change", function () {
-                const selectedOption = $(this).find("option:selected");
-                const budgetCode = selectedOption.data("budget-code");
-
-                if (budgetCode) {
-                    const budgetCodeSelect =
-                        document.getElementById("budgetCode");
-                    if (budgetCodeSelect.choicesInstance) {
-                        budgetCodeSelect.choicesInstance.setChoiceByValue(
-                            budgetCode,
-                        );
-                    }
+        $.ajax({
+            url: "/budget-user/stock-codes",
+            method: "GET",
+            success: function (response) {
+                if (response.success) {
+                    stockCodesData = response.data || [];
+                    _populateStockCodeSelect(stockCodesData);
                 }
-            });
-
-        resolve();
+                resolve();
+            },
+            error: function (xhr) {
+                console.error("Error loading stock codes:", xhr.responseJSON);
+                reject(xhr);
+            },
+        });
     });
 }
 

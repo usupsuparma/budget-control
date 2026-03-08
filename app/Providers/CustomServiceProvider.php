@@ -13,6 +13,8 @@ use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\BudgetLedgerService\BudgetLedgerServiceImpl;
 use App\Services\StockCodeService\StockCodeService;
 use App\Services\StockCodeService\StockCodeServiceImpl;
+use App\Services\BudgetUserService\BudgetUserService;
+use App\Services\BudgetUserService\BudgetUserServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -35,6 +37,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(VerificationBudgetService::class, VerificationBudgetServiceImpl::class);
         $this->app->bind(BudgetLedgerService::class, BudgetLedgerServiceImpl::class);
         $this->app->bind(StockCodeService::class, StockCodeServiceImpl::class);
+        $this->app->bind(BudgetUserService::class, BudgetUserServiceImpl::class);
     }
 
     /**

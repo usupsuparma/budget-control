@@ -125,7 +125,7 @@
             @can('budget.view')
             <li class="pe-slide pe-has-sub">
                 <a href="#collapseInvoices"
-                    class="pe-nav-link {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') ? 'active' : '' }}"
+                    class="pe-nav-link {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') || Request::is('budget-submission*') ? 'active' : '' }}"
                     data-bs-toggle="collapse">
 
                     <i class="bi bi-currency-exchange pe-nav-icon"></i>
@@ -133,7 +133,7 @@
                     <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
                 </a>
 
-                <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') ? 'show' : '' }}"
+                <ul class="pe-slide-menu collapse {{ Request::is('workplan*') || Request::is('anggaran*') || Request::is('budget-admin*') || Request::is('budget-user*') || Request::is('pengajuan.anggaran*') || Request::is('budget-resume*') || Request::is('admission/user/due-date*') || Request::is('budget-submission*') ? 'show' : '' }}"
                     id="collapseInvoices" data-bs-parent="#sidebar">
                     <li class="pe-slide-item">
                         <a href="{{ route('workplan.index') }}"

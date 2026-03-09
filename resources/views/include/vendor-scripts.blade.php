@@ -14,3 +14,18 @@
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    $(document).ready(function() {
+        // When any submenu is about to show, hide all other submenus.
+        $('.pe-slide-menu.collapse').on('show.bs.collapse', function() {
+            $('.pe-slide-menu.collapse.show').not(this).collapse('hide');
+        });
+
+        // On page load, if multiple submenus are marked 'show', collapse all but the first one.
+        var shown = $('.pe-slide-menu.collapse.show');
+        if (shown.length > 1) {
+            shown.not(shown.first()).collapse('hide');
+        }
+    });
+</script>

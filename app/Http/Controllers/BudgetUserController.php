@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Services\BudgetUserService\BudgetUserService;
+use App\Services\LogService\LogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class BudgetUserController extends Controller
 {
     protected BudgetUserService $budgetUserService;
+    protected LogService $logService;
 
-    public function __construct(BudgetUserService $budgetUserService)
+    public function __construct(BudgetUserService $budgetUserService, LogService $logService)
     {
         $this->budgetUserService = $budgetUserService;
+        $this->logService = $logService;
     }
 
     /**
@@ -37,7 +40,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading divisions: ' . $e->getMessage());
+            $this->logService->create('Error loading divisions: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -66,7 +72,12 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading all items: ' . $e->getMessage());
+            $this->logService->create('Error loading all items: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'division_id' => $request->input('division_id'),
+                'year' => $request->input('year'),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -85,7 +96,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading budget categories: ' . $e->getMessage());
+            $this->logService->create('Error loading budget categories: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -104,7 +118,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading cost centers: ' . $e->getMessage());
+            $this->logService->create('Error loading cost centers: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -123,7 +140,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading suppliers: ' . $e->getMessage());
+            $this->logService->create('Error loading suppliers: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -142,7 +162,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading budget codes: ' . $e->getMessage());
+            $this->logService->create('Error loading budget codes: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -161,7 +184,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading stock codes: ' . $e->getMessage());
+            $this->logService->create('Error loading stock codes: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -180,7 +206,10 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading units: ' . $e->getMessage());
+            $this->logService->create('Error loading units: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -230,8 +259,18 @@ class BudgetUserController extends Controller
             $result = $this->budgetUserService->createItem($validated);
 
             return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', array_flatten($e->errors())),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error creating item: ' . $e->getMessage());
+            $this->logService->create('Error creating item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'input' => $request->all(),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -280,9 +319,20 @@ class BudgetUserController extends Controller
 
             $result = $this->budgetUserService->updateItem((int) $itemId, $validated);
 
-            return response()->json($result, $result['success'] ? 200 : 403);
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', array_flatten($e->errors())),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error updating item: ' . $e->getMessage());
+            $this->logService->create('Error updating item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'item_id' => $itemId,
+                'input' => $request->all(),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -301,7 +351,11 @@ class BudgetUserController extends Controller
 
             return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
-            Log::error('Error deleting item: ' . $e->getMessage());
+            $this->logService->create('Error deleting item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'item_id' => $itemId,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -330,7 +384,12 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading workplans dropdown: ' . $e->getMessage());
+            $this->logService->create('Error loading workplans dropdown: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'division_id' => $request->input('division_id'),
+                'year' => $request->input('year'),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -359,7 +418,12 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading workplans: ' . $e->getMessage());
+            $this->logService->create('Error loading workplans: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'division_id' => $request->input('division_id'),
+                'year' => $request->input('year'),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -378,7 +442,11 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading categories: ' . $e->getMessage());
+            $this->logService->create('Error loading categories: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'workplan_id' => $workplanId,
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -398,7 +466,12 @@ class BudgetUserController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error loading items: ' . $e->getMessage());
+            $this->logService->create('Error loading items: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'workplan_id' => $workplanId,
+                'category_id' => $request->input('category_id'),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -444,9 +517,20 @@ class BudgetUserController extends Controller
 
             $result = $this->budgetUserService->createItemForWorkplan((int) $workplanId, $validated);
 
-            return response()->json($result);
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', array_flatten($e->errors())),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error creating item: ' . $e->getMessage());
+            $this->logService->create('Error creating item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'workplan_id' => $workplanId,
+                'input' => $request->all(),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -492,9 +576,21 @@ class BudgetUserController extends Controller
 
             $result = $this->budgetUserService->updateItemForWorkplan((int) $workplanId, (int) $itemId, $validated);
 
-            return response()->json($result, $result['success'] ? 200 : 403);
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', array_flatten($e->errors())),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error updating item: ' . $e->getMessage());
+            $this->logService->create('Error updating item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'workplan_id' => $workplanId,
+                'item_id' => $itemId,
+                'input' => $request->all(),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -513,7 +609,12 @@ class BudgetUserController extends Controller
 
             return response()->json($result, $result['success'] ? 200 : 403);
         } catch (\Exception $e) {
-            Log::error('Error deleting item: ' . $e->getMessage());
+            $this->logService->create('Error deleting item: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+                'workplan_id' => $workplanId,
+                'item_id' => $itemId,
+            ], 'error');
 
             return response()->json([
                 'success' => false,

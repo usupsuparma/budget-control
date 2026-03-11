@@ -14,6 +14,8 @@ All business logic MUST use the Interface + Implementation pattern. Controllers 
 - **Atomicity:** `DB::transaction` MUST be placed inside the Service implementation, NOT in the Controller.
 - **Single Responsibility:** One service method = one business use case.
 - **Interface-First:** Always define the contract in the Interface before implementing.
+- **Legacy Refactoring:** If you encounter legacy code with CRUD or business logic in the Controller, you MUST refactor it into the appropriate Service when modifying that module.
+- **Testing Mandate:** Every service method (new or refactored) MUST have a corresponding Automated Test (Pest/PHPUnit) to ensure logic integrity.
 
 **Directory structure:**
 ```
@@ -122,14 +124,16 @@ try {
 
 ## Critical Rules (Auto-Reject if Violated)
 
-1. **NO Model queries in Controllers.**
+1. **NO Model queries/CRUD in Controllers.**
 2. **NO `DB::transaction` in Controllers** - Move to Service.
 3. **NO raw arrays for complex data** - Use FormRequest/DTO.
-4. **SoftDeletes required** on all audit-critical tables.
-5. **Eager Load everything** - N+1 is a blocker.
-6. **Immutable Snapshots** for all approval-related data.
-7. **Custom Exceptions** for business logic errors.
-8. **Bootstrap 5 + Swal2** for UI/UX consistency.
+4. **Refactor on Sight:** Move any legacy Controller-based CRUD/logic to Services when modifying a module.
+5. **Zero-Test Tolerance:** All new or refactored logic must include automated tests (Pest/PHPUnit).
+6. **SoftDeletes required** on all audit-critical tables.
+7. **Eager Load everything** - N+1 is a blocker.
+8. **Immutable Snapshots** for all approval-related data.
+9. **Custom Exceptions** for business logic errors.
+10. **Bootstrap 5 + Swal2** for UI/UX consistency.
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

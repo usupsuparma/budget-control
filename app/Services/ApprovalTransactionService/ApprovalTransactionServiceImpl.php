@@ -1141,6 +1141,159 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
     }
 
     /**
+     * Automatically approve a transaction (used for imports).
+     */
+    public function autoApprove(int $transactionId, string $comment): array
+    {
+        try {
+            $transaction = Transaction::with(['user', 'details'])->findOrFail($transactionId);
+            
+            $this->logService->create("Auto-approving transaction from import", [
+                'transaction_id' => $transactionId,
+                'comment' => $comment,
+            ], 'info');
+
+            // Find module for transactions
+            $module = ApprovalModule::where('table_name', 'transactions')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$module) {
+                return [
+                    'success' => false,
+                    'message' => 'Approval module for transactions belum dikonfigurasi.',
+                ];
+            }
+
+            // Find active template
+            $template = ApprovalFlowTemplate::where('module_id', $module->id)
+                ->where('is_active', true)
+                ->orderBy('priority')
+                ->first();
+
+            if (!$template) {
+                return [
+                    'success' => false,
+                    'message' => 'Approval template belum dikonfigurasi.',
+                ];
+            }
+
+            // Get current user's employment
+            $employee = Auth::user();
+            $requesterEmployment = $employee ? $employee->employment : null;
+            if (!$requesterEmployment) {
+                return ['success' => false, 'message' => 'Employment data not found.'];
+            }
+
+            $requesterId = $requesterEmployment->id;
+
+            $divisionId = $requesterEmployment->organization_id ?? null;
+
+            // === BUDGET LEDGER: Validate budget sufficiency before final approval ===
+            $budgetValidation = $this->budgetLedgerService->validateBudgetSufficiency($transaction->id);
+            if (!$budgetValidation['success']) {
+                $this->logService->create("Budget validation failed on auto-approval", [
+                    'transaction_id' => $transaction->id,
+                    'message' => $budgetValidation['message'],
+                    'insufficient_items' => $budgetValidation['insufficient_items'] ?? [],
+                ], 'warning');
+                return [
+                    'success' => false,
+                    'message' => 'Saldo anggaran tidak mencukupi untuk auto-approve: ' . $budgetValidation['message'],
+                    'insufficient_items' => $budgetValidation['insufficient_items'] ?? [],
+                ];
+            }
+
+            // Build approval chain based on template configuration
+            $approvalChain = $this->buildApprovalChain(
+                $template,
+                $requesterEmployment,
+                $divisionId,
+                $transaction->estimated_amount
+            );
+
+            if (empty($approvalChain)) {
+                // If no chain, just create a dummy one for the requester or system
+                $approvalChain = [[
+                    'phase' => 'master_flow',
+                    'level_sequence' => 1,
+                    'employment_id' => $requesterEmployment->id,
+                    'employment_name' => $requesterEmployment->employee->first_name . ' ' . $requesterEmployment->employee->last_name,
+                ]];
+            }
+
+            DB::beginTransaction();
+
+            // Create approval request as already approved
+            $request = ApprovalRequest::create([
+                'module_id' => $module->id,
+                'reference_id' => $transactionId,
+                'reference_number' => $this->generateReferenceNumber($transaction),
+                'template_id' => $template->id,
+                'template_snapshot' => json_encode($approvalChain),
+                'status' => 'approved', // Status 2: Approved
+                'current_phase' => $approvalChain[count($approvalChain) - 1]['phase'],
+                'current_level' => count($approvalChain),
+                'total_levels' => count($approvalChain),
+                'requester_id' => $requesterEmployment->id,
+                'requested_at' => now(),
+                'completed_at' => now(),
+            ]);
+
+            // Create all details as approved
+            foreach ($approvalChain as $approver) {
+                ApprovalRequestDetail::create([
+                    'request_id' => $request->id,
+                    'phase' => $approver['phase'],
+                    'level_sequence' => $approver['level_sequence'],
+                    'employment_id' => $approver['employment_id'],
+                    'employment_name' => $approver['employment_name'],
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                ]);
+            }
+
+            // Update the transaction - fully approved (STATUS_PAID = 3)
+            $transaction->update([
+                'status' => Transaction::STATUS_PAID,
+                'status_approval' => Transaction::APPROVAL_STATUS_APPROVED,
+                'current_approval_level' => count($approvalChain),
+                'required_approval_levels' => count($approvalChain),
+                'approval_completed_at' => now(),
+                // Store the auto-approve comment in rejection_reason field or a more suitable one if available
+                // Given the existing model, re-using rejection_reason for specific info when approved might work 
+                // but let's just stick to requirements.
+            ]);
+
+            // Record mutations (Cash Advance)
+            $this->budgetLedgerService->recordCashAdvanceMutations($transaction->id);
+
+            // Notify requester
+            $this->notificationService->sendToEmployment(
+                $requesterId,
+                'approval',
+                'Transaksi Disetujui (Import)',
+                "Transaksi Anda: {$transaction->purpose} telah disetujui secara otomatis melalui proses import."
+            );
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Transaksi berhasil di-auto approve.',
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Auto approve failed: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Gagal auto approve: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Get approval timeline for display.
      */
     public function getApprovalTimeline(int $transactionId): array

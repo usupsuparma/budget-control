@@ -21,9 +21,9 @@ class ReferenceProgramsSheet implements FromCollection, WithHeadings, WithTitle
 
     public function collection()
     {
-        return KPIWorkPlan::where('status', 'approved')
-            ->orderBy('year', 'desc')
-            ->orderBy('activity')
-            ->get(['activity', 'year', 'kpi_type']);
+        $query =  KPIWorkPlan::query();
+        $query->orderBy('year', 'desc')
+            ->orderBy('activity');
+        return $query->get(['activity', 'year', 'kpi_type']);
     }
 }

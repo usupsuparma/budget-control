@@ -1303,9 +1303,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.master.view')
         ->get('/master-data', [MasterController::class, 'index'])
         ->name('master');
-    Route::middleware('permission:setting.users.view')
-        ->get('/user', [UsersController::class, 'index'])
-        ->name('users.index');
+    Route::prefix('users')
+        ->middleware('permission:setting.users.view')
+        ->group(function () {
+            Route::get('/', [UsersController::class, 'index'])
+                ->name('users.index');
+        });
+
     Route::middleware('permission:setting.history.view')
         ->get('/history', [MasterController::class, 'history'])
         ->name('history');

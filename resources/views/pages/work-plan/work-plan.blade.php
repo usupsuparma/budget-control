@@ -358,21 +358,27 @@
             <div class="filter-section">
                 <h6 class="mb-3">Filter KPI</h6>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-4" @if(!$isAdmin) style="display: none;" @endif>
                         <label class="form-label">Divisi</label>
                         <select id="filter_division" class="form-select">
                             <option value="">-- Pilih Divisi --</option>
                             @foreach($divisions as $div)
-                            <option value="{{ $div->id }}">{{ $div->name }}</option>
+                            <option value="{{ $div->id }}" {{ $userDivisionId == $div->id ? 'selected' : '' }}>{{ $div->name }}</option>
                             @endforeach
                         </select>
                     </div>
+                    @if(!$isAdmin)
+                    <div class="col-md-4">
+                        <label class="form-label">Divisi</label>
+                        <input type="text" class="form-control" value="{{ $divisions->where('id', $userDivisionId)->first()->name ?? 'N/A' }}" readonly>
+                    </div>
+                    @endif
                     <div class="col-md-3">
                         <label class="form-label">Tahun</label>
                         <select id="filter_year" class="form-select">
                             <option value="">-- Pilih Tahun --</option>
                             @foreach($years as $year)
-                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>
+                            <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
                                 {{ $year }}
                             </option>
                             @endforeach
@@ -399,7 +405,18 @@
                     <h6 class="mb-0">Work Plan (Program Kerja)</h6>
                 </div>
                 <div class="card-body">
-                    <div id="workplan-container" class="workplan-container">
+                    <div id="workplan-container" class="workplan-container" 
+                         data-is-admin="{{ $isAdmin ? 'true' : 'false' }}"
+                         data-user-division-id="{{ $userDivisionId }}"
+                         data-routes="{{ json_encode([
+                             'getKpiData' => route('workplan.getKpiData'),
+                             'store' => route('workplan.store'),
+                             'update' => route('workplan.update', ':id'),
+                             'delete' => route('workplan.destroy', ':id'),
+                             'approve' => route('workplan.approve', ':id'),
+                             'updateRealization' => route('workplan.updateRealization', ':id'),
+                             'budgetUser' => route('budget-user.index'),
+                         ]) }}">
                         <div class="no-data-message">
                             <i class="bi bi-info-circle" style="font-size: 48px;"></i>
                             <p class="mt-3">Silakan pilih Divisi dan Tahun kemudian klik "Load KPI Data" untuk menampilkan data KPI dan Work Plan</p>

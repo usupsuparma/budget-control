@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\KPIWorkPlan;
 use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Division;
+use App\Models\Section;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -15,29 +17,61 @@ class KPIWorkPlanController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+        // Check if user has admin or super-admin role
+        $isAdmin = $user->hasRole('admin') || $user->hasRole('super-admin');
+
+        $userDivisionId = null;
+        if (!$isAdmin) {
+            $employment = $user->employment;
+            if ($employment) {
+                $jobPosition = $employment->jobPosition;
+                if ($jobPosition) {
+                    $levelId = (int)$jobPosition->job_level_id;
+                    $structureId = (int)$jobPosition->structure_id;
+
+                    switch ($levelId) {
+                        case 1: // Director
+                            $userDivisionId = Division::where('director_id', $structureId)->first()?->id;
+                            break;
+                        case 2: // Division
+                            $userDivisionId = $structureId;
+                            break;
+                        case 3: // Department
+                            $userDivisionId = Department::where('id', $structureId)->first()?->division_id;
+                            break;
+                        default: // Section/Staff/Non-Staff
+                            $section = Section::with('department')->find($structureId);
+                            $userDivisionId = $section?->department?->division_id;
+                            break;
+                    }
+                }
+            }
+        }
+
         // Get unique divisions from KPI Division
         $kpiDivisions = KPIDivision::with('division')
             ->select('division_id')
             ->distinct()
             ->get();
 
-    
-        
-        $divisions = $kpiDivisions->map(function($kpi) {
+        $divisions = $kpiDivisions->map(function ($kpi) {
             return $kpi->division;
         })->filter()->unique('id')->values();
-        
+
         // Get unique years from KPI Division
         $kpiYears = KPIDivision::select('year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')
             ->toArray();
-        
+
         // If no KPI years exist, provide default years
         $years = !empty($kpiYears) ? $kpiYears : range(date('Y'), date('Y') + 5);
-        
-        return view('pages.work-plan.work-plan', compact('divisions', 'years'));
+
+        $currentYear = date('Y');
+
+        return view('pages.work-plan.work-plan', compact('divisions', 'years', 'isAdmin', 'userDivisionId', 'currentYear'));
     }
 
     /**
@@ -69,9 +103,9 @@ class KPIWorkPlanController extends Controller
             ];
 
             // Get KPI Department
-            $kpiDepartments = KPIDepartment::with(['department', 'workplans' => function($q) {
-                    $q->orderBy('created_at', 'desc');
-                }])
+            $kpiDepartments = KPIDepartment::with(['department', 'workplans' => function ($q) {
+                $q->orderBy('created_at', 'desc');
+            }])
                 ->where('kpi_division_id', $kpiDivision->id)
                 ->get();
 
@@ -81,16 +115,16 @@ class KPIWorkPlanController extends Controller
                     'department_name' => $kpiDept->department->name ?? 'N/A',
                     'department_goals' => $kpiDept->department_goals,
                     'target_department' => $kpiDept->target_department,
-                    'workplans' => $kpiDept->workplans->map(function($wp) {
+                    'workplans' => $kpiDept->workplans->map(function ($wp) {
                         return $this->formatWorkplan($wp);
                     }),
                     'sections' => []
                 ];
 
                 // Get KPI Section
-                $kpiSections = KPISection::with(['section', 'workplans' => function($q) {
-                        $q->orderBy('created_at', 'desc');
-                    }])
+                $kpiSections = KPISection::with(['section', 'workplans' => function ($q) {
+                    $q->orderBy('created_at', 'desc');
+                }])
                     ->where('kpi_department_id', $kpiDept->id)
                     ->get();
 
@@ -100,7 +134,7 @@ class KPIWorkPlanController extends Controller
                         'section_name' => $kpiSect->section->name ?? 'N/A',
                         'section_goals' => $kpiSect->section_goals,
                         'target_section' => $kpiSect->target_section,
-                        'workplans' => $kpiSect->workplans->map(function($wp) {
+                        'workplans' => $kpiSect->workplans->map(function ($wp) {
                             return $this->formatWorkplan($wp);
                         })
                     ];
@@ -293,24 +327,24 @@ class KPIWorkPlanController extends Controller
     {
         try {
             $workplan = KPIWorkPlan::findOrFail($id);
-            
+
             // Update only realization fields
             $realizationData = [];
             $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-            
+
             foreach ($months as $month) {
                 if ($request->has("real_{$month}")) {
                     $realizationData["real_{$month}"] = $request->boolean("real_{$month}");
                 }
             }
-            
+
             if (empty($realizationData)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No realization data to update'
                 ], 400);
             }
-            
+
             $workplan->update($realizationData);
 
             return response()->json([

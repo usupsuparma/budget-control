@@ -122,6 +122,15 @@ try {
 ### Blade & JavaScript Standard
 
 - **URL Helper:** ALWAYS use `route('name', ':id').replace(':id', id)`.
+- **JS Routes:** NEVER hardcode URLs in AJAX calls. ALWAYS pass routes from Blade to JS using a global object or data attributes.
+  ```javascript
+  // In Blade
+  <div id="app-config" data-urls="{{ json_encode(['store' => route('name.store')]) }}"></div>
+  
+  // In JS
+  const urls = $('#app-config').data('urls');
+  $.ajax({ url: urls.store, ... });
+  ```
 - **Feedback:** ALWAYS use SweetAlert2 (`Swal.fire`).
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
 - **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.

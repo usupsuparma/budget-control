@@ -25,6 +25,14 @@ class Division extends Model
      */
     public function kpiDivisions()
     {
-        return $this->hasMany(KpiDivision::class, 'division_id');
+        return $this->hasMany(\App\Models\KpiDivision::class, 'division_id');
+    }
+
+    /**
+     * Departments under this division
+     */
+    public function departments()
+    {
+        return $this->hasMany(\App\Models\Department::class, 'division_id');
     }
 }

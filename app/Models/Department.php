@@ -20,4 +20,12 @@ class Department extends Model
     {
         return $this->belongsTo(Division::class, 'division_id');
     }
+
+    /**
+     * Sections under this department
+     */
+    public function sections()
+    {
+        return $this->hasMany(\App\Models\Section::class, 'department_id');
+    }
 }

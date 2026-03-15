@@ -51,7 +51,11 @@
                                 <i class="fas fa-layer-group me-2"></i> Section
                             </a>
                         </li>
-
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
+                                <i class="fas fa-layer-group me-2"></i> Organization
+                            </a>
+                        </li>
 
 
                     </ul>
@@ -80,6 +84,9 @@
                         </div>
                         <div class="tab-pane fade" id="section">
                             @include('pages.settings.section')
+                        </div>
+                        <div class="tab-pane fade" id="organization">
+                            @include('pages.settings.organization')
                         </div>
                     </div>
                 </div>

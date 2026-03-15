@@ -12,5 +12,14 @@ class Director extends Model
         'name',
         'code',
         'status',
+        'structure_id',
     ];
+
+    /**
+     * Divisions under this director
+     */
+    public function divisions()
+    {
+        return $this->hasMany(\App\Models\Division::class, 'director_id');
+    }
 }

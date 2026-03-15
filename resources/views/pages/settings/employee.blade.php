@@ -22,6 +22,7 @@
                                 <th>NIP</th>
                                 <th>Names & Email</th>
                                 <th>Job Position</th>
+                                <th>Division</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th width="15%">Action</th>
@@ -306,28 +307,33 @@
                 {
                     data: 'employee_code',
                     name: 'employee_code',
-                    searchable: true  // Search by NIP
+                    searchable: true // Search by NIP
                 },
                 {
                     data: 'full_name',
                     name: 'full_name',
-                    searchable: true  // Search in first_name, last_name, and email
+                    searchable: true // Search in first_name, last_name, and email
                 },
                 {
                     data: 'job_info',
                     name: 'job_info',
-                    searchable: true  // Search in job position and job level
+                    searchable: true // Search in job position and job level
+                },
+                {
+                    data: 'division',
+                    name: 'division',
+                    searchable: true // Search in division
                 },
                 {
                     data: 'roles',
                     name: 'roles',
-                    searchable: true  // Search in role name
+                    searchable: true // Search in role name
                 },
                 {
                     data: 'status_badge',
                     name: 'status',
                     orderable: false,
-                    searchable: true  // Search by status (Active/Inactive)
+                    searchable: true // Search by status (Active/Inactive)
                 },
                 {
                     data: 'action',
@@ -354,12 +360,12 @@
             $("#detailName").text(data.first_name + " " + data.last_name);
             $("#detailEmail").text(data.email);
             $("#detailEmployeeId").text(data.employee_code ?? '-');
-            
+
             // Get job info from employment relationship
             let jobPosition = data.employment?.job_position?.job_position_name ?? '-';
             let organization = data.employment?.job_position?.structure_name ?? '-';
             let jobLevel = data.employment?.job_level?.job_level_name ?? '-';
-            
+
             $("#detailJobPosition").text(jobPosition);
             $("#detailOrganization").text(organization);
             $("#detailJobLevel").text(jobLevel);
@@ -372,7 +378,7 @@
 
             // Store employee ID for reset password button
             $("#employeeDetailModal").data('employee-id', data.id);
-            
+
             $("#employeeDetailModal").modal("show");
         });
     });
@@ -395,23 +401,23 @@
             },
             error: function(xhr) {
                 console.log(xhr.responseText);
-                
+
                 // Tangani ValidationError (422) dan ServerError (500)
                 if (xhr.status === 422) {
                     // Validation Error - tampilkan semua pesan error
                     let errors = xhr.responseJSON.errors;
                     let errorMessages = '';
-                    
+
                     for (let field in errors) {
                         errorMessages += '• ' + errors[field][0] + '\n';
                     }
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Validasi Gagal',
-                        html: '<div style="text-align:left;">' + 
-                              errorMessages.replace(/\n/g, '<br>') + 
-                              '</div>',
+                        html: '<div style="text-align:left;">' +
+                            errorMessages.replace(/\n/g, '<br>') +
+                            '</div>',
                     });
                 } else if (xhr.status === 500) {
                     // Server Error
@@ -531,23 +537,23 @@
             },
             error: function(xhr) {
                 console.log(xhr.responseText);
-                
+
                 // Tangani ValidationError (422) dan ServerError (500)
                 if (xhr.status === 422) {
                     // Validation Error - tampilkan semua pesan error
                     let errors = xhr.responseJSON.errors;
                     let errorMessages = '';
-                    
+
                     for (let field in errors) {
                         errorMessages += '• ' + errors[field][0] + '\n';
                     }
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Validasi Gagal',
-                        html: '<div style="text-align:left;">' + 
-                              errorMessages.replace(/\n/g, '<br>') + 
-                              '</div>',
+                        html: '<div style="text-align:left;">' +
+                            errorMessages.replace(/\n/g, '<br>') +
+                            '</div>',
                     });
                 } else if (xhr.status === 500) {
                     // Server Error
@@ -568,7 +574,7 @@
     $(document).on('click', '.employee-resetpass-btn, .resetPasswordBtn', function() {
         // Get ID from button data or from parent modal data
         let id = $(this).data('id') || $("#employeeDetailModal").data('employee-id');
-        
+
         if (!id) {
             Swal.fire("Error", "Employee ID not found", "error");
             return;
@@ -579,7 +585,7 @@
         if (detailModal) {
             detailModal.hide();
         }
-        
+
         // Remove modal backdrop if it still exists
         $('.modal-backdrop').remove();
         $('body').removeClass('modal-open');

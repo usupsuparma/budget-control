@@ -19,7 +19,7 @@ class EmployeeController extends Controller
     {
         // Use 'roles' (Spatie HasRoles trait) instead of 'role' to avoid conflict with scopeRole()
         // Load employment and job position via employment
-        $query = Employee::with(['roles', 'employment.jobPosition', 'employment.jobLevel'])
+        $query = Employee::with(['roles', 'employment.jobPosition.structure', 'employment.jobLevel'])
             ->select(['id', 'first_name', 'last_name', 'email', 'employee_code', 'status']);
 
         return DataTables::of($query)
@@ -44,6 +44,13 @@ class EmployeeController extends Controller
                     '<br>' .
                     '<small class="text-muted">' . e($jl?->job_level_name ?? '-') . '</small>';
             })
+
+            ->addColumn('division', function ($row) {
+                $structure = $row->employment?->jobPosition?->structure;
+                $divisionName = $structure?->name ?? '-';
+                return '<span class="text-primary">' . e($divisionName) . '</span>';
+            })
+
             ->addColumn(
                 'roles',
                 fn($row) =>
@@ -107,7 +114,7 @@ class EmployeeController extends Controller
                 });
             })
 
-            ->rawColumns(['full_name', 'employee_code', 'job_info', 'roles', 'email', 'status_badge', 'action'])
+            ->rawColumns(['full_name', 'employee_code', 'job_info', 'division', 'roles', 'email', 'status_badge', 'action'])
             ->make(true);
     }
 

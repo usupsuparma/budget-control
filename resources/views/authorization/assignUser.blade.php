@@ -35,26 +35,26 @@
                             <!-- Users yang punya role ini -->
                             <td>
                                 @php
-                                    $usersWithRole = $role->users;
+                                $usersWithRole = $role->users;
                                 @endphp
 
                                 @if($usersWithRole->count() == 0)
-                                    <span class="text-muted small fst-italic">No users assigned</span>
+                                <span class="text-muted small fst-italic">No users assigned</span>
                                 @else
-                                    @foreach($usersWithRole as $u)
-                                    <span class="badge bg-info text-dark me-1 mb-1 d-inline-flex align-items-center">
-                                        {{ $u->name }}
-                                        <button
-                                            class="btn btn-sm btn-link text-danger ms-1 p-0 removeUserFromRole"
-                                            data-user="{{ $u->id }}"
-                                            data-role="{{ $role->id }}"
-                                            data-user-name="{{ $u->name }}"
-                                            data-role-name="{{ $role->name }}"
-                                            title="Remove user from role">
-                                            <i class="bi bi-x-lg" style="font-size: 10px;"></i>
-                                        </button>
-                                    </span>
-                                    @endforeach
+                                @foreach($usersWithRole as $u)
+                                <span class="badge bg-info text-dark me-1 mb-1 d-inline-flex align-items-center">
+                                    {{ $u->name }}
+                                    <button
+                                        class="btn btn-sm btn-link text-danger ms-1 p-0 removeUserFromRole"
+                                        data-user="{{ $u->id }}"
+                                        data-role="{{ $role->id }}"
+                                        data-user-name="{{ $u->name }}"
+                                        data-role-name="{{ $role->name }}"
+                                        title="Remove user from role">
+                                        <i class="bi bi-x-lg" style="font-size: 10px;"></i>
+                                    </button>
+                                </span>
+                                @endforeach
                                 @endif
                             </td>
 
@@ -121,11 +121,11 @@
                         <select class="form-select" id="assign_user_select" name="user_id" required>
                             <option value="">-- Choose User --</option>
                             @if(isset($employees))
-                                @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}">
-                                    {{ $emp->name }} ({{ $emp->email ?? 'No email' }})
-                                </option>
-                                @endforeach
+                            @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}">
+                                {{ $emp->name }} ({{ $emp->email ?? 'No email' }})
+                            </option>
+                            @endforeach
                             @endif
                         </select>
                     </div>
@@ -171,7 +171,7 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Role Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="role_name" name="name" 
+                        <input type="text" class="form-control" id="role_name" name="name"
                             placeholder="e.g., Manager, Editor, Viewer" required>
                     </div>
                 </form>
@@ -239,7 +239,7 @@
 
             <div class="modal-body">
                 <input type="hidden" id="perm_role_id">
-                
+
                 <div class="alert alert-info py-2 px-3 mb-3">
                     <i class="bi bi-info-circle me-1"></i>
                     Check permissions to grant access to this role.
@@ -267,242 +267,246 @@
 
 @push('scripts')
 <script>
-$(document).ready(function() {
-    // Initialize tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
+    $(document).ready(function() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
 
-    // Initialize DataTable
-    if ($.fn.DataTable.isDataTable('#userRoleTable')) {
-        $('#userRoleTable').DataTable().destroy();
-    }
-    $('#userRoleTable').DataTable({
-        pageLength: 10,
-        responsive: true,
-        order: [[0, 'asc']]
-    });
-
-    // ==============================
-    // 1. ADD ROLE
-    // ==============================
-    $('#btnSaveRole').on('click', function() {
-        let roleName = $('#role_name').val();
-
-        if (!roleName || roleName.trim() === '') {
-            showAlert('error', 'Error', 'Role name is required!');
-            return;
+        // Initialize DataTable
+        if ($.fn.DataTable.isDataTable('#userRoleTable')) {
+            $('#userRoleTable').DataTable().destroy();
         }
-
-        let btn = $(this);
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Saving...');
-
-        $.ajax({
-            url: "{{ route('auth.roles.store') }}",
-            type: "POST",
-            data: {
-                _token: "{{ csrf_token() }}",
-                name: roleName
-            },
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', 'Success', 'Role created successfully!');
-                    $('#modalAddRole').modal('hide');
-                    $('#role_name').val('');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            },
-            error: function(xhr) {
-                let msg = xhr.responseJSON?.message || 'Failed to create role';
-                showAlert('error', 'Error', msg);
-                btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Save Role');
-            }
+        $('#userRoleTable').DataTable({
+            pageLength: 10,
+            responsive: true,
+            order: [
+                [0, 'asc']
+            ]
         });
-    });
 
-    // ==============================
-    // 2. EDIT ROLE - Open Modal
-    // ==============================
-    $(document).on('click', '.editRole', function() {
-        let id = $(this).data('id');
-        let name = $(this).data('name');
+        // ==============================
+        // 1. ADD ROLE
+        // ==============================
+        $('#btnSaveRole').on('click', function() {
+            let roleName = $('#role_name').val();
 
-        $('#edit_role_id').val(id);
-        $('#edit_role_name').val(name);
-        $('#modalEditRole').modal('show');
-    });
-
-    // ==============================
-    // 3. UPDATE ROLE
-    // ==============================
-    $('#btnUpdateRole').on('click', function() {
-        let id = $('#edit_role_id').val();
-        let name = $('#edit_role_name').val();
-
-        if (!name || name.trim() === '') {
-            showAlert('error', 'Error', 'Role name is required!');
-            return;
-        }
-
-        let btn = $(this);
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Updating...');
-
-        $.ajax({
-            url: "{{ url('authorization/roles/update') }}/" + id,
-            type: "POST",
-            data: {
-                _token: "{{ csrf_token() }}",
-                name: name
-            },
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', 'Success', 'Role updated successfully!');
-                    $('#modalEditRole').modal('hide');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            },
-            error: function(xhr) {
-                let msg = xhr.responseJSON?.message || 'Failed to update role';
-                showAlert('error', 'Error', msg);
-                btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Update Role');
+            if (!roleName || roleName.trim() === '') {
+                showAlert('error', 'Error', 'Role name is required!');
+                return;
             }
-        });
-    });
 
-    // ==============================
-    // 4. DELETE ROLE
-    // ==============================
-    $(document).on('click', '.deleteRole', function() {
-        let id = $(this).data('id');
-        let name = $(this).data('name');
+            let btn = $(this);
+            btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Saving...');
 
-        Swal.fire({
-            title: 'Delete Role?',
-            text: `Are you sure you want to delete role "${name}"?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('authorization/roles/delete') }}/" + id,
-                    type: "DELETE",
-                    data: { _token: "{{ csrf_token() }}" },
-                    success: function(response) {
-                        if (response.success) {
-                            showAlert('success', 'Deleted', 'Role has been deleted.');
-                            setTimeout(() => location.reload(), 1000);
-                        }
-                    },
-                    error: function(xhr) {
-                        let msg = xhr.responseJSON?.message || 'Failed to delete role';
-                        showAlert('error', 'Error', msg);
-                    }
-                });
-            }
-        });
-    });
-
-    // ==============================
-    // 5. ASSIGN ROLE TO USER
-    // ==============================
-    $('#btnSaveAssignRole').on('click', function() {
-        let userId = $('#assign_user_select').val();
-        let role = $('#assign_role_select').val();
-
-        if (!userId) {
-            showAlert('error', 'Error', 'Please select a user!');
-            return;
-        }
-        if (!role) {
-            showAlert('error', 'Error', 'Please select a role!');
-            return;
-        }
-
-        let btn = $(this);
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Assigning...');
-
-        $.ajax({
-            url: "{{ route('auth.assign.role') }}",
-            type: "POST",
-            data: {
-                _token: "{{ csrf_token() }}",
-                user_id: userId,
-                role: role
-            },
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', 'Success', 'Role assigned to user successfully!');
-                    $('#modalAssignRole').modal('hide');
-                    $('#assign_user_select').val('');
-                    $('#assign_role_select').val('');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            },
-            error: function(xhr) {
-                let msg = xhr.responseJSON?.message || 'Failed to assign role';
-                showAlert('error', 'Error', msg);
-                btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i> Assign Role');
-            }
-        });
-    });
-
-    // ==============================
-    // 6. REMOVE USER FROM ROLE
-    // ==============================
-    $(document).on('click', '.removeUserFromRole', function(e) {
-        e.preventDefault();
-
-        let userId = $(this).data('user');
-        let roleId = $(this).data('role');
-        let userName = $(this).data('user-name');
-        let roleName = $(this).data('role-name');
-
-        Swal.fire({
-            title: 'Remove User from Role?',
-            text: `Remove "${userName}" from role "${roleName}"?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, remove!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ route('role.removeUser') }}",
-                    method: "POST",
-                    data: {
-                        user_id: userId,
-                        role_id: roleId,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(res) {
-                        showAlert('success', 'Removed', res.message || 'User removed from role.');
+            $.ajax({
+                url: "{{ route('auth.roles.store') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    name: roleName
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', 'Success', 'Role created successfully!');
+                        $('#modalAddRole').modal('hide');
+                        $('#role_name').val('');
                         setTimeout(() => location.reload(), 1000);
-                    },
-                    error: function(xhr) {
-                        let msg = xhr.responseJSON?.message || 'Failed to remove user from role';
-                        showAlert('error', 'Error', msg);
                     }
-                });
-            }
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseJSON?.message || 'Failed to create role';
+                    showAlert('error', 'Error', msg);
+                    btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Save Role');
+                }
+            });
         });
-    });
 
-    // ==============================
-    // 7. MANAGE PERMISSIONS - Open Modal
-    // ==============================
-    $(document).on('click', '.managePermission', function() {
-        let roleId = $(this).data('id');
-        let roleName = $(this).data('name');
+        // ==============================
+        // 2. EDIT ROLE - Open Modal
+        // ==============================
+        $(document).on('click', '.editRole', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
 
-        $('#perm_role_id').val(roleId);
-        $('#perm_role_name').text(roleName);
+            $('#edit_role_id').val(id);
+            $('#edit_role_name').val(name);
+            $('#modalEditRole').modal('show');
+        });
 
-        // Show loading
-        $('#permissionList').html(`
+        // ==============================
+        // 3. UPDATE ROLE
+        // ==============================
+        $('#btnUpdateRole').on('click', function() {
+            let id = $('#edit_role_id').val();
+            let name = $('#edit_role_name').val();
+
+            if (!name || name.trim() === '') {
+                showAlert('error', 'Error', 'Role name is required!');
+                return;
+            }
+
+            let btn = $(this);
+            btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Updating...');
+
+            $.ajax({
+                url: "{{ url('authorization/roles/update') }}/" + id,
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    name: name
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', 'Success', 'Role updated successfully!');
+                        $('#modalEditRole').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseJSON?.message || 'Failed to update role';
+                    showAlert('error', 'Error', msg);
+                    btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Update Role');
+                }
+            });
+        });
+
+        // ==============================
+        // 4. DELETE ROLE
+        // ==============================
+        $(document).on('click', '.deleteRole', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
+
+            Swal.fire({
+                title: 'Delete Role?',
+                text: `Are you sure you want to delete role "${name}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('authorization/roles/delete') }}/" + id,
+                        type: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                showAlert('success', 'Deleted', 'Role has been deleted.');
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        },
+                        error: function(xhr) {
+                            let msg = xhr.responseJSON?.message || 'Failed to delete role';
+                            showAlert('error', 'Error', msg);
+                        }
+                    });
+                }
+            });
+        });
+
+        // ==============================
+        // 5. ASSIGN ROLE TO USER
+        // ==============================
+        $('#btnSaveAssignRole').on('click', function() {
+            let userId = $('#assign_user_select').val();
+            let role = $('#assign_role_select').val();
+
+            if (!userId) {
+                showAlert('error', 'Error', 'Please select a user!');
+                return;
+            }
+            if (!role) {
+                showAlert('error', 'Error', 'Please select a role!');
+                return;
+            }
+
+            let btn = $(this);
+            btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Assigning...');
+
+            $.ajax({
+                url: "{{ route('auth.assign.role') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    user_id: userId,
+                    role: role
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', 'Success', 'Role assigned to user successfully!');
+                        $('#modalAssignRole').modal('hide');
+                        $('#assign_user_select').val('');
+                        $('#assign_role_select').val('');
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseJSON?.message || 'Failed to assign role';
+                    showAlert('error', 'Error', msg);
+                    btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i> Assign Role');
+                }
+            });
+        });
+
+        // ==============================
+        // 6. REMOVE USER FROM ROLE
+        // ==============================
+        $(document).on('click', '.removeUserFromRole', function(e) {
+            e.preventDefault();
+
+            let userId = $(this).data('user');
+            let roleId = $(this).data('role');
+            let userName = $(this).data('user-name');
+            let roleName = $(this).data('role-name');
+
+            Swal.fire({
+                title: 'Remove User from Role?',
+                text: `Remove "${userName}" from role "${roleName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ route('role.removeUser') }}",
+                        method: "POST",
+                        data: {
+                            user_id: userId,
+                            role_id: roleId,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(res) {
+                            showAlert('success', 'Removed', res.message || 'User removed from role.');
+                            setTimeout(() => location.reload(), 1000);
+                        },
+                        error: function(xhr) {
+                            let msg = xhr.responseJSON?.message || 'Failed to remove user from role';
+                            showAlert('error', 'Error', msg);
+                        }
+                    });
+                }
+            });
+        });
+
+        // ==============================
+        // 7. MANAGE PERMISSIONS - Open Modal
+        // ==============================
+        $(document).on('click', '.managePermission', function() {
+            let roleId = $(this).data('id');
+            let roleName = $(this).data('name');
+
+            $('#perm_role_id').val(roleId);
+            $('#perm_role_name').text(roleName);
+
+            // Show loading
+            $('#permissionList').html(`
             <div class="col-12 text-center py-4">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
@@ -510,49 +514,49 @@ $(document).ready(function() {
             </div>
         `);
 
-        $('#modalPermissions').modal('show');
+            $('#modalPermissions').modal('show');
 
-        // Load permissions
-        $.ajax({
-            url: "{{ url('authorization/roles') }}/" + roleId + "/permissions",
-            type: "GET",
-            success: function(res) {
-                let html = '';
-                
-                // Group permissions by module
-                let grouped = {};
-                res.permissions.forEach(p => {
-                    let moduleName = (p.modul && p.modul.modul_name) ? p.modul.modul_name : (p.modul_menu_name || p.name.split('.')[0] || 'General');
-                    let menuName = (p.modul && p.modul.menu_name) ? p.modul.menu_name : '';
-                    
-                    if (!grouped[moduleName]) {
-                        grouped[moduleName] = {};
-                    }
-                    
-                    let key = menuName || 'General';
-                    if (!grouped[moduleName][key]) {
-                        grouped[moduleName][key] = [];
-                    }
-                    grouped[moduleName][key].push(p);
-                });
+            // Load permissions
+            $.ajax({
+                url: "{{ url('authorization/roles') }}/" + roleId + "/permissions",
+                type: "GET",
+                success: function(res) {
+                    let html = '';
 
-                // Build HTML
-                for (let module in grouped) {
-                    html += `<div class="col-12 mb-4">
+                    // Group permissions by module
+                    let grouped = {};
+                    res.permissions.forEach(p => {
+                        let moduleName = (p.modul && p.modul.modul_name) ? p.modul.modul_name : (p.modul_menu_name || p.name.split('.')[0] || 'General');
+                        let menuName = (p.modul && p.modul.menu_name) ? p.modul.menu_name : '';
+
+                        if (!grouped[moduleName]) {
+                            grouped[moduleName] = {};
+                        }
+
+                        let key = menuName || 'General';
+                        if (!grouped[moduleName][key]) {
+                            grouped[moduleName][key] = [];
+                        }
+                        grouped[moduleName][key].push(p);
+                    });
+
+                    // Build HTML
+                    for (let module in grouped) {
+                        html += `<div class="col-12 mb-4">
                         <h5 class="fw-bold text-primary border-bottom pb-2 mb-3 bg-light p-2 rounded">
                             <i class="bi bi-folder2-open me-2"></i>${module}
                         </h5>
                         <div class="ms-3">`;
-                    
-                    for (let menu in grouped[module]) {
-                        if (menu !== 'General') {
-                            html += `<h6 class="fw-bold text-secondary mb-2 mt-3"><i class="bi bi-chevron-right small me-1"></i>${menu}</h6>`;
-                        }
-                        
-                        html += `<div class="row ms-2">`;
-                        grouped[module][menu].forEach(p => {
-                            let checked = res.selected.includes(p.name) ? 'checked' : '';
-                            html += `
+
+                        for (let menu in grouped[module]) {
+                            if (menu !== 'General') {
+                                html += `<h6 class="fw-bold text-secondary mb-2 mt-3"><i class="bi bi-chevron-right small me-1"></i>${menu}</h6>`;
+                            }
+
+                            html += `<div class="row ms-2">`;
+                            grouped[module][menu].forEach(p => {
+                                let checked = res.selected.includes(p.name) ? 'checked' : '';
+                                html += `
                                 <div class="col-md-4 mb-2">
                                     <div class="form-check">
                                         <input class="form-check-input permissionCheck" type="checkbox"
@@ -564,77 +568,77 @@ $(document).ready(function() {
                                     </div>
                                 </div>
                             `;
-                        });
-                        html += `</div>`;
+                            });
+                            html += `</div>`;
+                        }
+
+                        html += '</div></div>';
                     }
-                    
-                    html += '</div></div>';
+
+                    if (res.permissions.length === 0) {
+                        html = '<div class="col-12 text-center text-muted py-4">No permissions available</div>';
+                    }
+
+                    $('#permissionList').html(html);
+                },
+                error: function(xhr) {
+                    $('#permissionList').html('<div class="col-12 text-center text-danger py-4">Failed to load permissions</div>');
                 }
-
-                if (res.permissions.length === 0) {
-                    html = '<div class="col-12 text-center text-muted py-4">No permissions available</div>';
-                }
-
-                $('#permissionList').html(html);
-            },
-            error: function(xhr) {
-                $('#permissionList').html('<div class="col-12 text-center text-danger py-4">Failed to load permissions</div>');
-            }
-        });
-    });
-
-    // ==============================
-    // 8. SAVE PERMISSIONS
-    // ==============================
-    $('#btnSavePermissions').on('click', function() {
-        let roleId = $('#perm_role_id').val();
-        let selectedPermissions = [];
-
-        $('.permissionCheck:checked').each(function() {
-            selectedPermissions.push($(this).val());
-        });
-
-        let btn = $(this);
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Saving...');
-
-        $.ajax({
-            url: "{{ url('authorization/roles') }}/" + roleId + "/permissions/update",
-            type: "POST",
-            data: {
-                permissions: selectedPermissions,
-                _token: "{{ csrf_token() }}"
-            },
-            success: function(res) {
-                if (res.success) {
-                    showAlert('success', 'Success', 'Permissions updated successfully!');
-                    $('#modalPermissions').modal('hide');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            },
-            error: function(xhr) {
-                let msg = xhr.responseJSON?.message || 'Failed to update permissions';
-                showAlert('error', 'Error', msg);
-                btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Save Permissions');
-            }
-        });
-    });
-
-    // ==============================
-    // Helper: Show Alert
-    // ==============================
-    function showAlert(type, title, message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: type,
-                title: title,
-                text: message,
-                timer: type === 'success' ? 2000 : undefined,
-                showConfirmButton: type !== 'success'
             });
-        } else {
-            alert(title + ': ' + message);
+        });
+
+        // ==============================
+        // 8. SAVE PERMISSIONS
+        // ==============================
+        $('#btnSavePermissions').on('click', function() {
+            let roleId = $('#perm_role_id').val();
+            let selectedPermissions = [];
+
+            $('.permissionCheck:checked').each(function() {
+                selectedPermissions.push($(this).val());
+            });
+
+            let btn = $(this);
+            btn.prop('disabled', true).html('<i class="bi bi-hourglass me-1"></i> Saving...');
+
+            $.ajax({
+                url: "{{ url('authorization/roles') }}/" + roleId + "/permissions/update",
+                type: "POST",
+                data: {
+                    permissions: selectedPermissions,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(res) {
+                    if (res.success) {
+                        showAlert('success', 'Success', 'Permissions updated successfully!');
+                        $('#modalPermissions').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseJSON?.message || 'Failed to update permissions';
+                    showAlert('error', 'Error', msg);
+                    btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Save Permissions');
+                }
+            });
+        });
+
+        // ==============================
+        // Helper: Show Alert
+        // ==============================
+        function showAlert(type, title, message) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: type,
+                    title: title,
+                    text: message,
+                    timer: type === 'success' ? 2000 : undefined,
+                    showConfirmButton: type !== 'success'
+                });
+            } else {
+                alert(title + ': ' + message);
+            }
         }
-    }
-});
+    });
 </script>
 @endpush

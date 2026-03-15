@@ -4,6 +4,30 @@
 @section('title-sub', 'Users & Roles Management')
 @section('pagetitle', 'Setting')
 
+@section('css')
+<!-- Choices.js Css -->
+<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}" />
+<style>
+    /* Improve Choices.js integration with Bootstrap */
+    .choices__inner {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        min-height: 38px;
+        padding: 4px 10px;
+    }
+    .choices__list--single {
+        padding: 4px 16px 4px 4px;
+    }
+    .choices[data-type*="select-one"] .choices__inner {
+        padding-bottom: 4px;
+    }
+    .choices__input {
+        background-color: transparent;
+    }
+</style>
+@endsection
+
 @section('content')
 
 <div class="col-12 col-lg-12">
@@ -52,3 +76,8 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<!-- Choices.js Js -->
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+@endpush

@@ -136,6 +136,7 @@ try {
 9. **Custom Exceptions** for business logic errors.
 10. **Bootstrap 5 + Swal2** for UI/UX consistency.
 11. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
+12. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

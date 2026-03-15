@@ -156,23 +156,55 @@ class AuthorizationController extends Controller
 
     public function permissionUpdate(Request $request, $id)
     {
-        $request->validate([
-            'modul_menu' => 'required|exists:moduls,id',
-            'name' => 'required|string|unique:permissions,name,' . $id,
-            'modul_menu_name' => 'required|string'
-        ]);
+        try {
+            Log::info('Permission Update Request:', ['id' => $id, 'data' => $request->all()]);
 
-        $permission = Permission::find($id);
-        $permission->update([
-            'modul_menu'         => $request->modul_menu,
-            'name'             => $request->name,
-            'modul_menu_name'  => $request->modul_menu_name,
-        ]);
+            $validator = FacadesValidator::make($request->all(), [
+                'modul_menu' => 'required|exists:modul_menu,id',
+                'name' => 'required|string|unique:permissions,name,' . $id,
+                'modul_menu_name' => 'required|string'
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Permission updated successfully'
-        ]);
+            if ($validator->fails()) {
+                Log::error('Update Validation failed:', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $permission = Permission::find($id);
+            if (!$permission) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permission not found'
+                ], 404);
+            }
+
+            $permission->update([
+                'modul_menu'       => $request->modul_menu,
+                'name'             => $request->name,
+                'modul_menu_name'  => $request->modul_menu_name,
+            ]);
+
+            Log::info('Permission updated successfully:', ['id' => $id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission updated successfully'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Permission Update Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function permissionDelete($id)

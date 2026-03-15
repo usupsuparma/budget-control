@@ -271,6 +271,36 @@
         // Initialize tooltips
         $('[data-bs-toggle="tooltip"]').tooltip();
 
+        // Initialize Choices.js
+        let userSelect, roleSelect;
+        
+        const initChoices = () => {
+            if ($('#assign_user_select').length) {
+                userSelect = new Choices('#assign_user_select', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Choose User --',
+                });
+            }
+            if ($('#assign_role_select').length) {
+                roleSelect = new Choices('#assign_role_select', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Choose Role --',
+                });
+            }
+        };
+
+        initChoices();
+
+        // Reset Choices when modal closes or opens if needed
+        $('#modalAssignRole').on('hidden.bs.modal', function () {
+            if(userSelect) userSelect.setChoiceByValue('');
+            if(roleSelect) roleSelect.setChoiceByValue('');
+        });
+
         // Initialize DataTable
         if ($.fn.DataTable.isDataTable('#userRoleTable')) {
             $('#userRoleTable').DataTable().destroy();
@@ -439,8 +469,8 @@
                     if (response.success) {
                         showAlert('success', 'Success', 'Role assigned to user successfully!');
                         $('#modalAssignRole').modal('hide');
-                        $('#assign_user_select').val('');
-                        $('#assign_role_select').val('');
+                        if(userSelect) userSelect.setChoiceByValue('');
+                        if(roleSelect) roleSelect.setChoiceByValue('');
                         setTimeout(() => location.reload(), 1000);
                     }
                 },

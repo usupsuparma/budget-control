@@ -41,6 +41,9 @@
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-warning btn-sm edit-permission"
                                     data-id="{{ $p->id }}"
+                                    data-name="{{ $p->name }}"
+                                    data-modul-menu="{{ $p->modul_menu }}"
+                                    data-modul-menu-name="{{ $p->modul_menu_name }}"
                                     data-bs-toggle="tooltip" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </button>
@@ -137,6 +140,68 @@
     </div>
 </div>
 
+<!-- EDIT PERMISSION MODAL -->
+<div class="modal fade" id="modalEditPermission" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Permission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="permissionEditForm" method="POST">
+                    @csrf
+                    <input type="hidden" name="id" id="edit_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Modul / Menu</label>
+                        <select name="modul_menu" id="edit_modul_menu" class="form-select" required>
+                            <option value="">-- Select Module/Menu --</option>
+                            @if(isset($moduls) && $moduls->count() > 0)
+                            @foreach($moduls as $modul)
+                            <option value="{{ $modul->id }}">
+                                @if($modul->modul_name && $modul->menu_name)
+                                {{ $modul->modul_name }} - {{ $modul->menu_name }}
+                                @elseif($modul->modul_name)
+                                {{ $modul->modul_name }}
+                                @elseif($modul->menu_name)
+                                {{ $modul->menu_name }}
+                                @else
+                                ID: {{ $modul->id }}
+                                @endif
+                            </option>
+                            @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Permission Display Name</label>
+                        <input type="text" name="modul_menu_name" id="edit_modul_menu_name" class="form-control"
+                            placeholder="e.g., Dashboard View" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Route/Key Name</label>
+                        <input type="text" name="name" id="edit_name" class="form-control"
+                            placeholder="e.g., dashboard.view" required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-warning" form="permissionEditForm">
+                    <i class="bi bi-save me-2"></i> Update Permission
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     $(document).ready(function() {
@@ -164,6 +229,27 @@
         // Initialize tooltips
         $('[data-bs-toggle="tooltip"]').tooltip();
 
+        // Initialize Choices.js
+        let modulMenuSelect, editModulMenuSelect;
+
+        if ($('#modul_menu').length) {
+            modulMenuSelect = new Choices('#modul_menu', {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholderValue: '-- Select Module/Menu --',
+            });
+        }
+
+        if ($('#edit_modul_menu').length) {
+            editModulMenuSelect = new Choices('#edit_modul_menu', {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholderValue: '-- Select Module/Menu --',
+            });
+        }
+
         // Form submission with AJAX
         $(document).on('submit', '#permissionCreateForm', function(e) {
             e.preventDefault();
@@ -185,6 +271,7 @@
                     if (response.success) {
                         // Show success message dengan Bootstrap alert
                         $('#modalAddPermission').modal('hide');
+                        if(modulMenuSelect) modulMenuSelect.setChoiceByValue('');
 
                         // Tampilkan alert sukses
                         showAlert('success', 'Success!', response.message || 'Permission created successfully!');
@@ -234,6 +321,68 @@
             });
         });
 
+        // Edit permission - populate modal
+        $(document).on('click', '.edit-permission', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
+            let modulMenu = $(this).data('modul-menu');
+            let modulMenuName = $(this).data('modul-menu-name');
+
+            $('#edit_id').val(id);
+            $('#edit_name').val(name);
+            
+            if (editModulMenuSelect) {
+                editModulMenuSelect.setChoiceByValue(String(modulMenu));
+            } else {
+                $('#edit_modul_menu').val(modulMenu);
+            }
+            
+            $('#edit_modul_menu_name').val(modulMenuName);
+
+            $('#modalEditPermission').modal('show');
+        });
+
+        // Edit permission - submit form
+        $(document).on('submit', '#permissionEditForm', function(e) {
+            e.preventDefault();
+
+            let form = $(this);
+            let id = $('#edit_id').val();
+            let url = "{{ url('authorization/permissions/update') }}/" + id;
+            let submitBtn = form.find('button[type="submit"]');
+
+            let originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass me-2"></i> Updating...');
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: form.serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalEditPermission').modal('hide');
+                        if(editModulMenuSelect) editModulMenuSelect.setChoiceByValue('');
+                        showAlert('success', 'Success!', response.message || 'Permission updated successfully!');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert('error', 'Error!', response.message || 'Failed to update permission');
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Failed to update permission';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    showAlert('error', 'Error!', errorMessage);
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
         // Delete permission
         $(document).on('click', '.delete-permission', function() {
             let permissionId = $(this).data('id');
@@ -273,7 +422,7 @@
             let icon = type === 'success' ? '<i class="bi bi-check-circle me-2"></i>' : '<i class="bi bi-exclamation-triangle me-2"></i>';
 
             let alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 end-0 m-3" 
+                <div class="alert ${alertClass} alert-position-fixed alert-dismissible fade show position-fixed top-0 end-0 m-3" 
                      style="z-index: 9999; min-width: 300px;" role="alert">
                     <div class="d-flex">
                         <div>${icon}</div>

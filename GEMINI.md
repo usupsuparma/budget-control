@@ -4,6 +4,9 @@
 
 Budget Control is a Laravel 12 enterprise application for budget management, KPI tracking, and approval workflows with two-phase dynamic approval system (uppline chain → master flow with threshold-based routing).
 
+**Key Documentation:**
+- [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
+
 ## Critical Architecture Patterns
 
 ### Service Layer Pattern (MANDATORY)

@@ -121,6 +121,7 @@ try {
 - **URL Helper:** ALWAYS use `route('name', ':id').replace(':id', id)`.
 - **Feedback:** ALWAYS use SweetAlert2 (`Swal.fire`).
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
+- **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.
 
 ## Critical Rules (Auto-Reject if Violated)
 
@@ -134,6 +135,7 @@ try {
 8. **Immutable Snapshots** for all approval-related data.
 9. **Custom Exceptions** for business logic errors.
 10. **Bootstrap 5 + Swal2** for UI/UX consistency.
+11. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

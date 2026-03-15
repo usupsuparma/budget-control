@@ -7,6 +7,8 @@ let selectedDivisionId = null;
 let selectedYear = null;
 let budgetCodesData = [];
 let stockCodesData = [];
+let suppliersData = [];
+let unitsData = [];
 let allWorkplans = [];
 let programIdChoices = null;
 let currentEmploymentId = null; // Current user's employment ID for approval authorization
@@ -234,6 +236,8 @@ function loadAllBudgetItems() {
                 allWorkplans = response.workplans || [];
                 budgetCodesData = response.budgetCodes || [];
                 stockCodesData = response.stockCodes || [];
+                console.log(stockCodesData, "stock codes");
+
                 allItemsData = response.data || []; // Store for detail lookup
                 currentEmploymentId = response.currentEmploymentId; // Store for authorization
 
@@ -861,15 +865,14 @@ function loadSuppliers() {
         method: "GET",
         success: function (response) {
             if (response.success) {
+                suppliersData = response.data || [];
                 const select = $("#supplier");
                 select.empty();
-                select.append(
-                    '<option value="" data-id="">Select Supplier</option>',
-                );
+                select.append('<option value="">Select Supplier</option>');
 
-                response.data.forEach((supplier) => {
+                suppliersData.forEach((supplier) => {
                     select.append(
-                        `<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`,
+                        `<option value="${supplier.id}">${supplier.supplier}</option>`,
                     );
                 });
             }
@@ -889,15 +892,14 @@ function loadUnits() {
         method: "GET",
         success: function (response) {
             if (response.success) {
+                unitsData = response.data || [];
                 const select = $("#unit");
                 select.empty();
-                select.append(
-                    '<option value="" data-name="">Select Unit</option>',
-                );
+                select.append('<option value="">Select Unit</option>');
 
-                response.data.forEach((unit) => {
+                unitsData.forEach((unit) => {
                     select.append(
-                        `<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`,
+                        `<option value="${unit.id}">${unit.unit}</option>`,
                     );
                 });
             }
@@ -1193,7 +1195,6 @@ function _populateBudgetCodeSelect(data) {
         const option = document.createElement("option");
         option.value = code.budget_code;
         option.textContent = `${code.budget_code} - ${code.name}`;
-        option.setAttribute("data-incharge", code.inchargeCode || "");
         select.appendChild(option);
     });
 
@@ -1212,8 +1213,12 @@ function _populateBudgetCodeSelect(data) {
     $(select)
         .off("change")
         .on("change", function () {
-            const selectedOption = $(this).find("option:selected");
-            const inchargeCode = selectedOption.data("incharge");
+            const val = $(this).val();
+            const selectedItem = budgetCodesData.find(
+                (item) => item.budget_code === val,
+            );
+            const inchargeCode = selectedItem ? selectedItem.inchargeCode : "";
+
             $("#costCenter").val(inchargeCode || "");
 
             const costCenterSelect = document.getElementById("costCenter");
@@ -1264,9 +1269,6 @@ function _populateStockCodeSelect(data) {
         const option = document.createElement("option");
         option.value = code.stock_code;
         option.textContent = `${code.stock_code} - ${code.name}`;
-        option.setAttribute("data-budget-code", code.budget_code || "");
-        option.setAttribute("data-unit", code.unit || "");
-        option.setAttribute("data-product-line", code.product_line || "");
         select.appendChild(option);
     });
 
@@ -1285,21 +1287,37 @@ function _populateStockCodeSelect(data) {
     $(select)
         .off("change")
         .on("change", function () {
-            const selectedOption = $(this).find("option:selected");
-            const budgetCode = selectedOption.data("budget-code");
-            const productLine = selectedOption.data("product-line");
+            const val = $(this).val();
+            const selectedItem = stockCodesData.find(
+                (item) => item.stock_code === val,
+            );
 
-            if (budgetCode) {
-                const budgetCodeSelect = document.getElementById("budgetCode");
-                if (budgetCodeSelect.choicesInstance) {
-                    budgetCodeSelect.choicesInstance.setChoiceByValue(
-                        budgetCode,
-                    );
+            if (selectedItem) {
+                if (selectedItem.budget_code) {
+                    const budgetCodeSelect =
+                        document.getElementById("budgetCode");
+                    if (budgetCodeSelect.choicesInstance) {
+                        budgetCodeSelect.choicesInstance.setChoiceByValue(
+                            selectedItem.budget_code,
+                        );
+                    }
                 }
-            }
 
-            if (productLine) {
-                $("#productLine").val(productLine);
+                if (selectedItem.product_line) {
+                    $("#productLine").val(selectedItem.product_line);
+                }
+
+                // Auto-fill unit if matching unit found in unitsData
+                if (selectedItem.unit && unitsData.length > 0) {
+                    const unitItem = unitsData.find(
+                        (u) =>
+                            u.unit.toLowerCase() ===
+                            selectedItem.unit.toLowerCase(),
+                    );
+                    if (unitItem) {
+                        $("#unit").val(unitItem.id);
+                    }
+                }
             }
         });
 }
@@ -1476,15 +1494,14 @@ function loadSuppliersAsync() {
             method: "GET",
             success: function (response) {
                 if (response.success) {
+                    suppliersData = response.data || [];
                     const select = $("#supplier");
                     select.empty();
-                    select.append(
-                        '<option value="" data-id="">Select Supplier</option>',
-                    );
+                    select.append('<option value="">Select Supplier</option>');
 
-                    response.data.forEach((supplier) => {
+                    suppliersData.forEach((supplier) => {
                         select.append(
-                            `<option value="${supplier.id}" data-name="${supplier.supplier}">${supplier.supplier}</option>`,
+                            `<option value="${supplier.id}">${supplier.supplier}</option>`,
                         );
                     });
                 }
@@ -1508,15 +1525,14 @@ function loadUnitsAsync() {
             method: "GET",
             success: function (response) {
                 if (response.success) {
+                    unitsData = response.data || [];
                     const select = $("#unit");
                     select.empty();
-                    select.append(
-                        '<option value="" data-name="">Select Unit</option>',
-                    );
+                    select.append('<option value="">Select Unit</option>');
 
-                    response.data.forEach((unit) => {
+                    unitsData.forEach((unit) => {
                         select.append(
-                            `<option value="${unit.id}" data-name="${unit.unit}">${unit.unit}</option>`,
+                            `<option value="${unit.id}">${unit.unit}</option>`,
                         );
                     });
                 }
@@ -1678,13 +1694,17 @@ function saveItem() {
 
     // Get supplier data
     const supplierId = $("#supplier").val();
-    const supplierName = supplierId
-        ? $("#supplier option:selected").data("name")
-        : null;
+    const selectedSupplier = suppliersData.find(
+        (s) => s.id.toString() === supplierId.toString(),
+    );
+    const supplierName = selectedSupplier ? selectedSupplier.supplier : null;
 
     // Get unit data
     const unitId = $("#unit").val();
-    const unitName = unitId ? $("#unit option:selected").data("name") : null;
+    const selectedUnit = unitsData.find(
+        (u) => u.id.toString() === unitId.toString(),
+    );
+    const unitName = selectedUnit ? selectedUnit.unit : null;
 
     const formData = {
         kpi_workplan_id: programId,

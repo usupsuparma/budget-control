@@ -18,7 +18,7 @@ class BudgetResumeController extends Controller
     {
         $title = 'Budget Resume';
         $year = $request->get('year', date('Y'));
-        
+
         $years = range(date('Y') + 2, date('Y') - 5);
         $categoryId = $request->get('category_id');
         $divisionId = $request->get('division_id');
@@ -27,7 +27,7 @@ class BudgetResumeController extends Controller
         // Get filter data
         $categories = BudgetCategory::active()->ordered()->get();
         $divisions = Division::orderBy('name')->get();
-        $budgetCodes = BudgetCode::active()->orderBy('stock_code')->get();
+        $budgetCodes = BudgetCode::active()->get();
 
         // Build query for budget items
         $query = WorkplanBudgetItem::with([
@@ -36,9 +36,9 @@ class BudgetResumeController extends Controller
             'category',
             'budgetCodeRelation'
         ])
-        ->whereHas('workplan', function($q) use ($year) {
-            $q->where('year', $year);
-        });
+            ->whereHas('workplan', function ($q) use ($year) {
+                $q->where('year', $year);
+            });
 
         // Apply filters
         if ($categoryId && $categoryId !== 'all') {
@@ -50,20 +50,20 @@ class BudgetResumeController extends Controller
         }
 
         if ($divisionId && $divisionId !== 'all') {
-            $query->whereHas('workplan', function($q) use ($divisionId) {
-                $q->where(function($subQ) use ($divisionId) {
+            $query->whereHas('workplan', function ($q) use ($divisionId) {
+                $q->where(function ($subQ) use ($divisionId) {
                     // For department KPI
                     $subQ->where('kpi_type', 'App\Models\KPIDepartment')
-                        ->whereHas('kpiDepartment', function($kpiQ) use ($divisionId) {
-                            $kpiQ->whereHas('department', function($deptQ) use ($divisionId) {
+                        ->whereHas('kpiDepartment', function ($kpiQ) use ($divisionId) {
+                            $kpiQ->whereHas('department', function ($deptQ) use ($divisionId) {
                                 $deptQ->where('division_id', $divisionId);
                             });
                         });
-                })->orWhere(function($subQ) use ($divisionId) {
+                })->orWhere(function ($subQ) use ($divisionId) {
                     // For section KPI
                     $subQ->where('kpi_type', 'App\Models\KPISection')
-                        ->whereHas('kpiSection', function($kpiQ) use ($divisionId) {
-                            $kpiQ->whereHas('kpiDepartment.department', function($deptQ) use ($divisionId) {
+                        ->whereHas('kpiSection', function ($kpiQ) use ($divisionId) {
+                            $kpiQ->whereHas('kpiDepartment.department', function ($deptQ) use ($divisionId) {
                                 $deptQ->where('division_id', $divisionId);
                             });
                         });
@@ -94,7 +94,7 @@ class BudgetResumeController extends Controller
         $budgetData = $this->organizeBudgetData($budgetItems, $submissions);
 
         return view('pages.budget.budget-resume', compact(
-            'title', 
+            'title',
             'year',
             'categories',
             'divisions',
@@ -113,7 +113,7 @@ class BudgetResumeController extends Controller
 
         foreach ($budgetItems as $item) {
             $workplan = $item->workplan;
-            
+
             // Determine division based on kpi_type
             $divisionName = 'N/A';
             if ($workplan->kpi_type === 'department' && $workplan->kpiDepartment) {
@@ -123,7 +123,7 @@ class BudgetResumeController extends Controller
             }
 
             $categoryName = $item->category->name ?? 'Uncategorized';
-            
+
             // Initialize structure - group by division only
             if (!isset($organized[$divisionName])) {
                 $organized[$divisionName] = [];

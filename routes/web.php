@@ -905,7 +905,7 @@ Route::middleware('auth')->group(function () {
     /* ========================
         WORK PLAN (Program Kerja)
     ======================== */
-    Route::prefix('workplan')
+    Route::prefix('workplans')
         ->middleware('permission:budget.view')
         ->group(function () {
 

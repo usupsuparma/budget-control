@@ -76,6 +76,15 @@ interface ApprovalTransactionService
     public function cancelApproval(int $transactionId): array;
 
     /**
+     * Automatically approve a transaction (used for imports).
+     *
+     * @param int $transactionId
+     * @param string $comment
+     * @return array ['success' => bool, 'message' => string]
+     */
+    public function autoApprove(int $transactionId, string $comment): array;
+
+    /**
      * Get approval timeline for display.
      *
      * @param int $transactionId

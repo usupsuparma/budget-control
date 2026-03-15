@@ -382,17 +382,22 @@ class SubmissionServiceImpl implements SubmissionService
 
             $this->createTransactionDetails($transaction->id, $data['items'], $data['urgency']);
 
-            // Submit for approval
-            $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
+            // Approval handling
+            if (isset($data['auto_approve']) && $data['auto_approve']) {
+                $approvalResult = $this->approvalTransactionService->autoApprove($transaction->id, 'Approve by McFramega');
+            } else {
+                // Submit for approval
+                $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
+            }
 
             if (! $approvalResult['success']) {
-                Log::warning('Failed to submit for approval: ' . $approvalResult['message']);
+                Log::warning('Failed to process approval: ' . $approvalResult['message']);
             }
 
             return [
                 'success' => true,
                 'message' => 'Transaction created successfully' . ($approvalResult['success']
-                    ? ' and submitted for approval.'
+                    ? (isset($data['auto_approve']) && $data['auto_approve'] ? ' and auto-approved.' : ' and submitted for approval.')
                     : '. Note: ' . $approvalResult['message']),
                 'data' => $transaction->load(['details', 'approvalRequest.details']),
                 'approval' => $approvalResult,
@@ -1151,7 +1156,7 @@ class SubmissionServiceImpl implements SubmissionService
                             ];
                         }
 
-                        // 3. Create Transaction using existing service logic logic
+                        // 3. Create Transaction using existing service logic with auto-approval
                         $transactionData = [
                             'transaction_date' => $transData['transaction_date'],
                             'planned_usage_date' => $transData['planned_usage_date'],
@@ -1161,6 +1166,7 @@ class SubmissionServiceImpl implements SubmissionService
                             'purpose' => $transData['purpose'],
                             'urgency' => $transData['urgency'],
                             'items' => $preparedItems,
+                            'auto_approve' => true,
                         ];
 
                         $createResult = $this->createTransaction($transactionData);

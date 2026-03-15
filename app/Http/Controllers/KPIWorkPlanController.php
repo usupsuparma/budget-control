@@ -18,8 +18,8 @@ class KPIWorkPlanController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        // Check if user has admin or super-admin role
-        $isAdmin = $user->hasRole('admin') || $user->hasRole('super-admin');
+        // Check if user has Admin role or budget.view permission as a fallback for admin-level access
+        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin') || $user->can('budget.view');
 
         $userDivisionId = null;
         if (!$isAdmin) {
@@ -49,7 +49,7 @@ class KPIWorkPlanController extends Controller
             }
         }
 
-        // Get unique divisions from KPI Division
+        // Get unique divisions from KPI Division (ONLY divisions that have implemented KPIs)
         $kpiDivisions = KPIDivision::with('division')
             ->select('division_id')
             ->distinct()
@@ -58,6 +58,14 @@ class KPIWorkPlanController extends Controller
         $divisions = $kpiDivisions->map(function ($kpi) {
             return $kpi->division;
         })->filter()->unique('id')->values();
+
+        // If non-admin and their division is not in the KPI list yet, add it so it doesn't show N/A
+        if (!$isAdmin && $userDivisionId && !$divisions->contains('id', $userDivisionId)) {
+            $myDiv = Division::find($userDivisionId);
+            if ($myDiv) {
+                $divisions->push($myDiv);
+            }
+        }
 
         // Get unique years from KPI Division
         $kpiYears = KPIDivision::select('year')
@@ -73,7 +81,6 @@ class KPIWorkPlanController extends Controller
 
         return view('pages.work-plan.work-plan', compact('divisions', 'years', 'isAdmin', 'userDivisionId', 'currentYear'));
     }
-
     /**
      * Get KPI data based on division and year
      */

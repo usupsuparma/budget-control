@@ -219,6 +219,82 @@ class BudgetUserController extends Controller
     }
 
     /**
+     * Search budget codes by query (server-side search, max 50 results)
+     */
+    public function searchBudgetCodes(Request $request)
+    {
+        try {
+            $query  = $request->input('q', '');
+            $limit  = min((int) $request->input('limit', 50), 100);
+            $result = $this->budgetUserService->searchBudgetCodes($query, $limit);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to search budget codes',
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * Search stock codes by query (server-side search, max 50 results)
+     */
+    public function searchStockCodes(Request $request)
+    {
+        try {
+            $query  = $request->input('q', '');
+            $limit  = min((int) $request->input('limit', 50), 100);
+            $result = $this->budgetUserService->searchStockCodes($query, $limit);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to search stock codes',
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a single budget code by exact code value (for edit form pre-population)
+     */
+    public function getBudgetCodeByCode(Request $request)
+    {
+        try {
+            $code   = $request->input('code', '');
+            $result = $this->budgetUserService->getBudgetCodeByCode($code);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a single stock code by exact code value (for edit form pre-population)
+     */
+    public function getStockCodeByCode(Request $request)
+    {
+        try {
+            $code   = $request->input('code', '');
+            $result = $this->budgetUserService->getStockCodeByCode($code);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
      * Store new budget item (without workplan ID initially)
      */
     public function storeItem(Request $request)

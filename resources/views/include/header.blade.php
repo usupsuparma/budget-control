@@ -5,15 +5,23 @@
             <div class="me-auto">
                 <div class="d-inline-flex align-items-center gap-5">
                     <a href="index" class="fs-18 fw-semibold">
-                        <img height="30" class="header-sidebar-logo-default d-none" alt="Logo" src="{{ asset('assets/images/logo-dark.png') }}">
-                        <img height="30" class="header-sidebar-logo-light d-none" alt="Logo" src="{{ asset('assets/images/logo-light.png') }}">
-                        <img height="30" class="header-sidebar-logo-small d-none" alt="Logo" src="{{ asset('assets/images/logo-md.png') }}">
-                        <img height="30" class="header-sidebar-logo-small-light d-none" alt="Logo" src="{{ asset('assets/images/logo-md-light.png') }}">
+                        <img height="30" class="header-sidebar-logo-default d-none" alt="Logo"
+                            src="{{ asset('assets/images/logo-dark.png') }}">
+                        <img height="30" class="header-sidebar-logo-light d-none" alt="Logo"
+                            src="{{ asset('assets/images/logo-light.png') }}">
+                        <img height="30" class="header-sidebar-logo-small d-none" alt="Logo"
+                            src="{{ asset('assets/images/logo-md.png') }}">
+                        <img height="30" class="header-sidebar-logo-small-light d-none" alt="Logo"
+                            src="{{ asset('assets/images/logo-md-light.png') }}">
                     </a>
-                    <button type="button" class="vertical-toggle btn btn-light-light text-muted icon-btn fs-5 rounded-pill" id="toggleSidebar">
+                    <button type="button"
+                        class="vertical-toggle btn btn-light-light text-muted icon-btn fs-5 rounded-pill"
+                        id="toggleSidebar">
                         <i class="bi bi-arrow-bar-left header-icon"></i>
                     </button>
-                    <button type="button" class="horizontal-toggle btn btn-light-light text-muted icon-btn fs-5 rounded-pill d-none" id="toggleHorizontal">
+                    <button type="button"
+                        class="horizontal-toggle btn btn-light-light text-muted icon-btn fs-5 rounded-pill d-none"
+                        id="toggleHorizontal">
                         <i class="ri-menu-2-line header-icon"></i>
                     </button>
                 </div>
@@ -36,16 +44,21 @@
 
                 <!-- Notifications -->
                 <div class="dropdown pe-dropdown-mega">
-                    <button class="header-btn btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBtn">
+                    <button class="header-btn btn position-relative" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false" id="notificationBtn">
                         <i class="bi bi-bell"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notificationCount">
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                            id="notificationCount">
                             0
                         </span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border-0" style="width: 350px; max-height: 500px; overflow-y: auto;">
+                    <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border-0"
+                        style="width: 350px; max-height: 500px; overflow-y: auto;">
                         <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
                             <h6 class="mb-0 fw-bold">Notifications</h6>
-                            <a href="javascript:void(0)" class="fs-12 text-primary" id="markAllRead">Mark all as read</a>
+                            <a href="javascript:void(0)" class="fs-12 text-primary" id="markAllRead">Mark all as
+                                read</a>
                         </div>
                         <div id="notificationList">
                             <!-- Loaded via AJAX -->
@@ -54,92 +67,107 @@
                             </div>
                         </div>
                         <div class="p-2 border-top text-center bg-light">
-                            <a href="{{ route('notifications.monitoring') }}" class="fs-12 text-muted">View All Monitoring</a>
-                        </div>
+                            <a href="{{ route('notifications.monitoring') }}" class="fs-12 text-muted">View All
+                                Monitoring</a>
                         </div>
                     </div>
-                    
-                    @push('scripts')
+                </div>
+
+                @push('scripts')
                     <script>
-                    $(document).ready(function() {
-                        function loadNotifications() {
-                            $.ajax({
-                                url: "{{ route('notifications.user') }}",
-                                type: "GET",
-                                success: function(response) {
-                                    $('#notificationList').html(response.html);
-                                    if (response.unread_count > 0) {
-                                        $('#notificationCount').text(response.unread_count).removeClass('d-none');
-                                    } else {
-                                        $('#notificationCount').addClass('d-none');
+                        $(document).ready(function() {
+                            function loadNotifications() {
+                                $.ajax({
+                                    url: "{{ route('notifications.user') }}",
+                                    type: "GET",
+                                    success: function(response) {
+                                        $('#notificationList').html(response.html);
+                                        if (response.unread_count > 0) {
+                                            $('#notificationCount').text(response.unread_count).removeClass('d-none');
+                                        } else {
+                                            $('#notificationCount').addClass('d-none');
+                                        }
                                     }
-                                }
-                            });
-                        }
-                    
-                        // Initial load
-                        loadNotifications();
-                    
-                        // Refresh every 30 seconds
-                        setInterval(loadNotifications, 30000);
-                    
-                        $('#notificationBtn').on('click', function() {
+                                });
+                            }
+
+                            // Initial load
                             loadNotifications();
-                        });
-                    
-                        $(document).on('click', '.notification-item', function() {
-                            var id = $(this).data('id');
-                            var $this = $(this);
-                            $.ajax({
-                                url: "{{ url('notifications/mark-as-read') }}/" + id,
-                                type: "POST",
-                                data: { _token: "{{ csrf_token() }}" },
-                                success: function() {
-                                    $this.removeClass('fw-bold border-start border-primary border-4').addClass('bg-light');
-                                    $this.find('h6').removeClass('text-dark').addClass('text-muted');
-                                    loadNotifications();
-                                }
+
+                            // Refresh every 30 seconds
+                            // setInterval(loadNotifications, 30000);
+
+                            $('#notificationBtn').on('click', function() {
+                                loadNotifications();
+                            });
+
+                            $(document).on('click', '.notification-item', function() {
+                                var id = $(this).data('id');
+                                var $this = $(this);
+                                $.ajax({
+                                    url: "{{ url('notifications/mark-as-read') }}/" + id,
+                                    type: "POST",
+                                    data: {
+                                        _token: "{{ csrf_token() }}"
+                                    },
+                                    success: function() {
+                                        $this.removeClass('fw-bold border-start border-primary border-4')
+                                            .addClass('bg-light');
+                                        $this.find('h6').removeClass('text-dark').addClass('text-muted');
+                                        loadNotifications();
+                                    }
+                                });
+                            });
+
+                            $('#markAllRead').on('click', function(e) {
+                                e.stopPropagation();
+                                $.ajax({
+                                    url: "{{ route('notifications.readAll') }}",
+                                    type: "POST",
+                                    data: {
+                                        _token: "{{ csrf_token() }}"
+                                    },
+                                    success: function() {
+                                        loadNotifications();
+                                    }
+                                });
                             });
                         });
-                    
-                        $('#markAllRead').on('click', function(e) {
-                            e.stopPropagation();
-                            $.ajax({
-                                url: "{{ route('notifications.readAll') }}",
-                                type: "POST",
-                                data: { _token: "{{ csrf_token() }}" },
-                                success: function() {
-                                    loadNotifications();
-                                }
-                            });
-                        });
-                    });
                     </script>
-                    @endpush
-                                    <div class="dropdown pe-dropdown-mega d-none d-md-block">
-                    <button class="header-profile-btn btn gap-1 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                @endpush
+                <div class="dropdown pe-dropdown-mega d-none d-md-block">
+                    <button class="header-profile-btn btn gap-1 text-start" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         <span class="header-btn btn position-relative">
-                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image" class="img-fluid rounded-circle">
-                            <span class="position-absolute translate-middle badge border border-light rounded-circle bg-success"><span class="visually-hidden">unread messages</span></span>
+                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image"
+                                class="img-fluid rounded-circle">
+                            <span
+                                class="position-absolute translate-middle badge border border-light rounded-circle bg-success"><span
+                                    class="visually-hidden">unread messages</span></span>
                         </span>
                         <div class="d-none d-lg-block pe-2">
-                            <span class="d-block mb-0 fs-13 fw-semibold">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</span>
-                            <span class="d-block mb-0 fs-12 text-muted">{{ Auth::user()->employment->job_position_name?? '-'  }}</span>
+                            <span
+                                class="d-block mb-0 fs-13 fw-semibold">{{ Auth::user()->first_name . ' ' . Auth::user()->last_name }}</span>
+                            <span
+                                class="d-block mb-0 fs-12 text-muted">{{ Auth::user()->employment->job_position_name ?? '-' }}</span>
                         </div>
                     </button>
                     <div class="dropdown-menu dropdown-mega-sm header-dropdown-menu p-3">
                         <div class="border-bottom pb-2 mb-2 d-flex align-items-center gap-2">
-                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image" class="avatar-md">
+                            <img src="{{ asset('assets/images/avatar/dummy-avatar.jpg') }}" alt="Avatar Image"
+                                class="avatar-md">
                             <div>
                                 <a href="javascript:void(0)">
-                                    <h6 class="mb-0 lh-base">{{ Auth::user()->first_name." ".Auth::user()->last_name }}</h6>
+                                    <h6 class="mb-0 lh-base">{{ Auth::user()->first_name . ' ' . Auth::user()->last_name }}
+                                    </h6>
                                 </a><br>
                                 <p class="mb-0 fs-13 text-muted">{{ Auth::user()->email }}</p><br>
-                                <p class="mb-0 fs-13">{{ Auth::user()->employment->job_position_name?? '-' }}</p>
+                                <p class="mb-0 fs-13">{{ Auth::user()->employment->job_position_name ?? '-' }}</p>
                             </div>
                         </div>
                         <ul class="list-unstyled mb-1 border-bottom pb-1">
-                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="bi bi-person me-1"></i> View Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i
+                                        class="bi bi-person me-1"></i> View Profile</a></li>
                             {{-- <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-gear me-1"></i> Settings</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-award me-1"></i> Subscription</a></li> --}}
                         </ul>
@@ -174,7 +202,9 @@
             <div class="d-flex justify-content-between align-items-center bg-body">
                 <div class="d-flex align-items-center border-0 px-3">
                     <i class="bi bi-search me-2"></i>
-                    <input class="d-flex w-full py-3 bg-transparent border-0 focus-ring" placeholder="Search Here.." autocomplete="off" autocorrect="off" spellcheck="false" aria-autocomplete="list" role="combobox" aria-expanded="true" type="text">
+                    <input class="d-flex w-full py-3 bg-transparent border-0 focus-ring" placeholder="Search Here.."
+                        autocomplete="off" autocorrect="off" spellcheck="false" aria-autocomplete="list"
+                        role="combobox" aria-expanded="true" type="text">
                 </div>
                 <button type="button" class="btn-close pe-3" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

@@ -69,6 +69,40 @@ interface BudgetUserService
     public function getUnits(): array;
 
     /**
+     * Search budget codes by query string (server-side search, max 50 results).
+     *
+     * @param  string  $query
+     * @param  int     $limit
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function searchBudgetCodes(string $query, int $limit = 50): array;
+
+    /**
+     * Search stock codes by query string (server-side search, max 50 results).
+     *
+     * @param  string  $query
+     * @param  int     $limit
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function searchStockCodes(string $query, int $limit = 50): array;
+
+    /**
+     * Get a single budget code by its exact code value (for pre-population in edit forms).
+     *
+     * @param  string  $code
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function getBudgetCodeByCode(string $code): array;
+
+    /**
+     * Get a single stock code by its exact code value (for pre-population in edit forms).
+     *
+     * @param  string  $code
+     * @return array ['success' => bool, 'data' => mixed]
+     */
+    public function getStockCodeByCode(string $code): array;
+
+    /**
      * Get workplans for dropdown (department and section only).
      *
      * @param  int  $divisionId

@@ -78,19 +78,6 @@ class BudgetUserServiceImpl implements BudgetUserService
             $currentEmploymentId = $employee->employment->id;
         }
 
-        $deptCodes = session('department_codes', []);
-
-        $budgetCodes = BudgetCode::active()
-            ->select('id', 'budget_code', 'name', 'inchargeCode')
-            ->when(! empty($deptCodes), fn($q) => $q->whereIn('inchargeCode', $deptCodes))
-            ->orderBy('budget_code')
-            ->get();
-
-        $stockCodes = StockCode::where('active', 1)
-            ->select('id', 'stock_code', 'name', 'unit', 'budget_code')
-            ->orderBy('stock_code')
-            ->get();
-
         $this->logService->create(
             'Loaded all budget items for division and year.',
             ['class' => __CLASS__, 'function' => __FUNCTION__, 'division_id' => $divisionId, 'year' => $year, 'user_id' => Auth::id()],
@@ -102,8 +89,6 @@ class BudgetUserServiceImpl implements BudgetUserService
             'data'                => $items,
             'workplans'           => $workplans,
             'totalWorkplans'      => $workplans->count(),
-            'budgetCodes'         => $budgetCodes,
-            'stockCodes'          => $stockCodes,
             'currentEmploymentId' => $currentEmploymentId,
         ];
     }
@@ -219,6 +204,78 @@ class BudgetUserServiceImpl implements BudgetUserService
         });
 
         return ['success' => true, 'data' => $units];
+    }
+
+    public function searchBudgetCodes(string $query, int $limit = 50): array
+    {
+        $deptCodes = session('department_codes', []);
+        $query     = trim($query);
+
+        $dbQuery = BudgetCode::active()
+            ->select('id', 'budget_code', 'name', 'inchargeCode')
+            ->where(function ($q) use ($query) {
+                $q->where('budget_code', 'LIKE', "%{$query}%")
+                    ->orWhere('name', 'LIKE', "%{$query}%");
+            })
+            ->orderBy('budget_code');
+
+        if (! empty($deptCodes)) {
+            $dbQuery->whereIn('inchargeCode', $deptCodes);
+        }
+
+        return ['success' => true, 'data' => $dbQuery->limit($limit)->get()];
+    }
+
+    public function searchStockCodes(string $query, int $limit = 50): array
+    {
+        try {
+            $deptCodes = session('department_codes', []);
+            $query     = trim($query);
+
+            $dbQuery = StockCode::where('active', 1)
+                ->select('id', 'stock_code', 'name', 'unit', 'budget_code', 'product_line')
+                ->where(function ($q) use ($query) {
+                    $q->where('stock_code', 'LIKE', "%{$query}%")
+                        ->orWhere('name', 'LIKE', "%{$query}%");
+                })
+                ->orderBy('stock_code');
+
+            if (! empty($deptCodes)) {
+                $allowedBudgetCodes = Cache::remember(
+                    'allowed_budget_codes_' . md5(implode(',', $deptCodes)),
+                    3600,
+                    fn() => BudgetCode::active()->whereIn('inchargeCode', $deptCodes)->pluck('budget_code')
+                );
+                if ($allowedBudgetCodes->isNotEmpty()) {
+                    $dbQuery->whereIn('budget_code', $allowedBudgetCodes);
+                }
+            }
+
+            return ['success' => true, 'data' => $dbQuery->limit($limit)->get()];
+        } catch (\Throwable $th) {
+            //throw $th;
+            return ['success' => false, 'message' => 'An error occurred while searching stock codes: ' . $th->getMessage()];
+        }
+    }
+
+    public function getBudgetCodeByCode(string $code): array
+    {
+        $item = BudgetCode::active()
+            ->select('id', 'budget_code', 'name', 'inchargeCode')
+            ->where('budget_code', $code)
+            ->first();
+
+        return ['success' => true, 'data' => $item];
+    }
+
+    public function getStockCodeByCode(string $code): array
+    {
+        $item = StockCode::where('active', 1)
+            ->select('id', 'stock_code', 'name', 'unit', 'budget_code', 'product_line')
+            ->where('stock_code', $code)
+            ->first();
+
+        return ['success' => true, 'data' => $item];
     }
 
     public function getWorkplansDropdown(int $divisionId, int $year): array

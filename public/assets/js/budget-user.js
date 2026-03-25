@@ -5,8 +5,11 @@
 
 let selectedDivisionId = null;
 let selectedYear = null;
-let budgetCodesData = [];
-let stockCodesData = [];
+// Server-side search caches — replaces full 20k-item arrays
+const _budgetCodeCache = new Map(); // budget_code → {budget_code, name, inchargeCode}
+const _stockCodeCache = new Map(); // stock_code  → {stock_code, name, unit, budget_code, product_line}
+let _budgetCodeSearchTimer = null;
+let _stockCodeSearchTimer = null;
 let suppliersData = [];
 let unitsData = [];
 let allWorkplans = [];
@@ -181,8 +184,6 @@ function refreshBudgetItems() {
                 console.log(response, "refreshed data");
 
                 allWorkplans = response.workplans || [];
-                budgetCodesData = response.budgetCodes || [];
-                stockCodesData = response.stockCodes || [];
                 allItemsData = response.data || [];
                 currentEmploymentId = response.currentEmploymentId;
 
@@ -234,10 +235,6 @@ function loadAllBudgetItems() {
             hideLoading();
             if (response.success) {
                 allWorkplans = response.workplans || [];
-                budgetCodesData = response.budgetCodes || [];
-                stockCodesData = response.stockCodes || [];
-                console.log(stockCodesData, "stock codes");
-
                 allItemsData = response.data || []; // Store for detail lookup
                 currentEmploymentId = response.currentEmploymentId; // Store for authorization
 
@@ -471,10 +468,6 @@ function autoLoadFromWorkplan(divisionId, year, workplanId) {
                 $("#dataInfoSection").show();
                 $("#budgetItemsSection").show();
 
-                // Store budget codes
-                budgetCodesData = response.budgetCodes || [];
-                stockCodesData = response.stockCodes || [];
-
                 // Render items
                 renderAllItems(response.data || []);
 
@@ -658,10 +651,25 @@ function populateItemForm(item) {
     $("#budgetCategoryId").val(item.budget_category_id);
     $("#description").val(item.description);
 
-    // Set Stock Code using Choices
-    const stockCodeSelect = document.getElementById("stockCode");
-    if (stockCodeSelect.choicesInstance && item.stock_code) {
-        stockCodeSelect.choicesInstance.setChoiceByValue(item.stock_code);
+    // Re-init Stock Code dropdown with preselected value (server-side search, edit mode)
+    if (item.stock_code) {
+        const scRelation = item.stock_code_relation;
+        const scLabel = scRelation
+            ? item.stock_code + " - " + scRelation.name
+            : item.stock_code;
+        _initStockCodeSearchDropdown(item.stock_code, scLabel);
+        // Prime cache so related-field auto-fill works without an extra request
+        if (scRelation) {
+            _stockCodeCache.set(item.stock_code, {
+                stock_code: item.stock_code,
+                name: scRelation.name,
+                budget_code: item.budget_code || null,
+                product_line: item.product_line || null,
+                unit: scRelation.unit || null,
+            });
+        }
+    } else {
+        _initStockCodeSearchDropdown(null, null);
     }
 
     // Set category_type radio button
@@ -676,10 +684,18 @@ function populateItemForm(item) {
         programIdChoices.setChoiceByValue(item.kpi_workplan_id.toString());
     }
 
-    // Set Budget Code using Choices
-    const budgetCodeSelect = document.getElementById("budgetCode");
-    if (budgetCodeSelect.choicesInstance && item.budget_code) {
-        budgetCodeSelect.choicesInstance.setChoiceByValue(item.budget_code);
+    // Re-init Budget Code dropdown with preselected value (server-side search, edit mode)
+    if (item.budget_code) {
+        const bcRelation = item.budget_code_relation;
+        const bcLabel = bcRelation
+            ? item.budget_code + " - " + bcRelation.name
+            : item.budget_code;
+        _initBudgetCodeSearchDropdown(item.budget_code, bcLabel);
+        if (bcRelation) {
+            _budgetCodeCache.set(item.budget_code, bcRelation);
+        }
+    } else {
+        _initBudgetCodeSearchDropdown(null, null);
     }
 
     $("#productLine").val(item.product_line);
@@ -761,17 +777,49 @@ function resetItemForm() {
     $("#total").val("0");
     $("#priceEstimation").val("0");
 
-    // Destroy Choices instances if they exist
+    // Destroy Choices instances and remove tracked event listeners to prevent accumulation
     const budgetCodeSelect = document.getElementById("budgetCode");
-    if (budgetCodeSelect && budgetCodeSelect.choicesInstance) {
-        budgetCodeSelect.choicesInstance.destroy();
-        budgetCodeSelect.choicesInstance = null;
+    if (budgetCodeSelect) {
+        if (budgetCodeSelect.choicesInstance) {
+            budgetCodeSelect.choicesInstance.destroy();
+            budgetCodeSelect.choicesInstance = null;
+        }
+        if (budgetCodeSelect._choicesSearchHandler) {
+            budgetCodeSelect.removeEventListener(
+                "search",
+                budgetCodeSelect._choicesSearchHandler,
+            );
+            budgetCodeSelect._choicesSearchHandler = null;
+        }
+        if (budgetCodeSelect._choicesChangeHandler) {
+            budgetCodeSelect.removeEventListener(
+                "change",
+                budgetCodeSelect._choicesChangeHandler,
+            );
+            budgetCodeSelect._choicesChangeHandler = null;
+        }
     }
 
     const stockCodeSelect = document.getElementById("stockCode");
-    if (stockCodeSelect && stockCodeSelect.choicesInstance) {
-        stockCodeSelect.choicesInstance.destroy();
-        stockCodeSelect.choicesInstance = null;
+    if (stockCodeSelect) {
+        if (stockCodeSelect.choicesInstance) {
+            stockCodeSelect.choicesInstance.destroy();
+            stockCodeSelect.choicesInstance = null;
+        }
+        if (stockCodeSelect._choicesSearchHandler) {
+            stockCodeSelect.removeEventListener(
+                "search",
+                stockCodeSelect._choicesSearchHandler,
+            );
+            stockCodeSelect._choicesSearchHandler = null;
+        }
+        if (stockCodeSelect._choicesChangeHandler) {
+            stockCodeSelect.removeEventListener(
+                "change",
+                stockCodeSelect._choicesChangeHandler,
+            );
+            stockCodeSelect._choicesChangeHandler = null;
+        }
     }
 
     const costCenterSelect = document.getElementById("costCenter");
@@ -1181,169 +1229,293 @@ function loadWorkplansForDropdownAsync() {
 }
 
 /**
- * Populate the budgetCode Choices.js select from the given data array
+ * Initialize Budget Code dropdown with server-side AJAX search.
+ * Eliminates 20k DOM nodes — only loads up to 50 matching results per query.
+ *
+ * @param {string|null} preselectedCode  - Code value to pre-select (edit mode)
+ * @param {string|null} preselectedLabel - Display label for the pre-selected code
  */
-function _populateBudgetCodeSelect(data) {
+function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
     const select = document.getElementById("budgetCode");
 
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
+        select.choicesInstance = null;
     }
 
-    select.innerHTML = '<option value="">Select Budget Code</option>';
-    data.forEach((code) => {
-        const option = document.createElement("option");
-        option.value = code.budget_code;
-        option.textContent = `${code.budget_code} - ${code.name}`;
-        select.appendChild(option);
-    });
+    // Remove old event listeners before re-adding to prevent accumulation
+    if (select._choicesSearchHandler) {
+        select.removeEventListener("search", select._choicesSearchHandler);
+        select._choicesSearchHandler = null;
+    }
+    if (select._choicesChangeHandler) {
+        select.removeEventListener("change", select._choicesChangeHandler);
+        select._choicesChangeHandler = null;
+    }
+
+    // Start with minimal DOM — no 20k <option> nodes
+    select.innerHTML =
+        '<option value="">Type to search budget code...</option>';
+
+    if (preselectedCode) {
+        const opt = document.createElement("option");
+        opt.value = preselectedCode;
+        opt.textContent = preselectedLabel || preselectedCode;
+        opt.selected = true;
+        select.appendChild(opt);
+        if (!_budgetCodeCache.has(preselectedCode)) {
+            _budgetCodeCache.set(preselectedCode, {
+                budget_code: preselectedCode,
+                name: preselectedLabel || preselectedCode,
+                inchargeCode: "",
+            });
+        }
+    }
 
     const choices = new Choices(select, {
         searchEnabled: true,
-        searchChoices: true,
-        searchPlaceholderValue: "Search budget code...",
-        itemSelectText: "Click to select",
-        noResultsText: "No budget codes found",
+        searchChoices: false, // disable client-side filtering — server does it
+        searchFloor: 2,
+        searchResultLimit: 50,
+        searchPlaceholderValue: "Type at least 2 characters...",
+        itemSelectText: "",
+        noResultsText: "No results. Keep typing...",
+        noChoicesText: "Type to search budget codes",
         shouldSort: false,
         removeItemButton: false,
     });
 
     select.choicesInstance = choices;
 
-    $(select)
-        .off("change")
-        .on("change", function () {
-            const val = $(this).val();
-            const selectedItem = budgetCodesData.find(
-                (item) => item.budget_code === val,
-            );
-            const inchargeCode = selectedItem ? selectedItem.inchargeCode : "";
+    // Fire AJAX search on Choices.js search event (debounced 300ms)
+    const _budgetCodeSearchHandler = function (e) {
+        const query = e.detail.value;
+        clearTimeout(_budgetCodeSearchTimer);
+        if (!query || query.length < 2) return;
 
-            $("#costCenter").val(inchargeCode || "");
+        _budgetCodeSearchTimer = setTimeout(function () {
+            $.ajax({
+                url: "/budget-user/budget-codes/search",
+                method: "GET",
+                data: { q: query, limit: 50 },
+                success: function (response) {
+                    if (!response.success || !select.choicesInstance) return;
 
-            const costCenterSelect = document.getElementById("costCenter");
-            if (costCenterSelect.choicesInstance) {
-                costCenterSelect.choicesInstance.setChoiceByValue(
-                    inchargeCode || "",
-                );
-            }
-        });
+                    const results = response.data || [];
+                    results.forEach(function (item) {
+                        _budgetCodeCache.set(item.budget_code, item);
+                    });
+
+                    const newChoices = results.map(function (code) {
+                        return {
+                            value: code.budget_code,
+                            label: code.budget_code + " - " + code.name,
+                        };
+                    });
+
+                    select.choicesInstance.setChoices(
+                        newChoices,
+                        "value",
+                        "label",
+                        true,
+                    );
+                },
+            });
+        }, 300);
+    };
+    select._choicesSearchHandler = _budgetCodeSearchHandler;
+    select.addEventListener("search", _budgetCodeSearchHandler);
+
+    // Cost center auto-fill when budget code is selected
+    const _budgetCodeChangeHandler = function (e) {
+        // Use detail.value from Choices.js CustomEvent when available, fall back to element value
+        const val =
+            e && e.detail && e.detail.value !== undefined
+                ? e.detail.value
+                : this.value;
+        if (!val) return;
+        const cached = _budgetCodeCache.get(val);
+        const inchargeCode = cached ? cached.inchargeCode || "" : "";
+
+        $("#costCenter").val(inchargeCode);
+        const costCenterEl = document.getElementById("costCenter");
+        if (costCenterEl && costCenterEl.choicesInstance) {
+            costCenterEl.choicesInstance.setChoiceByValue(inchargeCode);
+        }
+    };
+    select._choicesChangeHandler = _budgetCodeChangeHandler;
+    select.addEventListener("change", _budgetCodeChangeHandler);
 }
 
 /**
- * Load budget codes
+ * Load budget codes (now initialises AJAX search dropdown — no 20k preload)
  */
 function loadBudgetCodes() {
-    if (budgetCodesData.length > 0) {
-        _populateBudgetCodeSelect(budgetCodesData);
-        return;
-    }
-
-    $.ajax({
-        url: "/budget-user/budget-codes",
-        method: "GET",
-        success: function (response) {
-            if (response.success) {
-                budgetCodesData = response.data || [];
-                _populateBudgetCodeSelect(budgetCodesData);
-            }
-        },
-        error: function (xhr) {
-            console.error("Error loading budget codes:", xhr.responseJSON);
-        },
-    });
+    _initBudgetCodeSearchDropdown(null, null);
 }
 
 /**
- * Populate the stockCode Choices.js select from the given data array
+ * Initialize Stock Code dropdown with server-side AJAX search.
+ * Eliminates 20k DOM nodes — only loads up to 50 matching results per query.
+ *
+ * @param {string|null} preselectedCode  - Code value to pre-select (edit mode)
+ * @param {string|null} preselectedLabel - Display label for the pre-selected code
  */
-function _populateStockCodeSelect(data) {
+function _initStockCodeSearchDropdown(preselectedCode, preselectedLabel) {
     const select = document.getElementById("stockCode");
 
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
+        select.choicesInstance = null;
     }
 
-    select.innerHTML = '<option value="">Select Stock Code</option>';
-    data.forEach((code) => {
-        const option = document.createElement("option");
-        option.value = code.stock_code;
-        option.textContent = `${code.stock_code} - ${code.name}`;
-        select.appendChild(option);
-    });
+    // Remove old event listeners before re-adding to prevent accumulation
+    if (select._choicesSearchHandler) {
+        select.removeEventListener("search", select._choicesSearchHandler);
+        select._choicesSearchHandler = null;
+    }
+    if (select._choicesChangeHandler) {
+        select.removeEventListener("change", select._choicesChangeHandler);
+        select._choicesChangeHandler = null;
+    }
+
+    select.innerHTML = '<option value="">Type to search stock code...</option>';
+
+    if (preselectedCode) {
+        const opt = document.createElement("option");
+        opt.value = preselectedCode;
+        opt.textContent = preselectedLabel || preselectedCode;
+        opt.selected = true;
+        select.appendChild(opt);
+        if (!_stockCodeCache.has(preselectedCode)) {
+            _stockCodeCache.set(preselectedCode, {
+                stock_code: preselectedCode,
+                name: preselectedLabel || preselectedCode,
+                budget_code: null,
+                product_line: null,
+                unit: null,
+            });
+        }
+    }
 
     const choices = new Choices(select, {
         searchEnabled: true,
-        searchChoices: true,
-        searchPlaceholderValue: "Search stock code...",
-        itemSelectText: "Click to select",
-        noResultsText: "No stock codes found",
+        searchChoices: false, // server-side only
+        searchFloor: 2,
+        searchResultLimit: 50,
+        searchPlaceholderValue: "Type at least 2 characters...",
+        itemSelectText: "",
+        noResultsText: "No results. Keep typing...",
+        noChoicesText: "Type to search stock codes",
         shouldSort: false,
         removeItemButton: false,
     });
 
     select.choicesInstance = choices;
 
-    $(select)
-        .off("change")
-        .on("change", function () {
-            const val = $(this).val();
-            const selectedItem = stockCodesData.find(
-                (item) => item.stock_code === val,
-            );
+    // Fire AJAX search on Choices.js search event (debounced 300ms)
+    const _stockCodeSearchHandler = function (e) {
+        const query = e.detail.value;
+        clearTimeout(_stockCodeSearchTimer);
+        if (!query || query.length < 2) return;
 
-            if (selectedItem) {
-                if (selectedItem.budget_code) {
-                    const budgetCodeSelect =
-                        document.getElementById("budgetCode");
-                    if (budgetCodeSelect.choicesInstance) {
-                        budgetCodeSelect.choicesInstance.setChoiceByValue(
-                            selectedItem.budget_code,
-                        );
-                    }
-                }
+        _stockCodeSearchTimer = setTimeout(function () {
+            $.ajax({
+                url: "/budget-user/stock-codes/search",
+                method: "GET",
+                data: { q: query, limit: 50 },
+                success: function (response) {
+                    if (!response.success || !select.choicesInstance) return;
 
-                if (selectedItem.product_line) {
-                    $("#productLine").val(selectedItem.product_line);
-                }
+                    const results = response.data || [];
+                    results.forEach(function (item) {
+                        _stockCodeCache.set(item.stock_code, item);
+                    });
 
-                // Auto-fill unit if matching unit found in unitsData
-                if (selectedItem.unit && unitsData.length > 0) {
-                    const unitItem = unitsData.find(
-                        (u) =>
-                            u.unit.toLowerCase() ===
-                            selectedItem.unit.toLowerCase(),
+                    const newChoices = results.map(function (code) {
+                        return {
+                            value: code.stock_code,
+                            label: code.stock_code + " - " + code.name,
+                        };
+                    });
+
+                    select.choicesInstance.setChoices(
+                        newChoices,
+                        "value",
+                        "label",
+                        true,
                     );
-                    if (unitItem) {
-                        $("#unit").val(unitItem.id);
-                    }
-                }
+                },
+            });
+        }, 300);
+    };
+    select._choicesSearchHandler = _stockCodeSearchHandler;
+    select.addEventListener("search", _stockCodeSearchHandler);
+
+    // Auto-fill related fields when a stock code is selected
+    const _stockCodeChangeHandler = function (e) {
+        // Use detail.value from Choices.js CustomEvent when available, fall back to element value
+        const val =
+            e && e.detail && e.detail.value !== undefined
+                ? e.detail.value
+                : this.value;
+        if (!val) return;
+        const cached = _stockCodeCache.get(val);
+        if (!cached) return;
+
+        if (cached.product_line) {
+            $("#productLine").val(cached.product_line);
+        }
+
+        if (cached.unit && unitsData.length > 0) {
+            const unitMatch = unitsData.find(function (u) {
+                return u.unit.toLowerCase() === cached.unit.toLowerCase();
+            });
+            if (unitMatch) $("#unit").val(unitMatch.id);
+        }
+
+        // Auto-fill budget code dropdown only when budget_code differs from the selected stock code
+        if (cached.budget_code && cached.budget_code !== val) {
+            const budgetCached = _budgetCodeCache.get(cached.budget_code);
+            if (budgetCached) {
+                const label =
+                    budgetCached.budget_code +
+                    " - " +
+                    (budgetCached.name || "");
+                _initBudgetCodeSearchDropdown(cached.budget_code, label);
+            } else {
+                // Fetch the budget code details, then re-init the dropdown
+                $.ajax({
+                    url: "/budget-user/budget-codes/by-code",
+                    method: "GET",
+                    data: { code: cached.budget_code },
+                    success: function (res) {
+                        if (res.success && res.data) {
+                            _budgetCodeCache.set(
+                                res.data.budget_code,
+                                res.data,
+                            );
+                            const label =
+                                res.data.budget_code + " - " + res.data.name;
+                            _initBudgetCodeSearchDropdown(
+                                cached.budget_code,
+                                label,
+                            );
+                        }
+                    },
+                });
             }
-        });
+        }
+    };
+    select._choicesChangeHandler = _stockCodeChangeHandler;
+    select.addEventListener("change", _stockCodeChangeHandler);
 }
 
 /**
- * Load stock codes (from StockCode table) as searchable dropdown
+ * Load stock codes (now initialises AJAX search dropdown — no 20k preload)
  */
 function loadStockCodes() {
-    if (stockCodesData.length > 0) {
-        _populateStockCodeSelect(stockCodesData);
-        return;
-    }
-
-    $.ajax({
-        url: "/budget-user/stock-codes",
-        method: "GET",
-        success: function (response) {
-            if (response.success) {
-                stockCodesData = response.data || [];
-                _populateStockCodeSelect(stockCodesData);
-            }
-        },
-        error: function (xhr) {
-            console.error("Error loading stock codes:", xhr.responseJSON);
-        },
-    });
+    _initStockCodeSearchDropdown(null, null);
 }
 
 /**
@@ -1382,61 +1554,21 @@ function loadBudgetCategoriesAsync() {
 }
 
 /**
- * Async version of loadBudgetCodes - returns a Promise
+ * Async version of loadBudgetCodes — resolves instantly (no 20k preload).
+ * Initialises the AJAX-search dropdown immediately.
  */
 function loadBudgetCodesAsync() {
-    return new Promise((resolve, reject) => {
-        if (budgetCodesData.length > 0) {
-            _populateBudgetCodeSelect(budgetCodesData);
-            resolve();
-            return;
-        }
-
-        $.ajax({
-            url: "/budget-user/budget-codes",
-            method: "GET",
-            success: function (response) {
-                if (response.success) {
-                    budgetCodesData = response.data || [];
-                    _populateBudgetCodeSelect(budgetCodesData);
-                }
-                resolve();
-            },
-            error: function (xhr) {
-                console.error("Error loading budget codes:", xhr.responseJSON);
-                reject(xhr);
-            },
-        });
-    });
+    _initBudgetCodeSearchDropdown(null, null);
+    return Promise.resolve();
 }
 
 /**
- * Async version of loadStockCodes - returns a Promise
+ * Async version of loadStockCodes — resolves instantly (no 20k preload).
+ * Initialises the AJAX-search dropdown immediately.
  */
 function loadStockCodesAsync() {
-    return new Promise((resolve, reject) => {
-        if (stockCodesData.length > 0) {
-            _populateStockCodeSelect(stockCodesData);
-            resolve();
-            return;
-        }
-
-        $.ajax({
-            url: "/budget-user/stock-codes",
-            method: "GET",
-            success: function (response) {
-                if (response.success) {
-                    stockCodesData = response.data || [];
-                    _populateStockCodeSelect(stockCodesData);
-                }
-                resolve();
-            },
-            error: function (xhr) {
-                console.error("Error loading stock codes:", xhr.responseJSON);
-                reject(xhr);
-            },
-        });
-    });
+    _initStockCodeSearchDropdown(null, null);
+    return Promise.resolve();
 }
 
 /**

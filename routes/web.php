@@ -872,6 +872,10 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.budget-categories');
             Route::get('/budget-codes', [BudgetUserController::class, 'getBudgetCodes'])
                 ->name('budget-user.budget-codes');
+            Route::get('/budget-codes/search', [BudgetUserController::class, 'searchBudgetCodes'])
+                ->name('budget-user.budget-codes.search');
+            Route::get('/budget-codes/by-code', [BudgetUserController::class, 'getBudgetCodeByCode'])
+                ->name('budget-user.budget-codes.by-code');
             Route::get('/cost-centers', [BudgetUserController::class, 'getCostCenters'])
                 ->name('budget-user.cost-centers');
             Route::get('/suppliers', [BudgetUserController::class, 'getSuppliers'])
@@ -880,6 +884,10 @@ Route::middleware('auth')->group(function () {
                 ->name('budget-user.units');
             Route::get('/stock-codes', [BudgetUserController::class, 'getStockCodes'])
                 ->name('budget-user.stock-codes');
+            Route::get('/stock-codes/search', [BudgetUserController::class, 'searchStockCodes'])
+                ->name('budget-user.stock-codes.search');
+            Route::get('/stock-codes/by-code', [BudgetUserController::class, 'getStockCodeByCode'])
+                ->name('budget-user.stock-codes.by-code');
 
             // Workplans dropdown for department and section
             Route::get('/workplans/dropdown', [BudgetUserController::class, 'getWorkplansDropdown'])

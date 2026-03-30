@@ -616,6 +616,8 @@ class SubmissionServiceImpl implements SubmissionService
                 'category_name' => $item->category->category_name ?? '',
                 'total' => $currentBalance,
                 'label' => $item->description . ' (' . $item->budget_code . ')',
+                'unit_id' => $item->unit_id,
+                'unit_name' => $item->unit_name,
             ];
         });
 
@@ -821,7 +823,7 @@ class SubmissionServiceImpl implements SubmissionService
 
         $qrSubmission = null;
         $qrApprovals = [];
-        
+
         if ($transactionApproval['success'] && !empty($transactionApproval['data'])) {
 
             foreach ($transactionApproval['data'] as $item) {
@@ -831,9 +833,9 @@ class SubmissionServiceImpl implements SubmissionService
                  */
                 if ($item['type'] === 'submission') {
 
-                    $qrText = 'Ref Number : '.$item['reference_number'].' | '.
-                            'Proposed by | ' .
-                            $item['date'];
+                    $qrText = 'Ref Number : ' . $item['reference_number'] . ' | ' .
+                        'Proposed by | ' .
+                        $item['date'];
 
                     $qrSubmission = $this->generateQR($qrText);
                 }
@@ -843,11 +845,11 @@ class SubmissionServiceImpl implements SubmissionService
                  */
                 if ($item['type'] === 'approval' && $item['status'] === 'approved') {
 
-                    $qrText = 'Ref Number : '.$item['reference_number'].' | '.
-                            'APPROVED | ' .
-                            $item['approver_name'] . ' | ' .
-                            $item['label'] . ' | ' .
-                            $item['date'];
+                    $qrText = 'Ref Number : ' . $item['reference_number'] . ' | ' .
+                        'APPROVED | ' .
+                        $item['approver_name'] . ' | ' .
+                        $item['label'] . ' | ' .
+                        $item['date'];
 
                     $qrApprovals[] = [
                         'approver_name' => $item['approver_name'],
@@ -897,20 +899,20 @@ class SubmissionServiceImpl implements SubmissionService
         // 1. Submissions (Submission, Progress, Approved) past H+2
         // 2. LPJ (Paid but no LPJ) past H+7
         $dueDateCount = $this->model->where('user_id', $userId)
-            ->where(function($q) {
-                $q->where(function($sq) {
+            ->where(function ($q) {
+                $q->where(function ($sq) {
                     $sq->whereIn('status', [
-                        Transaction::STATUS_SUBMISSION, 
-                        Transaction::STATUS_PROGRESS, 
+                        Transaction::STATUS_SUBMISSION,
+                        Transaction::STATUS_PROGRESS,
                         Transaction::STATUS_APPROVED
                     ])
-                    ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
+                        ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
                 })
-                ->orWhere(function($sq) {
-                    $sq->where('status', Transaction::STATUS_PAID)
-                       ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
-                       ->whereDoesntHave('lpjSubmission');
-                });
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', Transaction::STATUS_PAID)
+                            ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
+                            ->whereDoesntHave('lpjSubmission');
+                    });
             })
             ->count();
 
@@ -946,20 +948,20 @@ class SubmissionServiceImpl implements SubmissionService
 
         $query = $this->model->query()
             ->where('user_id', $userId)
-            ->where(function($q) {
-                $q->where(function($sq) {
+            ->where(function ($q) {
+                $q->where(function ($sq) {
                     $sq->whereIn('status', [
-                        Transaction::STATUS_SUBMISSION, 
-                        Transaction::STATUS_PROGRESS, 
+                        Transaction::STATUS_SUBMISSION,
+                        Transaction::STATUS_PROGRESS,
                         Transaction::STATUS_APPROVED
                     ])
-                    ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
+                        ->where('transaction_date', '<=', now()->subDays(2)->toDateString());
                 })
-                ->orWhere(function($sq) {
-                    $sq->where('status', Transaction::STATUS_PAID)
-                       ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
-                       ->whereDoesntHave('lpjSubmission');
-                });
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', Transaction::STATUS_PAID)
+                            ->where('transaction_date', '<=', now()->subDays(7)->toDateString())
+                            ->whereDoesntHave('lpjSubmission');
+                    });
             })
             ->with([
                 'details',
@@ -1192,7 +1194,6 @@ class SubmissionServiceImpl implements SubmissionService
                 'errors' => $results['errors'],
                 'data' => $results,
             ];
-
         } catch (\Exception $e) {
             Log::error('Import Error: ' . $e->getMessage());
             return [

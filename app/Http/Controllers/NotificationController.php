@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Services\NotificationService\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 
 class NotificationController extends Controller
 {
+    public function __construct(private readonly NotificationService $service) {}
+
     public function monitoring()
     {
         return view('notifications.monitoring.index');
@@ -15,22 +19,8 @@ class NotificationController extends Controller
 
     public function index()
     {
-        $employeeId = auth()->id();
-        $notifications = Notification::with('category')
-            ->where(function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)
-                      ->orWhereNull('employee_id');
-            })
-            ->latest()
-            ->paginate(15);
-            
-        // Check read status for each notification
-        foreach ($notifications as $notification) {
-            $notification->is_read = $notification->reads()
-                ->where('employee_id', $employeeId)
-                ->where('is_read', true)
-                ->exists();
-        }
+        $employeeId    = auth()->id();
+        $notifications = $this->service->getPaginatedForEmployee($employeeId);
 
         return view('notifications.index', compact('notifications', 'employeeId'));
     }
@@ -58,70 +48,48 @@ class NotificationController extends Controller
 
     public function destroy($id)
     {
-        Notification::findOrFail($id)->delete();
-        return response()->json(['success' => 'Notification deleted successfully.']);
+        try {
+            $this->service->delete((int) $id);
+            return response()->json(['success' => true, 'message' => 'Notification deleted successfully.']);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['success' => false, 'message' => 'Internal Server Error'], 500);
+        }
     }
 
     public function getUserNotifications()
     {
         $employeeId = auth()->id();
-        
-        // Get notifications for this employee OR for all employees (employee_id is null)
-        $notifications = Notification::with('category')
-            ->where(function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)
-                      ->orWhereNull('employee_id');
-            })
-            ->latest()
-            ->limit(10)
-            ->get();
+        $result     = $this->service->getLatestForEmployee($employeeId);
 
-        $unreadCount = Notification::where(function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)
-                      ->orWhereNull('employee_id');
-            })
-            ->whereDoesntHave('reads', function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)->where('is_read', true);
-            })
-            ->count();
-
-        $html = view('notifications.partials.list', compact('notifications', 'employeeId'))->render();
+        $notifications = $result['notifications'];
+        $html          = view('notifications.partials.list', compact('notifications', 'employeeId'))->render();
 
         return response()->json([
-            'html' => $html,
-            'unread_count' => $unreadCount
+            'html'         => $html,
+            'unread_count' => $result['unread_count'],
         ]);
     }
 
     public function markAsRead($id)
     {
-        \App\Models\NotificationRead::updateOrCreate(
-            ['notification_id' => $id, 'employee_id' => auth()->id()],
-            ['is_read' => true]
-        );
-
-        return response()->json(['success' => true]);
+        try {
+            $this->service->markAsRead((int) $id, auth()->id());
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['success' => false, 'message' => 'Internal Server Error'], 500);
+        }
     }
 
     public function markAllAsRead()
     {
-        $employeeId = auth()->id();
-        $notifications = Notification::where(function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)
-                      ->orWhereNull('employee_id');
-            })
-            ->whereDoesntHave('reads', function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId)->where('is_read', true);
-            })
-            ->get();
-
-        foreach ($notifications as $notification) {
-            \App\Models\NotificationRead::updateOrCreate(
-                ['notification_id' => $notification->id, 'employee_id' => $employeeId],
-                ['is_read' => true]
-            );
+        try {
+            $this->service->markAllAsRead(auth()->id());
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['success' => false, 'message' => 'Internal Server Error'], 500);
         }
-
-        return response()->json(['success' => true]);
     }
 }

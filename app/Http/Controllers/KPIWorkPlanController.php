@@ -18,8 +18,7 @@ class KPIWorkPlanController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        // Check if user has Admin role or budget.view permission as a fallback for admin-level access
-        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin') || $user->can('budget.view');
+        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
 
         $userDivisionId = null;
         if (!$isAdmin) {

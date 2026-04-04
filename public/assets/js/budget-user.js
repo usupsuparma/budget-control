@@ -1474,38 +1474,8 @@ function _initStockCodeSearchDropdown(preselectedCode, preselectedLabel) {
             if (unitMatch) $("#unit").val(unitMatch.id);
         }
 
-        // Auto-fill budget code dropdown only when budget_code differs from the selected stock code
-        if (cached.budget_code && cached.budget_code !== val) {
-            const budgetCached = _budgetCodeCache.get(cached.budget_code);
-            if (budgetCached) {
-                const label =
-                    budgetCached.budget_code +
-                    " - " +
-                    (budgetCached.name || "");
-                _initBudgetCodeSearchDropdown(cached.budget_code, label);
-            } else {
-                // Fetch the budget code details, then re-init the dropdown
-                $.ajax({
-                    url: "/budget-user/budget-codes/by-code",
-                    method: "GET",
-                    data: { code: cached.budget_code },
-                    success: function (res) {
-                        if (res.success && res.data) {
-                            _budgetCodeCache.set(
-                                res.data.budget_code,
-                                res.data,
-                            );
-                            const label =
-                                res.data.budget_code + " - " + res.data.name;
-                            _initBudgetCodeSearchDropdown(
-                                cached.budget_code,
-                                label,
-                            );
-                        }
-                    },
-                });
-            }
-        }
+        // NOTE: Budget Code is intentionally NOT auto-filled here.
+        // User must select Budget Code manually to avoid unintended data entry.
     };
     select._choicesChangeHandler = _stockCodeChangeHandler;
     select.addEventListener("change", _stockCodeChangeHandler);

@@ -5,7 +5,6 @@
 Budget Control is a Laravel 12 enterprise application for budget management, KPI tracking, and approval workflows with two-phase dynamic approval system (uppline chain → master flow with threshold-based routing).
 
 **Key Documentation:**
-
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 
 ## Critical Architecture Patterns
@@ -15,7 +14,6 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 All business logic MUST use the Interface + Implementation pattern. Controllers are orchestrators only.
 
 **Rules:**
-
 - **Atomicity:** `DB::transaction` MUST be placed inside the Service implementation, NOT in the Controller.
 - **Single Responsibility:** One service method = one business use case.
 - **Interface-First:** Always define the contract in the Interface before implementing.
@@ -23,7 +21,6 @@ All business logic MUST use the Interface + Implementation pattern. Controllers 
 - **Testing Mandate:** Every service method (new or refactored) MUST have a corresponding Automated Test (Pest/PHPUnit) to ensure logic integrity.
 
 **Directory structure:**
-
 ```
 app/Services/{ServiceName}/
 ├── {ServiceName}Service.php       # Interface (contract)
@@ -31,7 +28,6 @@ app/Services/{ServiceName}/
 ```
 
 **Binding in `app/Providers/CustomServiceProvider.php`:**
-
 ```php
 $this->app->bind(
     \App\Services\ExampleService\ExampleService::class,
@@ -45,7 +41,6 @@ To ensure type-safety and prevent bugs, data passing from Controller to Service 
 
 **1. Form Request (Mandatory):**
 NEVER validate in the Controller. Use `php artisan make:request`.
-
 ```php
 public function store(StoreTransactionRequest $request) {
     $data = $request->validated(); // Guaranteed to be valid
@@ -55,7 +50,6 @@ public function store(StoreTransactionRequest $request) {
 
 **2. Data Transfer Object (DTO):**
 For complex services, use `readonly class` (PHP 8.2+) or a strictly defined array.
-
 ```php
 // app/DTOs/TransactionData.php
 readonly class TransactionData {
@@ -73,7 +67,6 @@ readonly class TransactionData {
 Instead of returning `false` or generic errors, use Domain-Specific Exceptions to handle business logic failures.
 
 **Pattern:**
-
 - Create `app/Exceptions/DomainException.php` as base.
 - Throw specific exceptions like `InsufficientBudgetException` or `ApprovalChainBrokenException`.
 - Catch these in the Controller to return a meaningful AJAX response.
@@ -88,7 +81,6 @@ if ($budget < $amount) {
 ### Approval System Architecture
 
 Two-phase sequential approval with immutable snapshots:
-
 1. **Phase 1: Uppline Chain** - Follows `users.uppline_id` recursively until NULL.
 2. **Phase 2: Master Flow** - Threshold-based (`amount <= threshold`) or all-levels mode.
 
@@ -99,14 +91,13 @@ When an approval request is created, MUST save a JSON snapshot of the source dat
 
 Standardize eager loading to prevent performance bottlenecks across the entire app.
 
-- **Global:** Use `$with` property in Models for relations that are _always_ needed.
+- **Global:** Use `$with` property in Models for relations that are *always* needed.
 - **DataTables:** MUST use `->with([...])` in the query builder.
 - **Services:** Service methods returning Models MUST load necessary relations before returning.
 
 ### JSON Response & AJAX Standard
 
 **Required JSON format:**
-
 ```php
 return response()->json([
     'success' => true,
@@ -116,7 +107,6 @@ return response()->json([
 ```
 
 **Mandatory try-catch in Controllers:**
-
 ```php
 try {
     $result = $this->service->execute($request->validated());
@@ -133,16 +123,14 @@ try {
 
 - **URL Helper:** ALWAYS use `route('name', ':id').replace(':id', id)`.
 - **JS Routes:** NEVER hardcode URLs in AJAX calls. ALWAYS pass routes from Blade to JS using a global object or data attributes.
-
-    ```javascript
-    // In Blade
-    <div id="app-config" data-urls="{{ json_encode(['store' => route('name.store')]) }}"></div>
-
-    // In JS
-    const urls = $('#app-config').data('urls');
-    $.ajax({ url: urls.store, ... });
-    ```
-
+  ```javascript
+  // In Blade
+  <div id="app-config" data-urls="{{ json_encode(['store' => route('name.store')]) }}"></div>
+  
+  // In JS
+  const urls = $('#app-config').data('urls');
+  $.ajax({ url: urls.store, ... });
+  ```
 - **Feedback:** ALWAYS use SweetAlert2 (`Swal.fire`).
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
 - **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.
@@ -163,14 +151,12 @@ try {
 12. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
 
 ## Technology Stack
-
 - Laravel 12 (PHP 8.2+)
 - Blade + Livewire 3 + PowerGrid
 - Bootstrap 5 + SweetAlert2 + jQuery 3.7
 - Spatie Permission + Yajra DataTables
 
 ## Naming Conventions
-
 - Model: `PascalCase` (Singular)
 - Service: `PascalCaseService` & `PascalCaseServiceImpl`
 - Route: `kebab-case.action`

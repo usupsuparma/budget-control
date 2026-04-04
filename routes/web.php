@@ -84,14 +84,18 @@ Route::middleware('auth')->group(function () {
         DASHBOARD
     ======================== */
 
+    // DASHBOARD EXECUTIVE
     Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
-        Route::get('/dashboard/dash', [DashboardController::class, 'executive'])
+        Route::get('/dashboard/executive', [DashboardController::class, 'executive'])
             ->name('dash.executive');
     });
+
+    // DASHBOARD USER
     Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');   // <- WAJIB ADA
     });
+
     Route::get('/dash-executive/policies', [DashboardController::class, 'executivePoliciesByYear'])
         ->name('dash.executive.policies');
     Route::get('/budget/summary', [DashboardController::class, 'budgetSummaryByYear'])

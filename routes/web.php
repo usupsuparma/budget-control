@@ -101,6 +101,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/budget/summary', [DashboardController::class, 'budgetSummaryByYear'])
         ->name('budget.summary.year');
 
+    // DASHBOARD AJAX ENDPOINTS
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/stats', [DashboardController::class, 'getDashboardStats'])
+            ->name('dashboard.stats');
+        Route::get('/division-realization', [DashboardController::class, 'getDivisionRealizationData'])
+            ->name('dashboard.division.realization');
+        Route::get('/monthly-chart', [DashboardController::class, 'getMonthlyChartData'])
+            ->name('dashboard.monthly.chart');
+    });
+
     /* ========================
         SASARAN STRATEGIS
     ======================== */

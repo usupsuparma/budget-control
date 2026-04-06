@@ -1,144 +1,75 @@
-# Planning Implementation: Fix & Refactor Organization Master Data Viewer
+# Planning Implementation: Import Workplan & Budget Items dari CSV
 
-## 1. Analisis & Identifikasi Masalah
-Saat membuka halaman `http://127.0.0.1:8001/master-data` dan memilih tab **Organization**, struktur organisasi tidak tampil dengan rapi / *layout broken*. Setelah menelusuri source code berdasar laporan, masalah bersumber pada:
-- **Tampilan Rusak (UI/UX)**: Ditemukan kebocoran raw string *JavaScript* (`childUl.style.display...`) yang nyasar di antara tag HTML di `resources/views/pages/settings/organization.blade.php`. Terdapat juga *unclosed tags* dan struktur tag `<ul>` / `<li>` yang tidak pada tempatnya (looping penutup *tag* berantakan), sehingga CSS *Tree* gagal me-_render_ garis penghubung antar organisasi.
-- **Pelanggaran Arsitektur**: Pada `app/Http/Controllers/MasterController.php`, proses pemanggilan *nested relation* Model Database Eager Loading untuk struktur organisasi secara spesifik dilakukan secara *hardcode* di dalam Controller (Line 27+). Menurut aturan baku pada **`GEMINI.md`**, logic pengambilan relasi Model harus selalu mendelegasikan ke **Service Layer**.
+## 1. Analisis & Tujuan Fitur
+Fitur ini bertujuan untuk menyediakan fungsionalitas impor data melalui file CSV untuk mengisi target Key Performance Indicator (KPI) pada tabel `kpi_workplans` beserta detail anggarannya pada tabel `workplan_budget_items`.
+
+Asumsi utama: Data yang berhasil di-import ini adalah *initial state* (data awal) yang berarti **sudah siap menuju ke proses transaksi** pada tabel `transactions` (`Transaction.php`). 
+
+Dikarenakan proses ini bersifat modifikasi skala besar (*bulk insert/update*) dan kritikal, implementasi **DIWAJIBKAN** untuk mematuhi arsitektur **Service Layer** sesuai aturan pada `GEMINI.md`. Dilarang menempatkan logika bisnis di dalam Controller.
+
+### Format Struktur CSV
+Baris header (Baris 1 & Baris 2) berformat kurang lebih sebagai berikut:
+```csv
+CODE;NAME;ACTIVEFLAG;INCHARGECODE;REMARKS;Goods Code;AC Code;Price;1.JAN;;2.FEB;;3.MAR;;4.APR;;5.MAY;;6.JUN;;7.JUL;;8.AUG;;9.SEP;;10.OCT;;11.NOV;;12.DEC;
+;;;;;;;;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount
+```
 
 ---
 
 ## 2. Rencana Eksekusi (Langkah demi Langkah)
 
-### A. Refactor Controller ke Service Layer
-Buat atau gunakan kembali module Service Layer untuk menarik data Organisasi agar terpisah dari Controller, dan mencegah Fat-Controller.
+### A. Routing & Validasi Upload (Controller Layer)
+1. **Penambahan Route (`routes/web.php`)**:
+   Buat sebuah route `POST` baru untuk fungsionalitas upload CSV.
+   ```php
+   Route::post('/import/workplan-budget', [ImportController::class, 'import'])->name('import.workplan-budget');
+   ```
+2. **Form Request (Mandatory)**:
+   Gunakan artisan `make:request` (misal: `ImportCsvRequest`) untuk memvalidasi *request*. Pastikan file yang diunggah valid (mimes:`csv,txt` dan ukurannya sesuai). Controller hanya bertugas memanggil validasi array ini lalu pass payload ke Service Layer.
 
-**1. Membuat Service & Implementasi (`app/Services/MasterDataService`)**
-- Buat interface file: `MasterDataService.php`
-- Buat file implementasi: `MasterDataServiceImpl.php`
+### B. Pembuatan Service Layer Baru
+1. Buat interface, misal `WorkplanImportService.php` dan implementasinya `WorkplanImportServiceImpl.php`.
+2. Jangan lupa daftarkan binding Service ini ke dalam `app/Providers/CustomServiceProvider.php`.
+3. Seluruh logika dari pembacaan CSV, *looping* validasi logic per baris, dan penyisipan data dibungkus dalam blok `DB::transaction()` di dalam class service ini.
 
-```php
-namespace App\Services\MasterDataService;
-use App\Models\Director;
-use Illuminate\Database\Eloquent\Collection;
+### C. Proses Bisnis & Pemetaan Data (Core Logic dalam Service)
+Saat melakukan proses pembacaan per baris di dalam skrip, terapkan secara berurutan langkah bisnis berikut:
 
-class MasterDataServiceImpl implements MasterDataService 
-{
-    /**
-     * Eager-load full org structure: directors -> divisions -> departments -> sections
-     */
-    public function getOrganizationTree(): Collection 
-    {
-        return Director::where('status', 'Active')
-            ->with([
-                'divisions' => fn($q) => $q->where('status', 'Active')->orderBy('name'),
-                'divisions.departments' => fn($q) => $q->where('status', 'Active')->orderBy('name'),
-                'divisions.departments.sections' => fn($q) => $q->where('status', 'Active')->orderBy('name')
-            ])
-            ->orderBy('name', 'asc')
-            ->get();
-    }
-}
-```
+1. **Filter ACTIVEFLAG**:
+   Cek nilai pada kolom `ACTIVEFLAG`. Jika nilainya adalah `0`, maka abaikan baris tersebut (`continue`). Hanya proses baris dengan `ACTIVEFLAG == 1`.
 
-**2. Binding di Provider (`app/Providers/CustomServiceProvider.php`)**
-```php
-$this->app->bind(
-    \App\Services\MasterDataService\MasterDataService::class,
-    \App\Services\MasterDataService\MasterDataServiceImpl::class
-);
-```
+2. **Filter Harga (Price)**:
+   Cek pada kolom `Price`. Jika nilainya `< 1` (kurang dari 1), maka skip baris tersebut. Proses hanya jika `Price >= 1`.
 
-**3. Inject di Controller (`app/Http/Controllers/MasterController.php`)**
-```php
-class MasterController extends Controller
-{
-    public function __construct(
-        protected \App\Services\MasterDataService\MasterDataService $masterDataService
-    ) {}
+3. **Resolusi INCHARGECODE & Hierarki Org**:
+   Cocokkan nilai pada kolom `INCHARGECODE` dengan kolom `code` di tabel organisasi secara berurutan: `sections`, lalu `departments`, lalu `divisions`. 
+   Identifikasi baris CSV ini masuk ke divisi, departemen, atau section mana berdasarkan kecocokan kode tersebut.
 
-    public function index()
-    {
-        // ... (data lainnya)
-        
-        // Panggil melalui Service Layer!
-        $directors = $this->masterDataService->getOrganizationTree();
+4. **Pencarian & Pembuatan `kpi_workplans` (Auto-Generate)**:
+   Setelah menelusuri code organisasi berdasarkan `INCHARGECODE`, cari KPI Workplan (*kpi_type* 'department' atau 'section') yang sesuai:
+   - Jika KPI berdasar referensi di atas **sudah ada**, gunakan ID KPI tersebut.
+   - Jika **belum ada**, **GENERATE** data KPI baru pada tabel `kpi_workplans`.
+   - **Aturan Penting saat Generate KPI**: Pembuatan harus dirut mengacu pada hirarkinya (`divisi -> departement -> section`). Pastikan parent dari setiap KPI terbentuk secara rekursif jika belum ada.
 
-        // ...
-    }
-}
-```
-
-### B. Perbaikan Semantic HTML & CSS Tree (`organization.blade.php`)
-Re-struktur kode Blade loop `<ul>` dan `<li>` agar murni *hierarkis (nested)* dan buang sisa teks javascript di baris tengah. Gunakan pola *parent-child* berikut:
-
-```html
-<!-- ... style existing dipertahankan ... -->
-<div class="org-tree">
-    <ul> <!-- ROOT LEVEL (Director) -->
-        @forelse($directors as $director)
-        <li>
-            <div class="org-node" data-toggle>
-                <div class="title">{{ $director->name }}</div>
-                <div class="meta">{{ $director->code ? $director->code . ' · ' : '' }}{{ $director->status }}</div>
-            </div>
-
-            <!-- LEVEL 2 (Divisions) -->
-            <ul class="children">
-                @forelse($director->divisions as $division)
-                <li>
-                    <div class="org-node" data-toggle>
-                        <div class="title">{{ $division->name }}</div>
-                        <div class="meta">{{ $division->code ?? '' }} · {{ $division->status }}</div>
-                    </div>
-
-                    <!-- LEVEL 3 (Departments) -->
-                    <ul class="children">
-                        @forelse($division->departments as $department)
-                        <li>
-                            <div class="org-node" data-toggle>
-                                <div class="title">{{ $department->name }}</div>
-                                <div class="meta">{{ $department->code ?? '' }} · {{ $department->status }}</div>
-                            </div>
-
-                            <!-- LEVEL 4 (Sections) -->
-                            <ul class="children">
-                                @forelse($department->sections as $section)
-                                <li>
-                                    <div class="org-node">
-                                        <div class="title">{{ $section->name }}</div>
-                                        <div class="meta">{{ $section->code ?? '' }} · {{ $section->status ?? '' }}</div>
-                                    </div>
-                                </li>
-                                @empty
-                                <li><div class="org-node"><div class="meta">No sections</div></div></li>
-                                @endforelse
-                            </ul>
-                        </li>
-                        @empty
-                        <li><div class="org-node"><div class="meta">No departments</div></div></li>
-                        @endforelse
-                    </ul>
-                </li>
-                @empty
-                <li><div class="org-node"><div class="meta">No divisions</div></div></li>
-                @endforelse
-            </ul>
-        </li>
-        @empty
-        <li><div class="org-node"><div class="title">No directors found</div></div></li>
-        @endforelse
-    </ul>
-</div>
-<!-- ... script js toggle (tetap dipertahankan di bawah) ... -->
-```
-*(Dengan mengganti `foreach` ke `forelse`, kita tidak perlu membuka-tutup `<li>` dua kali yang sering menyebabkan tag unclosed.)*
+5. **Pengisian Item Anggaran (`workplan_budget_items`)**:
+   Isi data anggaran ini dengan merelasikannya ke target KPI dari Langkah 4 (`kpi_workplan_id`).
+   - `budget_code`       : Diisi dari kolom **`CODE`** pada CSV. Kode ini merupakan referensi `budget_code` pada tabel `budget_code`.
+   - `price_estimation`  : Diisi persis dari kolom `Price` CSV.
+   - `price_final`       : Diisi persis dari kolom `Price` CSV.
+   - Kuantitas Kegiatan (`activity_jan`, `activity_feb`, ..., `activity_dec`): Lakukan sinkronisasi ke array offset CSV, dan ekstrak nilainya spesifik pada letak *sub-header* **Qty** pada bulan bersangkutan secara tepat.
 
 ---
 
-## 3. Checklist Eksekusi & QA (Untuk Dev/AI Agent)
+## 3. Checklist Verifikasi & QA (Panduan untuk Dev/Agent)
+- [ ] Route web `/import/workplan-budget` telah ditambahkan di `routes/web.php`.
+- [ ] Controller murni hanya memanggil method pada Service, tidak ada `DB::transaction` atau pemanggilan Models secara langsung.
+- [ ] Terdapat `FormRequest` khusus yang handle proteksi _file input_ CSV.
+- [ ] Proses *Skip Row* terjadi dengan benar ketika `ACTIVEFLAG == 0` atau `Price < 1`.
+- [ ] Kolom `CODE` dari file CSV berhasil dipetakan menjadi `budget_code` di `workplan_budget_items`.
+- [ ] Identifikasi organisasi berdasarkan `INCHARGECODE` bekerja dengan baik (mencocokkan code di Section > Dept > Divisi).
+- [ ] Auto-generate `kpi_workplans` berjalan mulus dengan mengedepankan pembentukan struktur hirearkinya terlebih dahulu (divisi->dept->section) jika belum eksis.
+- [ ] Nilai *Price* masuk dengan tervalidasi ke field `price_estimation` & `price_final` berserta parsing data `Qty` dari bulan Jan - Dec yang tepat.
+- [ ] Terkondisikan dengan baik hingga state nya siap menuju prosedur Transaksi.
+- [ ] Seluruh skenario telah dibuktikan melalui pembuatan **Unit/Feature Test (Pest/PHPUnit)**.
 
-1. [ ] Buat Folder `app/Services/MasterDataService` dan inisiasi Interface & Implementasinya.
-2. [ ] Pindahkan logic DB Query `$directors` dari Controller ke `getOrganizationTree()`.
-3. [ ] Register Service baru binding tersebut ke dalam `CustomServiceProvider.php`.
-4. [ ] Bersihkan kekacauan *tag structure* dan teks mentah javascript pada `organization.blade.php`.
-5. [ ] (QA Test Visual): Akses `http://127.0.0.1:8001/master-data` -> Buka tab *Organization*, pastikan CSS Tree tampil bercabang secara apik ke bawah. Menu dapat di-klik untuk disembunyikan/dimunculkan cabangnya (Toggle).
+> **CATATAN PENTING**: Jangan pernah melakukan penebakan (*guesswork*) mengenai asumsi yang berhubungan dengan referensi tabel. Apabila menjumpai ketidaksesuaian/ambiguitas ketika melakukan *data-mapping* (seperti ke *Transaction status*), **mohon tanyakan dan minta konfirmasi terlebih dahulu!**

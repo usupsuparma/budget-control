@@ -18,6 +18,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DirectorController;
 use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\JobPositionController;
 use App\Http\Controllers\KpiController;
@@ -573,7 +574,7 @@ Route::middleware('auth')->group(function () {
         });
 
     Route::prefix('pengajuan.anggaran')
-        ->middleware('permission:pengajuan.anggaran.view')
+        // ->middleware('permission:pengajuan.anggaran.view')
         ->group(function () {
 
             Route::get('/', [PengajuanAnggaranController::class, 'index'])
@@ -582,6 +583,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/create', [PengajuanAnggaranController::class, 'create'])
                 ->middleware('permission:pengajuan.anggaran.create')
                 ->name('pengajuan.anggaran.create');
+
+            Route::get('/import', [ImportController::class, 'showImportForm'])
+                // ->middleware('permission:pengajuan.anggaran.create')
+                ->name('import.workplan-budget.form');
+
+            Route::post('/import', [ImportController::class, 'import'])
+                // ->middleware('permission:pengajuan.anggaran.create')
+                ->name('import.workplan-budget');
 
             Route::post('/', [PengajuanAnggaranController::class, 'store'])
                 ->middleware('permission:pengajuan.anggaran.create')

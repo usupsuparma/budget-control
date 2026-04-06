@@ -1,122 +1,144 @@
-# Planning Implementation: Restrict Program ID by User Division
+# Planning Implementation: Fix & Refactor Organization Master Data Viewer
 
 ## 1. Analisis & Identifikasi Masalah
-Pada form **Add Submission** di halaman **User Submission** (`http://127.0.0.1:8001/admission/user`), dropdown **Program ID** saat ini menampilkan seluruh `KPIWorkPlan` alias Program Kerja dari berbagai macam divisi. Hal ini bisa menyebabkan user salah memilih Program ID milik divisi lain, atau sengaja mengajukan *budget* pada *workplan* yang bukan wewenangnya. 
-
-Sesuai aturan di **`EMPLOYEE_ORG_RESOLUTION.md`**, struktur hierarki organisasi dan departemen/divisi user diketahui secara dinamis dari `job_level_id` dan `structure_id` (berada di dalam `App\Models\Employment`). Oleh karena itu, kita perlu melengkapi Model `Employment` dengan fitur yang dapat melacak ID Divisi (Division ID) si user, dan menjadikan Division ID tersebut sebagai basis scope (filter) saat me-load `KPIWorkPlan`.
+Saat membuka halaman `http://127.0.0.1:8001/master-data` dan memilih tab **Organization**, struktur organisasi tidak tampil dengan rapi / *layout broken*. Setelah menelusuri source code berdasar laporan, masalah bersumber pada:
+- **Tampilan Rusak (UI/UX)**: Ditemukan kebocoran raw string *JavaScript* (`childUl.style.display...`) yang nyasar di antara tag HTML di `resources/views/pages/settings/organization.blade.php`. Terdapat juga *unclosed tags* dan struktur tag `<ul>` / `<li>` yang tidak pada tempatnya (looping penutup *tag* berantakan), sehingga CSS *Tree* gagal me-_render_ garis penghubung antar organisasi.
+- **Pelanggaran Arsitektur**: Pada `app/Http/Controllers/MasterController.php`, proses pemanggilan *nested relation* Model Database Eager Loading untuk struktur organisasi secara spesifik dilakukan secara *hardcode* di dalam Controller (Line 27+). Menurut aturan baku pada **`GEMINI.md`**, logic pengambilan relasi Model harus selalu mendelegasikan ke **Service Layer**.
 
 ---
 
 ## 2. Rencana Eksekusi (Langkah demi Langkah)
 
-### A. Update Model `Employment` (`app/Models/Employment.php`)
-Tambahkan method baru bernama `getDivisionIds()` di dalam model `Employment` yang bertugas me-resolve Divisi ID dari User berdasarkan Job Level-nya. Method ini mirip konsepnya dengan `getDepartmentCodes()`.
+### A. Refactor Controller ke Service Layer
+Buat atau gunakan kembali module Service Layer untuk menarik data Organisasi agar terpisah dari Controller, dan mencegah Fat-Controller.
 
-**Kode Referensi:**
+**1. Membuat Service & Implementasi (`app/Services/MasterDataService`)**
+- Buat interface file: `MasterDataService.php`
+- Buat file implementasi: `MasterDataServiceImpl.php`
+
 ```php
-public function getDivisionIds(): array
+namespace App\Services\MasterDataService;
+use App\Models\Director;
+use Illuminate\Database\Eloquent\Collection;
+
+class MasterDataServiceImpl implements MasterDataService 
 {
-    $jobPosition = $this->jobPosition;
-
-    if (! $jobPosition || ! $jobPosition->structure_id) {
-        return [];
-    }
-
-    $levelId     = (int) $jobPosition->job_level_id;
-    $structureId = (int) $jobPosition->structure_id;
-
-    switch ($levelId) {
-        case 1: // Director (Membawahi bbrp divisi)
-            return \App\Models\Division::where('director_id', $structureId)->pluck('id')->toArray();
-
-        case 2: // Division
-            return [$structureId];
-
-        case 3: // Department (cari divisi-nya lewat relasi department)
-            $dept = \App\Models\Department::find($structureId);
-            return ($dept && $dept->division_id) ? [$dept->division_id] : [];
-
-        default: // Section / Staff / Non-Staff (cari divisi-nya lewat section -> department)
-            $section = \App\Models\Section::with('department')->find($structureId);
-            return ($section && $section->department && $section->department->division_id) 
-                ? [$section->department->division_id] 
-                : [];
+    /**
+     * Eager-load full org structure: directors -> divisions -> departments -> sections
+     */
+    public function getOrganizationTree(): Collection 
+    {
+        return Director::where('status', 'Active')
+            ->with([
+                'divisions' => fn($q) => $q->where('status', 'Active')->orderBy('name'),
+                'divisions.departments' => fn($q) => $q->where('status', 'Active')->orderBy('name'),
+                'divisions.departments.sections' => fn($q) => $q->where('status', 'Active')->orderBy('name')
+            ])
+            ->orderBy('name', 'asc')
+            ->get();
     }
 }
 ```
 
-### B. Update Model `KPIWorkPlan` (`app/Models/KPIWorkPlan.php`)
-Tambahkan *Query Scope* lokal di `KPIWorkPlan` agar logika filter pada Service lebih bersih (memenuhi best-practice "Skinny Controller/Service, Fat Model"). 
-
-**Kode Referensi:**
+**2. Binding di Provider (`app/Providers/CustomServiceProvider.php`)**
 ```php
-public function scopeWhereDivisionIn($query, array $divisionIds)
+$this->app->bind(
+    \App\Services\MasterDataService\MasterDataService::class,
+    \App\Services\MasterDataService\MasterDataServiceImpl::class
+);
+```
+
+**3. Inject di Controller (`app/Http/Controllers/MasterController.php`)**
+```php
+class MasterController extends Controller
 {
-    return $query->where(function ($q) use ($divisionIds) {
-        // Jika kpi_type = 'department'
-        $q->whereHas('kpiDepartment.department', function ($subQ) use ($divisionIds) {
-            $subQ->whereIn('division_id', $divisionIds);
-        })
-        // Atau jika kpi_type = 'section'
-        ->orWhereHas('kpiSection.section.department', function ($subQ) use ($divisionIds) {
-            $subQ->whereIn('division_id', $divisionIds);
-        });
-    });
+    public function __construct(
+        protected \App\Services\MasterDataService\MasterDataService $masterDataService
+    ) {}
+
+    public function index()
+    {
+        // ... (data lainnya)
+        
+        // Panggil melalui Service Layer!
+        $directors = $this->masterDataService->getOrganizationTree();
+
+        // ...
+    }
 }
 ```
 
-### C. Refactor `SubmissionServiceImpl` (`app/Services/SubmissionService/SubmissionServiceImpl.php`)
-Di sinilah data Program disalurkan baik untuk inisialisasi Modal maupun saat *Ajax Request* pada Dropdown. Modifikasi logika pengambilan `KPIWorkPlan`.
+### B. Perbaikan Semantic HTML & CSS Tree (`organization.blade.php`)
+Re-struktur kode Blade loop `<ul>` dan `<li>` agar murni *hierarkis (nested)* dan buang sisa teks javascript di baris tengah. Gunakan pola *parent-child* berikut:
 
-**1. Di dalam `getUserPageData()` (Sekitar Line 41):**
-Ubah bagian pemanggilan raw `KPIWorkPlan::with(...)` menjadi ber-filter `whereDivisionIn()`.
-```php
-public function getUserPageData(): array
-{
-    // ... logic existing (auth user dll)
-    $employment = Auth::user()->employment;
-    $divisionIds = $employment ? $employment->getDivisionIds() : [];
+```html
+<!-- ... style existing dipertahankan ... -->
+<div class="org-tree">
+    <ul> <!-- ROOT LEVEL (Director) -->
+        @forelse($directors as $director)
+        <li>
+            <div class="org-node" data-toggle>
+                <div class="title">{{ $director->name }}</div>
+                <div class="meta">{{ $director->code ? $director->code . ' · ' : '' }}{{ $director->status }}</div>
+            </div>
 
-    // Terapkan filter Divisi di scope Model
-    $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])
-        ->whereDivisionIn($divisionIds)
-        ->get();
+            <!-- LEVEL 2 (Divisions) -->
+            <ul class="children">
+                @forelse($director->divisions as $division)
+                <li>
+                    <div class="org-node" data-toggle>
+                        <div class="title">{{ $division->name }}</div>
+                        <div class="meta">{{ $division->code ?? '' }} · {{ $division->status }}</div>
+                    </div>
 
-    // ... sisa logic return compact(...)
-}
+                    <!-- LEVEL 3 (Departments) -->
+                    <ul class="children">
+                        @forelse($division->departments as $department)
+                        <li>
+                            <div class="org-node" data-toggle>
+                                <div class="title">{{ $department->name }}</div>
+                                <div class="meta">{{ $department->code ?? '' }} · {{ $department->status }}</div>
+                            </div>
+
+                            <!-- LEVEL 4 (Sections) -->
+                            <ul class="children">
+                                @forelse($department->sections as $section)
+                                <li>
+                                    <div class="org-node">
+                                        <div class="title">{{ $section->name }}</div>
+                                        <div class="meta">{{ $section->code ?? '' }} · {{ $section->status ?? '' }}</div>
+                                    </div>
+                                </li>
+                                @empty
+                                <li><div class="org-node"><div class="meta">No sections</div></div></li>
+                                @endforelse
+                            </ul>
+                        </li>
+                        @empty
+                        <li><div class="org-node"><div class="meta">No departments</div></div></li>
+                        @endforelse
+                    </ul>
+                </li>
+                @empty
+                <li><div class="org-node"><div class="meta">No divisions</div></div></li>
+                @endforelse
+            </ul>
+        </li>
+        @empty
+        <li><div class="org-node"><div class="title">No directors found</div></div></li>
+        @endforelse
+    </ul>
+</div>
+<!-- ... script js toggle (tetap dipertahankan di bawah) ... -->
 ```
-
-**2. Di dalam `getProgramsByJobLevel()` (Penting agar dropdown AJAX ter-restrict security-nya):**
-```php
-public function getProgramsByJobLevel(int $jobLevelId): array
-{
-    // ... logic pengecekan level & scope kpi_type (department/section)
-    
-    // Tarik list divisi wewenang saat ini
-    $employment = Auth::user()->employment;
-    $divisionIds = $employment ? $employment->getDivisionIds() : [];
-
-    // Aplikasikan scope untuk restriction query
-    $query = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
-        ->whereDivisionIn($divisionIds)
-        ->orderBy('year', 'desc')
-        ->orderBy('activity');
-
-    // ... terapkan existing conditional if ($kpiType) dsb
-    // ... return response data
-}
-```
-
-### D. File-File Lain (Review Only)
-- `routes/web.php` dan `SubmissionController.php`: Tidak perlu mengubah `Controller` dan `Route`, biarkan `Controller` hanya bertugas mendelegasikan request secara *orchestration*.
-- `resources/views/pages/submission/user.blade.php`: Sistem loop `@foreach($workplans)` otomatis mendukung data API filter dari Service. **UI Aman, Tidak Perlu Sentuh Blade.**
-- `ApprovalTransactionService.php` / `LpjService.php`: Validasi restriction program ini bersifat front-facing dan scope filtering. Untuk approval atau LPJ lanjutan dari ID transaksi yang masuk akal, ia akan terisolir. Relasi tetap aman.
+*(Dengan mengganti `foreach` ke `forelse`, kita tidak perlu membuka-tutup `<li>` dua kali yang sering menyebabkan tag unclosed.)*
 
 ---
 
-## 3. Checklist QA & Testing
+## 3. Checklist Eksekusi & QA (Untuk Dev/AI Agent)
 
-1. [ ] Login di satu environment (dummy local) dengan akun bertipe **Division Head** atau **Staff** di suatu divisi (misal: Divisi IT).
-2. [ ] Masuk ke menu `http://127.0.0.1:8001/admission/user` > Klik `Add Data`.
-3. [ ] Buka Dropdown `Program ID`, pastikan secara visual HANYA terdapat program/kpi di bawah divisinya saja.
-4. [ ] Lakukan inspect/trigger element API ajax secara manual untuk job_level_id, pastikan response JSON yang dikembalikan juga tidak membocorkan Program ID divisi lain (Sudah dijaga melalui AJAX scope `getProgramsByJobLevel`).
+1. [ ] Buat Folder `app/Services/MasterDataService` dan inisiasi Interface & Implementasinya.
+2. [ ] Pindahkan logic DB Query `$directors` dari Controller ke `getOrganizationTree()`.
+3. [ ] Register Service baru binding tersebut ke dalam `CustomServiceProvider.php`.
+4. [ ] Bersihkan kekacauan *tag structure* dan teks mentah javascript pada `organization.blade.php`.
+5. [ ] (QA Test Visual): Akses `http://127.0.0.1:8001/master-data` -> Buka tab *Organization*, pastikan CSS Tree tampil bercabang secara apik ke bawah. Menu dapat di-klik untuk disembunyikan/dimunculkan cabangnya (Toggle).

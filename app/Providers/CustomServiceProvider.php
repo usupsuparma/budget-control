@@ -19,6 +19,8 @@ use App\Services\NotificationService\NotificationService;
 use App\Services\NotificationService\NotificationServiceImpl;
 use App\Services\DashboardService\DashboardService;
 use App\Services\DashboardService\DashboardServiceImpl;
+use App\Services\MasterDataService\MasterDataService;
+use App\Services\MasterDataService\MasterDataServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -44,6 +46,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(BudgetUserService::class, BudgetUserServiceImpl::class);
         $this->app->bind(NotificationService::class, NotificationServiceImpl::class);
         $this->app->bind(DashboardService::class, DashboardServiceImpl::class);
+        $this->app->bind(MasterDataService::class, MasterDataServiceImpl::class);
     }
 
     /**

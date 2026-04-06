@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
-use App\Models\Director;
 use App\Models\Division;
 use App\Models\Employee;
 use App\Models\JobLevel;
 use App\Models\JobPosition;
 use App\Models\Section;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 
 class MasterController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
     public function index()
     {
         $title = 'Master Data';
@@ -24,17 +27,8 @@ class MasterController extends Controller
         $jobPositions = JobPosition::where('status', 'Active')->get();
         $jobLevel = JobLevel::where('status', 'Active')->get();
 
-        // Eager-load full org structure: directors -> divisions -> departments -> sections
-        $directors = Director::where('status', 'Active')
-            ->with(['divisions' => function ($q) {
-                $q->where('status', 'Active')->orderBy('name');
-            }, 'divisions.departments' => function ($q) {
-                $q->where('status', 'Active')->orderBy('name');
-            }, 'divisions.departments.sections' => function ($q) {
-                $q->where('status', 'Active')->orderBy('name');
-            }])
-            ->orderBy('name', 'asc')
-            ->get();
+        // Delegasikan ke Service Layer (sesuai GEMINI.md: no query in Controller)
+        $directors = $this->masterDataService->getOrganizationTree();
 
         // Backwards-compatible variable for select lists in existing partials
         $director = $directors;
@@ -47,8 +41,6 @@ class MasterController extends Controller
         $divisions = $division;
         $departments = $department;
         $sections = $section;
-
-        // dd($employee);
 
 
         return view('pages.settings.Settings', compact(

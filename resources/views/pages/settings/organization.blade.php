@@ -6,211 +6,249 @@
                     box-sizing: border-box;
                 }
 
-                .org-tree ul {
-                    padding-top: 20px;
-                    position: relative;
-                    transition: all 0.5s;
+                /* ── Tree container ── */
+                .org-tree {
+                    overflow-x: auto;
+                    padding: 20px 8px;
+                }
+
+                /* ── Root level list ── */
+                .org-tree > ul {
                     display: flex;
                     justify-content: center;
+                    flex-wrap: wrap;
+                    gap: 32px;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                /* ── All list items ── */
+                .org-tree ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                /* ── Children list (nested) ── */
+                .org-tree ul.children {
+                    display: flex;
+                    justify-content: center;
+                    flex-wrap: wrap;
                     gap: 16px;
-                    flex-wrap: nowrap;
-                }
-
-                .org-tree li {
-                    list-style-type: none;
-                    text-align: center;
+                    padding-top: 24px;
                     position: relative;
-                    padding: 0 5px;
+                    margin-top: 0;
                 }
 
-                .org-tree ul::before {
+                /* Horizontal line spanning children */
+                .org-tree ul.children::before {
                     content: '';
                     position: absolute;
                     top: 0;
                     left: 10%;
                     right: 10%;
-                    height: 1px;
-                    background: rgba(148, 163, 184, 0.4);
+                    height: 2px;
+                    background: rgba(148, 163, 184, 0.35);
                 }
 
-                .org-tree li::before {
+                /* Vertical connector from horizontal bar down to each node */
+                .org-tree ul.children > li {
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .org-tree ul.children > li::before {
                     content: '';
                     position: absolute;
-                    top: -20px;
+                    top: -24px;
                     left: 50%;
                     transform: translateX(-50%);
                     width: 2px;
-                    height: 20px;
-                    background: rgba(148, 163, 184, 0.4);
+                    height: 24px;
+                    background: rgba(148, 163, 184, 0.35);
                 }
 
+                /* Vertical connector from parent node down to horizontal line */
+                .org-tree li.has-children > .org-node-wrap::after {
+                    content: '';
+                    display: block;
+                    width: 2px;
+                    height: 24px;
+                    background: rgba(148, 163, 184, 0.35);
+                    margin: 0 auto;
+                }
+
+                /* ── Node card ── */
                 .org-node {
-                    display: inline-block;
-                    padding: 10px 14px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(148, 163, 184, 0.15);
+                    display: inline-flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 10px 16px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(148, 163, 184, 0.2);
                     background: #fff;
-                    min-width: 160px;
-                    cursor: default;
-                    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.06);
+                    min-width: 150px;
+                    max-width: 200px;
+                    box-shadow: 0 2px 8px rgba(2, 6, 23, 0.07);
+                    transition: transform 0.15s ease, box-shadow 0.15s ease;
                 }
 
-                .org-node .title {
-                    font-weight: 700;
-                    font-size: 0.95rem;
-                    color: #0f172a;
-                }
-
-                .org-node .meta {
-                    font-size: 0.75rem;
-                    color: #64748b;
-                    margin-top: 4px;
-                }
-
-                .org-node .badge {
-                    display: inline-block;
-                    margin-top: 6px;
-                    padding: 2px 8px;
-                    font-size: 11px;
-                    border-radius: 999px;
-                    background: rgba(34, 197, 94, 0.08);
-                    color: #059669;
-                }
-
-                .org-tree .children {
-                    margin-top: 8px;
-                    display: flex;
-                    gap: 24px;
-                    justify-content: center;
-                }
-
-                .org-tree .children ul {
-                    display: flex;
-                    gap: 24px;
-                    padding-top: 12px;
+                .org-node:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 6px 16px rgba(2, 6, 23, 0.12);
                 }
 
                 .org-node[data-toggle] {
                     cursor: pointer;
                 }
 
-                .org-node:hover {
-                    transform: translateY(-3px);
-                    transition: transform 0.15s ease;
+                .org-node .node-title {
+                    font-weight: 700;
+                    font-size: 0.88rem;
+                    color: #0f172a;
+                    text-align: center;
+                    word-break: break-word;
                 }
 
+                .org-node .node-meta {
+                    font-size: 0.72rem;
+                    color: #64748b;
+                    margin-top: 3px;
+                    text-align: center;
+                }
+
+                /* Level colour accents */
+                .org-node.level-director  { border-top: 3px solid #6366f1; }
+                .org-node.level-division   { border-top: 3px solid #0ea5e9; }
+                .org-node.level-department { border-top: 3px solid #10b981; }
+                .org-node.level-section    { border-top: 3px solid #f59e0b; }
+
+                /* Collapsed indicator */
+                .org-node .toggle-icon {
+                    margin-top: 5px;
+                    font-size: 0.68rem;
+                    color: #94a3b8;
+                }
+
+                /* Responsive */
                 @media (max-width: 992px) {
-                    .org-tree ul {
+                    .org-tree > ul,
+                    .org-tree ul.children {
                         flex-direction: column;
                         align-items: center;
                     }
-
-                    .org-tree ul::before {
+                    .org-tree ul.children::before,
+                    .org-tree ul.children > li::before,
+                    .org-tree li.has-children > .org-node-wrap::after {
                         display: none;
-                    }
-
-                    .org-tree li::before {
-                        display: none;
-                    }
-
-                    .org-tree .children {
-                        flex-direction: column;
-                        gap: 12px;
                     }
                 }
             </style>
 
+            {{-- ── ORGANIZATION TREE ── --}}
             <ul>
                 @forelse($directors as $director)
-                <li>
-                    <div class="org-node" data-toggle>
-                        <div class="title">{{ $director->name }}</div>
-                        <div class="meta">{{ $director->code ? $director->code . ' · ' : '' }}{{ $director->status }}</div>
-                        @if(!empty($director->structure_id))
-                        <div class="badge">Structure: {{ $director->structure_id }}</div>
-                        @endif
+                <li class="{{ $director->divisions->isNotEmpty() ? 'has-children' : '' }}">
+                    <div class="org-node-wrap">
+                        <div class="org-node level-director {{ $director->divisions->isNotEmpty() ? '' : '' }}"
+                             {{ $director->divisions->isNotEmpty() ? 'data-toggle' : '' }}>
+                            <div class="node-title">{{ $director->name }}</div>
+                            <div class="node-meta">{{ $director->code ? $director->code . ' · ' : '' }}{{ $director->status }}</div>
+                            @if($director->divisions->isNotEmpty())
+                            <div class="toggle-icon">▾ {{ $director->divisions->count() }} divisions</div>
+                            @endif
+                        </div>
                     </div>
 
-                    childUl.style.display = (childUl.style.display === 'none' || childUl.style.display === '') ? 'flex' : 'none';
-                    @if($director->divisions->isEmpty())
-                <li>
-                    <div class="org-node">
-                        <div class="meta">No divisions</div>
-                    </div>
-                </li>
-                @else
-                @foreach($director->divisions as $division)
-                <li>
-                    <div class="org-node" data-toggle>
-                        <div class="title">{{ $division->name }}</div>
-                        <div class="meta">{{ $division->code ?? '' }} · {{ $division->status }}</div>
-                    </div>
-
+                    {{-- Level 2: Divisions --}}
+                    @if($director->divisions->isNotEmpty())
                     <ul class="children">
-                        @if($division->departments->isEmpty())
-                        <li>
-                            <div class="org-node">
-                                <div class="meta">No departments</div>
-                            </div>
-                        </li>
-                        @else
-                        @foreach($division->departments as $department)
-                        <li>
-                            <div class="org-node" data-toggle>
-                                <div class="title">{{ $department->name }}</div>
-                                <div class="meta">{{ $department->code ?? '' }} · {{ $department->status }}</div>
+                        @foreach($director->divisions as $division)
+                        <li class="{{ $division->departments->isNotEmpty() ? 'has-children' : '' }}">
+                            <div class="org-node-wrap">
+                                <div class="org-node level-division"
+                                     {{ $division->departments->isNotEmpty() ? 'data-toggle' : '' }}>
+                                    <div class="node-title">{{ $division->name }}</div>
+                                    <div class="node-meta">{{ $division->code ?? '' }}{{ $division->code ? ' · ' : '' }}{{ $division->status }}</div>
+                                    @if($division->departments->isNotEmpty())
+                                    <div class="toggle-icon">▾ {{ $division->departments->count() }} depts</div>
+                                    @endif
+                                </div>
                             </div>
 
+                            {{-- Level 3: Departments --}}
+                            @if($division->departments->isNotEmpty())
                             <ul class="children">
-                                @if($department->sections->isEmpty())
-                                <li>
-                                    <div class="org-node">
-                                        <div class="meta">No sections</div>
+                                @foreach($division->departments as $department)
+                                <li class="{{ $department->sections->isNotEmpty() ? 'has-children' : '' }}">
+                                    <div class="org-node-wrap">
+                                        <div class="org-node level-department"
+                                             {{ $department->sections->isNotEmpty() ? 'data-toggle' : '' }}>
+                                            <div class="node-title">{{ $department->name }}</div>
+                                            <div class="node-meta">{{ $department->code ?? '' }}{{ $department->code ? ' · ' : '' }}{{ $department->status }}</div>
+                                            @if($department->sections->isNotEmpty())
+                                            <div class="toggle-icon">▾ {{ $department->sections->count() }} sections</div>
+                                            @endif
+                                        </div>
                                     </div>
-                                </li>
-                                @else
-                                @foreach($department->sections as $section)
-                                <li>
-                                    <div class="org-node">
-                                        <div class="title">{{ $section->name }}</div>
-                                        <div class="meta">{{ $section->code ?? '' }} · {{ $section->status ?? '' }}</div>
-                                    </div>
+
+                                    {{-- Level 4: Sections --}}
+                                    @if($department->sections->isNotEmpty())
+                                    <ul class="children">
+                                        @foreach($department->sections as $section)
+                                        <li>
+                                            <div class="org-node level-section">
+                                                <div class="node-title">{{ $section->name }}</div>
+                                                <div class="node-meta">{{ $section->code ?? '' }}{{ ($section->code && $section->status) ? ' · ' : '' }}{{ $section->status ?? '' }}</div>
+                                            </div>
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                    @endif
                                 </li>
                                 @endforeach
-                                @endif
                             </ul>
+                            @endif
                         </li>
                         @endforeach
-                        @endif
                     </ul>
+                    @endif
                 </li>
-                @endforeach
-                @endif
-            </ul>
-            </li>
-            @empty
-            <li>
-                <div class="org-node">
-                    <div class="title">No directors found</div>
-                </div>
-            </li>
-            @endforelse
+                @empty
+                <li>
+                    <div class="org-node level-director">
+                        <div class="node-title">No directors found</div>
+                        <div class="node-meta">Please add an active director to the system.</div>
+                    </div>
+                </li>
+                @endforelse
             </ul>
 
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // initialize: ensure inner children are visible
-                    document.querySelectorAll('.org-tree ul.children').forEach(function(el) {
+                document.addEventListener('DOMContentLoaded', function () {
+                    // All children lists start visible
+                    document.querySelectorAll('.org-tree ul.children').forEach(function (el) {
                         el.style.display = 'flex';
                     });
 
-                    document.querySelectorAll('.org-node[data-toggle]').forEach(function(node) {
-                        node.addEventListener('click', function(e) {
+                    // Toggle collapse on click
+                    document.querySelectorAll('.org-node[data-toggle]').forEach(function (node) {
+                        node.addEventListener('click', function (e) {
                             e.stopPropagation();
-                            var parent = node.parentElement;
-                            var childUl = parent.querySelector(':scope > ul.children');
+                            var parentLi = node.closest('li');
+                            var childUl = parentLi ? parentLi.querySelector(':scope > ul.children') : null;
                             if (!childUl) return;
-                            childUl.style.display = (childUl.style.display === 'none') ? 'flex' : 'none';
+
+                            var isHidden = childUl.style.display === 'none';
+                            childUl.style.display = isHidden ? 'flex' : 'none';
+
+                            // Toggle icon text
+                            var icon = node.querySelector('.toggle-icon');
+                            if (icon) {
+                                icon.textContent = icon.textContent.replace(isHidden ? '▸' : '▾', isHidden ? '▾' : '▸');
+                            }
                         });
                     });
                 });

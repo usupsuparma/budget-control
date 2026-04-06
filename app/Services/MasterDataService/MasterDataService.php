@@ -13,4 +13,10 @@ interface MasterDataService
      * @return Collection<\App\Models\Director>
      */
     public function getOrganizationTree(): Collection;
+
+    /**
+     * Invalidate the cached organization tree.
+     * Call this after any CRUD operation on Director, Division, Department, or Section.
+     */
+    public function forgetCache(): void;
 }

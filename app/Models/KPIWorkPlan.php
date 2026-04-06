@@ -68,9 +68,40 @@ class KPIWorkPlan extends Model
     {
         return $query->where('kpi_type', 'section');
     }
+
     public function scopeIsKpiDepartment($query)
     {
         return $query->where('kpi_type', 'department');
+    }
+
+    /**
+     * Scope to filter workplans by Division IDs.
+     *
+     * Covers both kpi_type = 'department' (via kpiDepartment → department → division_id)
+     * and kpi_type = 'section' (via kpiSection → section → department → division_id).
+     *
+     * If $divisionIds is empty, the scope returns no records (strict security — fail closed).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  array  $divisionIds  List of Division IDs the user has access to
+     */
+    public function scopeWhereDivisionIn($query, array $divisionIds)
+    {
+        if (empty($divisionIds)) {
+            // Jika tidak ada divisi ditemukan, jangan tampilkan apapun (fail closed)
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function ($q) use ($divisionIds) {
+            // Workplan tipe 'department': filter via kpiDepartment → department → division_id
+            $q->whereHas('kpiDepartment.department', function ($subQ) use ($divisionIds) {
+                $subQ->whereIn('division_id', $divisionIds);
+            })
+            // Workplan tipe 'section': filter via kpiSection → section → department → division_id
+            ->orWhereHas('kpiSection.section.department', function ($subQ) use ($divisionIds) {
+                $subQ->whereIn('division_id', $divisionIds);
+            });
+        });
     }
 
     // Polymorphic relationship

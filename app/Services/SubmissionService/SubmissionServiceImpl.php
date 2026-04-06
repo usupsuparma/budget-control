@@ -71,7 +71,13 @@ class SubmissionServiceImpl implements SubmissionService
 
         $jobLevels = JobLevel::all();
         $jobPositions = JobPosition::all();
-        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])->get();
+
+        // Filter workplans hanya untuk divisi user yang sedang login
+        $divisionIds = $employment ? $employment->getDivisionIds() : [];
+        $workplans = KPIWorkPlan::with(['kpiDepartment', 'kpiSection'])
+            ->whereDivisionIn($divisionIds)
+            ->get();
+
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
@@ -560,7 +566,12 @@ class SubmissionServiceImpl implements SubmissionService
             $kpiType = 'department';
         }
 
+        // Restrict workplans hanya untuk divisi user yang sedang login (security: fail closed)
+        $employment = Auth::user()->employment;
+        $divisionIds = $employment ? $employment->getDivisionIds() : [];
+
         $query = KPIWorkPlan::with(['kpiDepartment.department', 'kpiSection.section'])
+            ->whereDivisionIn($divisionIds)
             ->orderBy('year', 'desc')
             ->orderBy('activity');
 

@@ -224,4 +224,60 @@ class Employment extends Model
                 return ($section->department->code) ? [$section->department->code] : [];
         }
     }
+
+    /**
+     * Resolve the Division ID(s) for this employment based on job position hierarchy.
+     *
+     * Uses the same hierarchy logic as getDepartmentCodes(), but returns Division IDs
+     * to allow filtering KPIWorkPlans that belong to the user's division scope.
+     *
+     *   L1 Director  → structure_id = director.id → all division IDs under that director
+     *   L2 Division  → structure_id = division.id → that division ID
+     *   L3 Department→ structure_id = department.id → parent division ID
+     *   L4+ Section  → structure_id = section.id  → section → department → division ID
+     *
+     * Returns an array of Division IDs (empty array if unresolvable).
+     */
+    public function getDivisionIds(): array
+    {
+        $jobPosition = $this->jobPosition;
+
+        if (! $jobPosition || ! $jobPosition->structure_id) {
+            Log::warning('getDivisionIds: no job_position or structure_id', [
+                'employment_id' => $this->id,
+                'employee_id'   => $this->employee_id,
+            ]);
+            return [];
+        }
+
+        $levelId     = (int) $jobPosition->job_level_id;
+        $structureId = (int) $jobPosition->structure_id;
+
+        switch ($levelId) {
+            case 1: // Director → semua divisi yang berada di bawah director ini
+                return Division::where('director_id', $structureId)
+                    ->pluck('id')
+                    ->values()
+                    ->toArray();
+
+            case 2: // Division → langsung division ID-nya sendiri
+                return [$structureId];
+
+            case 3: // Department → cari division_id dari department ini
+                $dept = Department::find($structureId);
+                return ($dept && $dept->division_id) ? [$dept->division_id] : [];
+
+            default: // Section (4), Staff, Non-Staff → section → department → division
+                $section = Section::with('department')->find($structureId);
+                if (! $section || ! $section->department) {
+                    Log::warning('getDivisionIds: section or department not found', [
+                        'employment_id' => $this->id,
+                        'level_id'      => $levelId,
+                        'structure_id'  => $structureId,
+                    ]);
+                    return [];
+                }
+                return ($section->department->division_id) ? [$section->department->division_id] : [];
+        }
+    }
 }

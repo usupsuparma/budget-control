@@ -112,6 +112,16 @@ Route::middleware('auth')->group(function () {
             ->name('dashboard.monthly.chart');
     });
 
+    // DASH EXECUTIVE AJAX ENDPOINTS
+    Route::prefix('dash-executive')->group(function () {
+        Route::get('/stats', [DashboardController::class, 'getDashboardStats'])
+            ->name('dash.executive.stats');
+        Route::get('/division-realization', [DashboardController::class, 'getDivisionRealizationData'])
+            ->name('dash.executive.division.realization');
+        Route::get('/monthly-chart', [DashboardController::class, 'getMonthlyChartData'])
+            ->name('dash.executive.monthly.chart');
+    });
+
     /* ========================
         SASARAN STRATEGIS
     ======================== */

@@ -5,814 +5,517 @@
 @section('pagetitle', 'Dashboard')
 
 @section('content')
-    <div id="layout-wrapper">
-        <div class="row">
-            <!-- === COMPANY POLICY 2026 (5 COLUMNS) === -->
-            <div class="col-12">
-                <div class="card bg-secondary-subtle border-0">
-                    <div class="card-body p-4">
-                        <div class="row mb-4">
-                            <div class="col-12 position-relative">
 
-                                <!-- TITLE (CENTER PERFECT) -->
-                                <h5 class="fw-bold text-center mb-0" id="companyPolicyTitle">
-                                    Company Policy {{ date('Y') }} (Strategic Goals)
-                                </h5>
+<div id="layout-wrapper">
 
-                                <!-- YEAR SELECT (RIGHT) -->
-                                <div class="position-absolute top-50 end-0 translate-middle-y">
-                                    <select class="form-select form-select-sm w-auto" id="form-select-01" name="tahun">
-                                        <option value="">Select</option>
-                                        @for ($year = 2023; $year <= date('Y') + 1; $year++)
-                                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>
-                                                {{ $year }}
-                                            </option>
-                                        @endfor
-                                    </select>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-borderless align-middle text-center mb-0">
-                                <tr id="strategicGoalsRow">
-                                    @foreach ($policies as $policy)
-                                        @if ($policy->tahun == date('Y'))
-                                            @foreach ($policy->details as $detail)
-                                                @if ($detail->strategic_goal_id)
-                                                    <td>
-                                                        <div
-                                                            class="d-flex flex-column align-items-center justify-content-center">
-                                                            <div
-                                                                class="h-50px w-50px d-flex justify-content-center align-items-center bg-secondary text-white fs-4 rounded-pill mb-3">
-                                                                <i class="bi bi-mortarboard"></i>
-                                                            </div>
-                                                            <h6 class="fw-semibold fs-14 mb-1">{!! $detail->strategic_goal_id !!}</h6>
-                                                            <p class="text-muted fs-13 mb-0">{!! $detail->description_id !!}</p>
-                                                        </div>
-                                                    </td>
-                                                @endif
-                                            @endforeach
-                                        @endif
-                                    @endforeach
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+    {{-- ── Notifications ─────────────────────────────────────── --}}
+    @if(!empty($notifications) && count($notifications) > 0)
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bell me-2"></i>Notifications</h6>
+                    <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-light">View All</a>
                 </div>
-            </div>
-
-            <!-- === NOTIFICATIONS === -->
-            @if(!empty($notifications) && count($notifications) > 0)
-            <div class="col-12 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 fw-bold"><i class="bi bi-bell me-2"></i>Recent Notifications</h6>
-                        <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-light">View All</a>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            @foreach($notifications as $notif)
-                            <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-bottom-0">
-                                <div class="flex-shrink-0">
-                                    @php
-                                        $bgColor = 'bg-primary';
-                                        $icon = 'bi-info-circle';
-                                        if($notif->category) {
-                                            switch(strtolower($notif->category->name)) {
-                                                case 'approval': $bgColor = 'bg-warning'; $icon = 'bi-check2-circle'; break;
-                                                case 'system': $bgColor = 'bg-danger'; $icon = 'bi-cpu'; break;
-                                                case 'info': $bgColor = 'bg-info'; $icon = 'bi-info-lg'; break;
-                                            }
-                                        }
-                                    @endphp
-                                    <div class="h-40px w-40px d-flex justify-content-center align-items-center rounded-circle {{ $bgColor }} text-white">
-                                        <i class="bi {{ $icon }}"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-1 {{ !$notif->is_read ? 'fw-bold' : 'text-muted' }}">{{ $notif->title }}</h6>
-                                        <small class="text-muted">{{ $notif->created_at->diffForHumans() }}</small>
-                                    </div>
-                                    <p class="mb-0 text-muted fs-13 text-truncate" style="max-width: 700px;">{{ $notif->details }}</p>
-                                </div>
-                                @if(!$notif->is_read)
-                                <div class="flex-shrink-0">
-                                    <span class="badge bg-primary rounded-pill p-1"><span class="visually-hidden">New</span></span>
-                                </div>
-                                @endif
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            <!-- === SUMMARY CARDS === -->
-            <div class="col-xxl-12 mb-4">
-                <div class="row g-3">
-                    <!-- Total Anggaran -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card overflow-hidden">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-10">
-                                    <div>
-                                        <p class="text-muted mb-2">Budget Total</p>
-                                        <h3 class="fw-medium mb-0" id="budgetTotalValue">Rp -</h3>
-                                    </div>
-                                    <div
-                                        class="h-50px w-50px position-relative d-flex justify-content-center align-items-center bg-info text-white fs-4 rounded-pill">
-                                        <i class="bi bi-cash-stack"></i>
-                                    </div>
-                                </div>
-                                <p class="text-success mb-0 fs-13" id="budgetTotalNote">
-                                    <i class="bi bi-arrow-up-short"></i> -
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Realisasi Anggaran -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card overflow-hidden">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-10">
-                                    <div>
-                                        <p class="text-muted mb-2">Budget Realization</p>
-                                        <h3 class="fw-medium mb-0">Rp 98,2 M</h3>
-                                    </div>
-                                    <div
-                                        class="h-50px w-50px position-relative d-flex justify-content-center align-items-center bg-warning text-white fs-4 rounded-pill">
-                                        <i class="bi bi-graph-up-arrow"></i>
-                                    </div>
-                                </div>
-                                <p class="text-success mb-0 fs-13"><i class="bi bi-arrow-up-short"></i> 78.1% dari total
-                                    anggaran</p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Outstanding Budget -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card overflow-hidden">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-10">
-                                    <div>
-                                        <p class="text-muted mb-2">Budget Balance</p>
-                                        <h3 class="fw-medium mb-0">Rp 27,6 M</h3>
-                                    </div>
-                                    <div
-                                        class="h-50px w-50px position-relative d-flex justify-content-center align-items-center bg-success text-white fs-4 rounded-pill">
-                                        <i class="bi bi-pie-chart"></i>
-                                    </div>
-                                </div>
-                                <p class="text-warning mb-0 fs-13"><i class="bi bi-arrow-right-short"></i> 21.9% tersisa</p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- KPI Achievement -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card overflow-hidden">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-10">
-                                    <div>
-                                        <p class="text-muted mb-2">KPI Achievement</p>
-                                        <h3 class="fw-medium mb-0">89%</h3>
-                                    </div>
-                                    <div
-                                        class="h-50px w-50px position-relative d-flex justify-content-center align-items-center bg-primary text-white fs-4 rounded-pill">
-                                        <i class="bi bi-activity"></i>
-                                    </div>
-                                </div>
-                                <p class="text-success mb-0 fs-13"><i class="bi bi-arrow-up-short"></i> Meningkat 5% bulan
-                                    ini</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- === GRAFIK REALISASI & PENGAJUAN === -->
-
-            <div class="col-xxl-12 col-md-12 mb-4">
-                <div class="row g-3">
-                    <div class="col-xl-6 col-md-6 p-1">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Division Budget Realization</h6>
-                                <button class="btn btn-outline-light text-muted btn-sm">See All<i
-                                        class="bi bi-arrow-right ms-1"></i></button>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-box table-responsive">
-                                    <table class="table text-nowrap align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">Divisi</th>
-                                                <th scope="col">Realisasi</th>
-                                                <th scope="col">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="form-check form-check-primary">
-                                                            <label>
-                                                                <h6 class="mb-1">PLANT</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <span class="fs-12 fw-semibold">50%</span>
-                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="50"
-                                                        aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar" style="width: 50%"></div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="form-check form-check-primary">
-                                                            <label>
-                                                                <h6 class="mb-1">PRODUCTION</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <span class="fs-12 fw-semibold">75%</span>
-                                                    <div class="progress progress-xs" role="progressbar" aria-valuenow="75"
-                                                        aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar" style="width: 75%"></div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="form-check form-check-primary">
-                                                            <label>
-                                                                <h6 class="mb-1">MARKETING</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <span class="fs-12 fw-semibold">100%</span>
-                                                    <div class="progress progress-xs" role="progressbar"
-                                                        aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar" style="width: 100%"></div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="form-check form-check-primary">
-                                                            <label>
-                                                                <h6 class="mb-1">FINANCE</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <span class="fs-12 fw-semibold">64%</span>
-                                                    <div class="progress progress-xs" role="progressbar"
-                                                        aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar" style="width: 64%"></div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="form-check form-check-primary">
-                                                            <label>
-                                                                <h6 class="mb-1">HR, GA & PROCUREMENT</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <span class="fs-12 fw-semibold">25%</span>
-                                                    <div class="progress progress-xs" role="progressbar"
-                                                        aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar" style="width: 25%"></div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info">On Budget</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach($notifications as $notif)
+                        <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                            <div class="flex-shrink-0">
+                                @php
+                                $bgColor = 'bg-primary';
+                                $icon = 'bi-info-circle';
+                                if ($notif->category) {
+                                switch (strtolower($notif->category->name)) {
+                                case 'approval': $bgColor = 'bg-warning'; $icon = 'bi-check2-circle'; break;
+                                case 'system': $bgColor = 'bg-danger'; $icon = 'bi-cpu'; break;
+                                case 'info': $bgColor = 'bg-info'; $icon = 'bi-info-lg'; break;
+                                }
+                                }
+                                @endphp
+                                <div class="h-40px w-40px d-flex justify-content-center align-items-center rounded-circle {{ $bgColor }} text-white">
+                                    <i class="bi {{ $icon }}"></i>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-6 col-md-6 p-1">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Today Activities</h6>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-1 {{ !$notif->is_read ? 'fw-bold' : 'text-muted' }}">{{ $notif->title }}</h6>
+                                    <small class="text-muted">{{ $notif->created_at->diffForHumans() }}</small>
+                                </div>
+                                <p class="mb-0 text-muted fs-13 text-truncate" style="max-width: 500px;">{{ $notif->details }}</p>
                             </div>
-                            <div class="card-body">
-                                <section data-simplebar class="px-5 mx-n5" style="max-height: 340px;">
-                                    <div class="timeline2">
-                                        <ul>
-                                            <li class="card border-0 box">
-                                                <span></span>
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div
-                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                            <i class="bi bi-cup-hot fs-5"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-1">Pengajuan Transaksi</h6>
-                                                            <p class="fs-12 text-muted mb-0">- Sarah
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="text-muted mb-1">10:00 AM</div>
-                                                        <div class="avatar-group">
-                                                            <a href="javascript:voide(0)" class="avatar-item">
-                                                                <img class="img-fluid avatar-sm"
-                                                                    src="{{ asset('assets/images/avatar/avatar-1.jpg') }}"
-                                                                    alt="avatar image">
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                            </li>
-                                            <li class="card border-0 box">
-                                                <span></span>
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div
-                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                            <i class="bi bi-gem fs-5"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-1">Pengajuan ReClass Anggaran</h6>
-                                                            <p class="fs-12 text-muted mb-0">- Anthony
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="text-muted mb-1">10:00 AM</div>
-                                                        <div class="avatar-group">
-                                                            <a href="javascript:voide(0)" class="avatar-item">
-                                                                <img class="img-fluid avatar-sm"
-                                                                    src="{{ asset('assets/images/avatar/avatar-2.jpg') }}"
-                                                                    alt="avatar image">
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="card border-0 box">
-                                                <span></span>
-                                                <div class="d-flex justify-content-between align-items-start mb-5">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div
-                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                            <i class="bi bi-gem fs-5"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-1 max-w-200px text-truncate"> Approval Anggaran
-                                                            </h6>
-                                                            <p class="fs-12 text-muted mb-0">- Andrew
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="text-muted mb-1">11:30 AM</div>
-                                                        <div class="avatar-group">
-                                                            <a href="javascript:voide(0)" class="avatar-item">
-                                                                <img class="img-fluid avatar-sm"
-                                                                    src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                                    alt="avatar image">
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="card border-0 box">
-                                                <span></span>
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div
-                                                            class="h-40px w-40px d-flex justify-content-center align-items-center bg-light-subtle text-muted rounded-pill">
-                                                            <i class="bi bi-clock-history fs-5"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-1">Pencairan Pengajuan </h6>
-                                                            <p class="text-muted mb-0">- Andrew</p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="text-muted mb-1">5:15 AM</div>
-                                                        <div class="avatar-group">
-
-                                                            <a href="javascript:voide(0)" class="avatar-item">
-                                                                <img class="img-fluid avatar-sm"
-                                                                    src="{{ asset('assets/images/avatar/avatar-3.jpg') }}"
-                                                                    alt="avatar image">
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="p-3 border border-dashed rounded cursor-pointer">
-                                                    <div class="d-flex justify-content-between align-items-start">
-                                                        <div>
-                                                            <div class="d-flex align-items-center gap-2">
-
-                                                                <div>
-
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </section>
+                            @if(!$notif->is_read)
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-primary rounded-pill p-1"><span class="visually-hidden">New</span></span>
                             </div>
+                            @endif
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- === BUDGET VS REALIZATION === -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Budget VS Realisasi</h6>
-                        <button class="btn btn-outline-light text-muted btn-sm"><i
-                                class="bi bi-arrow-right ms-1"></i></button>
-                    </div>
-                    <div class="card-body">
-                        <div id="basic_column_chart" class="apexcharts-container"></div>
-                    </div>
-                </div>
-            </div>
-
-
-
-
-            <!-- === TABEL PENGAJUAN === -->
-            <div class="col-xl-12 mt-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Budget Submission List</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Unit</th>
-                                        <th>Program Kerja</th>
-                                        <th>Nilai</th>
-                                        <th>Status</th>
-                                        <th>Tanggal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Divisi Operasional</td>
-                                        <td>Perawatan Aset Fasilitas</td>
-                                        <td>Rp 520.000.000</td>
-                                        <td><span class="badge bg-info-subtle text-info">Menunggu</span></td>
-                                        <td>01 Nov 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <td>Divisi HR & GA</td>
-                                        <td>Pelatihan SDM Tahap II</td>
-                                        <td>Rp 245.000.000</td>
-                                        <td><span class="badge bg-warning-subtle text-warning">Proses Review</span></td>
-                                        <td>03 Nov 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>3</td>
-                                        <td>Divisi Keuangan</td>
-                                        <td>Upgrade Sistem ERP</td>
-                                        <td>Rp 360.000.000</td>
-                                        <td><span class="badge bg-success-subtle text-success">Disetujui</span></td>
-                                        <td>05 Nov 2025</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    @endif
+
+    {{-- ── Year Filter + Loading Skeleton ─────────────────────── --}}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0 fw-semibold">Budget Overview</h5>
+        <div class="d-flex align-items-center gap-2">
+            <label for="dashboard-year-filter" class="text-muted mb-0 me-1"><i class="bi bi-calendar3"></i></label>
+            <select id="dashboard-year-filter" class="form-select form-select-sm" style="width:110px;">
+                @for($y = now()->year; $y >= now()->year - 4; $y--)
+                <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+            </select>
+        </div>
+    </div>
+
+    {{-- ── Row 1: 4 KPI Cards ──────────────────────────────────── --}}
+    <div class="row g-3 mb-4" id="kpi-cards-row">
+
+        {{-- Budget Total --}}
+        <div class="col-xxl-3 col-xl-6 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="h-70px w-70px bg-primary bg-opacity-10 position-absolute top-0 end-0 blur-md rounded-circle" style="transform:translate(20px,-20px);"></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="text-muted mb-1 fs-13">Budget Total</p>
+                            <h4 class="mb-0 fw-bold" id="stat-total-budget">
+                                <span class="placeholder col-8 rounded"></span>
+                            </h4>
+                        </div>
+                        <div class="h-50px w-50px d-flex justify-content-center align-items-center bg-primary text-white fs-4 rounded-pill flex-shrink-0">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted fs-13 mb-0">Seluruh divisi &bull; tahun berjalan</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Budget Realisasi --}}
+        <div class="col-xxl-3 col-xl-6 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="h-70px w-70px bg-warning bg-opacity-10 position-absolute top-0 end-0 blur-md rounded-circle" style="transform:translate(20px,-20px);"></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="text-muted mb-1 fs-13">Budget Realisasi</p>
+                            <h4 class="mb-0 fw-bold" id="stat-total-realization">
+                                <span class="placeholder col-8 rounded"></span>
+                            </h4>
+                        </div>
+                        <div class="h-50px w-50px d-flex justify-content-center align-items-center bg-warning text-white fs-4 rounded-pill flex-shrink-0">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted fs-13 mb-0">Total pencairan & LPJ reimburse</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Budget Balance --}}
+        <div class="col-xxl-3 col-xl-6 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="h-70px w-70px bg-success bg-opacity-10 position-absolute top-0 end-0 blur-md rounded-circle" style="transform:translate(20px,-20px);"></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="text-muted mb-1 fs-13">Budget Balance</p>
+                            <h4 class="mb-0 fw-bold" id="stat-balance">
+                                <span class="placeholder col-8 rounded"></span>
+                            </h4>
+                        </div>
+                        <div class="h-50px w-50px d-flex justify-content-center align-items-center bg-success text-white fs-4 rounded-pill flex-shrink-0">
+                            <i class="bi bi-piggy-bank"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted fs-13 mb-0">Total &minus; Realisasi</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- KPI Achievement --}}
+        <div class="col-xxl-3 col-xl-6 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="h-70px w-70px bg-info bg-opacity-10 position-absolute top-0 end-0 blur-md rounded-circle" style="transform:translate(20px,-20px);"></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="text-muted mb-1 fs-13">KPI Achievement</p>
+                            <h4 class="mb-0 fw-bold" id="stat-kpi">
+                                <span class="placeholder col-4 rounded"></span>
+                            </h4>
+                        </div>
+                        <div class="h-50px w-50px d-flex justify-content-center align-items-center bg-info text-white fs-4 rounded-pill flex-shrink-0">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted fs-13 mb-0">Pencapaian KPI organisasi</p>
+                </div>
+            </div>
+        </div>
+
+    </div>{{-- /.row kpi cards --}}
+
+    {{-- ── Row 2: Chart (Budget vs Realisasi) + Total Activities ── --}}
+    <div class="row g-3 mb-4">
+
+        {{-- Budget vs Realisasi Chart --}}
+        <div class="col-xl-8 col-xxl-9">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3">
+                    <h6 class="mb-0 fw-semibold">Budget vs Realisasi</h6>
+                    <span class="badge bg-light text-muted" id="chart-year-badge">{{ now()->year }}</span>
+                </div>
+                <div class="card-body pt-0">
+                    <div id="budget-vs-realization-chart" style="min-height:280px;"></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Total Activities --}}
+        <div class="col-xl-4 col-xxl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <h6 class="fw-semibold mb-3">Total Activities</h6>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="h-55px w-55px d-flex justify-content-center align-items-center bg-warning-subtle text-warning rounded-circle fs-3">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold" id="stat-pending-activities">
+                                    <span class="placeholder col-5 rounded"></span>
+                                </h3>
+                                <p class="text-muted mb-0 fs-13">Transaksi menunggu approval</p>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-3 bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark fs-13 px-3 py-2">Pending</span>
+                                <span class="text-muted fs-13">Perlu tindakan atasan</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <p class="text-muted fs-12 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Berdasarkan transaksi dengan status <code>pending</code> approval.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>{{-- /.row chart + activities --}}
+
+    {{-- ── Row 3: Division Budget Realization Table ────────────── --}}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3">
+                    <h6 class="mb-0 fw-semibold">Division Budget Realization</h6>
+                    <span class="text-muted fs-13" id="division-table-year">Tahun {{ now()->year }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="division-realization-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" style="width:40px;">#</th>
+                                    <th>Divisi</th>
+                                    <th class="text-end">Budget</th>
+                                    <th class="text-end">Realisasi</th>
+                                    <th style="min-width:180px;">Persentase (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="division-realization-tbody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="d-flex justify-content-center align-items-center gap-2 text-muted">
+                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                            <span>Memuat data...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot id="division-realization-tfoot" class="d-none">
+                                <tr class="table-secondary fw-semibold">
+                                    <td class="ps-4" colspan="2">TOTAL</td>
+                                    <td class="text-end" id="tfoot-budget">—</td>
+                                    <td class="text-end" id="tfoot-realization">—</td>
+                                    <td id="tfoot-pct">—</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>{{-- /.row division table --}}
+
+</div>{{-- /#layout-wrapper --}}
 
 @endsection
 
 @section('js')
-    <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const yearSelect = document.getElementById('form-select-01');
-            const titleEl = document.getElementById('companyPolicyTitle');
+<script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+<script>
+    (function() {
+        'use strict';
 
-            function updateTitle() {
-                const year = yearSelect.value || '{{ date('Y') }}';
-                titleEl.textContent = `Company Policy ${year} (Strategic Goals)`;
-            }
+        // ── Config ────────────────────────────────────────────────────────────
+        const URLS = {
+            stats: "{{ route('dash.executive.stats') }}",
+            division: "{{ route('dash.executive.division.realization') }}",
+            monthly: "{{ route('dash.executive.monthly.chart') }}",
+        };
 
-            // initial load
-            updateTitle();
-
-            // when year changes
-            yearSelect.addEventListener('change', updateTitle);
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const yearSelect = document.getElementById('form-select-01');
-            const titleEl = document.getElementById('companyPolicyTitle');
-            const rowEl = document.getElementById('strategicGoalsRow');
-
-            const ajaxUrl = "{{ route('dash.executive.policies') }}";
-
-            function updateTitle() {
-                const year = yearSelect.value || "{{ date('Y') }}";
-                titleEl.textContent = `Company Policy ${year} (Strategic Goals)`;
-            }
-
-            async function loadPoliciesByYear(year) {
-                if (!year) return;
-
-                rowEl.innerHTML = `<td class="text-muted py-4">Loading...</td>`;
-
-                try {
-                    const res = await fetch(`${ajaxUrl}?year=${encodeURIComponent(year)}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    const json = await res.json();
-
-                    if (!res.ok || json.status !== 'success') {
-                        rowEl.innerHTML = `<td class="text-danger py-4">Failed to load data.</td>`;
-                        return;
-                    }
-
-                    rowEl.innerHTML = json.html;
-
-                } catch (e) {
-                    rowEl.innerHTML = `<td class="text-danger py-4">Error loading data.</td>`;
-                }
-            }
-
-            // init title + load initial
-            updateTitle();
-            loadPoliciesByYear(yearSelect.value || "{{ date('Y') }}");
-
-            yearSelect.addEventListener('change', function() {
-                updateTitle();
-                loadPoliciesByYear(this.value);
-            });
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const yearSelect = document.getElementById('form-select-01');
-            const budgetEl = document.getElementById('budgetTotalValue');
-
-            const ajaxUrl = "{{ route('budget.summary.year') }}";
-
-            function formatRupiahCompact(number) {
-                const n = Number(number || 0);
-
-                // contoh hasil: Rp 125,8 M / Rp 2,3 T / Rp 950,2 Jt
-                const abs = Math.abs(n);
-                let value = n;
-                let suffix = '';
-
-                if (abs >= 1_000_000_000_000) {
-                    value = n / 1_000_000_000_000;
-                    suffix = ' T';
-                } else if (abs >= 1_000_000_000) {
-                    value = n / 1_000_000_000;
-                    suffix = ' M';
-                } else if (abs >= 1_000_000) {
-                    value = n / 1_000_000;
-                    suffix = ' Jt';
-                } else if (abs >= 1_000) {
-                    value = n / 1_000;
-                    suffix = ' Rb';
-                }
-
-                // pakai format Indonesia (koma desimal)
-                return 'Rp ' + value.toLocaleString('id-ID', {
-                    maximumFractionDigits: 1
-                }) + suffix;
-            }
-
-            async function loadBudgetTotal(year) {
-                if (!year) {
-                    budgetEl.textContent = 'Rp -';
-                    return;
-                }
-
-                budgetEl.textContent = 'Loading...';
-
-                try {
-                    const res = await fetch(`${ajaxUrl}?year=${encodeURIComponent(year)}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    const json = await res.json();
-
-                    if (!res.ok || json.status !== 'success') {
-                        budgetEl.textContent = 'Rp -';
-                        return;
-                    }
-
-                    budgetEl.textContent = formatRupiahCompact(json.total_sum);
-                } catch (err) {
-                    budgetEl.textContent = 'Rp -';
-                }
-            }
-
-            // initial load
-            loadBudgetTotal(yearSelect.value);
-
-            // on change year
-            yearSelect.addEventListener('change', function() {
-                loadBudgetTotal(this.value);
-            });
-        });
-    </script>
-
-
-    <script>
-        // === Realisasi Anggaran per Divisi ===
-        var optionsRealisasi = {
-            series: [{
-                name: 'Realisasi',
-                data: [92, 85, 80, 78, 73]
-            }],
-            chart: {
-                type: 'bar',
-                height: 300
-            },
-            colors: ['#0d6efd'],
-            plotOptions: {
-                bar: {
-                    borderRadius: 6,
-                    horizontal: true
-                }
-            },
-            xaxis: {
-                categories: ['Operasional', 'Keuangan', 'Asset Mgmt', 'Bisnis', 'HR & GA']
+        let budgetChart = null;
+        let currentYear = {
+            {
+                now() - > year
             }
         };
-        new ApexCharts(document.querySelector("#chart_realisasi_divisi"), optionsRealisasi).render();
 
-        // === Top 5 Divisi ===
-        var optionsTop5 = {
-            series: [{
-                name: 'Realisasi (%)',
-                data: [98, 95, 90, 88, 86]
-            }],
-            chart: {
-                type: 'bar',
-                height: 280
-            },
-            colors: ['#198754'],
-            plotOptions: {
-                bar: {
-                    borderRadius: 5,
-                    horizontal: false,
-                    columnWidth: '45%'
-                }
-            },
-            xaxis: {
-                categories: ['Operasional', 'Keuangan', 'Asset Mgmt', 'Bisnis', 'HR & GA']
-            },
-            dataLabels: {
-                enabled: true
-            },
-        };
-        new ApexCharts(document.querySelector("#chart_top5_divisi"), optionsTop5).render();
-    </script>
-    <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+        // ── Helpers ───────────────────────────────────────────────────────────
+        function formatRupiah(value) {
+            if (value === null || value === undefined) return '—';
+            const num = parseFloat(value);
+            if (isNaN(num)) return '—';
+            return 'Rp ' + num.toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            var budget_realization_chart = {
-                series: [{
-                    name: 'Anggaran',
-                    data: [1250, 980, 1500, 1750, 900, 1100] // contoh nilai dalam juta
-                }, {
-                    name: 'Realisasi',
-                    data: [1180, 870, 1400, 1600, 880, 950] // contoh nilai dalam juta
-                }],
+        function formatPct(value) {
+            if (value === null || value === undefined) return '0%';
+            return parseFloat(value).toFixed(1) + '%';
+        }
+
+        function pctBadgeClass(pct) {
+            if (pct >= 90) return 'bg-danger';
+            if (pct >= 70) return 'bg-warning';
+            if (pct >= 40) return 'bg-info';
+            return 'bg-success';
+        }
+
+        // ── KPI Cards ─────────────────────────────────────────────────────────
+        function loadStats(year) {
+            ['stat-total-budget', 'stat-total-realization', 'stat-balance', 'stat-kpi', 'stat-pending-activities'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<span class="placeholder col-8 rounded"></span>';
+            });
+
+            $.get(URLS.stats, {
+                year
+            }, function(res) {
+                if (!res.success) return;
+                const d = res.data;
+
+                document.getElementById('stat-total-budget').textContent = formatRupiah(d.total_budget);
+                document.getElementById('stat-total-realization').textContent = formatRupiah(d.total_realization);
+                document.getElementById('stat-balance').textContent = formatRupiah(d.balance);
+                document.getElementById('stat-kpi').textContent = formatPct(d.kpi_achievement);
+                document.getElementById('stat-pending-activities').textContent = d.pending_activities;
+            });
+        }
+
+        // ── Monthly Chart ─────────────────────────────────────────────────────
+        function initChart(labels, budgetSeries, realizationSeries) {
+            const opts = {
                 chart: {
                     type: 'bar',
-                    height: 380,
+                    height: 280,
                     toolbar: {
                         show: false
-                    }
+                    },
+                    fontFamily: 'inherit',
+                },
+                series: [{
+                        name: 'Budget',
+                        type: 'bar',
+                        data: budgetSeries
+                    },
+                    {
+                        name: 'Realisasi',
+                        type: 'line',
+                        data: realizationSeries
+                    },
+                ],
+                colors: ['#5b73e8', '#f5b225'],
+                stroke: {
+                    width: [0, 3],
+                    curve: 'smooth'
                 },
                 plotOptions: {
                     bar: {
-                        horizontal: false,
-                        columnWidth: '45%',
-                        borderRadius: 6,
-                        endingShape: 'rounded'
-                    }
+                        borderRadius: 4,
+                        columnWidth: '50%'
+                    },
                 },
                 dataLabels: {
                     enabled: false
                 },
-                stroke: {
-                    show: true,
-                    width: 3,
-                    colors: ['transparent']
-                },
-                colors: ["#2CBCAD", "#4E73DF"], // Warna: hijau kebiruan & biru MUJ
                 xaxis: {
-                    categories: ['PLANT', 'PRODUCTION', 'MARKETING', 'FINANCE', 'HR', 'GA & PROCUREMENT'],
+                    categories: labels,
                     labels: {
                         style: {
-                            colors: '#6c757d',
-                            fontSize: '13px',
-                            fontWeight: 500
+                            fontSize: '12px'
                         }
                     }
                 },
                 yaxis: {
                     labels: {
-                        formatter: function(val) {
-                            return 'Rp ' + val + ' jt';
-                        },
+                        formatter: v => 'Rp ' + (v / 1e6).toFixed(1) + 'M',
                         style: {
-                            colors: '#6c757d'
-                        }
-                    }
-                },
-                grid: {
-                    borderColor: '#f1f1f1',
-                    strokeDashArray: 4
+                            fontSize: '11px'
+                        },
+                    },
                 },
                 tooltip: {
-                    theme: "dark",
                     y: {
-                        formatter: function(val) {
-                            return "Rp " + val + " juta";
-                        }
-                    }
+                        formatter: v => formatRupiah(v)
+                    },
                 },
                 legend: {
                     position: 'top',
-                    horizontalAlign: 'center',
+                    horizontalAlign: 'right',
                     fontSize: '13px',
-                    labels: {
-                        colors: '#333'
-                    },
-                    markers: {
-                        radius: 6
-                    }
                 },
-                fill: {
-                    opacity: 1,
-                    type: 'solid'
-                }
+                grid: {
+                    borderColor: '#e9ecef',
+                    strokeDashArray: 4
+                },
             };
 
-            // Render chart ke elemen dengan id basic_column_chart
-            var chart = new ApexCharts(document.querySelector("#basic_column_chart"), budget_realization_chart);
-            chart.render();
-        });
-    </script>
+            if (budgetChart) {
+                budgetChart.updateOptions({
+                    xaxis: {
+                        categories: labels
+                    }
+                });
+                budgetChart.updateSeries([{
+                        name: 'Budget',
+                        data: budgetSeries
+                    },
+                    {
+                        name: 'Realisasi',
+                        data: realizationSeries
+                    },
+                ]);
+            } else {
+                budgetChart = new ApexCharts(document.getElementById('budget-vs-realization-chart'), opts);
+                budgetChart.render();
+            }
+        }
 
+        function loadMonthlyChart(year) {
+            $.get(URLS.monthly, {
+                year
+            }, function(res) {
+                if (!res.success) return;
+                const d = res.data;
+                initChart(d.labels, d.budget, d.realization);
+            });
+        }
+
+        // ── Division Table ────────────────────────────────────────────────────
+        function loadDivisionTable(year) {
+            const tbody = document.getElementById('division-realization-tbody');
+            const tfoot = document.getElementById('division-realization-tfoot');
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <div class="d-flex justify-content-center align-items-center gap-2 text-muted">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>Memuat data...</span>
+                    </div>
+                </td>
+            </tr>`;
+            tfoot.classList.add('d-none');
+
+            $.get(URLS.division, {
+                year
+            }, function(res) {
+                if (!res.success) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Gagal memuat data.</td></tr>';
+                    return;
+                }
+
+                const rows = res.data;
+
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data untuk tahun ini.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                let totalBudget = 0;
+                let totalReal = 0;
+
+                rows.forEach((row, idx) => {
+                    const pct = parseFloat(row.percentage);
+                    const barCls = pctBadgeClass(pct);
+                    totalBudget += parseFloat(row.budget);
+                    totalReal += parseFloat(row.realization);
+
+                    html += `
+                <tr>
+                    <td class="ps-4 text-muted">${idx + 1}</td>
+                    <td class="fw-medium">${row.division_name}</td>
+                    <td class="text-end">${formatRupiah(row.budget)}</td>
+                    <td class="text-end">${formatRupiah(row.realization)}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height:8px;">
+                                <div class="progress-bar ${barCls}" style="width:${Math.min(pct,100)}%;"></div>
+                            </div>
+                            <span class="text-muted fs-13 text-end" style="min-width:46px;">${formatPct(pct)}</span>
+                        </div>
+                    </td>
+                </tr>`;
+                });
+
+                tbody.innerHTML = html;
+
+                // Footer totals
+                const grandPct = totalBudget > 0 ? ((totalReal / totalBudget) * 100) : 0;
+                document.getElementById('tfoot-budget').textContent = formatRupiah(totalBudget);
+                document.getElementById('tfoot-realization').textContent = formatRupiah(totalReal);
+                document.getElementById('tfoot-pct').innerHTML = `
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:8px;">
+                        <div class="progress-bar ${pctBadgeClass(grandPct)}" style="width:${Math.min(grandPct,100)}%;"></div>
+                    </div>
+                    <span class="text-muted fs-13" style="min-width:46px;">${formatPct(grandPct)}</span>
+                </div>`;
+                tfoot.classList.remove('d-none');
+            });
+        }
+
+        // ── Bootstrap All ─────────────────────────────────────────────────────
+        function loadAll(year) {
+            document.getElementById('chart-year-badge').textContent = year;
+            document.getElementById('division-table-year').textContent = 'Tahun ' + year;
+            loadStats(year);
+            loadMonthlyChart(year);
+            loadDivisionTable(year);
+        }
+
+        $(document).ready(function() {
+            loadAll(currentYear);
+
+            $('#dashboard-year-filter').on('change', function() {
+                currentYear = parseInt($(this).val());
+                loadAll(currentYear);
+            });
+        });
+
+    })();
+</script>
 @endsection

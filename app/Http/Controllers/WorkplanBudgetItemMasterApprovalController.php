@@ -98,6 +98,56 @@ class WorkplanBudgetItemMasterApprovalController extends Controller
     }
 
     /**
+     * Bulk process approval requests (approve/reject).
+     */
+    public function bulkProcess(Request $request)
+    {
+        try {
+            $request->validate([
+                'detail_ids' => 'required|array',
+                'detail_ids.*' => 'exists:approval_request_details,id',
+                'action' => 'required|in:approve,reject',
+                'comments' => 'nullable|string|max:1000',
+            ]);
+
+            $employee = Auth::user();
+            $employmentId = $employee?->employment?->id;
+
+            if (!$employmentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data employment Anda tidak ditemukan.',
+                ]);
+            }
+
+            $action = $request->input('action');
+            $comments = $request->input('comments');
+
+            if ($action === 'reject' && empty($comments)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Alasan penolakan wajib diisi untuk bulk reject.',
+                ]);
+            }
+
+            $result = $this->approvalService->bulkProcessApproval(
+                $request->input('detail_ids'),
+                $action,
+                $employmentId,
+                $comments
+            );
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('WBI bulkProcess error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses bulk approval: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get approval status for an item.
      */
     public function getApprovalStatus(Request $request, $id)

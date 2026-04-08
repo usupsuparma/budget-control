@@ -1299,6 +1299,8 @@ Route::middleware('auth')->group(function () {
                 ->name('wbi.approval.status');
             Route::get('/pending', [WorkplanBudgetItemMasterApprovalController::class, 'myPendingApprovals'])
                 ->name('wbi.approval.pending');
+            Route::post('/bulk-process', [WorkplanBudgetItemMasterApprovalController::class, 'bulkProcess'])
+                ->name('wbi.approval.bulkProcess');
             Route::post('/{id}/cancel', [WorkplanBudgetItemMasterApprovalController::class, 'cancel'])
                 ->name('wbi.approval.cancel');
         });

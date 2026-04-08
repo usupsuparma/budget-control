@@ -532,9 +532,62 @@ class WorkplanBudgetItemApprovalService
     }
 
     /**
+     * Process multiple approval actions (approve/reject).
+     */
+    public function bulkProcessApproval(array $detailIds, string $action, int $approverId, ?string $comments = null): array
+    {
+        try {
+            DB::beginTransaction();
+            $results = [];
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($detailIds as $detailId) {
+                $result = $this->processApproval((int) $detailId, $action, $approverId, $comments);
+
+                if ($result['success']) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+
+                $results[] = [
+                    'detail_id' => $detailId,
+                    'success' => $result['success'],
+                    'message' => $result['message'],
+                ];
+            }
+
+            DB::commit();
+
+            return [
+                'success' => $successCount > 0,
+                'message' => "Proses bulk $action selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'data' => [
+                    'results' => $results,
+                    'success_count' => $successCount,
+                    'fail_count' => $failCount,
+                ],
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk process approval failed: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Gagal memproses bulk approval: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Process an approval action (approve/reject).
      *
+     * @param  int  $requestDetailId
      * @param  string  $action  ('approve' or 'reject')
+     * @param  int  $approverId
+     * @param  string|null  $comments
+     * @return array
      */
     public function processApproval(int $requestDetailId, string $action, int $approverId, ?string $comments = null): array
     {

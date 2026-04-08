@@ -644,15 +644,25 @@
                     <!-- TAB 3: Approval -->
                     <div class="tab-pane fade" id="approvalTab">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-check-double me-2"></i>Pending Approvals
                                     <span class="badge bg-danger ms-2" id="approvalCountHeader">0</span>
                                 </h5>
-                                <button type="button" class="btn btn-outline-primary btn-sm"
-                                    onclick="loadPendingApprovalItems()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <div id="bulkApprovalActions" style="display: none;">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="handleBulkApprove()">
+                                            <i class="bi bi-check-all me-1"></i>Bulk Approve (<span id="selectedApprovalCount">0</span>)
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="openBulkApprovalRejectModal()">
+                                            <i class="bi bi-x-all me-1"></i>Bulk Reject
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                        onclick="loadPendingApprovalItems()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div id="pendingApprovalContainer">
@@ -1857,6 +1867,9 @@
             </div>
         `);
 
+            // Reset checkboxes and bulk actions
+            $('#bulkApprovalActions').hide();
+
             $.ajax({
                 url: '/workplan-budget-item-approval/pending',
                 method: 'GET',
@@ -1912,6 +1925,9 @@
                 <table class="table table-bordered table-hover align-middle" id="approvalItemsTable">
                     <thead class="table-light">
                         <tr>
+                            <th class="text-center" style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAllApproval">
+                            </th>
                             <th class="text-center" style="width:50px;">#</th>
                             <th>Ref Number</th>
                             <th>Description</th>
@@ -1921,9 +1937,9 @@
                             <th class="text-end">Unit Price</th>
                             <th class="text-center">Total Qty</th>
                             <th class="text-end">Total Budget</th>
-                            <th class="text-center">Approval Level</th>
+                            <th class="text-center">Level</th>
                             <th>Requested At</th>
-                            <th class="text-center" style="width:160px;">Action</th>
+                            <th class="text-center" style="width:130px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1943,6 +1959,9 @@
 
                 html += `
                 <tr>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input approval-checkbox" value="${approval.detail_id}">
+                    </td>
                     <td class="text-center">${index + 1}</td>
                     <td>
                         <span class="fw-semibold text-primary" style="font-size:12px;">${approval.reference_number || '-'}</span>
@@ -1964,7 +1983,7 @@
                     <td class="text-center" style="font-size:12px;">${item.total_qty || 0}</td>
                     <td class="text-end fw-bold" style="font-size:12px;">${formatApprovalCurrency(item.total_budget || 0)}</td>
                     <td class="text-center">
-                        <span class="badge bg-info">Level ${approval.level} / ${approval.total_levels}</span>
+                        <span class="badge bg-info">${approval.level} / ${approval.total_levels}</span>
                     </td>
                     <td style="font-size:12px;">
                         <div>${formatApprovalDate(approval.requested_at)}</div>
@@ -1994,6 +2013,130 @@
         `;
 
             $('#pendingApprovalContainer').html(html);
+
+            // Initialize checkbox listeners for approval tab
+            initApprovalCheckboxListeners();
+        }
+
+        /**
+         * Initialize checkbox listeners for approval tab
+         */
+        function initApprovalCheckboxListeners() {
+            $('#selectAllApproval').on('change', function() {
+                $('.approval-checkbox').prop('checked', $(this).is(':checked'));
+                updateBulkApprovalActionsVisibility();
+            });
+
+            $('.approval-checkbox').on('change', function() {
+                const total = $('.approval-checkbox').length;
+                const checked = $('.approval-checkbox:checked').length;
+                $('#selectAllApproval').prop('checked', total === checked);
+                updateBulkApprovalActionsVisibility();
+            });
+        }
+
+        /**
+         * Update bulk actions visibility for approval tab
+         */
+        function updateBulkApprovalActionsVisibility() {
+            const checkedCount = $('.approval-checkbox:checked').length;
+            if (checkedCount > 0) {
+                $('#selectedApprovalCount').text(checkedCount);
+                $('#bulkApprovalActions').fadeIn();
+            } else {
+                $('#bulkApprovalActions').fadeOut();
+            }
+        }
+
+        /**
+         * Handle Bulk Approve
+         */
+        function handleBulkApprove() {
+            const detailIds = [];
+            $('.approval-checkbox:checked').each(function() {
+                detailIds.push($(this).val());
+            });
+
+            Swal.fire({
+                title: 'Confirm Bulk Approval',
+                text: `Are you sure you want to approve all ${detailIds.length} selected items?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Yes, Approve All',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processBulkApproval(detailIds, 'approve');
+                }
+            });
+        }
+
+        /**
+         * Open Bulk Approval Reject Modal
+         */
+        function openBulkApprovalRejectModal() {
+            const count = $('.approval-checkbox:checked').length;
+            $('#bulkRejectCount').text(count); // Reuse existing modal fields if suitable, or use standard Swal
+            
+            Swal.fire({
+                title: 'Bulk Reject Reason',
+                input: 'textarea',
+                inputLabel: 'Please provide a reason for rejecting the selected items',
+                inputPlaceholder: 'Enter reason here...',
+                inputAttributes: {
+                    'aria-label': 'Enter reason here'
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Reject Selected',
+                preConfirm: (value) => {
+                    if (!value) {
+                        Swal.showValidationMessage('Rejection reason is required');
+                    }
+                    return value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const detailIds = [];
+                    $('.approval-checkbox:checked').each(function() {
+                        detailIds.push($(this).val());
+                    });
+                    processBulkApproval(detailIds, 'reject', result.value);
+                }
+            });
+        }
+
+        /**
+         * Process Bulk Approval/Reject via AJAX
+         */
+        function processBulkApproval(detailIds, action, comments = null) {
+            showLoading();
+            $.ajax({
+                url: '/workplan-budget-item-approval/bulk-process',
+                method: 'POST',
+                data: {
+                    _token: CSRF_TOKEN,
+                    detail_ids: detailIds,
+                    action: action,
+                    comments: comments
+                },
+                success: function(response) {
+                    hideLoading();
+                    if (response.success) {
+                        Swal.fire('Success!', response.message, 'success');
+                        loadPendingApprovalItems();
+                        // Also refresh badge count
+                        loadApprovalBadgeCount();
+                    } else {
+                        showToast(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    hideLoading();
+                    showToast(xhr.responseJSON?.message || 'Bulk process failed', 'error');
+                }
+            });
         }
 
         /**

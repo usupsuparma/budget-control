@@ -544,6 +544,189 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     }
 
     /**
+     * Bulk verify budget items
+     */
+    public function bulkVerify(array $itemIds, array $fixPrices = [], ?string $notes = null): array
+    {
+        try {
+            DB::beginTransaction();
+            $results = [];
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($itemIds as $itemId) {
+                // Determine fix price for this item
+                // If fixPrices is a simple value (not array), use it for all
+                // If fixPrices is an array, check if it has the itemId as key
+                $fixPrice = 0;
+                if (!is_array($fixPrices)) {
+                    $fixPrice = (float) $fixPrices;
+                } elseif (isset($fixPrices[$itemId])) {
+                    $fixPrice = (float) $fixPrices[$itemId];
+                } else {
+                    // Fallback: try to find the item to see its current price estimation
+                    $item = WorkplanBudgetItem::find($itemId);
+                    $fixPrice = (float) ($item->price_estimation ?? 0);
+                }
+
+                if ($fixPrice <= 0) {
+                    $results[] = [
+                        'item_id' => $itemId,
+                        'success' => false,
+                        'message' => 'Harga verifikasi tidak valid (harus > 0).',
+                    ];
+                    $failCount++;
+                    continue;
+                }
+
+                $verifyResult = $this->verifyBudget($itemId, $fixPrice, $notes);
+                
+                if ($verifyResult['success']) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+
+                $results[] = [
+                    'item_id' => $itemId,
+                    'success' => $verifyResult['success'],
+                    'message' => $verifyResult['message'],
+                ];
+            }
+
+            DB::commit();
+
+            return [
+                'success' => $successCount > 0,
+                'message' => "Proses bulk verifikasi selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'data' => [
+                    'results' => $results,
+                    'success_count' => $successCount,
+                    'fail_count' => $failCount,
+                ],
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('VerificationBudgetService.bulkVerify', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal memproses bulk verifikasi: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Bulk reject verification
+     */
+    public function bulkReject(array $itemIds, string $notes): array
+    {
+        try {
+            DB::beginTransaction();
+            $results = [];
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($itemIds as $itemId) {
+                $rejectResult = $this->rejectVerification($itemId, $notes);
+                
+                if ($rejectResult['success']) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+
+                $results[] = [
+                    'item_id' => $itemId,
+                    'success' => $rejectResult['success'],
+                    'message' => $rejectResult['message'],
+                ];
+            }
+
+            DB::commit();
+
+            return [
+                'success' => $successCount > 0,
+                'message' => "Proses bulk reject selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'data' => [
+                    'results' => $results,
+                    'success_count' => $successCount,
+                    'fail_count' => $failCount,
+                ],
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('VerificationBudgetService.bulkReject', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal memproses bulk reject: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Process CSV import for bulk verification
+     */
+    public function processCsvImport($file): array
+    {
+        try {
+            $handle = fopen($file->getRealPath(), 'r');
+            $header = fgetcsv($handle, 1000, ','); // Assume comma separator
+            
+            // Expected columns: item_id, verified_price
+            $idIdx = array_search('item_id', $header);
+            $priceIdx = array_search('verified_price', $header);
+
+            if ($idIdx === false || $priceIdx === false) {
+                fclose($handle);
+                return [
+                    'success' => false,
+                    'message' => 'Format CSV salah. Pastikan kolom "item_id" dan "verified_price" tersedia.',
+                ];
+            }
+
+            $itemIds = [];
+            $fixPrices = [];
+            $count = 0;
+
+            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                $itemId = (int) $data[$idIdx];
+                $price = (float) str_replace(',', '', $data[$priceIdx]); // Handle possible thousand separators
+
+                if ($itemId > 0 && $price > 0) {
+                    $itemIds[] = $itemId;
+                    $fixPrices[$itemId] = $price;
+                    $count++;
+                }
+            }
+            fclose($handle);
+
+            if ($count === 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Tidak ada data valid yang ditemukan di file CSV.',
+                ];
+            }
+
+            return $this->bulkVerify($itemIds, $fixPrices, 'Verified via CSV Import');
+        } catch (Exception $e) {
+            Log::error('VerificationBudgetService.processCsvImport', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal memproses file CSV: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Check if current user can verify an item
      */
     public function canVerify(int $itemId): bool

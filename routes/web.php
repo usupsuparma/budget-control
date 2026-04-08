@@ -1329,6 +1329,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/{itemId}/reject', [VerificationBudgetController::class, 'reject'])
                 ->name('verification.budget.reject');
 
+            // Bulk verification actions
+            Route::post('/bulk-verify', [VerificationBudgetController::class, 'bulkVerify'])
+                ->name('verification.budget.bulkVerify');
+            Route::post('/bulk-reject', [VerificationBudgetController::class, 'bulkReject'])
+                ->name('verification.budget.bulkReject');
+            Route::post('/import-csv', [VerificationBudgetController::class, 'importCsv'])
+                ->name('verification.budget.importCsv');
+
             // Get verification status for an item
             Route::get('/{itemId}/status', [VerificationBudgetController::class, 'getStatus'])
                 ->name('verification.budget.status');

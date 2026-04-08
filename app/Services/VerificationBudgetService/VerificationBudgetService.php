@@ -56,6 +56,33 @@ interface VerificationBudgetService
     public function getVerifiersByCostCenter(string $costCenter): array;
 
     /**
+     * Bulk verify budget items
+     * 
+     * @param array $itemIds List of WorkplanBudgetItem IDs
+     * @param array $fixPrices Map of [item_id => fix_price]
+     * @param string|null $notes General verification notes
+     * @return array
+     */
+    public function bulkVerify(array $itemIds, array $fixPrices = [], ?string $notes = null): array;
+
+    /**
+     * Bulk reject verification
+     * 
+     * @param array $itemIds List of WorkplanBudgetItem IDs
+     * @param string $notes Rejection reason
+     * @return array
+     */
+    public function bulkReject(array $itemIds, string $notes): array;
+
+    /**
+     * Process CSV import for bulk verification
+     * 
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return array
+     */
+    public function processCsvImport($file): array;
+
+    /**
      * Check if current user can verify an item
      * 
      * @param int $itemId WorkplanBudgetItem ID

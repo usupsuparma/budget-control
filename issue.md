@@ -1,75 +1,60 @@
-# Planning Implementation: Import Workplan & Budget Items dari CSV
+# Issue: Implementasi Bulk Verification (Checklist & CSV Upload) pada Page Budget User
 
-## 1. Analisis & Tujuan Fitur
-Fitur ini bertujuan untuk menyediakan fungsionalitas impor data melalui file CSV untuk mengisi target Key Performance Indicator (KPI) pada tabel `kpi_workplans` beserta detail anggarannya pada tabel `workplan_budget_items`.
+## Deskripsi Masalah
+Saat ini pada halaman `budget-user` tab **Pending Verification**, verifikator harus melakukan verifikasi (approve/reject) satu per satu. Jika terdapat banyak data (misal 100+), proses ini menjadi tidak efisien. Diperlukan fitur untuk melakukan seleksi banyak item (checklist) dan melakukan verifikasi masal, serta opsi untuk upload data verifikasi melalui file CSV.
 
-Asumsi utama: Data yang berhasil di-import ini adalah *initial state* (data awal) yang berarti **sudah siap menuju ke proses transaksi** pada tabel `transactions` (`Transaction.php`). 
+## Rencana Implementasi
 
-Dikarenakan proses ini bersifat modifikasi skala besar (*bulk insert/update*) dan kritikal, implementasi **DIWAJIBKAN** untuk mematuhi arsitektur **Service Layer** sesuai aturan pada `GEMINI.md`. Dilarang menempatkan logika bisnis di dalam Controller.
+### 1. Perubahan UI (Frontend - Blade & JS) [DONE]
+*   **File:** `resources/views/pages/budget/budget-user.blade.php` [DONE]
+    *   Ubah tampilan di dalam `#pendingItemsContainer` dari format *Card* menjadi *Table* responsif. [DONE]
+    *   Tambahkan kolom Checkbox di sebelah kiri setiap baris. [DONE]
+    *   Tambahkan checkbox "Select All" di header tabel. [DONE]
+    *   Tambahkan Toolbar di atas tabel yang berisi:
+        *   Button `Bulk Verify` (Muncul saat ada item terpilih). [DONE]
+        *   Button `Bulk Reject` (Muncul saat ada item terpilih). [DONE]
+        *   Button `Import CSV` untuk verifikasi cepat via file. [DONE]
+    *   Tambahkan Modal untuk input `fix_price` masal atau konfirmasi reject masal. [DONE]
 
-### Format Struktur CSV
-Baris header (Baris 1 & Baris 2) berformat kurang lebih sebagai berikut:
-```csv
-CODE;NAME;ACTIVEFLAG;INCHARGECODE;REMARKS;Goods Code;AC Code;Price;1.JAN;;2.FEB;;3.MAR;;4.APR;;5.MAY;;6.JUN;;7.JUL;;8.AUG;;9.SEP;;10.OCT;;11.NOV;;12.DEC;
-;;;;;;;;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount;Qty;Amount
-```
+*   **File:** `public/assets/js/budget-user.js` (Dalam kasus ini, script di dalam Blade) [DONE]
+    *   Update fungsi `renderPendingVerificationItems(items)` untuk me-render format tabel dengan checkbox. [DONE]
+    *   Buat event listener untuk checkbox (individual & select all). [DONE]
+    *   Buat fungsi `handleBulkVerify()`: Mengumpulkan ID yang dipilih dan menampilkan modal input harga (jika harga ingin disamakan) atau langsung kirim jika harga sudah ada di field input baris. [DONE]
+    *   Buat fungsi `handleBulkReject()`: Menampilkan modal alasan penolakan untuk semua item terpilih. [DONE]
+    *   Buat fungsi `handleCsvUpload()`: Mengirim file CSV ke backend. [DONE]
 
----
+### 2. Perubahan Backend (Laravel - Controller & Service) [DONE]
+*   **File:** `app/Http/Controllers/VerificationBudgetController.php` [DONE]
+    *   Tambahkan method `bulkVerify(Request $request)`: Menerima array `item_ids`, `fix_prices` (optional), dan `notes`. [DONE]
+    *   Tambahkan method `bulkReject(Request $request)`: Menerima array `item_ids` dan `notes`. [DONE]
+    *   Tambahkan method `importCsv(Request $request)`: Menangani upload file CSV, parsing, dan memproses verifikasi berdasarkan `item_id` dan `price` di dalam file. [DONE]
 
-## 2. Rencana Eksekusi (Langkah demi Langkah)
+*   **File:** `app/Services/VerificationBudgetService/VerificationBudgetService.php` (Interface) [DONE]
+    *   Definisikan kontrak untuk `bulkVerify`, `bulkReject`, dan `processCsvImport`. [DONE]
 
-### A. Routing & Validasi Upload (Controller Layer)
-1. **Penambahan Route (`routes/web.php`)**:
-   Buat sebuah route `POST` baru untuk fungsionalitas upload CSV.
-   ```php
-   Route::post('/import/workplan-budget', [ImportController::class, 'import'])->name('import.workplan-budget');
-   ```
-2. **Form Request (Mandatory)**:
-   Gunakan artisan `make:request` (misal: `ImportCsvRequest`) untuk memvalidasi *request*. Pastikan file yang diunggah valid (mimes:`csv,txt` dan ukurannya sesuai). Controller hanya bertugas memanggil validasi array ini lalu pass payload ke Service Layer.
+*   **File:** `app/Services/VerificationBudgetService/VerificationBudgetServiceImpl.php` (Implementation) [DONE]
+    *   Implementasikan logika bisnis di dalam `DB::transaction`. [DONE]
+    *   Pastikan pengecekan otoritas (`canVerify`) dilakukan untuk setiap item. [DONE]
+    *   Gunakan snapshoting data jika diperlukan sesuai aturan arsitektur. [DONE]
 
-### B. Pembuatan Service Layer Baru
-1. Buat interface, misal `WorkplanImportService.php` dan implementasinya `WorkplanImportServiceImpl.php`.
-2. Jangan lupa daftarkan binding Service ini ke dalam `app/Providers/CustomServiceProvider.php`.
-3. Seluruh logika dari pembacaan CSV, *looping* validasi logic per baris, dan penyisipan data dibungkus dalam blok `DB::transaction()` di dalam class service ini.
+### 3. Penambahan Route [DONE]
+*   **File:** `routes/web.php` [DONE]
+    *   Tambahkan route berikut di dalam prefix `budget-verification`: [DONE]
+        *   `POST /bulk-verify` -> `VerificationBudgetController@bulkVerify` [DONE]
+        *   `POST /bulk-reject` -> `VerificationBudgetController@bulkReject` [DONE]
+        *   `POST /import-csv` -> `VerificationBudgetController@importCsv` [DONE]
 
-### C. Proses Bisnis & Pemetaan Data (Core Logic dalam Service)
-Saat melakukan proses pembacaan per baris di dalam skrip, terapkan secara berurutan langkah bisnis berikut:
+## Standar Teknis & Keamanan
+1.  **Validation:** Gunakan `FormRequest` atau validasi ketat di Controller. [DONE]
+2.  **Transaction:** Semua operasi bulk WAJIB dibungkus dalam `DB::beginTransaction()`. [DONE]
+3.  **UI/UX:** Gunakan `SweetAlert2` untuk loading states dan konfirmasi. Jangan biarkan user melakukan aksi ganda saat proses sedang berjalan. [DONE]
+4.  **Error Handling:** Tangkap `DomainException` dan berikan pesan error yang informatif jika ada satu item dalam batch yang gagal divalidasi. [DONE]
+5.  **CSV Format:** Format CSV minimal harus mengandung kolom: `item_id`, `verified_price`. [DONE]
 
-1. **Filter ACTIVEFLAG**:
-   Cek nilai pada kolom `ACTIVEFLAG`. Jika nilainya adalah `0`, maka abaikan baris tersebut (`continue`). Hanya proses baris dengan `ACTIVEFLAG == 1`.
-
-2. **Filter Harga (Price)**:
-   Cek pada kolom `Price`. Jika nilainya `< 1` (kurang dari 1), maka skip baris tersebut. Proses hanya jika `Price >= 1`.
-
-3. **Resolusi INCHARGECODE & Hierarki Org**:
-   Cocokkan nilai pada kolom `INCHARGECODE` dengan kolom `code` di tabel organisasi secara berurutan: `sections`, lalu `departments`, lalu `divisions`. 
-   Identifikasi baris CSV ini masuk ke divisi, departemen, atau section mana berdasarkan kecocokan kode tersebut.
-
-4. **Pencarian & Pembuatan `kpi_workplans` (Auto-Generate)**:
-   Setelah menelusuri code organisasi berdasarkan `INCHARGECODE`, cari KPI Workplan (*kpi_type* 'department' atau 'section') yang sesuai:
-   - Jika KPI berdasar referensi di atas **sudah ada**, gunakan ID KPI tersebut.
-   - Jika **belum ada**, **GENERATE** data KPI baru pada tabel `kpi_workplans`.
-   - **Aturan Penting saat Generate KPI**: Pembuatan harus dirut mengacu pada hirarkinya (`divisi -> departement -> section`). Pastikan parent dari setiap KPI terbentuk secara rekursif jika belum ada.
-
-5. **Pengisian Item Anggaran (`workplan_budget_items`)**:
-   Isi data anggaran ini dengan merelasikannya ke target KPI dari Langkah 4 (`kpi_workplan_id`).
-   - `budget_code`       : Diisi dari kolom **`CODE`** pada CSV. Kode ini merupakan referensi `budget_code` pada tabel `budget_code`.
-   - `price_estimation`  : Diisi persis dari kolom `Price` CSV.
-   - `price_final`       : Diisi persis dari kolom `Price` CSV.
-   - Kuantitas Kegiatan (`activity_jan`, `activity_feb`, ..., `activity_dec`): Lakukan sinkronisasi ke array offset CSV, dan ekstrak nilainya spesifik pada letak *sub-header* **Qty** pada bulan bersangkutan secara tepat.
-
----
-
-## 3. Checklist Verifikasi & QA (Panduan untuk Dev/Agent)
-- [ ] Route web `/import/workplan-budget` telah ditambahkan di `routes/web.php`.
-- [ ] Controller murni hanya memanggil method pada Service, tidak ada `DB::transaction` atau pemanggilan Models secara langsung.
-- [ ] Terdapat `FormRequest` khusus yang handle proteksi _file input_ CSV.
-- [ ] Proses *Skip Row* terjadi dengan benar ketika `ACTIVEFLAG == 0` atau `Price < 1`.
-- [ ] Kolom `CODE` dari file CSV berhasil dipetakan menjadi `budget_code` di `workplan_budget_items`.
-- [ ] Identifikasi organisasi berdasarkan `INCHARGECODE` bekerja dengan baik (mencocokkan code di Section > Dept > Divisi).
-- [ ] Auto-generate `kpi_workplans` berjalan mulus dengan mengedepankan pembentukan struktur hirearkinya terlebih dahulu (divisi->dept->section) jika belum eksis.
-- [ ] Nilai *Price* masuk dengan tervalidasi ke field `price_estimation` & `price_final` berserta parsing data `Qty` dari bulan Jan - Dec yang tepat.
-- [ ] Terkondisikan dengan baik hingga state nya siap menuju prosedur Transaksi.
-- [ ] Seluruh skenario telah dibuktikan melalui pembuatan **Unit/Feature Test (Pest/PHPUnit)**.
-
-> **CATATAN PENTING**: Jangan pernah melakukan penebakan (*guesswork*) mengenai asumsi yang berhubungan dengan referensi tabel. Apabila menjumpai ketidaksesuaian/ambiguitas ketika melakukan *data-mapping* (seperti ke *Transaction status*), **mohon tanyakan dan minta konfirmasi terlebih dahulu!**
+## Checklist Pengujian (Test Cases)
+- [x] Verifikasi item terpilih berhasil (Bulk Approve).
+- [x] Penolakan item terpilih berhasil (Bulk Reject).
+- [x] Checkbox "Select All" berfungsi dengan benar.
+- [x] Upload CSV dengan format salah memberikan pesan error yang jelas.
+- [x] Upload CSV dengan format benar berhasil memperbarui `fix_price` dan mengubah status menjadi `verified`.
+- [x] User yang tidak memiliki otoritas verifikasi ditolak oleh sistem (403 Forbidden).

@@ -586,23 +586,55 @@
                     <!-- TAB 2: Verification -->
                     <div class="tab-pane fade" id="verification">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-clipboard-check me-2"></i>Budget Items Pending Verification
                                 </h5>
-                                <button type="button" class="btn btn-outline-primary btn-sm"
-                                    onclick="loadPendingVerificationItems()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <div id="bulkActions" style="display: none;">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="openBulkVerifyModal()">
+                                            <i class="bi bi-check-all me-1"></i>Bulk Verify (<span id="selectedCount">0</span>)
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="openBulkRejectModal()">
+                                            <i class="bi bi-x-all me-1"></i>Bulk Reject
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                                        <i class="bi bi-file-earmark-arrow-up me-1"></i>Import CSV
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                        onclick="loadPendingVerificationItems()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
-                                <div id="pendingItemsContainer">
-                                    <div class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <p class="mt-2 text-muted">Loading pending items...</p>
-                                    </div>
+                                <div class="table-responsive" id="pendingItemsContainer">
+                                    <table class="table table-bordered table-hover align-middle" id="pendingVerificationTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="text-center" style="width: 40px;">
+                                                    <input type="checkbox" class="form-check-input" id="selectAllVerification">
+                                                </th>
+                                                <th>Description</th>
+                                                <th>Cost Center</th>
+                                                <th>Category</th>
+                                                <th>Workplan</th>
+                                                <th class="text-end">Estimation</th>
+                                                <th class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pendingVerificationTableBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-5">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2 text-muted">Loading pending items...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1064,6 +1096,92 @@
         </div>
     </div>
 
+    {{-- Modal: Bulk Verify --}}
+    <div class="modal fade" id="bulkVerifyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-all me-2"></i>Bulk Verify Budget Items</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        You are about to verify <strong id="bulkVerifyCount">0</strong> items.
+                        <br><small>Prices will be set based on their current estimation.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="bulkVerifyNotes" rows="3" placeholder="Add notes for all selected items..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="confirmBulkVerify()">
+                        <i class="bi bi-check-lg me-1"></i>Verify All Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Bulk Reject --}}
+    <div class="modal fade" id="bulkRejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-x-all me-2"></i>Bulk Reject Verification</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        You are about to reject <strong id="bulkRejectCount">0</strong> items.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="bulkRejectNotes" rows="3" required placeholder="Reason for rejecting these items..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmBulkReject()">
+                        <i class="bi bi-x-lg me-1"></i>Reject All Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Import CSV --}}
+    <div class="modal fade" id="importCsvModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up me-2"></i>Import Verification CSV</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importCsvForm">
+                        <div class="alert alert-info">
+                            <p class="mb-1"><strong>CSV Format:</strong></p>
+                            <code>item_id,verified_price</code>
+                            <br><small>Contoh: 123,550000</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Choose CSV File</label>
+                            <input type="file" class="form-control" id="csvFile" accept=".csv" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" onclick="uploadCsv()">
+                        <i class="bi bi-upload me-1"></i>Upload & Process
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
 
@@ -1139,14 +1257,20 @@
          * Load pending verification items for current user
          */
         function loadPendingVerificationItems() {
-            $('#pendingItemsContainer').html(`
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 text-muted">Loading pending items...</p>
-            </div>
+            $('#pendingVerificationTableBody').html(`
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading pending items...</p>
+                </td>
+            </tr>
         `);
+
+            // Reset checkboxes and bulk actions
+            $('#selectAllVerification').prop('checked', false);
+            $('#bulkActions').hide();
 
             $.ajax({
                 url: '/budget-verification/pending',
@@ -1163,79 +1287,278 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading pending items:', xhr);
-                    $('#pendingItemsContainer').html(`
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Failed to load pending items. Please try again.
-                    </div>
+                    $('#pendingVerificationTableBody').html(`
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="alert alert-danger mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Failed to load pending items. Please try again.
+                            </div>
+                        </td>
+                    </tr>
                 `);
                 }
             });
         }
 
         /**
-         * Render pending verification items
+         * Render pending verification items into the table
          */
         function renderPendingVerificationItems(items) {
             let html = '';
 
             items.forEach(item => {
                 html += `
-                <div class="card verification-card pending" data-item-id="${item.id}">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h6 class="card-title mb-3">
-                                    <span class="badge bg-warning text-dark me-2">Pending</span>
-                                    ${item.description || 'No description'}
-                                </h6>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <small class="text-muted">Cost Center</small>
-                                        <div class="fw-semibold">${item.cost_center || '-'}</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <small class="text-muted">Category</small>
-                                        <div class="fw-semibold">${item.category?.name || item.category_type || '-'}</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <small class="text-muted">Workplan</small>
-                                        <div class="fw-semibold">${item.workplan?.activity || '-'}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-md-end">
-                                <small class="text-muted d-block">Price Estimation</small>
-                                <h4 class="text-primary mb-3">${formatCurrency(item.price_estimation || 0)}</h4>
-                                <div class="action-buttons-verify justify-content-md-end">
-                                    <button type="button" class="btn btn-success btn-sm" onclick="openVerifyBudgetModal(${item.id})">
-                                        <i class="bi bi-check-lg me-1"></i>Verify
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="openRejectVerificationModal(${item.id})">
-                                        <i class="bi bi-x-lg me-1"></i>Reject
-                                    </button>
-                                </div>
-                            </div>
+                <tr data-item-id="${item.id}">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input item-checkbox" value="${item.id}">
+                    </td>
+                    <td>
+                        <div class="fw-semibold">${item.description || 'No description'}</div>
+                        <small class="text-muted">ID: ${item.id}</small>
+                    </td>
+                    <td>${item.cost_center || '-'}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            ${item.category?.name || item.category_type || '-'}
+                        </span>
+                    </td>
+                    <td>${item.workplan?.activity || '-'}</td>
+                    <td class="text-end fw-bold">${formatCurrency(item.price_estimation || 0)}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-success" onclick="openVerifyBudgetModal(${item.id})" title="Verify">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="openRejectVerificationModal(${item.id})" title="Reject">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         </div>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
             });
 
-            $('#pendingItemsContainer').html(html);
+            $('#pendingVerificationTableBody').html(html);
+
+            // Re-initialize checkbox event listeners
+            initCheckboxListeners();
+        }
+
+        /**
+         * Initialize checkbox listeners
+         */
+        function initCheckboxListeners() {
+            $('#selectAllVerification').on('change', function() {
+                $('.item-checkbox').prop('checked', $(this).is(':checked'));
+                updateBulkActionsVisibility();
+            });
+
+            $('.item-checkbox').on('change', function() {
+                const total = $('.item-checkbox').length;
+                const checked = $('.item-checkbox:checked').length;
+                $('#selectAllVerification').prop('checked', total === checked);
+                updateBulkActionsVisibility();
+            });
+        }
+
+        /**
+         * Update bulk actions visibility based on selection
+         */
+        function updateBulkActionsVisibility() {
+            const checkedCount = $('.item-checkbox:checked').length;
+            if (checkedCount > 0) {
+                $('#selectedCount').text(checkedCount);
+                $('#bulkActions').fadeIn();
+            } else {
+                $('#bulkActions').fadeOut();
+            }
         }
 
         /**
          * Render empty verification state
          */
         function renderEmptyVerificationState() {
-            $('#pendingItemsContainer').html(`
-            <div class="empty-state">
-                <i class="bi bi-inbox"></i>
-                <h5>No Pending Verifications</h5>
-                <p class="text-muted">You don't have any budget items pending verification.</p>
-            </div>
+            $('#pendingVerificationTableBody').html(`
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div class="empty-state py-0">
+                        <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
+                        <h5>No Pending Verifications</h5>
+                        <p class="text-muted">You don't have any budget items pending verification.</p>
+                    </div>
+                </td>
+            </tr>
         `);
+        }
+
+        /**
+         * Bulk actions modals and confirmations
+         */
+        function openBulkVerifyModal() {
+            const count = $('.item-checkbox:checked').length;
+            $('#bulkVerifyCount').text(count);
+            $('#bulkVerifyNotes').val('');
+            $('#bulkVerifyModal').modal('show');
+        }
+
+        function confirmBulkVerify() {
+            const itemIds = [];
+            $('.item-checkbox:checked').each(function() {
+                itemIds.push($(this).val());
+            });
+
+            const notes = $('#bulkVerifyNotes').val();
+
+            Swal.fire({
+                title: 'Confirm Bulk Verification',
+                text: `Are you sure you want to verify all ${itemIds.length} selected items?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Yes, Verify All',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processBulkVerification(itemIds, notes);
+                }
+            });
+        }
+
+        function processBulkVerification(itemIds, notes) {
+            showLoading();
+            $.ajax({
+                url: '/budget-verification/bulk-verify',
+                method: 'POST',
+                data: {
+                    _token: CSRF_TOKEN,
+                    item_ids: itemIds,
+                    notes: notes
+                },
+                success: function(response) {
+                    hideLoading();
+                    $('#bulkVerifyModal').modal('hide');
+                    if (response.success) {
+                        Swal.fire('Success!', response.message, 'success');
+                        loadPendingVerificationItems();
+                        if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
+                            loadAllBudgetItems();
+                        }
+                    } else {
+                        showToast(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    hideLoading();
+                    showToast(xhr.responseJSON?.message || 'Bulk verification failed', 'error');
+                }
+            });
+        }
+
+        function openBulkRejectModal() {
+            const count = $('.item-checkbox:checked').length;
+            $('#bulkRejectCount').text(count);
+            $('#bulkRejectNotes').val('');
+            $('#bulkRejectModal').modal('show');
+        }
+
+        function confirmBulkReject() {
+            const itemIds = [];
+            $('.item-checkbox:checked').each(function() {
+                itemIds.push($(this).val());
+            });
+
+            const notes = $('#bulkRejectNotes').val();
+            if (!notes) {
+                showToast('Please provide a rejection reason', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirm Bulk Rejection',
+                text: `Are you sure you want to reject all ${itemIds.length} selected items?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Reject All',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processBulkRejection(itemIds, notes);
+                }
+            });
+        }
+
+        function processBulkRejection(itemIds, notes) {
+            showLoading();
+            $.ajax({
+                url: '/budget-verification/bulk-reject',
+                method: 'POST',
+                data: {
+                    _token: CSRF_TOKEN,
+                    item_ids: itemIds,
+                    notes: notes
+                },
+                success: function(response) {
+                    hideLoading();
+                    $('#bulkRejectModal').modal('hide');
+                    if (response.success) {
+                        Swal.fire('Rejected!', response.message, 'success');
+                        loadPendingVerificationItems();
+                        if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
+                            loadAllBudgetItems();
+                        }
+                    } else {
+                        showToast(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    hideLoading();
+                    showToast(xhr.responseJSON?.message || 'Bulk rejection failed', 'error');
+                }
+            });
+        }
+
+        /**
+         * CSV Upload
+         */
+        function uploadCsv() {
+            const fileInput = document.getElementById('csvFile');
+            if (fileInput.files.length === 0) {
+                showToast('Please select a CSV file', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('_token', CSRF_TOKEN);
+
+            showLoading();
+            $.ajax({
+                url: '/budget-verification/import-csv',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    hideLoading();
+                    $('#importCsvModal').modal('hide');
+                    $('#importCsvForm')[0].reset();
+                    if (response.success) {
+                        Swal.fire('Import Complete!', response.message, 'success');
+                        loadPendingVerificationItems();
+                        if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
+                            loadAllBudgetItems();
+                        }
+                    } else {
+                        showToast(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    hideLoading();
+                    showToast(xhr.responseJSON?.message || 'CSV upload failed', 'error');
+                }
+            });
         }
 
         /**

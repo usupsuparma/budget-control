@@ -72,6 +72,81 @@ class VerificationBudgetController extends Controller
     }
 
     /**
+     * Bulk verify budget items
+     */
+    public function bulkVerify(Request $request)
+    {
+        try {
+            $request->validate([
+                'item_ids' => 'required|array',
+                'item_ids.*' => 'exists:workplan_budget_items,id',
+                'fix_prices' => 'nullable|array',
+                'notes' => 'nullable|string|max:1000',
+            ]);
+
+            $result = $this->verificationService->bulkVerify(
+                $request->input('item_ids'),
+                $request->input('fix_prices', []),
+                $request->input('notes')
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses bulk verifikasi: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk reject verification
+     */
+    public function bulkReject(Request $request)
+    {
+        try {
+            $request->validate([
+                'item_ids' => 'required|array',
+                'item_ids.*' => 'exists:workplan_budget_items,id',
+                'notes' => 'required|string|max:1000',
+            ]);
+
+            $result = $this->verificationService->bulkReject(
+                $request->input('item_ids'),
+                $request->input('notes')
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses bulk reject: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Import CSV for verification
+     */
+    public function importCsv(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
+            $result = $this->verificationService->processCsvImport($request->file('file'));
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses file CSV: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get items pending verification for current user
      */
     public function myPendingVerifications()

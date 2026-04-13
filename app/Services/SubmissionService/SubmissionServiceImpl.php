@@ -1169,7 +1169,7 @@ class SubmissionServiceImpl implements SubmissionService
                             ];
                         }
 
-                        // 3. Create Transaction using existing service logic with auto-approval
+                        // 3. Create Transaction using existing service logic with approval flow
                         $transactionData = [
                             'transaction_date' => $transData['transaction_date'],
                             'planned_usage_date' => $transData['planned_usage_date'],
@@ -1179,7 +1179,6 @@ class SubmissionServiceImpl implements SubmissionService
                             'purpose' => $transData['purpose'],
                             'urgency' => $transData['urgency'],
                             'items' => $preparedItems,
-                            'auto_approve' => true,
                         ];
 
                         $createResult = $this->createTransaction($transactionData);

@@ -1335,8 +1335,6 @@ function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
     }
 
     // ── Pre-fetch first page immediately so list is ready on first click ──
-    fetchBudgetCodes("", 1, true);
-
     // ── Bind scroll listener on the Choices inner list (once per instance) ─
     function bindScrollListener() {
         if (_bcScrollBound) return;
@@ -1359,15 +1357,34 @@ function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
         });
     }
 
-    // ── showDropdown: load first page when dropdown opens ─────────────────
-    const _showDropdownHandler = function () {
-        _bcPage = 1;
-        _bcHasMore = true;
-        fetchBudgetCodes(_bcQuery, 1, true);
+    // ── Trigger load on first open (click on choices container) ───────────
+    function _triggerLoad() {
+        if (!_bcLoading) {
+            _bcPage = 1;
+            _bcHasMore = true;
+            fetchBudgetCodes(_bcQuery, 1, true);
+        }
         bindScrollListener();
+    }
+
+    // Primary: Choices.js showDropdown custom event
+    const _showDropdownHandler = function () {
+        _triggerLoad();
     };
     select._showDropdownHandler = _showDropdownHandler;
     select.addEventListener("showDropdown", _showDropdownHandler);
+
+    // Fallback: click on the Choices outer container (fires reliably on first click)
+    setTimeout(function () {
+        const containerEl =
+            choices.containerOuter && choices.containerOuter.element;
+        if (!containerEl) return;
+        containerEl.addEventListener("click", function () {
+            if (choices.isOpen) {
+                _triggerLoad();
+            }
+        });
+    }, 0);
 
     // ── search event: user types — reset and load page 1 ─────────────────
     const _budgetCodeSearchHandler = function (e) {

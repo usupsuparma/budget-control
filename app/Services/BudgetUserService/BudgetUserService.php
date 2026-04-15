@@ -78,13 +78,14 @@ interface BudgetUserService
     public function searchBudgetCodes(string $query, int $limit = 50): array;
 
     /**
-     * Search stock codes by query string (server-side search, max 50 results).
+     * Search stock codes by query string (server-side search, paginated).
      *
      * @param  string  $query
      * @param  int     $limit
-     * @return array ['success' => bool, 'data' => mixed]
+     * @param  int     $page
+     * @return array ['success' => bool, 'data' => mixed, 'has_more' => bool, 'page' => int, 'total' => int]
      */
-    public function searchStockCodes(string $query, int $limit = 50): array;
+    public function searchStockCodes(string $query, int $limit = 10, int $page = 1): array;
 
     /**
      * Get a single budget code by its exact code value (for pre-population in edit forms).

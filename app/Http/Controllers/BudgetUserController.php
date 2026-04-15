@@ -239,21 +239,23 @@ class BudgetUserController extends Controller
     }
 
     /**
-     * Search stock codes by query (server-side search, max 50 results)
+     * Search stock codes by query (paginated, 10 per page)
      */
     public function searchStockCodes(Request $request)
     {
         try {
             $query  = $request->input('q', '');
-            $limit  = min((int) $request->input('limit', 50), 100);
-            $result = $this->budgetUserService->searchStockCodes($query, $limit);
+            $limit  = min((int) $request->input('limit', 10), 100);
+            $page   = max(1, (int) $request->input('page', 1));
+            $result = $this->budgetUserService->searchStockCodes($query, $limit, $page);
 
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to search stock codes',
-                'data'    => [],
+                'success'  => false,
+                'message'  => 'Failed to search stock codes',
+                'data'     => [],
+                'has_more' => false,
             ], 500);
         }
     }

@@ -226,7 +226,7 @@ class BudgetUserServiceImpl implements BudgetUserService
         return ['success' => true, 'data' => $dbQuery->limit($limit)->get()];
     }
 
-    public function searchStockCodes(string $query, int $limit = 50): array
+    public function searchStockCodes(string $query, int $limit = 10, int $page = 1): array
     {
         try {
             $deptCodes = session('department_codes', []);
@@ -235,8 +235,10 @@ class BudgetUserServiceImpl implements BudgetUserService
             $dbQuery = StockCode::where('active', 1)
                 ->select('id', 'stock_code', 'name', 'unit', 'budget_code', 'product_line')
                 ->where(function ($q) use ($query) {
-                    $q->where('stock_code', 'LIKE', "%{$query}%")
-                        ->orWhere('name', 'LIKE', "%{$query}%");
+                    if ($query !== '') {
+                        $q->where('stock_code', 'LIKE', "%{$query}%")
+                            ->orWhere('name', 'LIKE', "%{$query}%");
+                    }
                 })
                 ->orderBy('stock_code');
 
@@ -251,9 +253,18 @@ class BudgetUserServiceImpl implements BudgetUserService
                 }
             }
 
-            return ['success' => true, 'data' => $dbQuery->limit($limit)->get()];
+            $total  = $dbQuery->count();
+            $offset = ($page - 1) * $limit;
+            $data   = $dbQuery->offset($offset)->limit($limit)->get();
+
+            return [
+                'success'  => true,
+                'data'     => $data,
+                'has_more' => ($offset + $limit) < $total,
+                'page'     => $page,
+                'total'    => $total,
+            ];
         } catch (\Throwable $th) {
-            //throw $th;
             return ['success' => false, 'message' => 'An error occurred while searching stock codes: ' . $th->getMessage()];
         }
     }

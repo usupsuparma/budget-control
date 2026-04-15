@@ -1355,8 +1355,8 @@ function loadBudgetCodes() {
 }
 
 /**
- * Initialize Stock Code dropdown with server-side AJAX search.
- * Eliminates 20k DOM nodes — only loads up to 50 matching results per query.
+ * Initialize Stock Code dropdown with server-side AJAX search + infinite scroll.
+ * Loads 10 items on open, appends more on scroll, filters on type.
  *
  * @param {string|null} preselectedCode  - Code value to pre-select (edit mode)
  * @param {string|null} preselectedLabel - Display label for the pre-selected code
@@ -1364,22 +1364,29 @@ function loadBudgetCodes() {
 function _initStockCodeSearchDropdown(preselectedCode, preselectedLabel) {
     const select = document.getElementById("stockCode");
 
+    // ── Cleanup previous instance ──────────────────────────────────────────
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
         select.choicesInstance = null;
     }
+    [
+        "_choicesSearchHandler",
+        "_choicesChangeHandler",
+        "_showDropdownHandler",
+    ].forEach(function (key) {
+        if (select[key]) {
+            select.removeEventListener(
+                key
+                    .replace("Handler", "")
+                    .replace("_choices", "")
+                    .replace("_show", "show"),
+                select[key],
+            );
+            select[key] = null;
+        }
+    });
 
-    // Remove old event listeners before re-adding to prevent accumulation
-    if (select._choicesSearchHandler) {
-        select.removeEventListener("search", select._choicesSearchHandler);
-        select._choicesSearchHandler = null;
-    }
-    if (select._choicesChangeHandler) {
-        select.removeEventListener("change", select._choicesChangeHandler);
-        select._choicesChangeHandler = null;
-    }
-
-    select.innerHTML = '<option value="">Type to search stock code...</option>';
+    select.innerHTML = '<option value="">Select stock code...</option>';
 
     if (preselectedCode) {
         const opt = document.createElement("option");
@@ -1401,60 +1408,132 @@ function _initStockCodeSearchDropdown(preselectedCode, preselectedLabel) {
     const choices = new Choices(select, {
         searchEnabled: true,
         searchChoices: false, // server-side only
-        searchFloor: 2,
-        searchResultLimit: 50,
-        searchPlaceholderValue: "Type at least 2 characters...",
+        searchFloor: 1,
+        searchResultLimit: 10,
+        searchPlaceholderValue: "Search stock code...",
         itemSelectText: "",
-        noResultsText: "No results. Keep typing...",
-        noChoicesText: "Type to search stock codes",
+        noResultsText: "No results found.",
+        noChoicesText: "Loading...",
         shouldSort: false,
         removeItemButton: false,
     });
 
     select.choicesInstance = choices;
 
-    // Fire AJAX search on Choices.js search event (debounced 300ms)
+    // ── Infinite scroll state ──────────────────────────────────────────────
+    let _scQuery = "";
+    let _scPage = 1;
+    let _scLoading = false;
+    let _scHasMore = true;
+    let _scScrollBound = false;
+
+    // ── Core fetch function ────────────────────────────────────────────────
+    function fetchStockCodes(query, page, replace) {
+        if (_scLoading) return;
+        if (!replace && !_scHasMore) return;
+
+        _scLoading = true;
+
+        $.ajax({
+            url: "/budget-user/stock-codes/search",
+            method: "GET",
+            data: { q: query, limit: 10, page: page },
+            success: function (response) {
+                _scLoading = false;
+                if (!response.success || !select.choicesInstance) return;
+
+                _scHasMore = response.has_more || false;
+                const results = response.data || [];
+
+                results.forEach(function (item) {
+                    _stockCodeCache.set(item.stock_code, item);
+                });
+
+                const newChoices = results.map(function (code) {
+                    return {
+                        value: code.stock_code,
+                        label: code.stock_code + " - " + code.name,
+                    };
+                });
+
+                // replace=true clears list; replace=false appends
+                select.choicesInstance.setChoices(
+                    newChoices,
+                    "value",
+                    "label",
+                    replace,
+                );
+            },
+            error: function () {
+                _scLoading = false;
+            },
+        });
+    }
+
+    // ── Bind scroll listener on the Choices inner list (once per instance) ─
+    function bindScrollListener() {
+        if (_scScrollBound) return;
+        _scScrollBound = true;
+
+        const listEl = choices.choiceList && choices.choiceList.element;
+        if (!listEl) return;
+
+        listEl.addEventListener("scroll", function () {
+            const threshold = 60;
+            if (
+                listEl.scrollTop + listEl.clientHeight >=
+                listEl.scrollHeight - threshold
+            ) {
+                if (!_scLoading && _scHasMore) {
+                    _scPage++;
+                    fetchStockCodes(_scQuery, _scPage, false);
+                }
+            }
+        });
+    }
+
+    // ── showDropdown: load first page when dropdown opens ─────────────────
+    const _showDropdownHandler = function () {
+        _scPage = 1;
+        _scHasMore = true;
+        fetchStockCodes(_scQuery, 1, true);
+        bindScrollListener();
+    };
+    select._showDropdownHandler = _showDropdownHandler;
+    select.addEventListener("showDropdown", _showDropdownHandler);
+
+    // ── search event: user types — reset and load page 1 ─────────────────
     const _stockCodeSearchHandler = function (e) {
         const query = e.detail.value;
         clearTimeout(_stockCodeSearchTimer);
-        if (!query || query.length < 2) return;
 
         _stockCodeSearchTimer = setTimeout(function () {
-            $.ajax({
-                url: "/budget-user/stock-codes/search",
-                method: "GET",
-                data: { q: query, limit: 50 },
-                success: function (response) {
-                    if (!response.success || !select.choicesInstance) return;
-
-                    const results = response.data || [];
-                    results.forEach(function (item) {
-                        _stockCodeCache.set(item.stock_code, item);
-                    });
-
-                    const newChoices = results.map(function (code) {
-                        return {
-                            value: code.stock_code,
-                            label: code.stock_code + " - " + code.name,
-                        };
-                    });
-
-                    select.choicesInstance.setChoices(
-                        newChoices,
-                        "value",
-                        "label",
-                        true,
-                    );
-                },
-            });
+            _scQuery = query || "";
+            _scPage = 1;
+            _scHasMore = true;
+            fetchStockCodes(_scQuery, 1, true);
         }, 300);
     };
     select._choicesSearchHandler = _stockCodeSearchHandler;
     select.addEventListener("search", _stockCodeSearchHandler);
 
-    // Auto-fill related fields when a stock code is selected
+    // ── Detect clear (user deletes all text) → reload page 1 ─────────────
+    setTimeout(function () {
+        const inputEl = choices.input && choices.input.element;
+        if (!inputEl) return;
+        inputEl.addEventListener("input", function () {
+            if (this.value === "") {
+                clearTimeout(_stockCodeSearchTimer);
+                _scQuery = "";
+                _scPage = 1;
+                _scHasMore = true;
+                fetchStockCodes("", 1, true);
+            }
+        });
+    }, 0);
+
+    // ── change: auto-fill related fields when a stock code is selected ────
     const _stockCodeChangeHandler = function (e) {
-        // Use detail.value from Choices.js CustomEvent when available, fall back to element value
         const val =
             e && e.detail && e.detail.value !== undefined
                 ? e.detail.value

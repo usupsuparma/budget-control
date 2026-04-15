@@ -832,6 +832,10 @@ function resetItemForm() {
         programIdChoices.destroy();
         programIdChoices = null;
     }
+
+    // Re-init budget code & stock code dropdowns so they're ready for the next add/edit
+    _initBudgetCodeSearchDropdown(null, null);
+    _initStockCodeSearchDropdown(null, null);
 }
 
 /**

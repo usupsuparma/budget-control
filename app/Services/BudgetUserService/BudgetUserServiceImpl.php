@@ -206,24 +206,40 @@ class BudgetUserServiceImpl implements BudgetUserService
         return ['success' => true, 'data' => $units];
     }
 
-    public function searchBudgetCodes(string $query, int $limit = 50): array
+    public function searchBudgetCodes(string $query, int $limit = 10, int $page = 1): array
     {
-        $deptCodes = session('department_codes', []);
-        $query     = trim($query);
+        try {
+            $deptCodes = session('department_codes', []);
+            $query     = trim($query);
 
-        $dbQuery = BudgetCode::active()
-            ->select('id', 'budget_code', 'name', 'inchargeCode')
-            ->where(function ($q) use ($query) {
-                $q->where('budget_code', 'LIKE', "%{$query}%")
-                    ->orWhere('name', 'LIKE', "%{$query}%");
-            })
-            ->orderBy('budget_code');
+            $dbQuery = BudgetCode::active()
+                ->select('id', 'budget_code', 'name', 'inchargeCode')
+                ->where(function ($q) use ($query) {
+                    if ($query !== '') {
+                        $q->where('budget_code', 'LIKE', "%{$query}%")
+                            ->orWhere('name', 'LIKE', "%{$query}%");
+                    }
+                })
+                ->orderBy('budget_code');
 
-        if (! empty($deptCodes)) {
-            $dbQuery->whereIn('inchargeCode', $deptCodes);
+            if (! empty($deptCodes)) {
+                $dbQuery->whereIn('inchargeCode', $deptCodes);
+            }
+
+            $total  = $dbQuery->count();
+            $offset = ($page - 1) * $limit;
+            $data   = $dbQuery->offset($offset)->limit($limit)->get();
+
+            return [
+                'success'  => true,
+                'data'     => $data,
+                'has_more' => ($offset + $limit) < $total,
+                'page'     => $page,
+                'total'    => $total,
+            ];
+        } catch (\Throwable $th) {
+            return ['success' => false, 'message' => 'An error occurred while searching budget codes: ' . $th->getMessage()];
         }
-
-        return ['success' => true, 'data' => $dbQuery->limit($limit)->get()];
     }
 
     public function searchStockCodes(string $query, int $limit = 10, int $page = 1): array

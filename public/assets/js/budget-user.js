@@ -1238,24 +1238,22 @@ function loadWorkplansForDropdownAsync() {
 function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
     const select = document.getElementById("budgetCode");
 
+    // ── Cleanup previous instance ──────────────────────────────────────────
     if (select.choicesInstance) {
         select.choicesInstance.destroy();
         select.choicesInstance = null;
     }
+    [
+        "_choicesSearchHandler",
+        "_choicesChangeHandler",
+        "_showDropdownHandler",
+    ].forEach(function (key) {
+        if (select[key]) {
+            select[key] = null;
+        }
+    });
 
-    // Remove old event listeners before re-adding to prevent accumulation
-    if (select._choicesSearchHandler) {
-        select.removeEventListener("search", select._choicesSearchHandler);
-        select._choicesSearchHandler = null;
-    }
-    if (select._choicesChangeHandler) {
-        select.removeEventListener("change", select._choicesChangeHandler);
-        select._choicesChangeHandler = null;
-    }
-
-    // Start with minimal DOM — no 20k <option> nodes
-    select.innerHTML =
-        '<option value="">Type to search budget code...</option>';
+    select.innerHTML = '<option value="">Select budget code...</option>';
 
     if (preselectedCode) {
         const opt = document.createElement("option");
@@ -1274,61 +1272,135 @@ function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
 
     const choices = new Choices(select, {
         searchEnabled: true,
-        searchChoices: false, // disable client-side filtering — server does it
-        searchFloor: 2,
-        searchResultLimit: 50,
-        searchPlaceholderValue: "Type at least 2 characters...",
+        searchChoices: false, // server-side only
+        searchFloor: 1,
+        searchResultLimit: 10,
+        searchPlaceholderValue: "Search budget code...",
         itemSelectText: "",
-        noResultsText: "No results. Keep typing...",
-        noChoicesText: "Type to search budget codes",
+        noResultsText: "No results found.",
+        noChoicesText: "Loading...",
         shouldSort: false,
         removeItemButton: false,
     });
 
     select.choicesInstance = choices;
 
-    // Fire AJAX search on Choices.js search event (debounced 300ms)
+    // ── Infinite scroll state ──────────────────────────────────────────────
+    let _bcQuery = "";
+    let _bcPage = 1;
+    let _bcLoading = false;
+    let _bcHasMore = true;
+    let _bcScrollBound = false;
+
+    // ── Core fetch function ────────────────────────────────────────────────
+    function fetchBudgetCodes(query, page, replace) {
+        if (_bcLoading) return;
+        if (!replace && !_bcHasMore) return;
+
+        _bcLoading = true;
+
+        $.ajax({
+            url: "/budget-user/budget-codes/search",
+            method: "GET",
+            data: { q: query, limit: 10, page: page },
+            success: function (response) {
+                _bcLoading = false;
+                if (!response.success || !select.choicesInstance) return;
+
+                _bcHasMore = response.has_more || false;
+                const results = response.data || [];
+
+                results.forEach(function (item) {
+                    _budgetCodeCache.set(item.budget_code, item);
+                });
+
+                const newChoices = results.map(function (code) {
+                    return {
+                        value: code.budget_code,
+                        label: code.budget_code + " - " + code.name,
+                    };
+                });
+
+                select.choicesInstance.setChoices(
+                    newChoices,
+                    "value",
+                    "label",
+                    replace,
+                );
+            },
+            error: function () {
+                _bcLoading = false;
+            },
+        });
+    }
+
+    // ── Pre-fetch first page immediately so list is ready on first click ──
+    fetchBudgetCodes("", 1, true);
+
+    // ── Bind scroll listener on the Choices inner list (once per instance) ─
+    function bindScrollListener() {
+        if (_bcScrollBound) return;
+        _bcScrollBound = true;
+
+        const listEl = choices.choiceList && choices.choiceList.element;
+        if (!listEl) return;
+
+        listEl.addEventListener("scroll", function () {
+            const threshold = 60;
+            if (
+                listEl.scrollTop + listEl.clientHeight >=
+                listEl.scrollHeight - threshold
+            ) {
+                if (!_bcLoading && _bcHasMore) {
+                    _bcPage++;
+                    fetchBudgetCodes(_bcQuery, _bcPage, false);
+                }
+            }
+        });
+    }
+
+    // ── showDropdown: load first page when dropdown opens ─────────────────
+    const _showDropdownHandler = function () {
+        _bcPage = 1;
+        _bcHasMore = true;
+        fetchBudgetCodes(_bcQuery, 1, true);
+        bindScrollListener();
+    };
+    select._showDropdownHandler = _showDropdownHandler;
+    select.addEventListener("showDropdown", _showDropdownHandler);
+
+    // ── search event: user types — reset and load page 1 ─────────────────
     const _budgetCodeSearchHandler = function (e) {
         const query = e.detail.value;
         clearTimeout(_budgetCodeSearchTimer);
-        if (!query || query.length < 2) return;
 
         _budgetCodeSearchTimer = setTimeout(function () {
-            $.ajax({
-                url: "/budget-user/budget-codes/search",
-                method: "GET",
-                data: { q: query, limit: 50 },
-                success: function (response) {
-                    if (!response.success || !select.choicesInstance) return;
-
-                    const results = response.data || [];
-                    results.forEach(function (item) {
-                        _budgetCodeCache.set(item.budget_code, item);
-                    });
-
-                    const newChoices = results.map(function (code) {
-                        return {
-                            value: code.budget_code,
-                            label: code.budget_code + " - " + code.name,
-                        };
-                    });
-
-                    select.choicesInstance.setChoices(
-                        newChoices,
-                        "value",
-                        "label",
-                        true,
-                    );
-                },
-            });
+            _bcQuery = query || "";
+            _bcPage = 1;
+            _bcHasMore = true;
+            fetchBudgetCodes(_bcQuery, 1, true);
         }, 300);
     };
     select._choicesSearchHandler = _budgetCodeSearchHandler;
     select.addEventListener("search", _budgetCodeSearchHandler);
 
-    // Cost center auto-fill when budget code is selected
+    // ── Detect clear (user deletes all text) → reload page 1 ─────────────
+    setTimeout(function () {
+        const inputEl = choices.input && choices.input.element;
+        if (!inputEl) return;
+        inputEl.addEventListener("input", function () {
+            if (this.value === "") {
+                clearTimeout(_budgetCodeSearchTimer);
+                _bcQuery = "";
+                _bcPage = 1;
+                _bcHasMore = true;
+                fetchBudgetCodes("", 1, true);
+            }
+        });
+    }, 0);
+
+    // ── change: auto-fill cost center when a budget code is selected ────
     const _budgetCodeChangeHandler = function (e) {
-        // Use detail.value from Choices.js CustomEvent when available, fall back to element value
         const val =
             e && e.detail && e.detail.value !== undefined
                 ? e.detail.value

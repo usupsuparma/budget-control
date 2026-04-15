@@ -225,15 +225,17 @@ class BudgetUserController extends Controller
     {
         try {
             $query  = $request->input('q') ?? '';
-            $limit  = min((int) $request->input('limit', 50), 100);
-            $result = $this->budgetUserService->searchBudgetCodes($query, $limit);
+            $limit  = min((int) $request->input('limit', 10), 100);
+            $page   = max(1, (int) $request->input('page', 1));
+            $result = $this->budgetUserService->searchBudgetCodes($query, $limit, $page);
 
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to search budget codes',
-                'data'    => [],
+                'success'  => false,
+                'message'  => 'Failed to search budget codes',
+                'data'     => [],
+                'has_more' => false,
             ], 500);
         }
     }

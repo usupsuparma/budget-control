@@ -224,7 +224,7 @@ class BudgetUserController extends Controller
     public function searchBudgetCodes(Request $request)
     {
         try {
-            $query  = $request->input('q', '');
+            $query  = $request->input('q') ?? '';
             $limit  = min((int) $request->input('limit', 50), 100);
             $result = $this->budgetUserService->searchBudgetCodes($query, $limit);
 
@@ -244,7 +244,7 @@ class BudgetUserController extends Controller
     public function searchStockCodes(Request $request)
     {
         try {
-            $query  = $request->input('q', '');
+            $query  = $request->input('q') ?? '';
             $limit  = min((int) $request->input('limit', 10), 100);
             $page   = max(1, (int) $request->input('page', 1));
             $result = $this->budgetUserService->searchStockCodes($query, $limit, $page);

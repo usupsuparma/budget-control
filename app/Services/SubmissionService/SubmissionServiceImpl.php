@@ -398,6 +398,7 @@ class SubmissionServiceImpl implements SubmissionService
 
             if (! $approvalResult['success']) {
                 Log::warning('Failed to process approval: ' . $approvalResult['message']);
+                throw new \App\Exceptions\DomainException('Failed to process approval: ' . $approvalResult['message']);
             }
 
             return [
@@ -1184,7 +1185,14 @@ class SubmissionServiceImpl implements SubmissionService
                         $createResult = $this->createTransaction($transactionData);
 
                         if (!$createResult['success']) {
-                            throw new \Exception($createResult['message']);
+                            $msg = $createResult['message'];
+                            if (!empty($createResult['budget_errors'])) {
+                                $budgetErrStr = implode(', ', array_map(function($err) {
+                                    return "{$err['item']} (Maks: {$err['budget']})";
+                                }, $createResult['budget_errors']));
+                                $msg .= ' ' . $budgetErrStr;
+                            }
+                            throw new \Exception($msg);
                         }
 
                         return true;
@@ -1200,7 +1208,7 @@ class SubmissionServiceImpl implements SubmissionService
 
             return [
                 'success' => $results['created'] > 0,
-                'message' => "Import completed. {$results['created']} transactions created." . (count($results['errors']) > 0 ? " Some errors occurred." : ""),
+                'message' => "Berhasil mengimpor {$results['created']} transaksi dan mengajukannya ke dalam proses Approval." . (count($results['errors']) > 0 ? " Beberapa transaksi gagal diproses." : ""),
                 'errors' => $results['errors'],
                 'data' => $results,
             ];

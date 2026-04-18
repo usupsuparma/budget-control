@@ -1121,8 +1121,22 @@
                         if (response.success) {
                             loadData();
                             loadSummary();
-                            showAlert(response.message, 'success');
-                            // setTimeout(() => $('#importModal').modal('hide'), 3000);
+                            let htmlContent = response.message;
+                            if (response.errors && response.errors.length > 0) {
+                                htmlContent += '<br><br><div style="max-height: 150px; overflow-y: auto; text-align: left;"><ul style="color: #dc3545; font-size: 0.85em;">';
+                                response.errors.forEach(err => {
+                                    htmlContent += `<li>${err}</li>`;
+                                });
+                                htmlContent += '</ul></div>';
+                            }
+                            Swal.fire({
+                                icon: response.errors && response.errors.length > 0 ? 'warning' : 'success',
+                                title: 'Proses Import Selesai',
+                                html: htmlContent,
+                                confirmButtonColor: '#28a745'
+                            }).then((result) => {
+                                $('#importModal').modal('hide');
+                            });
                         }
                     },
                     error: function(xhr) {

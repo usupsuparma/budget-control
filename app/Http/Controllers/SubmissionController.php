@@ -623,6 +623,11 @@ class SubmissionController extends Controller
         try {
             $result = $this->submissionService->importTransactions($request->file('file'));
 
+            if (!$result['success']) {
+                $statusCode = $result['status_code'] ?? 422;
+                return response()->json($result, $statusCode);
+            }
+
             return response()->json($result);
         } catch (\Exception $e) {
             Log::error('Error importing transactions: '.$e->getMessage());

@@ -1,108 +1,37 @@
-# Issue: Implementasi Bulk Verification (Checklist & CSV Upload) pada Page Budget User
+# Issue: Implementasi Status 0 dan Trigger Approval Process pada Import User Submission
 
 ## Deskripsi Masalah
-Saat ini pada halaman `budget-user` tab **Pending Verification**, verifikator harus melakukan verifikasi (approve/reject) satu per satu. Jika terdapat banyak data (misal 100+), proses ini menjadi tidak efisien. Diperlukan fitur untuk melakukan seleksi banyak item (checklist) dan melakukan verifikasi masal, serta opsi untuk upload data verifikasi melalui file CSV.
+Saat ini pada menu User Submission (`admission/user`), fitur Import data dari file Excel/CSV belum secara sepenuhnya menjamin pengajuan yang diimport memiliki status awal `0` (Submission/Pending) dan terintegrasi dengan mulus pada proses dua-fase *dynamic approval system* (Uppline Chain -> Master Flow). Pengguna ingin agar proses *approve* berjalan persis sama dengan fitur "Add data" (manual form).
 
 ## Rencana Implementasi
 
-### 1. Perubahan UI (Frontend - Blade & JS) [DONE]
-*   **File:** `resources/views/pages/budget/budget-user.blade.php` [DONE]
-    *   Ubah tampilan di dalam `#pendingItemsContainer` dari format *Card* menjadi *Table* responsif. [DONE]
-    *   Tambahkan kolom Checkbox di sebelah kiri setiap baris. [DONE]
-    *   Tambahkan checkbox "Select All" di header tabel. [DONE]
-    *   Tambahkan Toolbar di atas tabel yang berisi:
-        *   Button `Bulk Verify` (Muncul saat ada item terpilih). [DONE]
-        *   Button `Bulk Reject` (Muncul saat ada item terpilih). [DONE]
-        *   Button `Import CSV` untuk verifikasi cepat via file. [DONE]
-    *   Tambahkan Modal untuk input `fix_price` masal atau konfirmasi reject masal. [DONE]
+### 1. Perubahan & Verifikasi Backend (Service Layer) [DONE]
+*   **File:** `app/Services/SubmissionService/SubmissionServiceImpl.php`
+    *   **Method `importTransactions($file)`:**
+        Walaupun saat ini sudah memanggil `$this->createTransaction($transactionData)`, pastikan variabel relasi (*urgency*, tipe program) terbaca presisi dari *excel parsing* agar aturan *threshold-based routing* atau jenis approval yang di-hit tidak keliru (misalnya, jika *auto_approve* tersetel nyala saat tidak terencana).
+    *   **Method `createTransaction($data)`:**
+        Pastikan nilai field statu secara eksplisit terkunci di nilai `Transaction::STATUS_PENDING` (yaitu `0`) saat awal transaksi disimpan ke DB.
+    *   **Triggering Approval Workflow:**
+        Pastikan pemanggilan rutin terhadap `$this->approvalTransactionService->submitForApproval($transaction->id)` berhasil membuat `ApprovalRequest` dan rantai `ApprovalRequestDetail`. Tangkap *exception* apa pun (seperti `DomainException`) yang muncul jika *uppline_id* dari uploader bersangkutan ternyata `null` atau `chain` approval tidak tersedia.
 
-*   **File:** `public/assets/js/budget-user.js` (Dalam kasus ini, script di dalam Blade) [DONE]
-    *   Update fungsi `renderPendingVerificationItems(items)` untuk me-render format tabel dengan checkbox. [DONE]
-    *   Buat event listener untuk checkbox (individual & select all). [DONE]
-    *   Buat fungsi `handleBulkVerify()`: Mengumpulkan ID yang dipilih dan menampilkan modal input harga (jika harga ingin disamakan) atau langsung kirim jika harga sudah ada di field input baris. [DONE]
-    *   Buat fungsi `handleBulkReject()`: Menampilkan modal alasan penolakan untuk semua item terpilih. [DONE]
-    *   Buat fungsi `handleCsvUpload()`: Mengirim file CSV ke backend. [DONE]
+### 2. Validasi & Penanganan Error Mode Batch [DONE]
+*   **Exception & Atomicity:**
+        Jika di tengah baris excel terjadi kesalahan (misal approver putus), maka implementasikan pembatalan (rollback) via `DB::transaction`. Jika bisnis memperbolehkan parsial (baris gagal di-skip, baris valid dilanjutkan), kumpulkan error tersebut ke variabel dan cetak sebagai catatan tanpa membongkar keseluruhan flow. 
+        **Perhatian!** Standard project ini biasanya preferensi pada atomisasi yang jelas, di mana seluruh satu blok *row group* yang invalid men-trigger *rollback*.
+*   **File Controller:** Dalam `SubmissionController@import`, tangkap *response* pengecekan dari service apabila pengajuan approval gagal di generate akibat konfigurasi hirarki karyawan yang salah, dan lemparkan status kode 422 agar frontend memprosesnya.
 
-### 2. Perubahan Backend (Laravel - Controller & Service) [DONE]
-*   **File:** `app/Http/Controllers/VerificationBudgetController.php` [DONE]
-    *   Tambahkan method `bulkVerify(Request $request)`: Menerima array `item_ids`, `fix_prices` (optional), dan `notes`. [DONE]
-    *   Tambahkan method `bulkReject(Request $request)`: Menerima array `item_ids` dan `notes`. [DONE]
-    *   Tambahkan method `importCsv(Request $request)`: Menangani upload file CSV, parsing, dan memproses verifikasi berdasarkan `item_id` dan `price` di dalam file. [DONE]
+### 3. Perubahan UI (Frontend - Action Feedback) [DONE]
+*   **File:** `resources/views/pages/submission/user.blade.php` (Blade & Javascript DOM)
+    *   Sesuaikan pesan saat proses unggah (AJAX File Upload) usai. Tampilkan detail respons secara jelas, contoh: *"Berhasil mengimpor X transaksi dan mengajukannya ke dalam proses Approval."* (Lebih baik memakai SweetAlert2 `Swal.fire`).
+    *   Pastikan tabel otomatis ter-*reload* via data-driven js dan item baru tersebut muncul dengan *Badge* status "Pending" atau "Submission".
 
-*   **File:** `app/Services/VerificationBudgetService/VerificationBudgetService.php` (Interface) [DONE]
-    *   Definisikan kontrak untuk `bulkVerify`, `bulkReject`, dan `processCsvImport`. [DONE]
-
-*   **File:** `app/Services/VerificationBudgetService/VerificationBudgetServiceImpl.php` (Implementation) [DONE]
-    *   Implementasikan logika bisnis di dalam `DB::transaction`. [DONE]
-    *   Pastikan pengecekan otoritas (`canVerify`) dilakukan untuk setiap item. [DONE]
-    *   Gunakan snapshoting data jika diperlukan sesuai aturan arsitektur. [DONE]
-
-### 3. Penambahan Route [DONE]
-*   **File:** `routes/web.php` [DONE]
-    *   Tambahkan route berikut di dalam prefix `budget-verification`: [DONE]
-        *   `POST /bulk-verify` -> `VerificationBudgetController@bulkVerify` [DONE]
-        *   `POST /bulk-reject` -> `VerificationBudgetController@bulkReject` [DONE]
-        *   `POST /import-csv` -> `VerificationBudgetController@importCsv` [DONE]
-
-## Standar Teknis & Keamanan
-1.  **Validation:** Gunakan `FormRequest` atau validasi ketat di Controller. [DONE]
-2.  **Transaction:** Semua operasi bulk WAJIB dibungkus dalam `DB::beginTransaction()`. [DONE]
-3.  **UI/UX:** Gunakan `SweetAlert2` untuk loading states dan konfirmasi. Jangan biarkan user melakukan aksi ganda saat proses sedang berjalan. [DONE]
-4.  **Error Handling:** Tangkap `DomainException` dan berikan pesan error yang informatif jika ada satu item dalam batch yang gagal divalidasi. [DONE]
-5.  **CSV Format:** Format CSV minimal harus mengandung kolom: `item_id`, `verified_price`. [DONE]
+## Standar Teknis & Keamanan (Mematuhi `GEMINI.md`)
+1.  **NO Model queries/CRUD in Controllers.** - Tetap berada di Service `$this->submissionService->importTransactions`.
+2.  **Zero-Test Tolerance:** Sertakan skenario pengujian di Pest/PHPUnit saat memverifikasi API import, untuk dipastikan tidak memunculkan N+1 query.
+3.  **Data-Driven Updates:** Pada `onSuccess` callback di Javascript, cukup panggil API untuk *fetch table* terbaru, jangan *append DOM* manual (hindari penyimpanan *business data* di atribut `data-*`).
 
 ## Checklist Pengujian (Test Cases)
-- [x] Verifikasi item terpilih berhasil (Bulk Approve).
-- [x] Penolakan item terpilih berhasil (Bulk Reject).
-- [x] Checkbox "Select All" berfungsi dengan benar.
-- [x] Upload CSV dengan format salah memberikan pesan error yang jelas.
-- [x] Upload CSV dengan format benar berhasil memperbarui `fix_price` dan mengubah status menjadi `verified`.
-- [x] User yang tidak memiliki otoritas verifikasi ditolak oleh sistem (403 Forbidden).
-
----
-
-# Issue: Implementasi Bulk Approval pada Tab Pending Approvals [DONE]
-
-## Deskripsi Masalah
-Sama halnya dengan fitur verifikasi harga, tab **Pending Approvals** pada halaman `budget-user` saat ini hanya mendukung proses approval/reject satu per satu. Untuk meningkatkan efisiensi pengguna dengan peran approver, diperlukan fitur untuk melakukan seleksi banyak item (checklist) dan melakukan approval atau reject secara masal.
-
-## Rencana Implementasi
-
-### 1. Perubahan UI (Frontend - Blade & JS) [DONE]
-*   **File:** `resources/views/pages/budget/budget-user.blade.php` [DONE]
-    *   Tambahkan kolom Checkbox di sebelah kiri tabel `#approvalItemsTable`. [DONE]
-    *   Tambahkan checkbox "Select All" di header tabel approval. [DONE]
-    *   Tambahkan Toolbar di atas tabel approval yang berisi:
-        *   Button `Bulk Approve` (Muncul saat ada item terpilih). [DONE]
-        *   Button `Bulk Reject` (Muncul saat ada item terpilih). [DONE]
-    *   Gunakan modal yang sudah ada (`rejectCommentModal`) atau buat baru untuk bulk rejection guna menampung komentar penolakan masal. [DONE]
-
-*   **Logic Script (Blade):** [DONE]
-    *   Update fungsi `renderPendingApprovalItems(items)` untuk menyertakan checkbox. [DONE]
-    *   Buat event listener untuk checkbox approval (individual & select all). [DONE]
-    *   Buat fungsi `handleBulkApprove()`: Mengumpulkan `detail_ids` yang dipilih dan mengirim ke backend. [DONE]
-    *   Buat fungsi `handleBulkReject()`: Menampilkan modal alasan penolakan untuk semua item terpilih. [DONE]
-
-### 2. Perubahan Backend (Laravel - Controller & Service) [DONE]
-*   **File:** `app/Http/Controllers/WorkplanBudgetItemMasterApprovalController.php` [DONE]
-    *   Tambahkan method `bulkProcess(Request $request)`: Menerima array `detail_ids`, `action` (approve/reject), dan `comments`. [DONE]
-
-*   **File:** `app/Services/WorkplanBudgetItemApprovalService.php` [DONE]
-    *   Tambahkan method `bulkProcessApproval(array $detailIds, string $action, int $approverId, ?string $comments = null)`: [DONE]
-        *   Gunakan `DB::transaction`. [DONE]
-        *   Iterasi `detail_ids` dan panggil `processApproval` untuk setiap item. [DONE]
-        *   Kumpulkan hasil sukses/gagal untuk dikembalikan ke controller. [DONE]
-
-### 3. Penambahan Route [DONE]
-*   **File:** `routes/web.php` [DONE]
-    *   Tambahkan route berikut di dalam prefix `workplan-budget-item-approval`: [DONE]
-        *   `POST /bulk-process` -> `WorkplanBudgetItemMasterApprovalController@bulkProcess` [DONE]
-
-## Checklist Pengujian (Test Cases)
-- [x] Checklist "Select All" pada tab approval berfungsi dengan benar.
-- [x] Bulk Approve item terpilih berhasil memajukan status ke level berikutnya atau menjadi `approved`.
-- [x] Bulk Reject item terpilih berhasil mengubah status menjadi `rejected` dan meminta komentar wajib.
-- [x] Validasi sekuensial tetap berjalan (tidak bisa menyetujui item yang belum gilirannya, meskipun terpilih).
-- [x] Notifikasi dikirimkan ke approver berikutnya atau requester setelah proses bulk selesai.
-
-
+- [x] Upload *Template* CSV yg memiliki *Budget Code* & *Program* benar, transaksi harus tampil di datatable dengan status 0 (Submission/Pending).
+- [x] Pengajuan yang masuk via import sukses mendistribusikan notifikasi/pending state ke akun atasan (*approver* level pertama).
+- [x] Jika struktur hirarki atasan uploader putus, validasi menangkapnya sebelum file berhasil di-import (mencegah *orphan submission* berstatus 0).
+- [x] File dengan formasi *budget limit* yang membeludak, segera menghentikan import sebelum tersimpan.

@@ -123,14 +123,7 @@ try {
 
 - **URL Helper:** ALWAYS use `route('name', ':id').replace(':id', id)`.
 - **JS Routes:** NEVER hardcode URLs in AJAX calls. ALWAYS pass routes from Blade to JS using a global object or data attributes.
-  ```javascript
-  // In Blade
-  <div id="app-config" data-urls="{{ json_encode(['store' => route('name.store')]) }}"></div>
-  
-  // In JS
-  const urls = $('#app-config').data('urls');
-  $.ajax({ url: urls.store, ... });
-  ```
+- **Choices.js Standard:** All `<select>` elements MUST use **Choices.js** with individual instances. Refer to [Choices.js Standard](documentasi/CHOICES_JS_STANDARD.md) for implementation details.
 - **Feedback:** ALWAYS use SweetAlert2 (`Swal.fire`).
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
 - **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.
@@ -147,8 +140,9 @@ try {
 8. **Immutable Snapshots** for all approval-related data.
 9. **Custom Exceptions** for business logic errors.
 10. **Bootstrap 5 + Swal2** for UI/UX consistency.
-11. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
-12. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
+11. **Mandatory Choices.js:** Every select dropdown must implement Choices.js individual instances.
+12. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
+13. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

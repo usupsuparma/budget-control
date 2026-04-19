@@ -14,20 +14,21 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 All business logic MUST use the Interface + Implementation pattern. Controllers are orchestrators only.
 
 **Rules:**
-- **Atomicity:** `DB::transaction` MUST be placed inside the Service implementation, NOT in the Controller.
+- **Atomicity:** `DB::transaction` MUST be placed inside the Service implementation, NOT in the Controller. Use the closure-based method: `DB::transaction(fn() => ...)`.
 - **Single Responsibility:** One service method = one business use case.
 - **Interface-First:** Always define the contract in the Interface before implementing.
 - **Legacy Refactoring:** If you encounter legacy code with CRUD or business logic in the Controller, you MUST refactor it into the appropriate Service when modifying that module.
-- **Testing Mandate:** Every service method (new or refactored) MUST have a corresponding Automated Test (Pest/PHPUnit) to ensure logic integrity.
+- **Testing Mandate:** Every service method (new or refactored) MUST have a corresponding Automated Test (PHPUnit) to ensure logic integrity.
 
 **Directory structure:**
 ```
 app/Services/{ServiceName}/
 ├── {ServiceName}Service.php       # Interface (contract)
-└── {ServiceName}ServiceImpl.php   # Implementation (logic + transactions)
+├── {ServiceName}ServiceImpl.php   # Implementation (logic + transactions)
+└── DTOs/                          # Data Transfer Objects (if needed)
 ```
 
-**Binding in `app/Providers/CustomServiceProvider.php`:**
+**Binding in `app/Providers/CustomServiceProvider.php` (Mandatory Manual Binding):**
 ```php
 $this->app->bind(
     \App\Services\ExampleService\ExampleService::class,
@@ -49,9 +50,9 @@ public function store(StoreTransactionRequest $request) {
 ```
 
 **2. Data Transfer Object (DTO):**
-For complex services, use `readonly class` (PHP 8.2+) or a strictly defined array.
+For complex services, use `readonly class` (PHP 8.2+) or a strictly defined array. DTOs MUST be placed within the specific service directory under `DTOs/`.
 ```php
-// app/DTOs/TransactionData.php
+// app/Services/TransactionService/DTOs/TransactionData.php
 readonly class TransactionData {
     public function __construct(
         public int $amount,
@@ -85,7 +86,7 @@ Two-phase sequential approval with immutable snapshots:
 2. **Phase 2: Master Flow** - Threshold-based (`amount <= threshold`) or all-levels mode.
 
 **Snapshot Rule:**
-When an approval request is created, MUST save a JSON snapshot of the source data to ensure history remains valid even if master data changes.
+When an approval request is created, MUST save a JSON snapshot of the source data (e.g., in `approval_flow_details`) to ensure history remains valid even if master data changes.
 
 ### Eager Loading Standard (Anti N+1)
 
@@ -131,11 +132,11 @@ try {
 ## Critical Rules (Auto-Reject if Violated)
 
 1. **NO Model queries/CRUD in Controllers.**
-2. **NO `DB::transaction` in Controllers** - Move to Service.
+2. **NO `DB::transaction` in Controllers** - Move to Service Implementation using closure `DB::transaction(fn() => ...)`.
 3. **NO raw arrays for complex data** - Use FormRequest/DTO.
-4. **Refactor on Sight:** Move any legacy Controller-based CRUD/logic to Services when modifying a module.
-5. **Zero-Test Tolerance:** All new or refactored logic must include automated tests (Pest/PHPUnit).
-6. **SoftDeletes required** on all audit-critical tables.
+4. **Refactor on Sight:** Move any legacy Controller-based CRUD/logic to Services when modifying a module (unless it's a very minor fix).
+5. **Zero-Test Tolerance:** All new or refactored logic must include automated tests (PHPUnit).
+6. **SoftDeletes required** on all audit-critical tables (Transactions, Budgets, Approvals). Master data currently do not use SoftDeletes.
 7. **Eager Load everything** - N+1 is a blocker.
 8. **Immutable Snapshots** for all approval-related data.
 9. **Custom Exceptions** for business logic errors.

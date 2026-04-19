@@ -3,6 +3,7 @@
 namespace App\Services\MasterDataService;
 
 use App\Models\Director;
+use App\Models\Employment;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -35,29 +36,31 @@ class MasterDataServiceImpl implements MasterDataService
      */
     public function getOrganizationTree(): Collection
     {
-        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+        $directors = Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
             return Director::where('status', 'Active')
                 ->select(['id', 'name', 'code', 'status'])
                 ->with([
                     'divisions' => function ($q) {
                         $q->where('status', 'Active')
-                          ->orderBy('name')
-                          ->select(['id', 'director_id', 'name', 'status']);
+                            ->orderBy('name')
+                            ->select(['id', 'director_id', 'name', 'status']);
                     },
                     'divisions.departments' => function ($q) {
                         $q->where('status', 'Active')
-                          ->orderBy('name')
-                          ->select(['id', 'division_id', 'name', 'code', 'status']);
+                            ->orderBy('name')
+                            ->select(['id', 'division_id', 'name', 'code', 'status']);
                     },
                     'divisions.departments.sections' => function ($q) {
                         $q->where('status', 'Active')
-                          ->orderBy('name')
-                          ->select(['id', 'department_id', 'name', 'code', 'status']);
+                            ->orderBy('name')
+                            ->select(['id', 'department_id', 'name', 'code', 'status']);
                     },
                 ])
                 ->orderBy('name', 'asc')
                 ->get();
         });
+
+        return $this->attachHeadNames($directors);
     }
 
     /**
@@ -72,5 +75,68 @@ class MasterDataServiceImpl implements MasterDataService
     public function forgetCache(): void
     {
         Cache::forget(self::CACHE_KEY);
+    }
+
+    private function attachHeadNames(Collection $directors): Collection
+    {
+        $employments = Employment::with(['employee', 'jobPosition'])
+            ->where('status', 'Active')
+            ->whereNotNull('job_position_id')
+            ->get();
+
+        $heads = [];
+        foreach ($employments as $employment) {
+            $job = $employment->jobPosition;
+            $employee = $employment->employee;
+            if (! $job || ! $employee) {
+                continue;
+            }
+
+            $structureId = (int) $job->structure_id;
+            $levelId = (int) $job->job_level_id;
+            if (! $structureId || ! $levelId) {
+                continue;
+            }
+
+            $keyLevel = $levelId >= 4 ? 4 : $levelId;
+            $key = sprintf('%s:%s', $keyLevel, $structureId);
+
+            if (! isset($heads[$key])) {
+                $heads[$key] = [
+                    'employee_name' => $employee->name,
+                    'job_position_name' => $job->job_position_name,
+                ];
+            }
+        }
+
+        foreach ($directors as $director) {
+            $directorKey = sprintf('1:%s', $director->id);
+            $directorHead = $heads[$directorKey] ?? null;
+            $director->head_employee_name = $directorHead['employee_name'] ?? null;
+            $director->head_job_position = $directorHead['job_position_name'] ?? null;
+
+            foreach ($director->divisions as $division) {
+                $divisionKey = sprintf('2:%s', $division->id);
+                $divisionHead = $heads[$divisionKey] ?? null;
+                $division->head_employee_name = $divisionHead['employee_name'] ?? null;
+                $division->head_job_position = $divisionHead['job_position_name'] ?? null;
+
+                foreach ($division->departments as $department) {
+                    $departmentKey = sprintf('3:%s', $department->id);
+                    $departmentHead = $heads[$departmentKey] ?? null;
+                    $department->head_employee_name = $departmentHead['employee_name'] ?? null;
+                    $department->head_job_position = $departmentHead['job_position_name'] ?? null;
+
+                    foreach ($department->sections as $section) {
+                        $sectionKey = sprintf('4:%s', $section->id);
+                        $sectionHead = $heads[$sectionKey] ?? null;
+                        $section->head_employee_name = $sectionHead['employee_name'] ?? null;
+                        $section->head_job_position = $sectionHead['job_position_name'] ?? null;
+                    }
+                }
+            }
+        }
+
+        return $directors;
     }
 }

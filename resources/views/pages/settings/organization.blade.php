@@ -13,7 +13,7 @@
                 }
 
                 /* ── Root level list ── */
-                .org-tree > ul {
+                .org-tree>ul {
                     display: flex;
                     justify-content: center;
                     flex-wrap: wrap;
@@ -52,14 +52,14 @@
                 }
 
                 /* Vertical connector from horizontal bar down to each node */
-                .org-tree ul.children > li {
+                .org-tree ul.children>li {
                     position: relative;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                 }
 
-                .org-tree ul.children > li::before {
+                .org-tree ul.children>li::before {
                     content: '';
                     position: absolute;
                     top: -24px;
@@ -71,7 +71,7 @@
                 }
 
                 /* Vertical connector from parent node down to horizontal line */
-                .org-tree li.has-children > .org-node-wrap::after {
+                .org-tree li.has-children>.org-node-wrap::after {
                     content: '';
                     display: block;
                     width: 2px;
@@ -120,10 +120,21 @@
                 }
 
                 /* Level colour accents */
-                .org-node.level-director  { border-top: 3px solid #6366f1; }
-                .org-node.level-division   { border-top: 3px solid #0ea5e9; }
-                .org-node.level-department { border-top: 3px solid #10b981; }
-                .org-node.level-section    { border-top: 3px solid #f59e0b; }
+                .org-node.level-director {
+                    border-top: 3px solid #6366f1;
+                }
+
+                .org-node.level-division {
+                    border-top: 3px solid #0ea5e9;
+                }
+
+                .org-node.level-department {
+                    border-top: 3px solid #10b981;
+                }
+
+                .org-node.level-section {
+                    border-top: 3px solid #f59e0b;
+                }
 
                 /* Collapsed indicator */
                 .org-node .toggle-icon {
@@ -134,14 +145,16 @@
 
                 /* Responsive */
                 @media (max-width: 992px) {
-                    .org-tree > ul,
+
+                    .org-tree>ul,
                     .org-tree ul.children {
                         flex-direction: column;
                         align-items: center;
                     }
+
                     .org-tree ul.children::before,
-                    .org-tree ul.children > li::before,
-                    .org-tree li.has-children > .org-node-wrap::after {
+                    .org-tree ul.children>li::before,
+                    .org-tree li.has-children>.org-node-wrap::after {
                         display: none;
                     }
                 }
@@ -153,9 +166,14 @@
                 <li class="{{ $director->divisions->isNotEmpty() ? 'has-children' : '' }}">
                     <div class="org-node-wrap">
                         <div class="org-node level-director {{ $director->divisions->isNotEmpty() ? '' : '' }}"
-                             {{ $director->divisions->isNotEmpty() ? 'data-toggle' : '' }}>
+                            {{ $director->divisions->isNotEmpty() ? 'data-toggle' : '' }}>
                             <div class="node-title">{{ $director->name }}</div>
                             <div class="node-meta">{{ $director->code ? $director->code . ' · ' : '' }}{{ $director->status }}</div>
+                            @if(!empty($director->head_employee_name))
+                            <div class="node-meta text-secondary">
+                                {{ $director->head_employee_name }}@if(!empty($director->head_job_position)) · {{ $director->head_job_position }}@endif
+                            </div>
+                            @endif
                             @if($director->divisions->isNotEmpty())
                             <div class="toggle-icon">▾ {{ $director->divisions->count() }} divisions</div>
                             @endif
@@ -169,9 +187,14 @@
                         <li class="{{ $division->departments->isNotEmpty() ? 'has-children' : '' }}">
                             <div class="org-node-wrap">
                                 <div class="org-node level-division"
-                                     {{ $division->departments->isNotEmpty() ? 'data-toggle' : '' }}>
+                                    {{ $division->departments->isNotEmpty() ? 'data-toggle' : '' }}>
                                     <div class="node-title">{{ $division->name }}</div>
                                     <div class="node-meta">{{ $division->code ?? '' }}{{ $division->code ? ' · ' : '' }}{{ $division->status }}</div>
+                                    @if(!empty($division->head_employee_name))
+                                    <div class="node-meta text-secondary">
+                                        {{ $division->head_employee_name }}@if(!empty($division->head_job_position)) · {{ $division->head_job_position }}@endif
+                                    </div>
+                                    @endif
                                     @if($division->departments->isNotEmpty())
                                     <div class="toggle-icon">▾ {{ $division->departments->count() }} depts</div>
                                     @endif
@@ -185,9 +208,14 @@
                                 <li class="{{ $department->sections->isNotEmpty() ? 'has-children' : '' }}">
                                     <div class="org-node-wrap">
                                         <div class="org-node level-department"
-                                             {{ $department->sections->isNotEmpty() ? 'data-toggle' : '' }}>
+                                            {{ $department->sections->isNotEmpty() ? 'data-toggle' : '' }}>
                                             <div class="node-title">{{ $department->name }}</div>
                                             <div class="node-meta">{{ $department->code ?? '' }}{{ $department->code ? ' · ' : '' }}{{ $department->status }}</div>
+                                            @if(!empty($department->head_employee_name))
+                                            <div class="node-meta text-secondary">
+                                                {{ $department->head_employee_name }}@if(!empty($department->head_job_position)) · {{ $department->head_job_position }}@endif
+                                            </div>
+                                            @endif
                                             @if($department->sections->isNotEmpty())
                                             <div class="toggle-icon">▾ {{ $department->sections->count() }} sections</div>
                                             @endif
@@ -202,6 +230,11 @@
                                             <div class="org-node level-section">
                                                 <div class="node-title">{{ $section->name }}</div>
                                                 <div class="node-meta">{{ $section->code ?? '' }}{{ ($section->code && $section->status) ? ' · ' : '' }}{{ $section->status ?? '' }}</div>
+                                                @if(!empty($section->head_employee_name))
+                                                <div class="node-meta text-secondary">
+                                                    {{ $section->head_employee_name }}@if(!empty($section->head_job_position)) · {{ $section->head_job_position }}@endif
+                                                </div>
+                                                @endif
                                             </div>
                                         </li>
                                         @endforeach
@@ -227,15 +260,15 @@
             </ul>
 
             <script>
-                document.addEventListener('DOMContentLoaded', function () {
+                document.addEventListener('DOMContentLoaded', function() {
                     // All children lists start visible
-                    document.querySelectorAll('.org-tree ul.children').forEach(function (el) {
+                    document.querySelectorAll('.org-tree ul.children').forEach(function(el) {
                         el.style.display = 'flex';
                     });
 
                     // Toggle collapse on click
-                    document.querySelectorAll('.org-node[data-toggle]').forEach(function (node) {
-                        node.addEventListener('click', function (e) {
+                    document.querySelectorAll('.org-node[data-toggle]').forEach(function(node) {
+                        node.addEventListener('click', function(e) {
                             e.stopPropagation();
                             var parentLi = node.closest('li');
                             var childUl = parentLi ? parentLi.querySelector(':scope > ul.children') : null;

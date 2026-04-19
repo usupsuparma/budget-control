@@ -31,13 +31,12 @@
         </div>
     </div>
 </div>
+
 <!-- Create Modal -->
-<!-- Create Employee Modal -->
 <div class="modal fade" id="addDepartment" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDepartmentLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md" role="document">
         <div class="modal-content">
 
-            <!-- Header -->
             <div class="modal-header">
                 <h5 class="modal-title">Add Department</h5>
                 <button type="button" class="btn-close icon-btn-sm" data-bs-dismiss="modal" aria-label="Close">
@@ -45,14 +44,10 @@
                 </button>
             </div>
 
-            <!-- Body -->
             <div class="modal-body">
                 <form id="departmentCreateForm" method="POST" action="{{ route('department.store') }}">
                     @csrf
-
                     <div class="row g-3">
-
-                        <!-- Organization Name -->
                         <div class="col-12">
                             <label class="form-label">Department Name</label>
                             <input type="text" name="department_name" class="form-control" placeholder="Enter Department Name" required>
@@ -61,19 +56,12 @@
                             <label class="form-label">Division</label>
                             <select name="division_id" id="division_id" class="form-control" required>
                                 <option value="" selected disabled>-- Select Division --</option>
-                                @foreach ($division as $div)
-                                <option value="{{ $div->id }}">{{ $div->name }}</option>
-                                @endforeach
                             </select>
                         </div>
-
-
                     </div>
-
                 </form>
             </div>
 
-            <!-- Footer -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                 <button class="btn btn-primary" id="btnCreateDepartment">Save Data</button>
@@ -82,6 +70,8 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Modal -->
 <div class="modal fade" id="editDepartment" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -95,18 +85,14 @@
                 <form id="departmentEditForm" method="POST">
                     @csrf
                     <div class="row g-3">
-
                         <div class="col-12">
                             <label class="form-label">Department Name</label>
                             <input type="text" name="department_name" id="edit_department_name" class="form-control" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Division</label>
-                            <select name="division_id" id="edit_division_department_name" class="form-control" required>
+                            <select name="division_id" id="edit_division_department_id" class="form-control" required>
                                 <option value="" disabled>-- Select Division --</option>
-                                @foreach ($division as $div)
-                                <option value="{{ $div->id }}">{{ $div->name }}</option>
-                                @endforeach
                             </select>
                         </div>
                         <div class="col-12">
@@ -116,7 +102,6 @@
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
-
                     </div>
                 </form>
             </div>
@@ -130,76 +115,39 @@
     </div>
 </div>
 
-
-<!-- Submit Section -->
-
-
-
-@push('scripts')
-<!-- DataTables -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
+@push('page-scripts')
 <script>
     $(document).ready(function() {
+        // Inisialisasi dropdown awal
+        if (window.masterData && window.masterData.divisions) {
+            populateSelect('division_id', window.masterData.divisions);
+            populateSelect('edit_division_department_id', window.masterData.divisions);
+        }
+
+        // Event listener untuk refresh data master
+        $(document).on('masterDataRefreshed', function(e, data) {
+            populateSelect('division_id', data.divisions);
+            populateSelect('edit_division_department_id', data.divisions);
+        });
+
         $('#departmentTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('department.data') }}",
-            columns: [{
-                    data: 'id',
-                    name: 'id'
-                },
-
-                {
-                    data: 'name',
-                    name: 'name'
-                },
-                {
-                    data: 'division',
-                    name: 'division'
-                },
-                {
-                    data: 'status_badge',
-                    name: 'status',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false
-                }
+            columns: [
+                { data: 'id', name: 'id' },
+                { data: 'name', name: 'name' },
+                { data: 'division', name: 'division' },
+                { data: 'status_badge', name: 'status', orderable: false, searchables: false },
+                { data: 'action', name: 'action', orderable: false, searchables: false }
             ],
-            order: [
-                [0, 'desc']
-            ]
+            order: [[0, 'desc']]
         });
     });
-</script>
 
-@if(session('success'))
-<script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: "{{ session('success') }}",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-    });
-</script>
-@endif
-
-<script>
     // CREATE (AJAX)
     $('#btnCreateDepartment').click(function(e) {
         e.preventDefault();
-
         let form = $('#departmentCreateForm');
         let url = form.attr('action');
 
@@ -208,69 +156,46 @@
             method: "POST",
             data: form.serialize(),
             success: function(res) {
-
-                // Tutup modal
                 $('#addDepartment').modal('hide');
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
-                // Reload DataTable tanpa reload halaman
                 $('#departmentTable').DataTable().ajax.reload(null, false);
+                refreshMasterOptions();
 
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Section added successfully",
+                    text: "Department added successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });
 
-                // Reset form
                 form.trigger('reset');
-            },
-            error: function(xhr) {
-                console.log(xhr.responseText);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "Failed to add data"
-                });
             }
         });
     });
-</script>
 
-<script>
-    $(document).ready(function() {
+    // EDIT
+    $(document).on('click', '.department-edit-btn', function() {
+        var id = $(this).data('id');
+        var editUrl = "{{ route('department.edit', ['id' => 0]) }}";
+        editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
 
-        $(document).on('click', '.department-edit-btn', function() {
-            var id = $(this).data('id');
+        $.get(editUrl, function(response) {
+            $('#edit_department_name').val(response.name);
+            populateSelect('edit_division_department_id', window.masterData.divisions, response.division_id);
+            $('#edit_status_department').val(response.status);
 
-            // Buat URL edit dengan dummy ID
-            var editUrl = "{{ route('department.edit', ['id' => 0]) }}";
-            editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
-
-            $.get(editUrl, function(response) {
-
-                // response = data dari controller
-                $('#edit_department_name').val(response.name);
-                $('#edit_division_department_name').val(response.division_id).change();
-                $('#edit_status_department').val(response.status);
-
-                // Atur URL update
-                var updateUrl = "{{ route('department.update', ['id' => 0]) }}";
-                updateUrl = updateUrl.replace('/0', '/' + id);
-
-                $('#departmentEditForm').attr('action', updateUrl);
-
-                $('#editDepartment').modal('show');
-            });
+            var updateUrl = "{{ route('department.update', ['id' => 0]) }}";
+            updateUrl = updateUrl.replace('/0', '/' + id);
+            $('#departmentEditForm').attr('action', updateUrl);
+            $('#editDepartment').modal('show');
         });
     });
 
     $('#departmentEditForm').submit(function(e) {
         e.preventDefault();
-
         let form = $(this);
         let url = form.attr('action');
 
@@ -280,12 +205,11 @@
             data: form.serialize(),
             success: function(res) {
                 $('#editDepartment').modal('hide');
-
-                // Fix overlay nyangkut
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
                 $('#departmentTable').DataTable().ajax.reload();
+                refreshMasterOptions();
 
                 Swal.fire({
                     icon: "success",
@@ -294,18 +218,13 @@
                     timer: 1500,
                     showConfirmButton: false
                 });
-            },
-            error: function(xhr) {
-                console.log(xhr.responseText);
             }
         });
     });
-</script>
 
-<script>
+    // DELETE
     $(document).on('click', '.department-delete-btn', function() {
         var id = $(this).data('id');
-
         Swal.fire({
             title: "Delete Department?",
             text: "This action cannot be undone.",
@@ -315,20 +234,16 @@
             cancelButtonText: "Cancel"
         }).then((result) => {
             if (result.isConfirmed) {
-
-                let deleteUrl = "/department/delete/" + id;
-
                 $.ajax({
-                    url: deleteUrl,
+                    url: "/department/delete/" + id,
                     type: "POST",
                     data: {
                         _method: "DELETE",
                         _token: "{{ csrf_token() }}"
                     },
                     success: function() {
-
                         $('#departmentTable').DataTable().ajax.reload(null, false);
-
+                        refreshMasterOptions();
                         Swal.fire({
                             icon: "success",
                             title: "Deleted",
@@ -336,16 +251,10 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-                    },
-                    error: function(xhr) {
-                        console.log(xhr.responseText);
                     }
                 });
             }
         });
     });
 </script>
-
-
-
 @endpush

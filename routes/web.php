@@ -1354,6 +1354,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting.master.view')
         ->get('/master-data', [MasterController::class, 'index'])
         ->name('master');
+    Route::middleware('permission:setting.master.view')
+        ->get('/master-data/options', [MasterController::class, 'options'])
+        ->name('master.options');
+    Route::middleware('permission:setting.master.view')
+        ->get('/master-data/organization', [MasterController::class, 'organization'])
+        ->name('master.organization');
     Route::prefix('users')
         ->middleware('permission:setting.users.view')
         ->group(function () {

@@ -12,7 +12,13 @@ interface MasterDataService
      *
      * @return Collection<\App\Models\Director>
      */
-    public function getOrganizationTree(): Collection;
+    /**
+     * Get all master data options for dropdowns.
+     * Includes JobPositions, JobLevels, Directors, Divisions, Departments, and Sections.
+     *
+     * @return array
+     */
+    public function getAllOptions(): array;
 
     /**
      * Invalidate the cached organization tree.

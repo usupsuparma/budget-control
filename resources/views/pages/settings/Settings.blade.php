@@ -4,6 +4,13 @@
 @section('title-sub', 'Master')
 @section('pagetitle', 'Setting')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+<style>
+    .choices__inner { min-height: 38px; }
+</style>
+@endpush
+
 @section('content')
 
 <div class="col-12 col-lg-12">
@@ -86,7 +93,9 @@
                             @include('pages.settings.section')
                         </div>
                         <div class="tab-pane fade" id="organization">
-                            @include('pages.settings.organization')
+                            <div id="orgTreeContainer">
+                                {{-- Will be loaded via AJAX --}}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,3 +105,130 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+<script>
+    window.masterChoices = {};
+    window.masterData = {};
+
+    /**
+     * Inisialisasi Choices.js pada elemen select
+     */
+    function initChoices(elementId, placeholder = "Select option") {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        // Jika sudah ada instance, destroy dulu
+        if (window.masterChoices[elementId]) {
+            window.masterChoices[elementId].destroy();
+        }
+
+        window.masterChoices[elementId] = new Choices(element, {
+            searchEnabled: true,
+            itemSelectText: '',
+            allowHTML: true,
+            shouldSort: false,
+            removeItemButton: false
+        });
+    }
+
+    /**
+     * Mengisi select dengan data baru dan refresh Choices.js
+     */
+    function populateSelect(elementId, data, selectedValue = null, labelField = 'name') {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            console.warn(`Element #${elementId} not found for populateSelect`);
+            return;
+        }
+
+        console.log(`Populating #${elementId} with ${data.length} items`);
+
+        // Siapkan choices
+        const choices = [{
+            value: '',
+            label: '-- Select Option --',
+            selected: !selectedValue,
+            disabled: true
+        }];
+
+        data.forEach(item => {
+            choices.push({
+                value: item.id.toString(),
+                label: item[labelField],
+                selected: selectedValue && selectedValue.toString() === item.id.toString()
+            });
+        });
+
+        // Jika sudah ada instance Choices.js
+        if (window.masterChoices[elementId]) {
+            const instance = window.masterChoices[elementId];
+            instance.clearStore();
+            instance.setChoices(choices, 'value', 'label', true);
+        } else {
+            // Jika belum ada instance, isi HTML manual dulu lalu init
+            let html = '<option value="" disabled selected>-- Select Option --</option>';
+            data.forEach(item => {
+                const isSelected = selectedValue && selectedValue.toString() === item.id.toString();
+                html += `<option value="${item.id}" ${isSelected ? 'selected' : ''}>${item[labelField]}</option>`;
+            });
+            element.innerHTML = html;
+            
+            // Beri sedikit delay untuk inisialisasi Choices.js jika elemen baru muncul
+            setTimeout(() => {
+                initChoices(elementId);
+            }, 50);
+        }
+    }
+
+    /**
+     * Ambil data master terbaru dari server
+     */
+    function refreshMasterOptions(callback = null) {
+        $.ajax({
+            url: "{{ route('master.options') }}",
+            method: "GET",
+            success: function(res) {
+                if (res.success) {
+                    console.log("Master options refreshed:", res.data);
+                    window.masterData = res.data;
+                    
+                    // Trigger event global agar partial lain bisa update
+                    $(document).trigger('masterDataRefreshed', [res.data]);
+
+                    if (typeof callback === 'function') callback(res.data);
+                }
+            },
+            error: function(xhr) {
+                console.error("Failed to refresh master options", xhr.responseText);
+            }
+        });
+
+        // Juga refresh pohon organisasi
+        refreshOrgTree();
+    }
+
+    /**
+     * Ambil pohon organisasi terbaru dari server (HTML partial)
+     */
+    function refreshOrgTree() {
+        $.ajax({
+            url: "{{ route('master.organization') }}",
+            method: "GET",
+            success: function(html) {
+                $('#orgTreeContainer').html(html);
+
+                // Re-init toggle listener jika ada di partial
+                if (typeof initOrgTreeToggle === 'function') {
+                    initOrgTreeToggle();
+                }
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        refreshMasterOptions();
+    });
+    </script>
+    @endpush

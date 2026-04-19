@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Section;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class SectionController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
+
     public function getData()
     {
         $query = Section::with('department')->select(['id', 'name', 'department_id', 'status']);
@@ -40,17 +45,19 @@ class SectionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'section_name' => 'required|string|max:255',
+            'section_name'  => 'required|string|max:255',
+            'department_id' => 'required|exists:department,id',
         ]);
 
         Section::create([
             'name' => $validated['section_name'],
-            'department_id' => $request->department_id,
+            'department_id' => $validated['department_id'],
             'status' => 'Active',
         ]);
 
+        $this->masterDataService->forgetCache();
 
-        return redirect()->back()->with('success', 'Section berhasil ditambahkan.');
+        return response()->json(['success' => true, 'message' => 'Section created successfully.']);
     }
 
     public function edit($id)
@@ -69,22 +76,26 @@ class SectionController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'section_name' => 'required|string|max:255',
-            'status'       => 'required|in:Active,Inactive',
+            'section_name'  => 'required|string|max:255',
+            'department_id' => 'required|exists:department,id',
+            'status'        => 'required|in:Active,Inactive',
         ]);
 
         $section = Section::findOrFail($id);
         $section->name   = $validated['section_name'];
         $section->status = $validated['status'];
-        $section->department_id = $request->department_id;
+        $section->department_id = $validated['department_id'];
         $section->save();
 
-        return redirect()->back()->with('success', 'Section berhasil diperbarui.');
+        $this->masterDataService->forgetCache();
+
+        return response()->json(['success' => true, 'message' => 'Section updated successfully.']);
     }
 
     public function destroy($id)
     {
         Section::findOrFail($id)->delete();
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }

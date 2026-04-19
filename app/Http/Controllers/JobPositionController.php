@@ -8,11 +8,16 @@ use App\Models\Division;
 use App\Models\JobLevel;
 use App\Models\JobPosition;
 use App\Models\Section;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class JobPositionController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
+
     public function getData()
     {
         $query = JobPosition::select([
@@ -92,17 +97,21 @@ class JobPositionController extends Controller
     {
         $validated = $request->validate([
             'job_position_name' => 'required|string|max:255',
-            'job_level_id'      => 'required',
+            'job_level_id'      => 'required|exists:job_level,id',
             'structure_id'      => 'required',
         ]);
+
+        $jobLevel = JobLevel::find($validated['job_level_id']);
 
         JobPosition::create([
             'job_position_name' => $validated['job_position_name'],
             'job_level_id'      => $validated['job_level_id'],
-            'job_level_name'    => JobLevel::find($validated['job_level_id'])->job_level_name,
+            'job_level_name'    => $jobLevel->job_level_name,
             'structure_id'      => $validated['structure_id'],
             'status'            => 'Active'
         ]);
+
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }
@@ -120,18 +129,22 @@ class JobPositionController extends Controller
     {
         $validated = $request->validate([
             'job_position_name' => 'required|string|max:255',
-            'job_level_id'      => 'required',
+            'job_level_id'      => 'required|exists:job_level,id',
             'structure_id'      => 'required',
             'status'            => 'required|in:Active,Inactive'
         ]);
 
+        $jobLevel = JobLevel::find($validated['job_level_id']);
+
         $jp = JobPosition::findOrFail($id);
         $jp->job_position_name = $validated['job_position_name'];
         $jp->job_level_id      = $validated['job_level_id'];
-        $jp->job_level_name    = JobLevel::find($validated['job_level_id'])->job_level_name;
+        $jp->job_level_name    = $jobLevel->job_level_name;
         $jp->structure_id      = $validated['structure_id'];
         $jp->status            = $validated['status'];
         $jp->save();
+
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }
@@ -140,6 +153,8 @@ class JobPositionController extends Controller
     public function destroy($id)
     {
         JobPosition::findOrFail($id)->delete();
+        $this->masterDataService->forgetCache();
+
         return response()->json(['success' => true]);
     }
 }

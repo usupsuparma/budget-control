@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Division;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class DivisionController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
     public function getData()
     {
         $query = Division::with('director')->select(['id', 'name', 'director_id', 'status']);
@@ -40,15 +44,18 @@ class DivisionController extends Controller
     {
         $validated = $request->validate([
             'division_name' => 'required|string|max:255',
+            'director_id'   => 'required|exists:director,id',
         ]);
 
         Division::create([
             'name' => $validated['division_name'],
-            'director_id' => $request['director_id'],
-            'status' => 'Active', // default
+            'director_id' => $validated['director_id'],
+            'status' => 'Active',
         ]);
 
-        return redirect()->back()->with('success', 'Division berhasil ditambahkan.');
+        $this->masterDataService->forgetCache();
+
+        return response()->json(['success' => true, 'message' => 'Division created successfully.']);
     }
 
     public function edit($id)
@@ -68,21 +75,25 @@ class DivisionController extends Controller
     {
         $validated = $request->validate([
             'division_name' => 'required|string|max:255',
+            'director_id'   => 'required|exists:director,id',
             'status' => 'required|in:Active,Inactive',
         ]);
 
         $division = Division::findOrFail($id);
         $division->name = $validated['division_name'];
-        $division->director_id = $request['director_id'];
+        $division->director_id = $validated['director_id'];
         $division->status = $validated['status'];
         $division->save();
 
-        return redirect()->back()->with('success', 'Division berhasil diperbarui.');
+        $this->masterDataService->forgetCache();
+
+        return response()->json(['success' => true, 'message' => 'Division updated successfully.']);
     }
 
     public function destroy($id)
     {
         Division::findOrFail($id)->delete();
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }

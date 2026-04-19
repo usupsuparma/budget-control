@@ -32,7 +32,6 @@
     </div>
 </div>
 <!-- Create Modal -->
-<!-- Create Employee Modal -->
 <div class="modal fade" id="addDivision" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDivisionLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md" role="document">
         <div class="modal-content">
@@ -52,21 +51,16 @@
 
                     <div class="row g-3">
 
-                        <!-- Organization Name -->
                         <div class="col-12">
                             <label class="form-label">Division Name</label>
                             <input type="text" name="division_name" class="form-control" placeholder="Enter Division Name" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Director</label>
-                            <select name="director_id" id="edit_director_id" class="form-control" required>
+                            <select name="director_id" id="director_id" class="form-control" required>
                                 <option value="" selected disabled>-- Select Director --</option>
-                                @foreach ($director as $dir)
-                                <option value="{{ $dir->id }}">{{ $dir->name }}</option>
-                                @endforeach
                             </select>
                         </div>
-
 
                     </div>
 
@@ -82,6 +76,8 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Modal -->
 <div class="modal fade" id="editDivision" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -102,14 +98,10 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Director</label>
-                            <select name="director_id" id="edit_director_division_name" class="form-control" required>
+                            <select name="director_id" id="edit_director_division_id" class="form-control" required>
                                 <option value="" disabled>-- Select Director --</option>
-                                @foreach ($director as $dir)
-                                <option value="{{ $dir->id }}">{{ $dir->name }}</option>
-                                @endforeach
                             </select>
                         </div>
-
 
                         <div class="col-12">
                             <label>Status</label>
@@ -133,76 +125,42 @@
     </div>
 </div>
 
-
-<!-- Submit Section -->
-
-
-
 @push('page-scripts')
-<!-- DataTables -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
     $(document).ready(function() {
+        // Event listener untuk refresh data master
+        $(document).on('masterDataRefreshed', function(e, data) {
+            console.log("Division partial: master data refreshed", data.directors);
+            if (data.directors) {
+                populateSelect('director_id', data.directors);
+                populateSelect('edit_director_division_id', data.directors);
+            }
+        });
+
+        // Inisialisasi dropdown awal jika data sudah ada
+        if (window.masterData && window.masterData.directors) {
+            populateSelect('director_id', window.masterData.directors);
+            populateSelect('edit_director_division_id', window.masterData.directors);
+        }
+
         $('#divisionTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('division.data') }}",
-            columns: [{
-                    data: 'id',
-                    name: 'id'
-                },
-
-                {
-                    data: 'name',
-                    name: 'name'
-                },
-                {
-                    data: 'director',
-                    name: 'director'
-                },
-                {
-                    data: 'status_badge',
-                    name: 'status',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false
-                }
+            columns: [
+                { data: 'id', name: 'id' },
+                { data: 'name', name: 'name' },
+                { data: 'director', name: 'director' },
+                { data: 'status_badge', name: 'status', orderable: false, searchable: false },
+                { data: 'action', name: 'action', orderable: false, searchable: false }
             ],
-            order: [
-                [0, 'desc']
-            ]
+            order: [[0, 'desc']]
         });
     });
-</script>
 
-@if(session('success'))
-<script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: "{{ session('success') }}",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-    });
-</script>
-@endif
-
-<script>
     // CREATE (AJAX)
     $('#btnCreateDivision').click(function(e) {
         e.preventDefault();
-
         let form = $('#divisionCreateForm');
         let url = form.attr('action');
 
@@ -211,28 +169,26 @@
             method: "POST",
             data: form.serialize(),
             success: function(res) {
-
-                // Tutup modal
                 $('#addDivision').modal('hide');
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
-                // Reload DataTable tanpa reload halaman
                 $('#divisionTable').DataTable().ajax.reload(null, false);
+                
+                // Refresh data global
+                refreshMasterOptions();
 
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Section added successfully",
+                    text: "Division added successfully",
                     timer: 1500,
                     showConfirmButton: false
                 });
 
-                // Reset form
                 form.trigger('reset');
             },
             error: function(xhr) {
-                console.log(xhr.responseText);
                 Swal.fire({
                     icon: "error",
                     title: "Error",
@@ -241,59 +197,13 @@
             }
         });
     });
-</script>
-<script>
-    $(document).on('click', '.division-delete-btn', function() {
-        var id = $(this).data('id');
 
-        Swal.fire({
-            title: "Delete Division?",
-            text: "This action cannot be undone.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Delete",
-            cancelButtonText: "Cancel"
-        }).then((result) => {
-            if (result.isConfirmed) {
-
-
-                let deleteUrl = "/division/delete/" + id;
-
-
-                $.ajax({
-                    url: deleteUrl,
-                    type: "POST",
-                    data: {
-                        _method: "DELETE",
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function() {
-
-                        $('#divisionTable').DataTable().ajax.reload(null, false);
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Deleted",
-                            text: "Division deleted successfully",
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    },
-                    error: function(xhr) {
-                        console.log(xhr.responseText);
-                    }
-                });
-            }
-        });
-    });
-</script>
-<script>
+    // EDIT
     $(document).on('click', '.division-edit-btn', function() {
         var id = $(this).data('id');
-
         $.get("{{ url('/division') }}/" + id + "/edit", function(data) {
             $('#edit_division_name').val(data.name);
-            $('#edit_director_division_name').val(data.director_id).change();
+            populateSelect('edit_director_division_id', window.masterData.directors, data.director_id);
             $('#edit_status_division').val(data.status);
 
             $('#divisionEditForm').attr('action', "{{ url('/division/update') }}/" + id);
@@ -301,10 +211,8 @@
         });
     });
 
-
     $('#divisionEditForm').submit(function(e) {
         e.preventDefault();
-
         let form = $(this);
         let url = form.attr('action');
 
@@ -314,12 +222,11 @@
             data: form.serialize(),
             success: function(res) {
                 $('#editDivision').modal('hide');
-
-                // Fix overlay nyangkut
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
 
                 $('#divisionTable').DataTable().ajax.reload();
+                refreshMasterOptions();
 
                 Swal.fire({
                     icon: "success",
@@ -328,14 +235,43 @@
                     timer: 1500,
                     showConfirmButton: false
                 });
-            },
-            error: function(xhr) {
-                console.log(xhr.responseText);
+            }
+        });
+    });
+
+    // DELETE
+    $(document).on('click', '.division-delete-btn', function() {
+        var id = $(this).data('id');
+        Swal.fire({
+            title: "Delete Division?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "/division/delete/" + id,
+                    type: "POST",
+                    data: {
+                        _method: "DELETE",
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function() {
+                        $('#divisionTable').DataTable().ajax.reload(null, false);
+                        refreshMasterOptions();
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted",
+                            text: "Division deleted successfully",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
             }
         });
     });
 </script>
-
-
-
 @endpush

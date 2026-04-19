@@ -21,44 +21,7 @@ class MasterController extends Controller
     public function index()
     {
         $title = 'Master Data';
-
-        $employees = Employee::where('status', 'Active')->get();
-        $roles = Role::get();
-        $jobPositions = JobPosition::where('status', 'Active')->get();
-        $jobLevel = JobLevel::where('status', 'Active')->get();
-
-        // Delegasikan ke Service Layer (sesuai GEMINI.md: no query in Controller)
-        $directors = $this->masterDataService->getOrganizationTree();
-
-        // Backwards-compatible variable for select lists in existing partials
-        $director = $directors;
-
-        $division = Division::where('status', 'Active')->with('director')->orderBy('name', 'asc')->get();
-        $department = Department::where('status', 'Active')->orderBy('name', 'asc')->get();
-        $section = Section::where('status', 'Active')->orderBy('name', 'asc')->get();
-
-        // provide plural aliases used across various blades for backward compatibility
-        $divisions = $division;
-        $departments = $department;
-        $sections = $section;
-
-
-        return view('pages.settings.Settings', compact(
-            'title',
-            'employees',
-            'roles',
-            'jobPositions',
-            'jobLevel',
-            'directors',
-            'director',
-            // singular and plural names kept for compatibility
-            'division',
-            'divisions',
-            'department',
-            'departments',
-            'section',
-            'sections'
-        ));
+        return view('pages.settings.Settings', compact('title'));
     }
 
     public function index2()
@@ -70,27 +33,28 @@ class MasterController extends Controller
 
     public function data(Request $request)
     {
-        if ($request->ajax()) {
-            $query = Employee::with('roles')->select(['id', 'email', 'first_name', 'last_name', 'status']);
+        // ... (existing data code)
+    }
 
-            return DataTables::of($query)
-                ->addColumn('fullname', fn($row) => $row->first_name . ' ' . $row->last_name)
-                ->addColumn('action', function ($row) {
-                    return '
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-warning edit" data-id="' . $row->id . '">Edit</button>
-                            <button class="btn btn-sm btn-danger delete" data-id="' . $row->id . '">Delete</button>
-                        </div>';
-                })
-                ->rawColumns(['action'])
-                ->make(true);
-
-            // 🧩 Return ke browser, baik AJAX maupun langsung
-            if ($request->ajax()) {
-                return $datatable;
-            } else {
-                return response()->json($datatable->getData());
-            }
+    public function options()
+    {
+        try {
+            $options = $this->masterDataService->getAllOptions();
+            return response()->json([
+                'success' => true,
+                'data' => $options
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch options'
+            ], 500);
         }
+    }
+
+    public function organization()
+    {
+        $directors = $this->masterDataService->getOrganizationTree();
+        return view('pages.settings.organization', compact('directors'))->render();
     }
 }

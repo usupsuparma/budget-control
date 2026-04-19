@@ -260,7 +260,7 @@
             </ul>
 
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                functioninitOrgTreeToggle() {
                     // All children lists start visible
                     document.querySelectorAll('.org-tree ul.children').forEach(function(el) {
                         el.style.display = 'flex';
@@ -268,9 +268,13 @@
 
                     // Toggle collapse on click
                     document.querySelectorAll('.org-node[data-toggle]').forEach(function(node) {
-                        node.addEventListener('click', function(e) {
+                        // Remove existing listeners if any (clone node)
+                        var newNode = node.cloneNode(true);
+                        node.parentNode.replaceChild(newNode, node);
+
+                        newNode.addEventListener('click', function(e) {
                             e.stopPropagation();
-                            var parentLi = node.closest('li');
+                            var parentLi = newNode.closest('li');
                             var childUl = parentLi ? parentLi.querySelector(':scope > ul.children') : null;
                             if (!childUl) return;
 
@@ -278,13 +282,16 @@
                             childUl.style.display = isHidden ? 'flex' : 'none';
 
                             // Toggle icon text
-                            var icon = node.querySelector('.toggle-icon');
+                            var icon = newNode.querySelector('.toggle-icon');
                             if (icon) {
                                 icon.textContent = icon.textContent.replace(isHidden ? '▸' : '▾', isHidden ? '▾' : '▸');
                             }
                         });
                     });
-                });
+                }
+
+                // Initial call for the first load
+                initOrgTreeToggle();
             </script>
         </div>
     </div>

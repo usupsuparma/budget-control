@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class DepartmentController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
+
     public function getData()
     {
         $query = Department::with('division')->select(['id', 'name', 'division_id', 'status']);
@@ -40,20 +45,22 @@ class DepartmentController extends Controller
     {
         $validated = $request->validate([
             'department_name' => 'required|string|max:255',
+            'division_id'     => 'required|exists:division,id',
         ]);
 
         Department::create([
             'name' => $validated['department_name'],
-            'division_id' => $request['division_id'],
+            'division_id' => $validated['division_id'],
             'status' => 'Active',
         ]);
 
-        return redirect()->back()->with('success', 'Department berhasil ditambahkan.');
+        $this->masterDataService->forgetCache();
+
+        return response()->json(['success' => true, 'message' => 'Department created successfully.']);
     }
 
     public function edit($id)
     {
-
         $data = Department::with('division')->findOrFail($id);
 
         return response()->json([
@@ -67,25 +74,27 @@ class DepartmentController extends Controller
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $validated = $request->validate([
             'department_name'   => 'required|string|max:255',
-            'status' => 'required|in:Active,Inactive',
+            'division_id'       => 'required|exists:division,id',
+            'status'            => 'required|in:Active,Inactive',
         ]);
 
         $department = Department::findOrFail($id);
         $department->name = $validated['department_name'];
+        $department->division_id = $validated['division_id'];
         $department->status = $validated['status'];
-        $department->division_id = $request['division_id'];
         $department->save();
 
-        return redirect()->back()->with('success', 'Department berhasil diperbarui.');
-    }
+        $this->masterDataService->forgetCache();
 
+        return response()->json(['success' => true, 'message' => 'Department updated successfully.']);
+    }
 
     public function destroy($id)
     {
         Department::findOrFail($id)->delete();
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }

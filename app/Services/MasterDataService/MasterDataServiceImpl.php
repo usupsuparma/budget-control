@@ -4,6 +4,11 @@ namespace App\Services\MasterDataService;
 
 use App\Models\Director;
 use App\Models\Employment;
+use App\Models\Division;
+use App\Models\Department;
+use App\Models\Section;
+use App\Models\JobLevel;
+use App\Models\JobPosition;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,6 +19,11 @@ class MasterDataServiceImpl implements MasterDataService
      * Invalidate this key whenever Director/Division/Department/Section master data changes.
      */
     private const CACHE_KEY = 'org_tree_active';
+
+    /**
+     * Cache key for options.
+     */
+    private const CACHE_OPTIONS_KEY = 'master_options_active';
 
     /**
      * Cache TTL in seconds (6 hours). Org structure is master data that rarely changes.
@@ -64,6 +74,24 @@ class MasterDataServiceImpl implements MasterDataService
     }
 
     /**
+     * Get all master data options for dropdowns.
+     */
+    public function getAllOptions(): array
+    {
+        return Cache::remember(self::CACHE_OPTIONS_KEY, self::CACHE_TTL, function () {
+            return [
+                'job_positions' => JobPosition::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
+                'job_levels'    => JobLevel::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
+                'directors'     => Director::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
+                'divisions'     => Division::where('status', 'Active')->orderBy('name')->select(['id', 'name', 'director_id'])->get(),
+                'departments'   => Department::where('status', 'Active')->orderBy('name')->select(['id', 'name', 'division_id'])->get(),
+                'sections'      => Section::where('status', 'Active')->orderBy('name')->select(['id', 'name', 'department_id'])->get(),
+            ];
+        });
+    }
+
+
+    /**
      * Invalidate the cached organization tree.
      *
      * Call this method from any Service that mutates Director, Division,
@@ -75,6 +103,7 @@ class MasterDataServiceImpl implements MasterDataService
     public function forgetCache(): void
     {
         Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::CACHE_OPTIONS_KEY);
     }
 
     private function attachHeadNames(Collection $directors): Collection

@@ -1,37 +1,56 @@
-# Issue: Implementasi Status 0 dan Trigger Approval Process pada Import User Submission
+# Issue: Master Data Employment Dynamic Synchronization (AJAX Refactor)
 
-## Deskripsi Masalah
-Saat ini pada menu User Submission (`admission/user`), fitur Import data dari file Excel/CSV belum secara sepenuhnya menjamin pengajuan yang diimport memiliki status awal `0` (Submission/Pending) dan terintegrasi dengan mulus pada proses dua-fase *dynamic approval system* (Uppline Chain -> Master Flow). Pengguna ingin agar proses *approve* berjalan persis sama dengan fitur "Add data" (manual form).
+## 1. Masalah
+Saat ini, menu **Settings -> Employment** (URL: `/master-data`) menggunakan data statis yang di-load sekali di `MasterController::index`. Jika user menambahkan data baru (misal: Division baru), data tersebut tidak muncul di dropdown (misal: saat tambah Department) tanpa me-restart/refresh halaman secara penuh.
 
-## Rencana Implementasi
+## 2. Tujuan
+Mengimplementasikan sistem sinkronisasi data master berbasis AJAX sehingga setiap perubahan data (Create/Update/Delete) pada satu tab akan secara otomatis memperbarui list dropdown di tab lainnya tanpa reload halaman.
 
-### 1. Perubahan & Verifikasi Backend (Service Layer) [DONE]
-*   **File:** `app/Services/SubmissionService/SubmissionServiceImpl.php`
-    *   **Method `importTransactions($file)`:**
-        Walaupun saat ini sudah memanggil `$this->createTransaction($transactionData)`, pastikan variabel relasi (*urgency*, tipe program) terbaca presisi dari *excel parsing* agar aturan *threshold-based routing* atau jenis approval yang di-hit tidak keliru (misalnya, jika *auto_approve* tersetel nyala saat tidak terencana).
-    *   **Method `createTransaction($data)`:**
-        Pastikan nilai field statu secara eksplisit terkunci di nilai `Transaction::STATUS_PENDING` (yaitu `0`) saat awal transaksi disimpan ke DB.
-    *   **Triggering Approval Workflow:**
-        Pastikan pemanggilan rutin terhadap `$this->approvalTransactionService->submitForApproval($transaction->id)` berhasil membuat `ApprovalRequest` dan rantai `ApprovalRequestDetail`. Tangkap *exception* apa pun (seperti `DomainException`) yang muncul jika *uppline_id* dari uploader bersangkutan ternyata `null` atau `chain` approval tidak tersedia.
+## 3. Standar Arsitektur (MANDATORY - Refer @GEMINI.md)
+*   **Service Layer:** Gunakan Interface + Implementation.
+*   **Binding:** Daftarkan service di `CustomServiceProvider.php`.
+*   **Validation:** Gunakan FormRequest (`php artisan make:request`).
+*   **Choices.js:** Setiap `<select>` wajib menggunakan instance individu Choices.js.
+*   **AJAX:** Gunakan standar JSON response `{ success: true, data: ... }`.
+*   **Testing:** Sertakan PHPUnit test untuk service method yang baru/direfactor.
 
-### 2. Validasi & Penanganan Error Mode Batch [DONE]
-*   **Exception & Atomicity:**
-        Jika di tengah baris excel terjadi kesalahan (misal approver putus), maka implementasikan pembatalan (rollback) via `DB::transaction`. Jika bisnis memperbolehkan parsial (baris gagal di-skip, baris valid dilanjutkan), kumpulkan error tersebut ke variabel dan cetak sebagai catatan tanpa membongkar keseluruhan flow. 
-        **Perhatian!** Standard project ini biasanya preferensi pada atomisasi yang jelas, di mana seluruh satu blok *row group* yang invalid men-trigger *rollback*.
-*   **File Controller:** Dalam `SubmissionController@import`, tangkap *response* pengecekan dari service apabila pengajuan approval gagal di generate akibat konfigurasi hirarki karyawan yang salah, dan lemparkan status kode 422 agar frontend memprosesnya.
+## 4. Rencana Implementasi
 
-### 3. Perubahan UI (Frontend - Action Feedback) [DONE]
-*   **File:** `resources/views/pages/submission/user.blade.php` (Blade & Javascript DOM)
-    *   Sesuaikan pesan saat proses unggah (AJAX File Upload) usai. Tampilkan detail respons secara jelas, contoh: *"Berhasil mengimpor X transaksi dan mengajukannya ke dalam proses Approval."* (Lebih baik memakai SweetAlert2 `Swal.fire`).
-    *   Pastikan tabel otomatis ter-*reload* via data-driven js dan item baru tersebut muncul dengan *Badge* status "Pending" atau "Submission".
+### A. Backend (Senior/Cheaper AI Tasks)
+1.  **Refactor MasterDataService:**
+    *   Pastikan ada method untuk mengambil list `JobPosition`, `JobLevel`, `Director`, `Division`, `Department`, dan `Section` yang berstatus 'Active'.
+2.  **API Endpoints:**
+    *   Buat endpoint di `web.php` (misal: `GET /master-data/options`) yang mengembalikan data JSON untuk semua list master di atas.
+    *   Alternatif: Endpoint individual per entitas jika data terlalu besar (misal: `GET /division/options`).
+3.  **Controllers:**
+    *   Update `MasterController::index` untuk tidak lagi mem-pass data list master yang bersifat dinamis (biarkan view kosong atau hanya inisialisasi awal).
 
-## Standar Teknis & Keamanan (Mematuhi `GEMINI.md`)
-1.  **NO Model queries/CRUD in Controllers.** - Tetap berada di Service `$this->submissionService->importTransactions`.
-2.  **Zero-Test Tolerance:** Sertakan skenario pengujian di Pest/PHPUnit saat memverifikasi API import, untuk dipastikan tidak memunculkan N+1 query.
-3.  **Data-Driven Updates:** Pada `onSuccess` callback di Javascript, cukup panggil API untuk *fetch table* terbaru, jangan *append DOM* manual (hindari penyimpanan *business data* di atribut `data-*`).
+### B. Frontend (Junior/AI Tasks)
+1.  **Global Data Manager (JavaScript):**
+    *   Buat fungsi `refreshMasterOptions()` yang memanggil API endpoint di atas.
+    *   Simpan hasilnya dalam variabel JavaScript global (misal: `window.masterData`).
+2.  **Dynamic Select Rendering:**
+    *   Buat fungsi utilitas (misal: `populateSelect(elementId, data, selectedValue)`) yang:
+        1. Menghapus isi select lama.
+        2. Menambahkan option baru dari data JSON.
+        3. Menghancurkan (destroy) dan menginisialisasi ulang instance **Choices.js**.
+3.  **Integration with Modals:**
+    *   Pada setiap event `success` dari AJAX Create/Update (misal di `JobPosition`, `Division`, dll):
+        1. Panggil `refreshMasterOptions()`.
+        2. Jalankan `populateSelect()` untuk semua dropdown yang relevan di tab lain.
+4.  **Choices.js Implementation:**
+    *   Ikuti standar di `documentasi/CHOICES_JS_STANDARD.md`. Pastikan setiap select memiliki instance unik yang bisa di-update.
 
-## Checklist Pengujian (Test Cases)
-- [x] Upload *Template* CSV yg memiliki *Budget Code* & *Program* benar, transaksi harus tampil di datatable dengan status 0 (Submission/Pending).
-- [x] Pengajuan yang masuk via import sukses mendistribusikan notifikasi/pending state ke akun atasan (*approver* level pertama).
-- [x] Jika struktur hirarki atasan uploader putus, validasi menangkapnya sebelum file berhasil di-import (mencegah *orphan submission* berstatus 0).
-- [x] File dengan formasi *budget limit* yang membeludak, segera menghentikan import sebelum tersimpan.
+## 5. Langkah Validasi
+1.  Buka tab "Division", tambah satu divisi baru.
+2.  Langsung buka tab "Department", buka modal "Add Department".
+3.  Pastikan divisi baru yang tadi dibuat sudah muncul di dropdown "Division" tanpa refresh halaman.
+4.  Lakukan hal yang sama untuk relasi lainnya (Director -> Division, Department -> Section).
+5.  Jalankan unit test: `php artisan test`.
+
+## 6. File Terkait
+*   `app/Http/Controllers/MasterController.php`
+*   `app/Services/MasterDataService/`
+*   `resources/views/pages/settings/Settings.blade.php`
+*   `resources/views/pages/settings/*.blade.php` (Partial tabs)
+*   `routes/web.php`

@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Director;
+use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class DirectorController extends Controller
 {
+    public function __construct(
+        protected MasterDataService $masterDataService
+    ) {}
+
     public function getData()
     {
         $query = Director::select(['id', 'name', 'status']);
@@ -21,11 +26,8 @@ class DirectorController extends Controller
             ->addColumn('action', function ($row) {
                 return '
                     <button class="btn btn-light-primary icon-btn-sm director-edit-btn" data-id="' . $row->id . '">
-                   
-
                         <i class="bi bi-pencil-square"></i>
                     </button>
-
                     <button type="button"
                             class="btn btn-light-danger icon-btn-sm director-delete-btn"
                             data-id="' . $row->id . '">
@@ -44,10 +46,12 @@ class DirectorController extends Controller
 
         Director::create([
             'name' => $validated['director_name'],
-            'status' => 'Active', // default
+            'status' => 'Active',
         ]);
 
-        return redirect()->back()->with('success', 'Director berhasil ditambahkan.');
+        $this->masterDataService->forgetCache();
+
+        return response()->json(['success' => true, 'message' => 'Director created successfully.']);
     }
 
     public function edit($id)
@@ -68,17 +72,18 @@ class DirectorController extends Controller
         $director->status = $validated['status'];
         $director->save();
 
+        $this->masterDataService->forgetCache();
+
         return response()->json([
             'success' => true,
             'message' => 'Director updated'
         ]);
     }
 
-
     public function destroy($id)
     {
-        // dd('$id');
         Director::findOrFail($id)->delete();
+        $this->masterDataService->forgetCache();
 
         return response()->json(['success' => true]);
     }

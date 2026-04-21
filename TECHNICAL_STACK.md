@@ -32,6 +32,20 @@ Always check `public/assets/libs/` before adding any CDN links.
 | **Dragula** | `dragula/` | Drag and drop so simple it hurts |
 | **SortableJS** | `sortablejs/` | Reorderable lists |
 | **PrismJS** | `prismjs/` | Syntax highlighter |
+| **@yaireo** | `@yaireo/` | Tagify plugin for tags input |
+| **Air Datepicker** | `air-datepicker/` | Lightweight customizable cross-browser datepicker |
+| **CountUp.js** | `countup.js/` | Animates a numerical value |
+| **Dual Listbox** | `dual-listbox/` | Responsive dual listbox |
+| **ECharts** | `echarts/` | Powerful, interactive charting and data visualization library |
+| **gmaps** | `gmaps/` | Google Maps API helper |
+| **Grid.js** | `gridjs/` | Advanced table plugin |
+| **Jsvectormap** | `jsvectormap/` | Interactive vector maps |
+| **List.js** | `list.js/` | Search, sort, filters for HTML lists |
+| **Plyr** | `plyr/` | Simple, lightweight media player |
+| **Remixicon** | `remixicon/` | Open source icon set |
+| **Shepherd.js** | `shepherd.js/` | Guide/App tour plugin |
+| **Star Rating** | `star-rating.js/` | Zero-dependency star rating |
+| **wNumb** | `wNumb/` | Number & money formatting |
 
 ## Usage Guideline
 To include a library in a Blade view, use the `asset()` helper:

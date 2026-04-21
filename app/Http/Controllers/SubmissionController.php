@@ -853,4 +853,94 @@ class SubmissionController extends Controller
             ], 500);
         }
     }
+
+    /* ========================
+        MACFRAME GA IMPORT
+    ======================== */
+
+    /**
+     * Phase 1 – Upload & parse MacframeGA file (no DB write).
+     * Returns parsed preview data as JSON.
+     */
+    public function previewMacframeImport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls|max:10240',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Format file tidak valid. Harap upload file Excel (.xlsx / .xls).',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $result = $this->submissionService->parseMacframeFile($request->file('file'));
+
+            $statusCode = $result['success'] ? 200 : 422;
+            return response()->json($result, $statusCode);
+        } catch (\Exception $e) {
+            Log::error('MacframeGA preview error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses file MacframeGA: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Phase 2 – Commit parsed MacframeGA data to database.
+     * Receives JSON payload: { items[], program_id, transaction_date, purpose, urgency }
+     */
+    public function commitMacframeImport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'program_id'       => 'required|integer|exists:kpi_workplans,id',
+            'transaction_date' => 'required|date',
+            'purpose'          => 'required|string|max:500',
+            'urgency'          => 'required|string|max:500',
+            'items'            => 'required|array|min:1',
+            'items.*.goods_service_name' => 'required|string',
+            'items.*.unit_name'          => 'nullable|string',
+            'items.*.unit_id'            => 'nullable|integer',
+            'items.*.quantity'           => 'required|numeric|min:0',
+            'items.*.price'              => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $result = $this->submissionService->commitMacframeTransactions(
+                $request->input('items'),
+                (int) $request->input('program_id'),
+                $request->input('transaction_date'),
+                $request->input('purpose'),
+                $request->input('urgency')
+            );
+
+            $statusCode = $result['status_code'] ?? ($result['success'] ? 200 : 422);
+            return response()->json($result, $statusCode);
+        } catch (\App\Exceptions\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('MacframeGA commit error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data MacframeGA: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

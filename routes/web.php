@@ -735,6 +735,13 @@ Route::middleware('auth')->group(function () {
                 Route::post('/import', [SubmissionController::class, 'import'])
                     ->name('userSubmission.import');
 
+                // MacframeGA Two-Phase Import
+                Route::post('/import-macframe-preview', [SubmissionController::class, 'previewMacframeImport'])
+                    ->name('userSubmission.importMacframePreview');
+
+                Route::post('/import-macframe-commit', [SubmissionController::class, 'commitMacframeImport'])
+                    ->name('userSubmission.importMacframeCommit');
+
                 Route::post('/store', [SubmissionController::class, 'store'])
                     ->name('userSubmission.store');
 

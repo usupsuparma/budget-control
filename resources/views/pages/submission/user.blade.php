@@ -392,41 +392,178 @@
         </div>
     </div>
 
-    {{-- === IMPORT MODAL === --}}
+    {{-- === IMPORT MODAL (Template / MacframeGA) === --}}
     <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="importModalLabel">Import Submissions from Excel</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <h5 class="modal-title" id="importModalLabel">
+                        <i class="ri-upload-cloud-2-line me-2"></i>Import Submissions
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="importForm" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <div class="alert alert-info">
+                <div class="modal-body">
+                    {{-- === Import Type Selector === --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Pilih Jenis Import</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card" id="cardTemplate" for="importTypeTemplate" style="cursor:pointer;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeTemplate" value="template" checked>
+                                        <div>
+                                            <div class="fw-semibold"><i class="ri-file-excel-line text-success me-1"></i>Template Sistem</div>
+                                            <small class="text-muted">File template yang diunduh dari sistem ini</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card" id="cardMacframe" for="importTypeMacframe" style="cursor:pointer;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeMacframe" value="macframe">
+                                        <div>
+                                            <div class="fw-semibold"><i class="ri-file-transfer-line text-primary me-1"></i>MacframeGA</div>
+                                            <small class="text-muted">File export dari aplikasi MacframeGA</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- === Template Import Section === --}}
+                    <div id="sectionTemplate">
+                        <form id="importForm" enctype="multipart/form-data">
+                            <div class="alert alert-info mb-3">
+                                <i class="ri-information-line me-2"></i>
+                                Gunakan template resmi sistem.
+                                <a href="{{ route('userSubmission.template') }}" class="fw-bold">Download Template</a>.
+                            </div>
+                            <div class="mb-3">
+                                <label for="importFile" class="form-label">Pilih File Excel (.xlsx, .xls, .csv)</label>
+                                <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls,.csv">
+                            </div>
+                            <div id="importResults" class="d-none">
+                                <hr>
+                                <h6>Hasil Import:</h6>
+                                <div id="importMessage" class="alert mb-2"></div>
+                                <ul id="importErrors" class="text-danger small"></ul>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- === MacframeGA Import Section === --}}
+                    <div id="sectionMacframe" class="d-none">
+                        <div class="alert alert-primary mb-3">
                             <i class="ri-information-line me-2"></i>
-                            Please use the provided template to ensure the correct format.
-                            <a href="{{ route('userSubmission.template') }}" class="fw-bold">Download Template here</a>.
+                            Upload file Excel dari <strong>MacframeGA</strong>. Setelah diproses, Anda akan diminta memilih <strong>Program ID</strong> sebelum data disimpan.
                         </div>
-                        <div class="mb-3">
-                            <label for="importFile" class="form-label">Choose Excel File (.xlsx, .xls, .csv)</label>
-                            <input type="file" class="form-control" id="importFile" name="file"
-                                accept=".xlsx, .xls, .csv" required>
+                        <form id="macframeUploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="macframeFile" class="form-label">File MacframeGA (.xlsx, .xls)</label>
+                                <input type="file" class="form-control" id="macframeFile" name="file" accept=".xlsx,.xls">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    {{-- Shown when type = template --}}
+                    <button type="submit" class="btn btn-primary" id="btnDoImport" form="importForm">
+                        <i class="ri-upload-line me-1"></i> Mulai Import
+                    </button>
+                    {{-- Shown when type = macframe --}}
+                    <button type="button" class="btn btn-primary d-none" id="btnProcessMacframe">
+                        <i class="ri-search-line me-1"></i> Proses & Preview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- === MACFRAME PREVIEW MODAL === --}}
+    <div class="modal fade" id="macframePreviewModal" tabindex="-1" aria-labelledby="macframePreviewModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="macframePreviewModalLabel">
+                        <i class="ri-file-transfer-line me-2"></i>Preview Data MacframeGA — Pilih Program ID
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{-- Program & Metadata form --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tanggal Transaksi <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="mf_transaction_date">
                         </div>
-                        <div id="importResults" class="d-none">
-                            <hr>
-                            <h6>Import Results:</h6>
-                            <div id="importMessage" class="alert mb-2"></div>
-                            <ul id="importErrors" class="text-danger small"></ul>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Program ID (KPI Workplan) <span class="text-danger">*</span></label>
+                            <select class="form-select" id="mf_program_id" name="mf_program_id">
+                                <option value="">-- Pilih Program --</option>
+                                @foreach ($workplans as $workplan)
+                                    <option value="{{ $workplan->id }}">
+                                        {{ $workplan->activity }} ({{ $workplan->year }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text text-muted">Semua baris data dari file ini akan dikaitkan dengan program yang dipilih.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Purpose <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="mf_purpose" placeholder="Tujuan pengajuan">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Urgency <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="mf_urgency" placeholder="Urgensi pengajuan">
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" id="btnDoImport">
-                            <i class="ri-upload-line me-1"></i> Start Import
-                        </button>
+
+                    {{-- Alert for unresolved units --}}
+                    <div id="mf_unit_warning" class="alert alert-warning d-none">
+                        <i class="ri-error-warning-line me-2"></i>
+                        <strong>Perhatian:</strong> Beberapa unit tidak ditemukan di master data (ditandai <span class="badge bg-warning text-dark">?</span>). Data tetap bisa disimpan namun unit akan kosong. Silakan tambahkan unit terlebih dahulu jika diperlukan.
                     </div>
-                </form>
+
+                    {{-- Preview table --}}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="4%">#</th>
+                                    <th width="28%">Nama Barang/Jasa</th>
+                                    <th width="15%">Purpose</th>
+                                    <th width="15%">Urgency</th>
+                                    <th width="10%">Unit</th>
+                                    <th width="8%" class="text-center">Qty</th>
+                                    <th width="12%" class="text-end">Harga</th>
+                                    <th width="12%" class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mf_preview_body">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Belum ada data</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="6" class="text-end">Grand Total:</td>
+                                    <td colspan="2" class="text-end" id="mf_grand_total">Rp 0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="ri-arrow-left-line me-1"></i> Kembali
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnConfirmMacframe">
+                        <i class="ri-save-line me-1"></i> Konfirmasi & Simpan
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -3109,5 +3246,226 @@
                 }
             });
         }
+
+        /* =====================================================
+            MACFRAME GA IMPORT — Two-Phase JavaScript Logic
+        ===================================================== */
+
+        let mfChoicesProgramId = null;   // Choices.js instance for #mf_program_id
+        let mfParsedData       = null;   // Cached server response from Phase 1
+
+        // ── Import-type radio switch ──
+        $('input[name="import_type"]').on('change', function () {
+            const isTemplate = $(this).val() === 'template';
+
+            $('#sectionTemplate').toggleClass('d-none', !isTemplate);
+            $('#sectionMacframe').toggleClass('d-none', isTemplate);
+            $('#btnDoImport').toggleClass('d-none', !isTemplate);
+            $('#btnProcessMacframe').toggleClass('d-none', isTemplate);
+
+            // Visual card highlight
+            $('#cardTemplate').toggleClass('border-primary', isTemplate).toggleClass('border-secondary', !isTemplate);
+            $('#cardMacframe').toggleClass('border-primary', !isTemplate).toggleClass('border-secondary', isTemplate);
+        });
+
+        // Trigger once to set initial state
+        $('input[name="import_type"]:checked').trigger('change');
+
+        // ── Phase 1 : Process & Preview button ──
+        $('#btnProcessMacframe').on('click', function () {
+            const fileInput = document.getElementById('macframeFile');
+            if (!fileInput.files.length) {
+                Swal.fire({ icon: 'warning', title: 'File Belum Dipilih', text: 'Pilih file MacframeGA (.xlsx) terlebih dahulu.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            Swal.fire({ title: 'Memproses file…', text: 'Mohon tunggu sebentar.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            $.ajax({
+                url: '{{ route("userSubmission.importMacframePreview") }}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    Swal.close();
+                    if (!res.success) {
+                        Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: res.message });
+                        return;
+                    }
+
+                    mfParsedData = res;
+                    renderMacframePreview(res);
+
+                    // Close import modal first, then open preview modal
+                    bootstrap.Modal.getInstance(document.getElementById('importModal'))?.hide();
+                    setTimeout(() => {
+                        new bootstrap.Modal(document.getElementById('macframePreviewModal')).show();
+                    }, 350);
+                },
+                error: function (xhr) {
+                    Swal.close();
+                    const msg = xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses file.';
+                    Swal.fire({ icon: 'error', title: 'Error', text: msg });
+                }
+            });
+        });
+
+        function renderMacframePreview(res) {
+            // Fill date, purpose, urgency
+            $('#mf_transaction_date').val(res.transaction_date || '{{ date("Y-m-d") }}');
+            $('#mf_purpose').val(res.purpose || '');
+            $('#mf_urgency').val(res.urgency || '');
+
+            // Initialise Choices.js on program select (one instance)
+            if (mfChoicesProgramId) {
+                mfChoicesProgramId.destroy();
+            }
+            mfChoicesProgramId = new Choices('#mf_program_id', {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: '-- Pilih Program --',
+            });
+
+            // Build preview table
+            const items      = res.data || [];
+            let html         = '';
+            let grandTotal   = 0;
+            let hasUnresolved = false;
+
+            items.forEach((item, idx) => {
+                const total = item.total || 0;
+                grandTotal += total;
+                if (item.unit_unresolved) { hasUnresolved = true; }
+
+                const unitCell = item.unit_unresolved
+                    ? `<span class="badge bg-warning text-dark">?</span> ${item.unit_name}`
+                    : (item.unit_name || '-');
+
+                html += `
+                    <tr>
+                        <td class="text-center">${idx + 1}</td>
+                        <td>${item.goods_service_name}</td>
+                        <td><small class="text-muted">${item.purpose || '-'}</small></td>
+                        <td><small class="text-muted">${item.urgency || '-'}</small></td>
+                        <td>${unitCell}</td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-end">${formatCurrency(item.price)}</td>
+                        <td class="text-end fw-semibold">${formatCurrency(total)}</td>
+                    </tr>
+                `;
+            });
+
+            $('#mf_preview_body').html(html || '<tr><td colspan="8" class="text-center text-muted">Tidak ada data</td></tr>');
+            $('#mf_grand_total').text(formatCurrency(grandTotal));
+            $('#mf_unit_warning').toggleClass('d-none', !hasUnresolved);
+        }
+
+        // ── Phase 2 : Konfirmasi & Simpan ──
+        $('#btnConfirmMacframe').on('click', function () {
+            const programId       = $('#mf_program_id').val();
+            const transactionDate = $('#mf_transaction_date').val();
+            const purpose         = $('#mf_purpose').val().trim();
+            const urgency         = $('#mf_urgency').val().trim();
+
+            if (!programId) {
+                Swal.fire({ icon: 'warning', title: 'Program Belum Dipilih', text: 'Pilih Program ID terlebih dahulu.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+            if (!transactionDate) {
+                Swal.fire({ icon: 'warning', title: 'Tanggal Kosong', text: 'Isi tanggal transaksi terlebih dahulu.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+            if (!purpose) {
+                Swal.fire({ icon: 'warning', title: 'Purpose Kosong', text: 'Isi purpose pengajuan.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+            if (!urgency) {
+                Swal.fire({ icon: 'warning', title: 'Urgency Kosong', text: 'Isi urgency pengajuan.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+
+            const items = mfParsedData?.data || [];
+
+            Swal.fire({
+                title: 'Konfirmasi Import',
+                html: `Anda akan mengimpor <strong>${items.length} item</strong> dari MacframeGA ke Program yang dipilih.<br><br>Lanjutkan?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Import!',
+                cancelButtonText: 'Batal',
+            }).then(result => {
+                if (!result.isConfirmed) { return; }
+
+                Swal.fire({ title: 'Menyimpan data…', text: 'Mohon tunggu.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                $.ajax({
+                    url: '{{ route("userSubmission.importMacframeCommit") }}',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    data: JSON.stringify({
+                        program_id:       parseInt(programId),
+                        transaction_date: transactionDate,
+                        purpose:          purpose,
+                        urgency:          urgency,
+                        items:            items,
+                    }),
+                    success: function (res) {
+                        Swal.close();
+                        if (res.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('macframePreviewModal'))?.hide();
+                            mfParsedData = null;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Import Berhasil!',
+                                text: res.message,
+                                confirmButtonColor: '#198754',
+                            }).then(() => {
+                                loadData();
+                                loadSummary();
+                            });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Gagal', text: res.message });
+                        }
+                    },
+                    error: function (xhr) {
+                        Swal.close();
+                        const msg = xhr.responseJSON?.message || 'Gagal menyimpan data MacframeGA.';
+                        let detail = '';
+                        if (xhr.responseJSON?.errors) {
+                            detail = '<ul class="mb-0 mt-2 text-start">';
+                            Object.values(xhr.responseJSON.errors).forEach(errs => {
+                                errs.forEach(e => { detail += `<li>${e}</li>`; });
+                            });
+                            detail += '</ul>';
+                        }
+                        Swal.fire({ icon: 'error', title: 'Error', html: msg + detail });
+                    }
+                });
+            });
+        });
+
+        // Reset MacframeGA modal on close
+        document.getElementById('macframePreviewModal').addEventListener('hidden.bs.modal', function () {
+            if (mfChoicesProgramId) {
+                mfChoicesProgramId.destroy();
+                mfChoicesProgramId = null;
+            }
+            $('#mf_preview_body').html('<tr><td colspan="8" class="text-center text-muted">Belum ada data</td></tr>');
+            $('#mf_grand_total').text('Rp 0');
+            $('#mf_unit_warning').addClass('d-none');
+        });
+
     </script>
 @endsection
+

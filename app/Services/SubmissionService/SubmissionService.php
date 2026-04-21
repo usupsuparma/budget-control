@@ -180,4 +180,42 @@ interface SubmissionService
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function downloadTemplate();
+
+    /**
+     * Parse a MacframeGA Excel file and return preview data (no DB write).
+     *
+     * File structure:
+     *   Row 1 : Master header
+     *   Row 2 : Master data  (Date, Own bank account, …)
+     *   Row 3 : Detail header
+     *   Row 4+ : Detail rows (Goods/Charges, D Descript, Unit, Qty, Price, …)
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @return array [
+     *   'success'       => bool,
+     *   'message'       => string,
+     *   'data'          => array  // parsed & mapped rows ready for preview
+     *   'transaction_date' => string
+     * ]
+     */
+    public function parseMacframeFile($file): array;
+
+    /**
+     * Commit parsed MacframeGA data to the database.
+     * Wraps everything inside DB::transaction(fn() => …).
+     *
+     * @param  array  $parsedRows  Items array from parseMacframeFile response
+     * @param  int    $programId   KPIWorkPlan ID chosen by user
+     * @param  string $transactionDate  ISO date string (Y-m-d)
+     * @param  string $purpose     Purpose text
+     * @param  string $urgency     Urgency text
+     * @return array ['success' => bool, 'message' => string, 'data' => mixed]
+     */
+    public function commitMacframeTransactions(
+        array  $parsedRows,
+        int    $programId,
+        string $transactionDate,
+        string $purpose,
+        string $urgency
+    ): array;
 }

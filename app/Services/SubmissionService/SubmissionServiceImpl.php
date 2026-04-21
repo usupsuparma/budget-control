@@ -17,6 +17,8 @@ use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
 use App\Exports\SubmissionTemplateExport;
 use App\Imports\SubmissionImport;
+use App\Imports\MacframeImport;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
@@ -1219,5 +1221,250 @@ class SubmissionServiceImpl implements SubmissionService
                 'message' => 'Error processing Excel file: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /* ========================
+        MACFRAME GA IMPORT
+    ======================== */
+
+    /**
+     * Phase 1 – Parse only, no DB write.
+     *
+     * MacframeGA Excel structure:
+     *   Row 1 : Master header  (Date, Own bank account, …)
+     *   Row 2 : Master data values
+     *   Row 3 : Detail header  (Detail type, Goods/Charges, D Descript, …)
+     *   Row 4+ : Detail rows
+     */
+    public function parseMacframeFile($file): array
+    {
+        try {
+            $collections = Excel::toCollection(new MacframeImport(), $file);
+            $rows        = $collections->first();
+
+            if ($rows === null || $rows->isEmpty()) {
+                return ['success' => false, 'message' => 'File kosong atau tidak dapat dibaca.'];
+            }
+
+            $rowArray = $rows->toArray();
+
+            if (count($rowArray) < 4) {
+                return [
+                    'success' => false,
+                    'message' => 'Format file tidak sesuai MacframeGA. Dibutuhkan minimal 4 baris.',
+                ];
+            }
+
+            // Row index 1 (second row) = master data
+            $masterRow = $rowArray[1];
+
+            // Column 0 = Date field in master row
+            $rawDate = $masterRow[0] ?? null;
+            $transactionDate = date('Y-m-d');
+
+            if (!empty($rawDate)) {
+                if (is_numeric($rawDate)) {
+                    try {
+                        $dt = ExcelDate::excelToDateTimeObject((float) $rawDate);
+                        $transactionDate = $dt->format('Y-m-d');
+                    } catch (\Throwable $e) {
+                        $transactionDate = date('Y-m-d');
+                    }
+                } else {
+                    $parsed = strtotime((string) $rawDate);
+                    $transactionDate = $parsed !== false ? date('Y-m-d', $parsed) : date('Y-m-d');
+                }
+            }
+
+            // Detail header is row 3 (index 2), detail data starts from row 4 (index 3)
+            $unitMap = Unit::all()->keyBy(fn ($u) => strtolower(trim($u->unit ?? $u->name ?? '')));
+
+            $parsedItems = [];
+            $purposes    = [];
+            $urgencies   = [];
+
+            for ($i = 3; $i < count($rowArray); $i++) {
+                $row = $rowArray[$i];
+
+                $cellValues = array_filter(array_map('trim', array_map('strval', $row)));
+                if (empty($cellValues)) {
+                    continue;
+                }
+
+                // Column mapping (0-based):
+                // 1 = Goods/Charges, 2 = D Descript, 3 = D Descript(contents), 5 = Unit, 6 = Qty, 7 = Price
+                $goodsCharges  = trim((string) ($row[1] ?? ''));
+                $dDescript     = trim((string) ($row[2] ?? ''));
+                $dDescContents = trim((string) ($row[3] ?? ''));
+                $unitName      = trim((string) ($row[5] ?? ''));
+                $qty           = (float) ($row[6] ?? 0);
+                $price         = (float) ($row[7] ?? 0);
+
+                if (empty($goodsCharges)) {
+                    continue;
+                }
+
+                $unitKey = strtolower($unitName);
+                $unitObj = $unitMap->get($unitKey);
+                $unitId  = $unitObj?->id ?? null;
+
+                if (!empty($dDescript)) {
+                    $purposes[] = $dDescript;
+                }
+                if (!empty($dDescContents)) {
+                    $urgencies[] = $dDescContents;
+                }
+
+                $parsedItems[] = [
+                    'goods_service_name' => $goodsCharges,
+                    'purpose'            => $dDescript,
+                    'urgency'            => $dDescContents,
+                    'unit_name'          => $unitName,
+                    'unit_id'            => $unitId,
+                    'quantity'           => $qty,
+                    'price'              => $price,
+                    'total'              => round($qty * $price, 2),
+                    'unit_unresolved'    => ($unitId === null && !empty($unitName)),
+                ];
+            }
+
+            if (empty($parsedItems)) {
+                return [
+                    'success' => false,
+                    'message' => 'Tidak ditemukan baris detail yang valid di file MacframeGA.',
+                ];
+            }
+
+            $aggregatePurpose = !empty($purposes) ? implode('; ', array_unique($purposes)) : 'Imported from MacframeGA';
+            $aggregateUrgency = !empty($urgencies) ? $urgencies[0] : 'low';
+
+            return [
+                'success'          => true,
+                'message'          => 'File berhasil diparsing. Silakan pilih Program ID dan konfirmasi.',
+                'transaction_date' => $transactionDate,
+                'purpose'          => $aggregatePurpose,
+                'urgency'          => $aggregateUrgency,
+                'data'             => $parsedItems,
+            ];
+
+        } catch (\Throwable $e) {
+            Log::error('MacframeGA parse error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return [
+                'success' => false,
+                'message' => 'Gagal memproses file: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Phase 2 – Commit parsed MacframeGA items to DB inside DB::transaction closure.
+     */
+    public function commitMacframeTransactions(
+        array  $parsedRows,
+        int    $programId,
+        string $transactionDate,
+        string $purpose,
+        string $urgency
+    ): array {
+        $user       = Auth::user();
+        $employment = $user->employment;
+
+        if (!$employment) {
+            return ['success' => false, 'message' => 'Data employment user tidak ditemukan.', 'status_code' => 422];
+        }
+
+        $program = KPIWorkPlan::find($programId);
+        if (!$program) {
+            return ['success' => false, 'message' => "Program ID {$programId} tidak ditemukan.", 'status_code' => 422];
+        }
+
+        return DB::transaction(function () use ($parsedRows, $programId, $transactionDate, $purpose, $urgency, $user, $employment) {
+            $unitMap         = Unit::all()->keyBy(fn ($u) => strtolower(trim($u->unit ?? $u->name ?? '')));
+            $preparedItems   = [];
+            $estimatedAmount = 0;
+            $firstUnit       = null;
+
+            foreach ($parsedRows as $row) {
+                $unitName = trim((string) ($row['unit_name'] ?? ''));
+                $unitKey  = strtolower($unitName);
+                $unitObj  = $unitMap->get($unitKey);
+
+                if (!$unitObj && !empty($unitName)) {
+                    throw new \App\Exceptions\DomainException(
+                        "Unit '{$unitName}' tidak ditemukan. Tambahkan unit terlebih dahulu."
+                    );
+                }
+
+                if ($firstUnit === null && $unitObj) {
+                    $firstUnit = $unitObj;
+                }
+
+                $qty   = (float) ($row['quantity'] ?? 0);
+                $price = (float) ($row['price'] ?? 0);
+                $estimatedAmount += round($qty * $price, 2);
+
+                $preparedItems[] = [
+                    'goods_service_name' => $row['goods_service_name'],
+                    'unit_id'            => $unitObj?->id ?? 0,
+                    'quantity'           => $qty,
+                    'price'              => $price,
+                ];
+            }
+
+            $transaction = $this->model->create([
+                'transaction_date'   => $transactionDate,
+                'planned_usage_date' => null,
+                'user_id'            => $user->id,
+                'user_name'          => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                'unit_id'            => $firstUnit?->id ?? 0,
+                'unit_name'          => $firstUnit?->unit ?? $firstUnit?->name ?? '',
+                'job_level_id'       => $employment->job_level_id,
+                'job_position_id'    => $employment->job_position_id,
+                'program_id'         => $programId,
+                'purpose'            => $purpose,
+                'estimated_amount'   => $estimatedAmount,
+                'actual_amount'      => 0,
+                'urgency'            => $urgency,
+                'status'             => Transaction::STATUS_PENDING,
+            ]);
+
+            foreach ($preparedItems as $item) {
+                $unit = Unit::find($item['unit_id']);
+
+                TransactionDetail::create([
+                    'transaction_id'     => $transaction->id,
+                    'budget_id'          => 0,
+                    'budget_name'        => '',
+                    'goods_service_name' => $item['goods_service_name'],
+                    'balance'            => 0,
+                    'estimated_price'    => $item['price'],
+                    'estimated_quantity' => $item['quantity'],
+                    'estimated_total'    => round($item['quantity'] * $item['price'], 2),
+                    'fix_price'          => 0,
+                    'fix_quantity'       => 0,
+                    'fix_total'          => 0,
+                    'unit_id'            => $item['unit_id'],
+                    'unit_name'          => $unit?->unit ?? $unit?->name ?? '',
+                    'remark'             => 'Imported from MacframeGA',
+                    'urgency'            => $urgency,
+                    'status'             => 0,
+                ]);
+            }
+
+            $approvalResult = $this->approvalTransactionService->submitForApproval($transaction->id);
+
+            if (!$approvalResult['success']) {
+                Log::warning('MacframeGA: approval submit fail – ' . $approvalResult['message']);
+                throw new \App\Exceptions\DomainException(
+                    'Gagal memulai alur approval: ' . $approvalResult['message']
+                );
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Import MacframeGA berhasil. Transaksi telah diajukan ke alur approval.',
+                'data'    => $transaction->load(['details', 'approvalRequest.details']),
+            ];
+        });
     }
 }

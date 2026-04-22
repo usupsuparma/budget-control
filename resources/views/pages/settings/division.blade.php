@@ -199,19 +199,43 @@
     });
 
     // EDIT
+    var $divEditModal = document.getElementById('editDivision');
+    var _divData = {};
+
     $(document).on('click', '.division-edit-btn', function() {
         var id = $(this).data('id');
-        $.get("{{ url('/division') }}/" + id + "/edit", function(data) {
+        var url = "{{ route('division.edit', ':id') }}".replace(':id', id);
+        Swal.fire({ title: 'Loading...', allowOutsideClick: false, didOpen: function(){ Swal.showLoading(); } });
+        $.get(url, function(data) {
+            Swal.close();
+            _divData = data;
             $('#edit_division_name').val(data.name);
-            populateSelect('edit_director_division_id', window.masterData.directors, data.director_id);
-            $('#edit_status_division').val(data.status);
-
-            $('#divisionEditForm').attr('action', "{{ url('/division/update') }}/" + id);
-            $('#editDivision').modal('show');
+            $('#edit_status_division').val(data.status || 'Active');
+            $('#divisionEditForm').attr('action', "{{ route('division.update', ':id') }}".replace(':id', data.id));
+            new bootstrap.Modal($divEditModal).show();
+        }).fail(function () {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load data.' });
         });
     });
 
-    $('#divisionEditForm').submit(function(e) {
+    $divEditModal.addEventListener('shown.bs.modal', function () {
+        var dirs = (window.masterData && window.masterData.directors) ? window.masterData.directors : [];
+        populateSelect('edit_director_division_id', dirs, _divData.director_id);
+        if (!window.masterChoices['edit_director_division_id']) {
+            initChoices('edit_director_division_id');
+        }
+    });
+
+    $divEditModal.addEventListener('hidden.bs.modal', function () {
+        if (window.masterChoices['edit_director_division_id']) {
+            window.masterChoices['edit_director_division_id'].destroy();
+            delete window.masterChoices['edit_director_division_id'];
+        }
+        _divData = {};
+    });
+
+
+    $('#divisionEditForm').on('submit', function(e) {
         e.preventDefault();
         let form = $(this);
         let url = form.attr('action');

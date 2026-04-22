@@ -177,22 +177,42 @@
     });
 
     // EDIT
+    var $deptEditModal = document.getElementById('editDepartment');
+    var _deptData = {};
+
     $(document).on('click', '.department-edit-btn', function() {
         var id = $(this).data('id');
-        var editUrl = "{{ route('department.edit', ['id' => 0]) }}";
-        editUrl = editUrl.replace('/0/edit', '/' + id + '/edit');
-
+        var editUrl = "{{ route('department.edit', ':id') }}".replace(':id', id);
+        Swal.fire({ title: 'Loading...', allowOutsideClick: false, didOpen: function(){ Swal.showLoading(); } });
         $.get(editUrl, function(response) {
+            Swal.close();
+            _deptData = response;
             $('#edit_department_name').val(response.name);
-            populateSelect('edit_division_department_id', window.masterData.divisions, response.division_id);
-            $('#edit_status_department').val(response.status);
-
-            var updateUrl = "{{ route('department.update', ['id' => 0]) }}";
-            updateUrl = updateUrl.replace('/0', '/' + id);
+            $('#edit_status_department').val(response.status || 'Active');
+            var updateUrl = "{{ route('department.update', ':id') }}".replace(':id', response.id);
             $('#departmentEditForm').attr('action', updateUrl);
-            $('#editDepartment').modal('show');
+            new bootstrap.Modal($deptEditModal).show();
+        }).fail(function () {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load data.' });
         });
     });
+
+    $deptEditModal.addEventListener('shown.bs.modal', function () {
+        var divs = (window.masterData && window.masterData.divisions) ? window.masterData.divisions : [];
+        populateSelect('edit_division_department_id', divs, _deptData.division_id);
+        if (!window.masterChoices['edit_division_department_id']) {
+            initChoices('edit_division_department_id');
+        }
+    });
+
+    $deptEditModal.addEventListener('hidden.bs.modal', function () {
+        if (window.masterChoices['edit_division_department_id']) {
+            window.masterChoices['edit_division_department_id'].destroy();
+            delete window.masterChoices['edit_division_department_id'];
+        }
+        _deptData = {};
+    });
+
 
     $('#departmentEditForm').submit(function(e) {
         e.preventDefault();

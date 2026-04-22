@@ -10,6 +10,7 @@ use App\Models\JobPosition;
 use App\Models\Section;
 use App\Services\MasterDataService\MasterDataService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -45,6 +46,7 @@ class MasterController extends Controller
                 'data' => $options
             ]);
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch options'
@@ -54,7 +56,15 @@ class MasterController extends Controller
 
     public function organization()
     {
-        $directors = $this->masterDataService->getOrganizationTree();
-        return view('pages.settings.organization', compact('directors'))->render();
+        try {
+            $directors = $this->masterDataService->getOrganizationTree();
+            return response()->json([
+                'success' => true,
+                'data'    => $directors,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('MasterController@organization: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to load org tree'], 500);
+        }
     }
 }

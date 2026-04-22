@@ -164,17 +164,41 @@
     });
 
     // EDIT
+    var $secEditModal = document.getElementById('editSection');
+    var _secData = {};
+
     $(document).on('click', '.section-edit-btn', function() {
         var id = $(this).data('id');
-        $.get("{{ url('/section') }}/" + id + "/edit", function(data) {
+        var url = "{{ url('/section') }}/" + id + "/edit";
+        Swal.fire({ title: 'Loading...', allowOutsideClick: false, didOpen: function(){ Swal.showLoading(); } });
+        $.get(url, function(data) {
+            Swal.close();
+            _secData = data;
             $('#edit_section_name').val(data.name);
-            populateSelect('edit_department_section_id', window.masterData.departments, data.department_id);
-            $('#edit_status_section').val(data.status);
-
-            $('#sectionEditForm').attr('action', "{{ url('/section/update') }}/" + id);
-            $('#editSection').modal('show');
+            $('#edit_status_section').val(data.status || 'Active');
+            $('#sectionEditForm').attr('action', "{{ url('/section/update') }}/" + data.id);
+            new bootstrap.Modal($secEditModal).show();
+        }).fail(function () {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load data.' });
         });
     });
+
+    $secEditModal.addEventListener('shown.bs.modal', function () {
+        var depts = (window.masterData && window.masterData.departments) ? window.masterData.departments : [];
+        populateSelect('edit_department_section_id', depts, _secData.department_id);
+        if (!window.masterChoices['edit_department_section_id']) {
+            initChoices('edit_department_section_id');
+        }
+    });
+
+    $secEditModal.addEventListener('hidden.bs.modal', function () {
+        if (window.masterChoices['edit_department_section_id']) {
+            window.masterChoices['edit_department_section_id'].destroy();
+            delete window.masterChoices['edit_department_section_id'];
+        }
+        _secData = {};
+    });
+
 
     $('#sectionEditForm').submit(function(e) {
         e.preventDefault();

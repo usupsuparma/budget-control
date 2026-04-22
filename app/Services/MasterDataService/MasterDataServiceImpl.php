@@ -80,8 +80,8 @@ class MasterDataServiceImpl implements MasterDataService
     {
         return Cache::remember(self::CACHE_OPTIONS_KEY, self::CACHE_TTL, function () {
             return [
-                'job_positions' => JobPosition::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
-                'job_levels'    => JobLevel::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
+                'job_positions' => JobPosition::where('status', 'Active')->orderBy('job_position_name')->selectRaw('id, job_position_name as name')->get(),
+                'job_levels'    => JobLevel::where('status', 'Active')->orderBy('job_level_name')->selectRaw('id, job_level_name as name')->get(),
                 'directors'     => Director::where('status', 'Active')->orderBy('name')->select(['id', 'name'])->get(),
                 'divisions'     => Division::where('status', 'Active')->orderBy('name')->select(['id', 'name', 'director_id'])->get(),
                 'departments'   => Department::where('status', 'Active')->orderBy('name')->select(['id', 'name', 'division_id'])->get(),

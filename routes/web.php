@@ -1358,15 +1358,17 @@ Route::middleware('auth')->group(function () {
     /* ========================
         SETTINGS
     ======================== */
-    Route::middleware('permission:setting.master.view')
-        ->get('/master-data', [MasterController::class, 'index'])
-        ->name('master');
-    Route::middleware('permission:setting.master.view')
-        ->get('/master-data/options', [MasterController::class, 'options'])
-        ->name('master.options');
-    Route::middleware('permission:setting.master.view')
-        ->get('/master-data/organization', [MasterController::class, 'organization'])
-        ->name('master.organization');
+    Route::prefix('master-data')
+        ->middleware('permission:setting.master.view')
+        ->group(function () {
+            Route::get('/options', [MasterController::class, 'options'])
+                ->name('master.options');
+            Route::get('/organization', [MasterController::class, 'organization'])
+                ->name('master.organization');
+            Route::get('/', [MasterController::class, 'index'])
+                ->name('master');
+        });
+
     Route::prefix('users')
         ->middleware('permission:setting.users.view')
         ->group(function () {

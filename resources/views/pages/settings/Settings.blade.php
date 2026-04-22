@@ -134,51 +134,41 @@
     }
 
     /**
-     * Mengisi select dengan data baru dan refresh Choices.js
+     * Mengisi <select> dengan data array.
+     * TIDAK auto-init Choices.js — caller bertanggung jawab init via initChoices()
+     * atau Choices.js sudah di-manage via shown.bs.modal / hidden.bs.modal.
+     *
+     * Jika instance Choices.js sudah ada (window.masterChoices[id]), gunakan
+     * setChoices() agar tidak merusak instance yang sedang aktif.
      */
     function populateSelect(elementId, data, selectedValue = null, labelField = 'name') {
         const element = document.getElementById(elementId);
-        if (!element) {
-            console.warn(`Element #${elementId} not found for populateSelect`);
-            return;
-        }
+        if (!element) return;
 
-        console.log(`Populating #${elementId} with ${data.length} items`);
+        const items = data || [];
 
-        // Siapkan choices
-        const choices = [{
-            value: '',
-            label: '-- Select Option --',
-            selected: !selectedValue,
-            disabled: true
-        }];
-
-        data.forEach(item => {
-            choices.push({
-                value: item.id.toString(),
-                label: item[labelField],
-                selected: selectedValue && selectedValue.toString() === item.id.toString()
-            });
-        });
-
-        // Jika sudah ada instance Choices.js
         if (window.masterChoices[elementId]) {
+            // Instance sudah ada → update via Choices API
             const instance = window.masterChoices[elementId];
+            const choiceItems = [{ value: '', label: '-- Select Option --', selected: !selectedValue, disabled: true }];
+            items.forEach(item => {
+                choiceItems.push({
+                    value: String(item.id),
+                    label: item[labelField] || '',
+                    selected: selectedValue && String(selectedValue) === String(item.id)
+                });
+            });
             instance.clearStore();
-            instance.setChoices(choices, 'value', 'label', true);
+            instance.setChoices(choiceItems, 'value', 'label', true);
         } else {
-            // Jika belum ada instance, isi HTML manual dulu lalu init
+            // Belum ada instance → set HTML options saja, jangan init Choices.js
+            // (Choices.js akan di-init saat modal shown atau secara eksplisit)
             let html = '<option value="" disabled selected>-- Select Option --</option>';
-            data.forEach(item => {
-                const isSelected = selectedValue && selectedValue.toString() === item.id.toString();
-                html += `<option value="${item.id}" ${isSelected ? 'selected' : ''}>${item[labelField]}</option>`;
+            items.forEach(item => {
+                const sel = selectedValue && String(selectedValue) === String(item.id) ? 'selected' : '';
+                html += `<option value="${item.id}" ${sel}>${item[labelField] || ''}</option>`;
             });
             element.innerHTML = html;
-            
-            // Beri sedikit delay untuk inisialisasi Choices.js jika elemen baru muncul
-            setTimeout(() => {
-                initChoices(elementId);
-            }, 50);
         }
     }
 
@@ -210,21 +200,57 @@
     }
 
     /**
-     * Ambil pohon organisasi terbaru dari server (HTML partial)
+     * Ambil pohon organisasi terbaru dari server (JSON) dan render di JS
      */
     function refreshOrgTree() {
         $.ajax({
             url: "{{ route('master.organization') }}",
             method: "GET",
-            success: function(html) {
+            success: function(res) {
+                if (!res.success || !res.data) return;
+                var html = buildOrgTree(res.data);
                 $('#orgTreeContainer').html(html);
-
-                // Re-init toggle listener jika ada di partial
-                if (typeof initOrgTreeToggle === 'function') {
-                    initOrgTreeToggle();
-                }
             }
         });
+    }
+
+    function buildOrgTree(directors) {
+        if (!directors || !directors.length) return '<p class="text-muted">No organization data.</p>';
+        var html = '<ul class="list-unstyled org-tree">';
+        directors.forEach(function(dir) {
+            html += '<li class="mb-2"><strong><i class="fas fa-building me-1 text-primary"></i>' + escHtml(dir.name) + '</strong>';
+            if (dir.divisions && dir.divisions.length) {
+                html += '<ul class="list-unstyled ms-4 mt-1">';
+                dir.divisions.forEach(function(div) {
+                    html += '<li class="mb-1"><i class="fas fa-sitemap me-1 text-success"></i>' + escHtml(div.name);
+                    if (div.departments && div.departments.length) {
+                        html += '<ul class="list-unstyled ms-4 mt-1">';
+                        div.departments.forEach(function(dept) {
+                            html += '<li class="mb-1"><i class="fas fa-users me-1 text-info"></i>' + escHtml(dept.name);
+                            if (dept.sections && dept.sections.length) {
+                                html += '<ul class="list-unstyled ms-4 mt-1">';
+                                dept.sections.forEach(function(sec) {
+                                    html += '<li><i class="fas fa-user me-1 text-secondary"></i>' + escHtml(sec.name) + '</li>';
+                                });
+                                html += '</ul>';
+                            }
+                            html += '</li>';
+                        });
+                        html += '</ul>';
+                    }
+                    html += '</li>';
+                });
+                html += '</ul>';
+            }
+            html += '</li>';
+        });
+        html += '</ul>';
+        return html;
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     $(document).ready(function() {

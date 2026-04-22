@@ -210,27 +210,81 @@
                 if (!res.success || !res.data) return;
                 var html = buildOrgTree(res.data);
                 $('#orgTreeContainer').html(html);
+                initOrgTreeToggle();
             }
         });
     }
 
     function buildOrgTree(directors) {
         if (!directors || !directors.length) return '<p class="text-muted">No organization data.</p>';
-        var html = '<ul class="list-unstyled org-tree">';
+        
+        var css = `
+            <style>
+                .org-container { padding: 20px; overflow-x: auto; background: #f8fafc; border-radius: 12px; }
+                .org-tree { display: flex; justify-content: center; padding-top: 20px; position: relative; margin: 0; padding-left: 0; }
+                .org-tree ul { padding-top: 20px; position: relative; transition: all 0.5s; display: flex; justify-content: center; gap: 16px; margin: 0; padding-left: 0; }
+                .org-tree li { list-style-type: none; text-align: center; position: relative; padding: 0 5px; }
+                .org-tree ul::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: rgba(148, 163, 184, 0.4); }
+                .org-tree li::before { content: ''; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 2px; height: 20px; background: rgba(148, 163, 184, 0.4); }
+                .org-node { display: inline-block; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: #fff; min-width: 160px; cursor: default; box-shadow: 0 2px 6px rgba(2, 6, 23, 0.06); position: relative; z-index: 1; }
+                .org-node .title { font-weight: 700; font-size: 0.95rem; color: #0f172a; }
+                .org-node .meta { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+                .org-node .badge { display: inline-block; margin-top: 6px; padding: 2px 8px; font-size: 11px; border-radius: 999px; background: rgba(34, 197, 94, 0.1); color: #059669; border: 1px solid rgba(34, 197, 94, 0.2); }
+                .org-node .badge.head { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.2); display: block; margin-top: 4px; }
+                .org-tree .children { margin-top: 8px; display: flex; gap: 24px; justify-content: center; }
+                .org-node[data-toggle] { cursor: pointer; }
+                .org-node:hover { transform: translateY(-3px); transition: transform 0.15s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+            </style>
+        `;
+
+        var html = css + '<div class="org-container"><ul class="org-tree">';
+        
         directors.forEach(function(dir) {
-            html += '<li class="mb-2"><strong><i class="fas fa-building me-1 text-primary"></i>' + escHtml(dir.name) + '</strong>';
+            html += '<li>';
+            html += '<div class="org-node" data-toggle="true">';
+            html += '<div class="title">' + escHtml(dir.name) + '</div>';
+            html += '<div class="meta">' + (dir.code ? escHtml(dir.code) + ' &bull; ' : '') + escHtml(dir.status) + '</div>';
+            if (dir.head_employee_name) {
+                html += '<div class="badge head"><i class="bi bi-person-fill"></i> ' + escHtml(dir.head_employee_name) + '</div>';
+            }
+            html += '</div>';
+
             if (dir.divisions && dir.divisions.length) {
-                html += '<ul class="list-unstyled ms-4 mt-1">';
+                html += '<ul class="children">';
                 dir.divisions.forEach(function(div) {
-                    html += '<li class="mb-1"><i class="fas fa-sitemap me-1 text-success"></i>' + escHtml(div.name);
+                    html += '<li>';
+                    html += '<div class="org-node" data-toggle="true">';
+                    html += '<div class="title">' + escHtml(div.name) + '</div>';
+                    html += '<div class="meta">' + escHtml(div.status) + '</div>';
+                    if (div.head_employee_name) {
+                        html += '<div class="badge head"><i class="bi bi-person-fill"></i> ' + escHtml(div.head_employee_name) + '</div>';
+                    }
+                    html += '</div>';
+
                     if (div.departments && div.departments.length) {
-                        html += '<ul class="list-unstyled ms-4 mt-1">';
+                        html += '<ul class="children">';
                         div.departments.forEach(function(dept) {
-                            html += '<li class="mb-1"><i class="fas fa-users me-1 text-info"></i>' + escHtml(dept.name);
+                            html += '<li>';
+                            html += '<div class="org-node" data-toggle="true">';
+                            html += '<div class="title">' + escHtml(dept.name) + '</div>';
+                            html += '<div class="meta">' + escHtml(dept.status) + '</div>';
+                            if (dept.head_employee_name) {
+                                html += '<div class="badge head"><i class="bi bi-person-fill"></i> ' + escHtml(dept.head_employee_name) + '</div>';
+                            }
+                            html += '</div>';
+
                             if (dept.sections && dept.sections.length) {
-                                html += '<ul class="list-unstyled ms-4 mt-1">';
+                                html += '<ul class="children">';
                                 dept.sections.forEach(function(sec) {
-                                    html += '<li><i class="fas fa-user me-1 text-secondary"></i>' + escHtml(sec.name) + '</li>';
+                                    html += '<li>';
+                                    html += '<div class="org-node">';
+                                    html += '<div class="title">' + escHtml(sec.name) + '</div>';
+                                    html += '<div class="meta">' + escHtml(sec.status) + '</div>';
+                                    if (sec.head_employee_name) {
+                                        html += '<div class="badge head"><i class="bi bi-person-fill"></i> ' + escHtml(sec.head_employee_name) + '</div>';
+                                    }
+                                    html += '</div>';
+                                    html += '</li>';
                                 });
                                 html += '</ul>';
                             }
@@ -244,8 +298,21 @@
             }
             html += '</li>';
         });
-        html += '</ul>';
+
+        html += '</ul></div>';
         return html;
+    }
+
+    function initOrgTreeToggle() {
+        document.querySelectorAll('.org-node[data-toggle="true"]').forEach(function(node) {
+            node.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var parent = node.parentElement;
+                var childUl = parent.querySelector(':scope > ul.children');
+                if (!childUl) return;
+                childUl.style.display = (childUl.style.display === 'none') ? 'flex' : 'none';
+            });
+        });
     }
 
     function escHtml(str) {

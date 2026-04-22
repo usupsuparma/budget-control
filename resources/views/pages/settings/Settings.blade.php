@@ -4,12 +4,12 @@
 @section('title-sub', 'Master')
 @section('pagetitle', 'Setting')
 
-@push('styles')
+@section('css')
 <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 <style>
     .choices__inner { min-height: 38px; }
 </style>
-@endpush
+@endsection
 
 @section('content')
 

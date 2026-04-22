@@ -19,83 +19,77 @@
 
 
         <div class="card-body">
-            <div class="row">
-                <!-- LEFT SIDEBAR (Tab) -->
-                <div class="col-md-2 border-end">
-                    <ul class="nav nav-pills flex-column" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#employee" role="tab">
-                                <i class="fas fa-user me-2"></i> Employee
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#job_position" role="tab">
-                                <i class="fas fa-user-tie me-2"></i> Job Position
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#job_level" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Job Level
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#director" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Director
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#division" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Division
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#department" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Department
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#section" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Section
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
-                                <i class="fas fa-layer-group me-2"></i> Organization
-                            </a>
-                        </li>
+            <div>
+                <!-- TOP TABS -->
+                <ul class="nav nav-pills nav-custom nav-success mb-3" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px;">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#employee" role="tab">
+                            <i class="fas fa-user me-2"></i> Employee
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#job_position" role="tab">
+                            <i class="fas fa-user-tie me-2"></i> Job Position
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#job_level" role="tab">
+                            <i class="fas fa-layer-group me-2"></i> Job Level
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#director" role="tab">
+                            <i class="fas fa-layer-group me-2"></i> Director
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#division" role="tab">
+                            <i class="fas fa-layer-group me-2"></i> Division
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#department" role="tab">
+                            <i class="fas fa-layer-group me-2"></i> Department
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#section" role="tab">
+                            <i class="fas fa-layer-group me-2"></i> Section
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#organization" role="tab">
+                            <i class="fas fa-sitemap me-2"></i> Organization
+                        </a>
+                    </li>
+                </ul>
 
-
-                    </ul>
-                </div>
-
-                <!-- RIGHT CONTENT -->
-                <div class="col-md-10">
-                    <div class="tab-content pt-3">
-                        <div class="tab-pane fade show active" id="employee">
-                            @include('pages.settings.employee')
-                        </div>
-                        <div class="tab-pane fade" id="job_position">
-                            @include('pages.settings.JobPosition')
-                        </div>
-                        <div class="tab-pane fade" id="job_level">
-                            @include('pages.settings.JobLevel')
-                        </div>
-                        <div class="tab-pane fade" id="director">
-                            @include('pages.settings.director')
-                        </div>
-                        <div class="tab-pane fade" id="division">
-                            @include('pages.settings.division')
-                        </div>
-                        <div class="tab-pane fade" id="department">
-                            @include('pages.settings.department')
-                        </div>
-                        <div class="tab-pane fade" id="section">
-                            @include('pages.settings.section')
-                        </div>
-                        <div class="tab-pane fade" id="organization">
-                            <div id="orgTreeContainer">
-                                {{-- Will be loaded via AJAX --}}
-                            </div>
+                <!-- TAB CONTENT -->
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="employee">
+                        @include('pages.settings.employee')
+                    </div>
+                    <div class="tab-pane fade" id="job_position">
+                        @include('pages.settings.JobPosition')
+                    </div>
+                    <div class="tab-pane fade" id="job_level">
+                        @include('pages.settings.JobLevel')
+                    </div>
+                    <div class="tab-pane fade" id="director">
+                        @include('pages.settings.director')
+                    </div>
+                    <div class="tab-pane fade" id="division">
+                        @include('pages.settings.division')
+                    </div>
+                    <div class="tab-pane fade" id="department">
+                        @include('pages.settings.department')
+                    </div>
+                    <div class="tab-pane fade" id="section">
+                        @include('pages.settings.section')
+                    </div>
+                    <div class="tab-pane fade" id="organization">
+                        <div id="orgTreeContainer">
+                            {{-- Will be loaded via AJAX --}}
                         </div>
                     </div>
                 </div>

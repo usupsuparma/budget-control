@@ -6,6 +6,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 
 **Key Documentation:**
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
+- [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
 
 ## Critical Architecture Patterns
 

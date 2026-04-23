@@ -710,7 +710,7 @@ Route::middleware('auth')->group(function () {
     /* ========================
         ADMISSION
     ======================== */
-    Route::prefix('admission')->group(function () {
+    Route::prefix('transactions')->group(function () {
 
         // User Submission Routes
         Route::prefix('user')

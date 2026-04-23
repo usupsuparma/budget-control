@@ -533,13 +533,14 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="4%">#</th>
-                                    <th width="28%">Nama Barang/Jasa</th>
-                                    <th width="15%">Purpose</th>
-                                    <th width="15%">Urgency</th>
-                                    <th width="10%">Unit</th>
-                                    <th width="8%" class="text-center">Qty</th>
-                                    <th width="12%" class="text-end">Harga</th>
-                                    <th width="12%" class="text-end">Total</th>
+                                    <th width="22%">Nama Barang/Jasa</th>
+                                    <th width="12%">Purpose</th>
+                                    <th width="12%">Urgency</th>
+                                    <th width="15%">Budget Item <span class="text-danger">*</span></th>
+                                    <th width="8%">Unit</th>
+                                    <th width="7%" class="text-center">Qty</th>
+                                    <th width="10%" class="text-end">Harga</th>
+                                    <th width="10%" class="text-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody id="mf_preview_body">
@@ -3253,6 +3254,7 @@
 
         let mfChoicesProgramId = null;   // Choices.js instance for #mf_program_id
         let mfParsedData       = null;   // Cached server response from Phase 1
+        let mfBudgetItems      = [];     // Available budget items for selected program
 
         // ── Import-type radio switch ──
         $('input[name="import_type"]').on('change', function () {
@@ -3315,6 +3317,44 @@
             });
         });
 
+        // ── Fetch Budget Items when program changes ──
+        $(document).on('change', '#mf_program_id', function() {
+            const programId = $(this).val();
+            if (!programId) {
+                mfBudgetItems = [];
+                updateMacframeBudgetDropdowns();
+                return;
+            }
+
+            $.ajax({
+                url: `{{ route('userSubmission.budgetItems', ':programId') }}`.replace(':programId', programId),
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        mfBudgetItems = response.data;
+                        updateMacframeBudgetDropdowns();
+                    }
+                },
+                error: function() {
+                    mfBudgetItems = [];
+                    updateMacframeBudgetDropdowns();
+                }
+            });
+        });
+
+        function updateMacframeBudgetDropdowns() {
+            let options = '<option value="">-- Pilih Budget --</option>';
+            mfBudgetItems.forEach(item => {
+                options += `<option value="${item.id}">${item.label}</option>`;
+            });
+
+            $('.mf-budget-select').each(function() {
+                const currentVal = $(this).val();
+                $(this).html(options);
+                if (currentVal) $(this).val(currentVal);
+            });
+        }
+
         function renderMacframePreview(res) {
             // Fill date, purpose, urgency
             $('#mf_transaction_date').val(res.transaction_date || '{{ date("Y-m-d") }}');
@@ -3349,11 +3389,16 @@
                     : (item.unit_name || '-');
 
                 html += `
-                    <tr>
+                    <tr class="mf-item-row" data-index="${idx}">
                         <td class="text-center">${idx + 1}</td>
                         <td>${item.goods_service_name}</td>
                         <td><small class="text-muted">${item.purpose || '-'}</small></td>
                         <td><small class="text-muted">${item.urgency || '-'}</small></td>
+                        <td>
+                            <select class="form-select form-select-sm mf-budget-select" required>
+                                <option value="">-- Pilih Budget --</option>
+                            </select>
+                        </td>
                         <td>${unitCell}</td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.price)}</td>
@@ -3362,9 +3407,15 @@
                 `;
             });
 
-            $('#mf_preview_body').html(html || '<tr><td colspan="8" class="text-center text-muted">Tidak ada data</td></tr>');
+            $('#mf_preview_body').html(html || '<tr><td colspan="9" class="text-center text-muted">Tidak ada data</td></tr>');
             $('#mf_grand_total').text(formatCurrency(grandTotal));
             $('#mf_unit_warning').toggleClass('d-none', !hasUnresolved);
+            
+            // If program already selected (rare on initial load), trigger fetch
+            const currentProgramId = $('#mf_program_id').val();
+            if (currentProgramId) {
+                $('#mf_program_id').trigger('change');
+            }
         }
 
         // ── Phase 2 : Konfirmasi & Simpan ──
@@ -3391,7 +3442,32 @@
                 return;
             }
 
-            const items = mfParsedData?.data || [];
+            // Collect items and their selected budget IDs
+            let items = [];
+            let allBudgetSelected = true;
+
+            $('.mf-item-row').each(function() {
+                const idx = $(this).data('index');
+                const budgetId = $(this).find('.mf-budget-select').val();
+                
+                if (!budgetId) {
+                    allBudgetSelected = false;
+                    $(this).find('.mf-budget-select').addClass('is-invalid');
+                } else {
+                    $(this).find('.mf-budget-select').removeClass('is-invalid');
+                }
+
+                const originalItem = mfParsedData.data[idx];
+                items.push({
+                    ...originalItem,
+                    budget_id: parseInt(budgetId)
+                });
+            });
+
+            if (!allBudgetSelected) {
+                Swal.fire({ icon: 'warning', title: 'Budget Belum Dipilih', text: 'Harap pilih Budget Item untuk setiap baris data.', confirmButtonColor: '#f39c12' });
+                return;
+            }
 
             Swal.fire({
                 title: 'Konfirmasi Import',
@@ -3461,7 +3537,7 @@
                 mfChoicesProgramId.destroy();
                 mfChoicesProgramId = null;
             }
-            $('#mf_preview_body').html('<tr><td colspan="8" class="text-center text-muted">Belum ada data</td></tr>');
+            $('#mf_preview_body').html('<tr><td colspan="9" class="text-center text-muted">Belum ada data</td></tr>');
             $('#mf_grand_total').text('Rp 0');
             $('#mf_unit_warning').addClass('d-none');
         });

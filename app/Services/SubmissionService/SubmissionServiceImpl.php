@@ -1408,6 +1408,7 @@ class SubmissionServiceImpl implements SubmissionService
                     'unit_id'            => $unitObj?->id ?? 0,
                     'quantity'           => $qty,
                     'price'              => $price,
+                    'budget_id'          => $row['budget_id'] ?? 0,
                 ];
             }
 
@@ -1430,13 +1431,14 @@ class SubmissionServiceImpl implements SubmissionService
 
             foreach ($preparedItems as $item) {
                 $unit = Unit::find($item['unit_id']);
+                $budgetItem = WorkplanBudgetItem::find($item['budget_id']);
 
                 TransactionDetail::create([
                     'transaction_id'     => $transaction->id,
-                    'budget_id'          => 0,
-                    'budget_name'        => '',
+                    'budget_id'          => $item['budget_id'],
+                    'budget_name'        => $budgetItem->description ?? '',
                     'goods_service_name' => $item['goods_service_name'],
-                    'balance'            => 0,
+                    'balance'            => $budgetItem->total ?? 0,
                     'estimated_price'    => $item['price'],
                     'estimated_quantity' => $item['quantity'],
                     'estimated_total'    => round($item['quantity'] * $item['price'], 2),

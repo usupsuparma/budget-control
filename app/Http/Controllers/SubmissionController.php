@@ -908,6 +908,7 @@ class SubmissionController extends Controller
             'items.*.unit_id'            => 'nullable|integer',
             'items.*.quantity'           => 'required|numeric|min:0',
             'items.*.price'              => 'required|numeric|min:0',
+            'items.*.budget_id'          => 'required|integer',
         ]);
 
         if ($validator->fails()) {

@@ -411,7 +411,8 @@
             } else {
                 data.data.forEach((item, index) => {
                     const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
-                    const lpjButton = item.status === 3 ? `
+                    const canSubmitLpj = item.can_submit_lpj || item.status === 2 || item.status === 3;
+                    const lpjButton = canSubmitLpj ? `
                         <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
                             <i class="ri-file-text-line"></i> LPJ
                         </button>

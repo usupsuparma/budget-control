@@ -146,11 +146,12 @@ class Transaction extends Model
     }
 
     /**
-     * Check if transaction can submit LPJ (status must be PAID).
+     * Check if transaction can submit LPJ after approval is completed.
      */
     public function canSubmitLpj(): bool
     {
-        return $this->status === self::STATUS_PAID && ! $this->lpjSubmission;
+        return in_array($this->status, [self::STATUS_APPROVED, self::STATUS_PAID], true)
+            && ! $this->lpjSubmission;
     }
 
     /**

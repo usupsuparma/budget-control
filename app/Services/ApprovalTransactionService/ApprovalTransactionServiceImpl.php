@@ -620,10 +620,10 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 'completed_at' => now(),
             ]);
 
-            // Update the transaction - fully approved and ready for disbursement (PAID)
+            // Update the transaction - fully approved. Disbursement/paid is a separate status.
             if ($transaction) {
                 $transaction->update([
-                    'status' => Transaction::STATUS_PAID, // Status 3 - Ready for disbursement
+                    'status' => Transaction::STATUS_APPROVED,
                     'status_approval' => Transaction::APPROVAL_STATUS_APPROVED,
                     'current_approval_level' => $request->total_levels,
                     'approval_completed_at' => now(),
@@ -649,7 +649,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
 
             return [
                 'success' => true,
-                'message' => 'Transaksi telah disetujui sepenuhnya dan siap untuk di-disbursed.',
+                'message' => 'Transaksi telah disetujui sepenuhnya.',
                 'is_fully_approved' => true,
             ];
         } else {
@@ -1253,9 +1253,9 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                 ]);
             }
 
-            // Update the transaction - fully approved (STATUS_PAID = 3)
+            // Update the transaction - fully approved. Disbursement/paid is a separate status.
             $transaction->update([
-                'status' => Transaction::STATUS_PAID,
+                'status' => Transaction::STATUS_APPROVED,
                 'status_approval' => Transaction::APPROVAL_STATUS_APPROVED,
                 'current_approval_level' => count($approvalChain),
                 'required_approval_levels' => count($approvalChain),

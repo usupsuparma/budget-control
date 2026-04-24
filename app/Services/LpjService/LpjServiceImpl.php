@@ -35,10 +35,10 @@ class LpjServiceImpl implements LpjService
                 return ['success' => false, 'message' => 'Transaction not found'];
             }
 
-            // Validate transaction status
-            if ($transaction->status !== Transaction::STATUS_PAID) {
+            // Validate transaction status. LPJ can be submitted after transaction approval is completed.
+            if (! in_array($transaction->status, [Transaction::STATUS_APPROVED, Transaction::STATUS_PAID], true)) {
                 DB::rollBack();
-                return ['success' => false, 'message' => 'Transaction must be in PAID status to submit LPJ'];
+                return ['success' => false, 'message' => 'Transaction must be APPROVED or PAID to submit LPJ'];
             }
 
             // Check if LPJ already exists

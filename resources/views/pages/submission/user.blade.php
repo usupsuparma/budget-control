@@ -1580,6 +1580,7 @@
                     const rowNumber = (data.current_page - 1) * data.per_page + index + 1;
                     const hasLpj = item.lpj_submission != null;
                     const lpjStatus = hasLpj ? item.lpj_submission.status_approval : null;
+                    const canSubmitLpj = item.can_submit_lpj || (!hasLpj && (item.status == 2 || item.status == 3));
 
                     html += `
                 <tr>
@@ -1613,7 +1614,7 @@
                                                     <i class="ri-close-line"></i>
                                                 </button>
                                             ` : ''}
-                            ${!hasLpj && item.status == 3 ? `
+                            ${canSubmitLpj ? `
                                                 <button type="button" class="btn btn-success" onclick="openLpjModal(${item.id})" title="Create LPJ">
                                                     <i class="ri-file-text-line"></i> LPJ
                                                 </button>
@@ -2657,7 +2658,7 @@
                     class: 'bg-primary'
                 },
                 1: {
-                    label: 'Submission',
+                    label: 'Progress',
                     class: 'bg-info'
                 },
                 2: {

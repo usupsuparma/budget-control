@@ -235,6 +235,7 @@ class SubmissionServiceImpl implements SubmissionService
             // Determine can_edit: editable if no approver has approved yet
             $hasApproved = $this->hasAnyApproverApproved($transaction);
             $transaction->can_edit = ! $hasApproved;
+            $transaction->can_submit_lpj = $transaction->canSubmitLpj();
 
             // Check dynamic approval system
             if ($employmentId && $transaction->approvalRequest) {
@@ -998,6 +999,7 @@ class SubmissionServiceImpl implements SubmissionService
             $transaction->can_approve = false;
             $transaction->pending_approval = null;
             $transaction->can_edit = false;
+            $transaction->can_submit_lpj = $transaction->canSubmitLpj();
 
             return $transaction;
         });

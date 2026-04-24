@@ -2343,36 +2343,24 @@
                     class: 'bg-primary'
                 },
                 1: {
-                    label: 'Approved Parent',
+                    label: 'Progress',
                     class: 'bg-info'
                 },
                 2: {
-                    label: 'Approved Finance',
-                    class: 'bg-info'
-                },
-                3: {
-                    label: 'Approved Division',
-                    class: 'bg-info'
-                },
-                4: {
-                    label: 'Approved Finance Director',
-                    class: 'bg-info'
-                },
-                5: {
-                    label: 'Approved President Director',
+                    label: 'Approved',
                     class: 'bg-success'
                 },
-                6: {
-                    label: 'Rejected',
-                    class: 'bg-danger'
-                },
-                7: {
+                3: {
                     label: 'Paid',
                     class: 'bg-success'
                 },
-                8: {
-                    label: 'Complete',
-                    class: 'bg-secondary'
+                4: {
+                    label: 'Completed',
+                    class: 'bg-info'
+                },
+                5: {
+                    label: 'Rejected',
+                    class: 'bg-danger'
                 },
                 '-1': {
                     label: 'Cancelled',

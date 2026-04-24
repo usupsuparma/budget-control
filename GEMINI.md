@@ -7,6 +7,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 **Key Documentation:**
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
+- [Transaction Approval and LPJ Status Workflow](documentasi/TRANSACTION_APPROVAL_LPJ_STATUS_WORKFLOW.md) - Transaction status lifecycle, LPJ eligibility, and proof-file preview behavior.
 
 ## Critical Architecture Patterns
 
@@ -130,6 +131,16 @@ try {
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
 - **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.
 
+### Documentation Update Standard
+
+Every feature change, workflow change, status mapping change, API/route change, or user-visible behavior change MUST update documentation in the same task.
+
+**Rules:**
+- Update the relevant file under `documentasi/` when existing documentation covers the feature.
+- Create a new focused document under `documentasi/` when no suitable document exists.
+- Update `GEMINI.md` when the change introduces a durable rule, architectural convention, workflow invariant, or important reference document.
+- Documentation updates must describe the business behavior, touched modules/files, status codes or data contract changes, and any testing or operational caveats.
+
 ## Critical Rules (Auto-Reject if Violated)
 
 1. **NO Model queries/CRUD in Controllers.**
@@ -145,6 +156,7 @@ try {
 11. **Mandatory Choices.js:** Every select dropdown must implement Choices.js individual instances.
 12. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
 13. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
+14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `documentasi/` file and, when the rule is durable, `GEMINI.md` in the same change set.
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

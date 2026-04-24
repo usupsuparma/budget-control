@@ -280,6 +280,7 @@ class SubmissionServiceImpl implements SubmissionService
             'jobLevel',
             'jobPosition',
             'unit',
+            'lpjSubmission.approvalDetails.employment.employee',
         ])->findOrFail($id);
 
         $user = Auth::user();

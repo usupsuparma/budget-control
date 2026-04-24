@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionLpjSubmission extends Model
 {
@@ -28,6 +29,14 @@ class TransactionLpjSubmission extends Model
         'submission_date' => 'date',
         'realization_date' => 'date',
         'approved_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'proof_of_payment_url',
+        'proof_of_payment_name',
+        'proof_of_payment_extension',
+        'proof_of_payment_mime_type',
+        'proof_of_payment_preview_type',
     ];
 
     // Status constants
@@ -59,6 +68,49 @@ class TransactionLpjSubmission extends Model
     public function finalApprover()
     {
         return $this->belongsTo(Employment::class, 'approved_by');
+    }
+
+    public function getProofOfPaymentUrlAttribute(): ?string
+    {
+        if (! $this->proof_of_payment) {
+            return null;
+        }
+
+        return route('userSubmission.lpj.proof', $this->id);
+    }
+
+    public function getProofOfPaymentNameAttribute(): ?string
+    {
+        return $this->proof_of_payment ? basename($this->proof_of_payment) : null;
+    }
+
+    public function getProofOfPaymentExtensionAttribute(): ?string
+    {
+        return $this->proof_of_payment ? strtolower(pathinfo($this->proof_of_payment, PATHINFO_EXTENSION)) : null;
+    }
+
+    public function getProofOfPaymentMimeTypeAttribute(): ?string
+    {
+        if (! $this->proof_of_payment || ! Storage::disk('public')->exists($this->proof_of_payment)) {
+            return null;
+        }
+
+        return Storage::disk('public')->mimeType($this->proof_of_payment);
+    }
+
+    public function getProofOfPaymentPreviewTypeAttribute(): ?string
+    {
+        $extension = $this->proof_of_payment_extension;
+
+        if (in_array($extension, ['jpg', 'jpeg', 'png'], true)) {
+            return 'image';
+        }
+
+        if ($extension === 'pdf') {
+            return 'pdf';
+        }
+
+        return $extension ? 'download' : null;
     }
 
     /**

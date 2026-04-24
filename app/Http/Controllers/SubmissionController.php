@@ -6,10 +6,12 @@ use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\LogService\LogService;
 use App\Services\LpjService\LpjService;
 use App\Services\SubmissionService\SubmissionService;
+use App\Models\TransactionLpjSubmission;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class SubmissionController extends Controller
@@ -725,6 +727,27 @@ class SubmissionController extends Controller
     }
 
     /**
+     * Preview uploaded LPJ proof file inline.
+     */
+    public function viewLpjProof($lpjId)
+    {
+        $lpjSubmission = TransactionLpjSubmission::findOrFail($lpjId);
+
+        if (! $lpjSubmission->proof_of_payment || ! Storage::disk('public')->exists($lpjSubmission->proof_of_payment)) {
+            abort(404, 'LPJ proof file not found');
+        }
+
+        $filePath = Storage::disk('public')->path($lpjSubmission->proof_of_payment);
+        $fileName = basename($lpjSubmission->proof_of_payment);
+        $mimeType = Storage::disk('public')->mimeType($lpjSubmission->proof_of_payment) ?: 'application/octet-stream';
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+        ]);
+    }
+
+    /**
      * Approve LPJ
      */
     public function approveLpj(Request $request, $lpjId)
@@ -798,7 +821,7 @@ class SubmissionController extends Controller
     /**
      * Get pending LPJ approvals for current user
      */
-    public function getPendingLpjApprovals()
+    public function getPendingLpjApprovals(Request $request)
     {
         try {
             $user = Auth::user();
@@ -812,7 +835,9 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            $result = $this->lpjService->getPendingLpjApprovalsForUser($employment->id);
+            $result = $this->lpjService->getPendingLpjApprovalsForUser($employment->id, [
+                'status' => $request->input('status', 'pending'),
+            ]);
 
             return response()->json($result);
         } catch (\Exception $e) {

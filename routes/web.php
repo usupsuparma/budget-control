@@ -802,6 +802,8 @@ Route::middleware('auth')->group(function () {
                         ->name('userSubmission.lpj.submit');
                     Route::get('/transaction/{transactionId}', [SubmissionController::class, 'getLpjByTransaction'])
                         ->name('userSubmission.lpj.byTransaction');
+                    Route::get('/{lpjId}/proof', [SubmissionController::class, 'viewLpjProof'])
+                        ->name('userSubmission.lpj.proof');
                     Route::post('/{lpjId}/approve', [SubmissionController::class, 'approveLpj'])
                         ->name('userSubmission.lpj.approve');
                     Route::post('/{lpjId}/reject', [SubmissionController::class, 'rejectLpj'])

@@ -963,6 +963,20 @@
                         </div>
                     </div>
 
+                    {{-- Proof of Payment Preview --}}
+                    <div class="card border mb-3" id="lpj_proof_preview_card">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="ri-attachment-2 me-2"></i>Proof of Payment</h6>
+                            <a href="#" class="btn btn-sm btn-outline-primary d-none" id="lpj_proof_open_link"
+                                target="_blank" rel="noopener">
+                                <i class="ri-external-link-line me-1"></i>Open File
+                            </a>
+                        </div>
+                        <div class="card-body" id="lpj_proof_preview_body">
+                            <p class="text-muted mb-0">No proof file uploaded.</p>
+                        </div>
+                    </div>
+
                     {{-- Items Table --}}
                     <div class="card border mb-3">
                         <div class="card-header bg-light">
@@ -3060,6 +3074,52 @@
             $(targetBody).html(html);
         }
 
+        function escapeHtml(value) {
+            return $('<div>').text(value ?? '').html();
+        }
+
+        function renderLpjProofPreview(lpj) {
+            const proofUrl = lpj.proof_of_payment_url;
+            const proofName = escapeHtml(lpj.proof_of_payment_name || 'Proof of payment');
+            const previewType = lpj.proof_of_payment_preview_type;
+            const openLink = $('#lpj_proof_open_link');
+
+            if (!proofUrl) {
+                openLink.addClass('d-none').attr('href', '#');
+                $('#lpj_proof_preview_body').html('<p class="text-muted mb-0">No proof file uploaded.</p>');
+                return;
+            }
+
+            openLink.removeClass('d-none').attr('href', proofUrl);
+
+            if (previewType === 'image') {
+                $('#lpj_proof_preview_body').html(`
+                    <div class="text-center">
+                        <a href="${proofUrl}" target="_blank" rel="noopener">
+                            <img src="${proofUrl}" alt="${proofName}" class="img-fluid rounded border" style="max-height: 520px;">
+                        </a>
+                        <div class="small text-muted mt-2">${proofName}</div>
+                    </div>
+                `);
+                return;
+            }
+
+            if (previewType === 'pdf') {
+                $('#lpj_proof_preview_body').html(`
+                    <iframe src="${proofUrl}" title="${proofName}" class="w-100 border rounded" style="height: 520px;"></iframe>
+                    <div class="small text-muted mt-2">${proofName}</div>
+                `);
+                return;
+            }
+
+            $('#lpj_proof_preview_body').html(`
+                <div class="alert alert-secondary mb-0">
+                    Preview is not available for this file type.
+                    <a href="${proofUrl}" target="_blank" rel="noopener" class="alert-link">Open ${proofName}</a>
+                </div>
+            `);
+        }
+
         function viewLpjDetail(transactionId) {
             let url = "{{ route('userSubmission.lpj.byTransaction', ':id') }}".replace(':id', transactionId);
 
@@ -3083,6 +3143,8 @@
                                 'alert-info alert-warning alert-success alert-danger')
                             .addClass(`alert-${statusColor}`);
                         $('#lpj_view_status_text').text(getLpjStatusLabel(lpj.status_approval));
+
+                        renderLpjProofPreview(lpj);
 
                         // Items
                         let itemsHtml = '';

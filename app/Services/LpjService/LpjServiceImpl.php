@@ -31,16 +31,19 @@ class LpjServiceImpl implements LpjService
             $transaction = Transaction::with('details')->find($transactionId);
 
             if (!$transaction) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'Transaction not found'];
             }
 
             // Validate transaction status
             if ($transaction->status !== Transaction::STATUS_PAID) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'Transaction must be in PAID status to submit LPJ'];
             }
 
             // Check if LPJ already exists
             if ($transaction->lpjSubmission) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'LPJ already submitted for this transaction'];
             }
 
@@ -48,6 +51,7 @@ class LpjServiceImpl implements LpjService
             $approvers = LpjApprovalMaster::getActiveApprovers();
 
             if ($approvers->isEmpty()) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'No LPJ approvers configured. Please contact administrator.'];
             }
 
@@ -171,10 +175,12 @@ class LpjServiceImpl implements LpjService
                 ->find($lpjSubmissionId);
 
             if (!$lpjSubmission) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'LPJ submission not found'];
             }
 
             if ($lpjSubmission->isApproved() || $lpjSubmission->isRejected()) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'LPJ has already been ' . $lpjSubmission->status_approval];
             }
 
@@ -185,12 +191,14 @@ class LpjServiceImpl implements LpjService
                 ->first();
 
             if (!$approvalDetail) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'You are not authorized to approve this LPJ'];
             }
 
             // Check if it's this user's turn (sequence check)
             $currentPending = $lpjSubmission->getCurrentPendingApproval();
             if (!$currentPending || $currentPending->id !== $approvalDetail->id) {
+                DB::rollBack();
                 return ['success' => false, 'message' => 'It is not your turn to approve. Please wait for previous approvers.'];
             }
 
@@ -249,6 +257,7 @@ class LpjServiceImpl implements LpjService
 
             } elseif ($action === 'reject') {
                 if (empty($notes)) {
+                    DB::rollBack();
                     return ['success' => false, 'message' => 'Rejection reason is required'];
                 }
 
@@ -273,6 +282,7 @@ class LpjServiceImpl implements LpjService
                 ];
             }
 
+            DB::rollBack();
             return ['success' => false, 'message' => 'Invalid action'];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -318,27 +328,56 @@ class LpjServiceImpl implements LpjService
     public function getPendingLpjApprovalsForUser(int $employmentId, array $filters = []): array
     {
         try {
+            $status = $filters['status'] ?? 'pending';
+
             $query = LpjApprovalDetail::with([
                 'lpjSubmission.transaction.details',
                 'lpjSubmission.transaction.user',
                 'lpjSubmission.approvalDetails.employment.employee'
-            ])
-                ->where('employment_id', $employmentId)
+            ])->where('employment_id', $employmentId);
+
+            if ($status === 'approved') {
+                $approvalDetails = $query
+                    ->where('status', LpjApprovalDetail::STATUS_APPROVED)
+                    ->latest('actioned_at')
+                    ->get();
+
+                return [
+                    'success' => true,
+                    'data' => $approvalDetails->values(),
+                    'count' => $approvalDetails->count()
+                ];
+            }
+
+            if ($status === 'rejected') {
+                $approvalDetails = $query
+                    ->where('status', LpjApprovalDetail::STATUS_REJECTED)
+                    ->latest('actioned_at')
+                    ->get();
+
+                return [
+                    'success' => true,
+                    'data' => $approvalDetails->values(),
+                    'count' => $approvalDetails->count()
+                ];
+            }
+
+            $query
                 ->where('status', LpjApprovalDetail::STATUS_PENDING)
                 ->whereHas('lpjSubmission', function ($q) {
                     $q->where('status_approval', TransactionLpjSubmission::STATUS_IN_PROGRESS);
                 });
 
-            // Filter to only show if it's user's turn
-            $pendingApprovals = $query->get()->filter(function ($detail) {
+            // Filter pending approvals to only show when it is this user's turn.
+            $approvalDetails = $query->get()->filter(function ($detail) {
                 $currentPending = $detail->lpjSubmission->getCurrentPendingApproval();
                 return $currentPending && $currentPending->id === $detail->id;
             });
 
             return [
                 'success' => true,
-                'data' => $pendingApprovals->values(),
-                'count' => $pendingApprovals->count()
+                'data' => $approvalDetails->values(),
+                'count' => $approvalDetails->count()
             ];
         } catch (\Exception $e) {
             Log::error('Get pending LPJ approvals error: ' . $e->getMessage());

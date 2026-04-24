@@ -8,6 +8,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
 - [Transaction Approval and LPJ Status Workflow](documentasi/TRANSACTION_APPROVAL_LPJ_STATUS_WORKFLOW.md) - Transaction status lifecycle, LPJ eligibility, and proof-file preview behavior.
+- [Sidebar Route Name Standard](documentasi/SIDEBAR_ROUTE_NAME_STANDARD.md) - Sidebar links and active/collapse states must use named routes.
 
 ## Critical Architecture Patterns
 
@@ -130,6 +131,7 @@ try {
 - **Feedback:** ALWAYS use SweetAlert2 (`Swal.fire`).
 - **Loading:** ALWAYS show `Swal.showLoading()` in `beforeSend`.
 - **Data-Driven UI:** ALWAYS use JavaScript arrays/objects (populated via AJAX) as the source of truth for synchronizing fields. Avoid storing business data in DOM attributes (`data-*`) for multiple related fields.
+- **Sidebar Navigation:** Sidebar links MUST use named routes via `route()`, and active/collapse checks MUST use `request()->routeIs()` instead of URL path matching such as `Request::is()`.
 
 ### Documentation Update Standard
 

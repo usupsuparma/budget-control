@@ -218,4 +218,12 @@ interface SubmissionService
         string $purpose,
         string $urgency
     ): array;
+
+    /**
+     * Webhook to update transaction status from PAID (3) to COMPLETED (4).
+     *
+     * @param int $id Transaction ID
+     * @return array ['success' => bool, 'message' => string]
+     */
+    public function updateStatusToCompleted(int $id): array;
 }

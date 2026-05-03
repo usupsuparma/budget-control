@@ -2348,11 +2348,15 @@
                 },
                 2: {
                     label: 'Approved',
-                    class: 'bg-success'
+                    class: 'bg-info'
                 },
                 3: {
-                    label: 'Completed',
+                    label: 'Paid',
                     class: 'bg-success'
+                },
+                4: {
+                    label: 'Completed',
+                    class: 'bg-dark'
                 },
                 5: {
                     label: 'Rejected',

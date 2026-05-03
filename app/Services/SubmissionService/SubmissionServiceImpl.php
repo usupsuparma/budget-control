@@ -66,6 +66,7 @@ class SubmissionServiceImpl implements SubmissionService
             ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
             ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
             ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
             ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
             ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
@@ -124,6 +125,7 @@ class SubmissionServiceImpl implements SubmissionService
             ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
             ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
             ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
+            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
             ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
             ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
@@ -165,8 +167,12 @@ class SubmissionServiceImpl implements SubmissionService
             ->whereIn('status', [
                 Transaction::STATUS_SUBMISSION,
                 Transaction::STATUS_PROGRESS,
-                Transaction::STATUS_APPROVED,
             ])
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
+            ->count();
+
+        $approved = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_APPROVED)
             ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
@@ -175,7 +181,10 @@ class SubmissionServiceImpl implements SubmissionService
             ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
-        $completion = 0; // Merged into paid as status 3 is the final state now
+        $completion = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_COMPLETED)
+            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
+            ->count();
 
         $rejected = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_REJECTED)
@@ -1472,5 +1481,38 @@ class SubmissionServiceImpl implements SubmissionService
                 'data'    => $transaction->load(['details', 'approvalRequest.details']),
             ];
         });
+    }
+
+    /**
+     * Webhook to update transaction status from PAID (3) to COMPLETED (4).
+     */
+    public function updateStatusToCompleted(int $id): array
+    {
+        try {
+            $transaction = $this->model->find($id);
+
+            if (!$transaction) {
+                return ['success' => false, 'message' => 'Transaction not found'];
+            }
+
+            if ($transaction->status !== Transaction::STATUS_PAID) {
+                return [
+                    'success' => false, 
+                    'message' => 'Transaction status must be PAID (3) to be marked as COMPLETED. Current status: ' . $transaction->status
+                ];
+            }
+
+            $transaction->update([
+                'status' => Transaction::STATUS_COMPLETED
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Transaction status updated to COMPLETED successfully'
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error updating status to completed: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error updating transaction status: ' . $e->getMessage()];
+        }
     }
 }

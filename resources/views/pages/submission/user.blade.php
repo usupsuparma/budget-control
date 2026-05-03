@@ -173,8 +173,9 @@
                             <label class="form-label">Status</label>
                             <select id="filterStatus" class="form-select">
                                 <option value="all">Semua Status</option>
-                                <option value="request">Request</option>
-                                <option value="3">Completed</option>
+                                <option value="2">Approved</option>
+                                <option value="3">Paid</option>
+                                <option value="4">Completed</option>
                                 <option value="5">Rejected</option>
                             </select>
                         </div>
@@ -213,8 +214,20 @@
                                     </strong>
                                 </span>
                                 <span class="badge bg-light text-dark border">
-                                    <i class="ri-checkbox-circle-line me-1 text-success"></i>Completed: <strong
-                                        id="progressCount">
+                                    <i class="ri-checkbox-circle-line me-1 text-info"></i>Approved: <strong
+                                        id="approvedCountSummary">
+                                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                                    </strong>
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="ri-money-dollar-circle-line me-1 text-success"></i>Paid: <strong
+                                        id="paidCountSummary">
+                                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                                    </strong>
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="ri-checkbox-double-line me-1 text-dark"></i>Completed: <strong
+                                        id="completionCount">
                                         <span class="spinner-border spinner-border-sm" role="status"></span>
                                     </strong>
                                 </span>
@@ -1496,10 +1509,12 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Request Tab (submission + progress + approved)
+                        // Request Tab
                         $('#newSubmissionCount').text(response.data.requestCount);
-                        // Disbursed Tab (paid)
-                        $('#progressCount').text(response.data.paid);
+                        // Approved
+                        $('#approvedCountSummary').text(response.data.approved);
+                        // Paid
+                        $('#paidCountSummary').text(response.data.paid);
 
                         $('#completionCount').text(response.data.completion);
                         $("#rejectedCount").text(response.data.rejected);
@@ -2660,8 +2675,12 @@
                     class: 'bg-info'
                 },
                 3: {
-                    label: 'Completed',
+                    label: 'Paid',
                     class: 'bg-success'
+                },
+                4: {
+                    label: 'Completed',
+                    class: 'bg-dark'
                 },
                 5: {
                     label: 'Rejected',

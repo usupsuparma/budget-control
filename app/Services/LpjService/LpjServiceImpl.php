@@ -222,9 +222,9 @@ class LpjServiceImpl implements LpjService
                         'approved_by' => $employmentId,
                     ]);
 
-                    // Update transaction status to COMPLETED
+                    // Update transaction status to PAID
                     $lpjSubmission->transaction->update([
-                        'status' => Transaction::STATUS_COMPLETED,
+                        'status' => Transaction::STATUS_PAID,
                     ]);
 
                     // === BUDGET LEDGER: Phase 3 - Record LPJ Settlement mutations ===
@@ -243,7 +243,7 @@ class LpjServiceImpl implements LpjService
                     DB::commit();
                     return [
                         'success' => true,
-                        'message' => 'LPJ fully approved. Transaction completed.',
+                        'message' => 'LPJ fully approved. Transaction paid.',
                         'data' => $lpjSubmission->fresh(['approvalDetails.employment.employee', 'transaction'])
                     ];
                 }

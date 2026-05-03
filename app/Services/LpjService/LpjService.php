@@ -6,7 +6,8 @@ namespace App\Services\LpjService;
  * Service interface for LPJ (Laporan Pertanggungjawaban) operations.
  * 
  * Handles LPJ submission and approval workflow for transactions
- * after transaction approval is completed (APPROVED = 2) or for legacy PAID (3) transactions.
+ * after transaction approval is completed (APPROVED = 2).
+ * Final LPJ approval will set the transaction status to PAID (3).
  */
 interface LpjService
 {

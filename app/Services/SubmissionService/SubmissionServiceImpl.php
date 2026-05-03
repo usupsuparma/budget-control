@@ -50,10 +50,10 @@ class SubmissionServiceImpl implements SubmissionService
             ->where('status', Transaction::STATUS_SUBMISSION)->count();
         $progress = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_PROGRESS)->count();
+        $approved = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_APPROVED)->count();
         $paid = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_PAID)->count();
-        $completion = $this->model->where('user_id', $userId)
-            ->where('status', Transaction::STATUS_COMPLETED)->count();
         $totalSubmission = $this->model->where('user_id', $userId)->count();
 
         $years = $this->model->selectRaw('YEAR(transaction_date) as year')
@@ -66,7 +66,6 @@ class SubmissionServiceImpl implements SubmissionService
             ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
             ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
             ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
-            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
             ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
             ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
@@ -83,21 +82,21 @@ class SubmissionServiceImpl implements SubmissionService
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
-        return compact(
-            'newSubmission',
-            'progress',
-            'paid',
-            'completion',
-            'totalSubmission',
-            'years',
-            'statuses',
-            'jobLevels',
-            'jobPositions',
-            'workplans',
-            'budgetCodes',
-            'units',
-            'employment',
-        );
+        return [
+            'newSubmission' => $newSubmission,
+            'progress' => $progress,
+            'approved' => $approved,
+            'paid' => $paid,
+            'totalSubmission' => $totalSubmission,
+            'years' => $years,
+            'statuses' => $statuses,
+            'jobLevels' => $jobLevels,
+            'jobPositions' => $jobPositions,
+            'workplans' => $workplans,
+            'budgetCodes' => $budgetCodes,
+            'units' => $units,
+            'employment' => $employment,
+        ];
     }
 
     public function getApprovalPageData(): array
@@ -109,10 +108,10 @@ class SubmissionServiceImpl implements SubmissionService
             ->where('status', Transaction::STATUS_SUBMISSION)->count();
         $progress = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_PROGRESS)->count();
+        $approved = $this->model->where('user_id', $userId)
+            ->where('status', Transaction::STATUS_APPROVED)->count();
         $paid = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_PAID)->count();
-        $completion = $this->model->where('user_id', $userId)
-            ->where('status', Transaction::STATUS_COMPLETED)->count();
         $totalSubmission = $this->model->where('user_id', $userId)->count();
 
         $years = $this->model->selectRaw('YEAR(transaction_date) as year')
@@ -125,7 +124,6 @@ class SubmissionServiceImpl implements SubmissionService
             ['value' => Transaction::STATUS_PROGRESS, 'label' => 'Progress'],
             ['value' => Transaction::STATUS_APPROVED, 'label' => 'Approved'],
             ['value' => Transaction::STATUS_PAID, 'label' => 'Paid'],
-            ['value' => Transaction::STATUS_COMPLETED, 'label' => 'Completed'],
             ['value' => Transaction::STATUS_REJECTED, 'label' => 'Rejected'],
             ['value' => Transaction::STATUS_CANCELLED, 'label' => 'Cancelled'],
         ];
@@ -136,21 +134,21 @@ class SubmissionServiceImpl implements SubmissionService
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
-        return compact(
-            'newSubmission',
-            'progress',
-            'paid',
-            'completion',
-            'totalSubmission',
-            'years',
-            'statuses',
-            'jobLevels',
-            'jobPositions',
-            'workplans',
-            'budgetCodes',
-            'units',
-            'employment',
-        );
+        return [
+            'newSubmission' => $newSubmission,
+            'progress' => $progress,
+            'approved' => $approved,
+            'paid' => $paid,
+            'totalSubmission' => $totalSubmission,
+            'years' => $years,
+            'statuses' => $statuses,
+            'jobLevels' => $jobLevels,
+            'jobPositions' => $jobPositions,
+            'workplans' => $workplans,
+            'budgetCodes' => $budgetCodes,
+            'units' => $units,
+            'employment' => $employment,
+        ];
     }
 
     /* ========================
@@ -177,10 +175,7 @@ class SubmissionServiceImpl implements SubmissionService
             ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
             ->count();
 
-        $completion = $this->model->where('user_id', $userId)
-            ->where('status', Transaction::STATUS_COMPLETED)
-            ->when($yearFilter, fn($q) => $q->whereYear('transaction_date', $year))
-            ->count();
+        $completion = 0; // Merged into paid as status 3 is the final state now
 
         $rejected = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_REJECTED)
@@ -191,7 +186,13 @@ class SubmissionServiceImpl implements SubmissionService
 
         return [
             'success' => true,
-            'data' => compact('requestCount', 'paid', 'completion', 'rejected', 'totalSubmission'),
+            'data' => [
+                'requestCount' => $requestCount,
+                'paid' => $paid,
+                'completion' => $completion,
+                'rejected' => $rejected,
+                'totalSubmission' => $totalSubmission,
+            ],
         ];
     }
 
@@ -943,16 +944,16 @@ class SubmissionServiceImpl implements SubmissionService
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
-        return compact(
-            'dueDateCount',
-            'years',
-            'jobLevels',
-            'jobPositions',
-            'workplans',
-            'budgetCodes',
-            'units',
-            'employment'
-        );
+        return [
+            'dueDateCount' => $dueDateCount,
+            'years' => $years,
+            'jobLevels' => $jobLevels,
+            'jobPositions' => $jobPositions,
+            'workplans' => $workplans,
+            'budgetCodes' => $budgetCodes,
+            'units' => $units,
+            'employment' => $employment,
+        ];
     }
 
     public function getDueDateTransactions(array $filters = []): array

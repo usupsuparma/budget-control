@@ -23,7 +23,7 @@ class Transaction extends Model
         'estimated_amount',
         'actual_amount',
         'urgency',
-        'status', // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid|4:Completed|5:Rejected|-1:Cancelled
+        'status', // Status Transaction constants 0:Submission|1:Progress|2:Approved|3:Paid (Completed)|5:Rejected|-1:Cancelled
         'threshold_id',
         'current_approval_level',
         'required_approval_levels',

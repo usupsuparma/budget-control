@@ -174,8 +174,7 @@
                             <select id="filterStatus" class="form-select">
                                 <option value="all">Semua Status</option>
                                 <option value="request">Request</option>
-                                <option value="3">Disbursed</option>
-                                <option value="4">Completed</option>
+                                <option value="3">Completed</option>
                                 <option value="5">Rejected</option>
                             </select>
                         </div>
@@ -214,13 +213,8 @@
                                     </strong>
                                 </span>
                                 <span class="badge bg-light text-dark border">
-                                    <i class="ri-time-line me-1 text-warning"></i>Disbursed: <strong id="progressCount">
-                                        <span class="spinner-border spinner-border-sm" role="status"></span>
-                                    </strong>
-                                </span>
-                                <span class="badge bg-light text-dark border">
                                     <i class="ri-checkbox-circle-line me-1 text-success"></i>Completed: <strong
-                                        id="completionCount">
+                                        id="progressCount">
                                         <span class="spinner-border spinner-border-sm" role="status"></span>
                                     </strong>
                                 </span>
@@ -2666,12 +2660,8 @@
                     class: 'bg-info'
                 },
                 3: {
-                    label: 'Paid',
-                    class: 'bg-success'
-                },
-                4: {
                     label: 'Completed',
-                    class: 'bg-info'
+                    class: 'bg-success'
                 },
                 5: {
                     label: 'Rejected',

@@ -2351,12 +2351,8 @@
                     class: 'bg-success'
                 },
                 3: {
-                    label: 'Paid',
-                    class: 'bg-success'
-                },
-                4: {
                     label: 'Completed',
-                    class: 'bg-info'
+                    class: 'bg-success'
                 },
                 5: {
                     label: 'Rejected',

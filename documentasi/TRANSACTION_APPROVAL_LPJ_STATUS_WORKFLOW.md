@@ -15,8 +15,7 @@ The canonical transaction statuses are defined in `app/Models/Transaction.php`.
 | `0` | `STATUS_SUBMISSION` | New submission/draft state before or during initial submission flow. |
 | `1` | `STATUS_PROGRESS` | Transaction approval is still in progress. At least one approval may have happened, but the chain is not complete. |
 | `2` | `STATUS_APPROVED` | Transaction approval is fully completed. This is the final transaction approval state. |
-| `3` | `STATUS_PAID` | Paid/disbursed state. This is separate from approval completion and is also supported as a legacy LPJ-eligible state. |
-| `4` | `STATUS_COMPLETED` | Transaction and LPJ workflow are completed. |
+| `3` | `STATUS_PAID` | Final state: Paid/disbursed and LPJ workflow completed. |
 | `5` | `STATUS_REJECTED` | Transaction approval was rejected. |
 | `-1` | `STATUS_CANCELLED` | Transaction was cancelled. |
 
@@ -55,7 +54,7 @@ Primary implementation:
 - Uploaded proof files are stored on the `public` disk under `lpj_proofs`.
 - LPJ submission status starts as `pending`, then moves to `in_progress` once the approval chain is created.
 - Final LPJ approval sets `transaction_lpj_submissions.status_approval` to `approved`.
-- Final LPJ approval sets the parent transaction status to `4` (`STATUS_COMPLETED`).
+- Final LPJ approval sets the parent transaction status to `3` (`STATUS_PAID`).
 - LPJ rejection sets `transaction_lpj_submissions.status_approval` to `rejected` and stores the rejection reason.
 
 ## LPJ Proof File Preview
@@ -84,8 +83,7 @@ Primary implementation:
 - Status badges must show:
   - `1` as `Progress`
   - `2` as `Approved`
-  - `3` as `Paid`
-  - `4` as `Completed`
+  - `3` as `Completed` (formerly Paid/Disbursed)
   - `5` as `Rejected`
 
 ## Verification Notes

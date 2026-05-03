@@ -14,9 +14,10 @@ The canonical transaction statuses are defined in `app/Models/Transaction.php`.
 | --- | --- | --- |
 | `0` | `STATUS_SUBMISSION` | New submission/draft state before or during initial submission flow. |
 | `1` | `STATUS_PROGRESS` | Transaction approval is still in progress. At least one approval may have happened, but the chain is not complete. |
-| `2` | `STATUS_APPROVED` | Transaction approval is fully completed. This is the final transaction approval state. |
-| `3` | `STATUS_PAID` | Final state: Paid/disbursed and LPJ workflow completed. |
-| `5` | `STATUS_REJECTED` | Transaction approval was rejected. |
+| `2` | `STATUS_APPROVED` | Transaction approval is fully completed by all approvers. |
+| `3` | `STATUS_PAID` | LPJ (Laporan Pertanggungjawaban) has been submitted and fully approved. |
+| `4` | `STATUS_COMPLETED` | Final operational state, set via external Webhook API after payment/processing is confirmed. |
+| `5` | `STATUS_REJECTED` | Transaction or LPJ was rejected. |
 | `-1` | `STATUS_CANCELLED` | Transaction was cancelled. |
 
 ## Approval Transaction Rules
@@ -24,7 +25,7 @@ The canonical transaction statuses are defined in `app/Models/Transaction.php`.
 - Submitting a transaction for approval sets `transactions.status` to `1` (`STATUS_PROGRESS`) and `transactions.status_approval` to `pending`.
 - Partial approval keeps `transactions.status` as `1` (`STATUS_PROGRESS`) and updates `transactions.status_approval` to `in_progress`.
 - Final approval sets `transactions.status` to `2` (`STATUS_APPROVED`) and `transactions.status_approval` to `approved`.
-- Auto-approval must also set `transactions.status` to `2` (`STATUS_APPROVED`), not `3`.
+- Auto-approval must also set `transactions.status` to `2` (`STATUS_APPROVED`).
 - Rejection sets `transactions.status` to `5` (`STATUS_REJECTED`) and `transactions.status_approval` to `rejected`.
 
 Primary implementation:
@@ -38,7 +39,7 @@ LPJ can be submitted when transaction approval is complete.
 
 Allowed transaction statuses for LPJ submission:
 - `2` (`STATUS_APPROVED`)
-- `3` (`STATUS_PAID`) for legacy or paid/disbursed transactions
+- `3` (`STATUS_PAID`) for re-submission or historical data
 
 The source of truth for this check is `Transaction::canSubmitLpj()`.
 
@@ -56,6 +57,14 @@ Primary implementation:
 - Final LPJ approval sets `transaction_lpj_submissions.status_approval` to `approved`.
 - Final LPJ approval sets the parent transaction status to `3` (`STATUS_PAID`).
 - LPJ rejection sets `transaction_lpj_submissions.status_approval` to `rejected` and stores the rejection reason.
+
+## External Webhook (Status 4)
+
+Transactions can be moved to the final `COMPLETED` (4) state via an external API call. This is typically used by finance or external systems to confirm the cycle is 100% finished.
+
+- **Endpoint:** `POST /api/v1/webhook/transaction/complete`
+- **Payload:** `{ "id": [Transaction ID] }`
+- **Rule:** Only transactions currently in status `3` (`PAID`) can be moved to `4` (`COMPLETED`).
 
 ## LPJ Proof File Preview
 
@@ -83,7 +92,8 @@ Primary implementation:
 - Status badges must show:
   - `1` as `Progress`
   - `2` as `Approved`
-  - `3` as `Completed` (formerly Paid/Disbursed)
+  - `3` as `Paid`
+  - `4` as `Completed`
   - `5` as `Rejected`
 
 ## Verification Notes

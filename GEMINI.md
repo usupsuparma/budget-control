@@ -4,6 +4,11 @@
 
 Budget Control is a Laravel 12 enterprise application for budget management, KPI tracking, and approval workflows with two-phase dynamic approval system (uppline chain → master flow with threshold-based routing).
 
+**Operational Status Lifecycle:**
+1. **Status 2 (Approved):** Automatically set when transaction approval chain is completed.
+2. **Status 3 (Paid):** Automatically set when LPJ (Laporan Pertanggungjawaban) is fully approved.
+3. **Status 4 (Completed):** Final state set via external API/Webhook (`/api/v1/webhook/transaction/complete`) to synchronize with external payment/finance systems.
+
 **Key Documentation:**
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.

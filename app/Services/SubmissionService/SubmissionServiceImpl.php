@@ -662,14 +662,19 @@ class SubmissionServiceImpl implements SubmissionService
 
             if ($budgetItem) {
                 $totalItemCost = $item['quantity'] * $item['price'];
-                $budgetValue = $budgetItem->total ?? 0;
+                
+                // Use current balance from BudgetLedgerService
+                $balanceResult = $this->budgetLedgerService->getBudgetBalance($budgetItem->id);
+                $currentBalance = $balanceResult['success']
+                    ? $balanceResult['data']['current_balance']
+                    : $budgetItem->total;
 
-                if ($totalItemCost > $budgetValue) {
+                if ($totalItemCost > $currentBalance) {
                     $budgetErrors[] = [
                         'item' => $item['goods_service_name'] ?? 'Item ' . ($index + 1),
                         'total' => 'Rp ' . number_format($totalItemCost, 0, ',', '.'),
-                        'budget' => 'Rp ' . number_format($budgetValue, 0, ',', '.'),
-                        'budget_code' => $budgetItem->budgetCodeRelation->name ?? 'Unknown',
+                        'budget' => 'Rp ' . number_format($currentBalance, 0, ',', '.'),
+                        'budget_code' => $budgetItem->budget_code ?? 'Unknown',
                     ];
                 }
             }
@@ -1422,6 +1427,17 @@ class SubmissionServiceImpl implements SubmissionService
                     'quantity'           => $qty,
                     'price'              => $price,
                     'budget_id'          => $row['budget_id'] ?? 0,
+                ];
+            }
+
+            // Validate budget sufficiency before proceeding
+            $budgetErrors = $this->validateBudgetItems($preparedItems);
+            if (!empty($budgetErrors)) {
+                return [
+                    'success' => false,
+                    'message' => 'Saldo budget tidak mencukupi untuk beberapa item.',
+                    'budget_errors' => $budgetErrors,
+                    'status_code' => 422,
                 ];
             }
 

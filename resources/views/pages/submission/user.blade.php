@@ -613,6 +613,7 @@
                                     <th width="12%">Purpose</th>
                                     <th width="12%">Urgency</th>
                                     <th width="15%">Budget Item <span class="text-danger">*</span></th>
+                                    <th width="12%">Saldo</th>
                                     <th width="8%">Unit</th>
                                     <th width="7%" class="text-center">Qty</th>
                                     <th width="10%" class="text-end">Harga</th>
@@ -621,13 +622,13 @@
                             </thead>
                             <tbody id="mf_preview_body">
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">Belum ada data</td>
+                                    <td colspan="10" class="text-center text-muted">Belum ada data</td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr class="table-light fw-bold">
-                                    <td colspan="6" class="text-end">Grand Total:</td>
-                                    <td colspan="2" class="text-end" id="mf_grand_total">Rp 0</td>
+                                    <td colspan="7" class="text-end">Grand Total:</td>
+                                    <td colspan="3" class="text-end" id="mf_grand_total">Rp 0</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -3574,7 +3575,7 @@
         function updateMacframeBudgetDropdowns() {
             let options = '<option value="">-- Pilih Budget --</option>';
             mfBudgetItems.forEach(item => {
-                options += `<option value="${item.id}">${item.label}</option>`;
+                options += `<option value="${item.id}" data-balance="${item.total}">${item.label}</option>`;
             });
 
             $('.mf-budget-select').each(function() {
@@ -3583,6 +3584,25 @@
                 if (currentVal) $(this).val(currentVal);
             });
         }
+
+        $(document).on('change', '.mf-budget-select', function() {
+            const row = $(this).closest('.mf-item-row');
+            const idx = row.data('index');
+            const selectedOption = $(this).find('option:selected');
+            const balance = parseFloat(selectedOption.data('balance')) || 0;
+            const itemTotal = mfParsedData.data[idx].total || 0;
+
+            const saldoCell = row.find('.mf-saldo-cell');
+            saldoCell.text(formatCurrency(balance));
+
+            if (itemTotal > balance && balance > 0) {
+                saldoCell.addClass('text-danger fw-bold');
+                $(this).addClass('is-invalid');
+            } else {
+                saldoCell.removeClass('text-danger fw-bold');
+                $(this).removeClass('is-invalid');
+            }
+        });
 
         function renderMacframePreview(res) {
             // Fill date, purpose, urgency
@@ -3628,6 +3648,7 @@
                                 <option value="">-- Pilih Budget --</option>
                             </select>
                         </td>
+                        <td class="text-end mf-saldo-cell">-</td>
                         <td>${unitCell}</td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.price)}</td>
@@ -3636,7 +3657,7 @@
                 `;
             });
 
-            $('#mf_preview_body').html(html || '<tr><td colspan="9" class="text-center text-muted">Tidak ada data</td></tr>');
+            $('#mf_preview_body').html(html || '<tr><td colspan="10" class="text-center text-muted">Tidak ada data</td></tr>');
             $('#mf_grand_total').text(formatCurrency(grandTotal));
             $('#mf_unit_warning').toggleClass('d-none', !hasUnresolved);
             
@@ -3674,27 +3695,47 @@
             // Collect items and their selected budget IDs
             let items = [];
             let allBudgetSelected = true;
+            let budgetViolation = false;
+            let violatedItems = [];
 
             $('.mf-item-row').each(function() {
                 const idx = $(this).data('index');
-                const budgetId = $(this).find('.mf-budget-select').val();
+                const budgetSelect = $(this).find('.mf-budget-select');
+                const budgetId = budgetSelect.val();
                 
                 if (!budgetId) {
                     allBudgetSelected = false;
-                    $(this).find('.mf-budget-select').addClass('is-invalid');
+                    budgetSelect.addClass('is-invalid');
                 } else {
-                    $(this).find('.mf-budget-select').removeClass('is-invalid');
-                }
+                    budgetSelect.removeClass('is-invalid');
+                    
+                    const balance = parseFloat(budgetSelect.find('option:selected').data('balance')) || 0;
+                    const originalItem = mfParsedData.data[idx];
+                    const itemTotal = originalItem.total || 0;
 
-                const originalItem = mfParsedData.data[idx];
-                items.push({
-                    ...originalItem,
-                    budget_id: parseInt(budgetId)
-                });
+                    if (itemTotal > balance && balance > 0) {
+                        budgetViolation = true;
+                        violatedItems.push(originalItem.goods_service_name);
+                    }
+
+                    items.push({
+                        ...originalItem,
+                        budget_id: parseInt(budgetId)
+                    });
+                }
             });
 
             if (!allBudgetSelected) {
                 Swal.fire({ icon: 'warning', title: 'Budget Belum Dipilih', text: 'Harap pilih Budget Item untuk setiap baris data.', confirmButtonColor: '#f39c12' });
+                return;
+            }
+
+            if (budgetViolation) {
+                let htmlMsg = 'Beberapa item melebihi saldo budget yang tersedia:<br><ul class="text-start mt-2">';
+                violatedItems.forEach(name => { htmlMsg += `<li>${name}</li>`; });
+                htmlMsg += '</ul>Harap sesuaikan pilihan budget atau kuantitas.';
+                
+                Swal.fire({ icon: 'error', title: 'Saldo Tidak Mencukupi', html: htmlMsg, confirmButtonColor: '#dc3545' });
                 return;
             }
 

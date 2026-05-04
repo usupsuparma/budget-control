@@ -265,9 +265,93 @@ Authorization: Bearer <token>
 
 ## 7. Submit Pengeluaran Reguler
 
-**GET** `/pengeluaran_reguler_submit.php`
+**POST** `/pengeluaran_reguler_submit.php`
 
 🔐 Requires Bearer Token
+
+### Headers
+
+```http
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+---
+
+### Request Body
+
+```json
+{
+  "tgl": "2026-04-15",
+  "jenis_kas": "1100.1.1.00.00",
+  "currency": "IDR",
+  "rate": 16500,
+  "keterangan": "Pembayaran operasional kantor",
+  "items": [
+    {
+      "jenis_transaksi": "1810.3.2.01.04",
+      "cost_center_code": "CC001",
+      "vendor_id": "12",
+      "reff": "INV-001",
+      "value": 1000000,
+      "ppn": 0.11,
+      "ppnval": 110000,
+      "tot": "PPh23",
+      "pph": 0.02,
+      "pphval": 20000,
+      "tax_trx_id": "TAX-001"
+    },
+    {
+      "jenis_transaksi": "1810.3.2.01.04",
+      "cost_center_code": "CC002",
+      "vendor_id": "15",
+      "reff": "INV-002",
+      "value": 2000000,
+      "ppn": 0.11,
+      "ppnval": 220000,
+      "tot": "PPh23",
+      "pph": 0.02,
+      "pphval": 40000,
+      "tax_trx_id": "TAX-002"
+    }
+  ]
+}
+```
+
+---
+
+### Request Fields
+
+#### Root Object
+
+| Field      | Type          | Required | Description                  |
+| ---------- | ------------- | -------- | ---------------------------- |
+| tgl        | string (date) | ✅        | Tanggal transaksi            |
+| jenis_kas  | string        | ✅        | Kode jenis kas               |
+| currency   | string        | ✅        | Mata uang (contoh: IDR, USD) |
+| rate       | number        | ✅        | Kurs                         |
+| keterangan | string        | ❌        | Keterangan transaksi         |
+| items      | array         | ✅        | Detail item transaksi        |
+
+---
+
+#### Items Object
+
+| Field            | Type   | Required | Description                 |
+| ---------------- | ------ | -------- | --------------------------- |
+| jenis_transaksi  | string | ✅        | Kode jenis transaksi        |
+| cost_center_code | string | ✅        | Kode cost center            |
+| vendor_id        | string | ✅        | ID vendor                   |
+| reff             | string | ❌        | Referensi (invoice/dokumen) |
+| value            | number | ✅        | Nilai transaksi             |
+| ppn              | number | ❌        | Persentase PPN              |
+| ppnval           | number | ❌        | Nilai PPN                   |
+| tot              | string | ❌        | Jenis pajak (misal: PPh23)  |
+| pph              | number | ❌        | Persentase PPh              |
+| pphval           | number | ❌        | Nilai PPh                   |
+| tax_trx_id       | string | ❌        | ID transaksi pajak          |
+
+---
 
 ### Response
 
@@ -276,9 +360,9 @@ Authorization: Bearer <token>
   "success": true,
   "message": "Pengeluaran reguler berhasil disimpan",
   "data": {
-    "id_transaksi": "BP001008",
+    "id_transaksi": "BP001009",
     "doc_type": "BP - Bank Payment",
-    "doc_no": "BP0.005279",
+    "doc_no": "BP0.005280",
     "total": 3270000,
     "total_usd": 198.1818181818182,
     "items_count": 2
@@ -286,24 +370,18 @@ Authorization: Bearer <token>
 }
 ```
 
-### Fields
+---
 
-| Field        | Type    |
-| ------------ | ------- |
-| id_transaksi | string  |
-| doc_type     | string  |
-| doc_no       | string  |
-| total        | number  |
-| total_usd    | number  |
-| items_count  | integer |
+### Response Fields
+
+| Field        | Type    | Description                |
+| ------------ | ------- | -------------------------- |
+| id_transaksi | string  | ID transaksi               |
+| doc_type     | string  | Jenis dokumen              |
+| doc_no       | string  | Nomor dokumen              |
+| total        | number  | Total dalam currency utama |
+| total_usd    | number  | Total dalam USD            |
+| items_count  | integer | Jumlah item                |
 
 ---
 
-# ✅ Catatan
-
-* Semua endpoint menggunakan method **GET**
-* Parameter filter menggunakan query `keyword`
-* Format response konsisten (`success`, `message`, `data`, `total`)
-* Endpoint submit tetap GET (perlu perhatian jika ingin RESTful)
-
----

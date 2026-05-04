@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'pip' => [
+        'base_url'  => env('PIP_API_URL', 'http://localhost/pip_new/api'),
+        'api_token' => env('PIP_API_TOKEN'),
+    ],
+
 ];

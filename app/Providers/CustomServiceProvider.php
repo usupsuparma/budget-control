@@ -23,6 +23,8 @@ use App\Services\MasterDataService\MasterDataService;
 use App\Services\MasterDataService\MasterDataServiceImpl;
 use App\Services\WorkplanImportService\WorkplanImportService;
 use App\Services\WorkplanImportService\WorkplanImportServiceImpl;
+use App\Services\PipIntegrationService\PipIntegrationService;
+use App\Services\PipIntegrationService\PipIntegrationServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -50,6 +52,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(DashboardService::class, DashboardServiceImpl::class);
         $this->app->bind(MasterDataService::class, MasterDataServiceImpl::class);
         $this->app->bind(WorkplanImportService::class, WorkplanImportServiceImpl::class);
+        $this->app->bind(PipIntegrationService::class, PipIntegrationServiceImpl::class);
     }
 
     /**

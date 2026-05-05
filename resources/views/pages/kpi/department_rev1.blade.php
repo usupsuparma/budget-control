@@ -196,12 +196,28 @@
                             <div class="col-xl-12">
                                 <div class="card card-h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">KPI Department</h6>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <h6 class="mb-0">KPI Department</h6>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label for="kpi_department_year_filter" class="mb-0 fw-semibold"></label>
+                                                <select id="kpi_department_year_filter" class="form-select form-select-sm">
+                                                    @foreach ($kpiYears as $year)
+                                                    <option value="{{ $year }}" {{ (int) $year === (int) $currentYear ? 'selected' : '' }}>
+                                                        {{ $year }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div class="ms-auto d-flex gap-2">
 
                                         </div>
                                     </div>
                                     <div class="card-body">
+                                        <div id="kpi-department-config"
+                                            data-current-year="{{ $currentYear }}"
+                                            data-urls='@json($kpiDepartmentUrls)'>
+                                        </div>
                                         <div class="row g-5">
                                             <div class="col-xl-12">
                                                 <div class="p-3">
@@ -742,16 +758,30 @@ $years = range(2023, date('Y') + 5);
 </script>
 
 <script>
-    const datatableUrl = "{{ route('kpidepartment.datatable') }}";
-    const storeUrl = "{{ route('kpidepartment.store') }}";
-    const showUrlTpl = "{{ url('kpidepartment') }}/:id/show";
-    const updateUrlTpl = "{{ url('kpidepartment') }}/:id/update";
-    const deleteUrlTpl = "{{ url('kpidepartment') }}/:id/destroy";
+    const kpiDeptConfigEl = document.getElementById('kpi-department-config');
+    const kpiDeptUrls = kpiDeptConfigEl ? $(kpiDeptConfigEl).data('urls') : {};
+    const currentDeptYear = kpiDeptConfigEl ? parseInt(kpiDeptConfigEl.dataset.currentYear, 10) : null;
+    const yearDeptFilter = $('#kpi_department_year_filter');
+    const datatableUrl = kpiDeptUrls.datatable;
+    const storeUrl = kpiDeptUrls.store;
+    const showUrlTpl = kpiDeptUrls.show;
+    const updateUrlTpl = kpiDeptUrls.update;
+    const deleteUrlTpl = kpiDeptUrls.destroy;
     const csrfToken = "{{ csrf_token() }}";
 
     let mode = 'create'; // 'create' | 'edit'
 
     $(document).ready(function() {
+        function resolveUrl(template, id) {
+            return template
+                .replace(':id', id)
+                .replace('%3Aid', id);
+        }
+
+        if (currentDeptYear && (!yearDeptFilter.val() || yearDeptFilter.val() === '')) {
+            yearDeptFilter.val(currentDeptYear);
+        }
+
         const table = $('#kpi_department_table').DataTable({
             scrollX: true,
             scrollCollapse: true,
@@ -760,6 +790,9 @@ $years = range(2023, date('Y') + 5);
             ajax: {
                 url: datatableUrl,
                 type: 'GET',
+                data: function(d) {
+                    d.year = yearDeptFilter.val() || currentDeptYear;
+                }
             },
             columns: [{
                     data: null,
@@ -961,7 +994,7 @@ $years = range(2023, date('Y') + 5);
             $('#btn-save-kpi-dept').text('Update');
             $('#kpi_department_id').val(id);
 
-            const showUrl = showUrlTpl.replace(':id', id);
+            const showUrl = resolveUrl(showUrlTpl, id);
 
             $.get(showUrl, function(res) {
                 const d = res.data;
@@ -1055,7 +1088,7 @@ $years = range(2023, date('Y') + 5);
 
             let url = storeUrl;
             if (mode === 'edit' && id) {
-                url = updateUrlTpl.replace(':id', id);
+                url = resolveUrl(updateUrlTpl, id);
                 payload._method = 'PUT';
             }
 
@@ -1104,7 +1137,7 @@ $years = range(2023, date('Y') + 5);
             }).then((result) => {
                 if (!result.isConfirmed) return;
 
-                const url = deleteUrlTpl.replace(':id', id);
+                const url = resolveUrl(deleteUrlTpl, id);
 
                 $.ajax({
                     url: url,
@@ -1134,6 +1167,10 @@ $years = range(2023, date('Y') + 5);
                     }
                 });
             });
+        });
+
+        yearDeptFilter.on('change', function() {
+            refreshTable();
         });
 
     });

@@ -2,259 +2,186 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KPIDepartment;
-use App\Models\KPISection;
-use App\Models\Section;
-use Illuminate\Http\Request;
+use App\DTOs\KPISectionData;
+use App\Exceptions\DomainException;
+use App\Http\Requests\KPISectionDataTableRequest;
+use App\Http\Requests\StoreKPISectionRequest;
+use App\Http\Requests\UpdateKPISectionRequest;
+use App\Services\KPISectionService\KPISectionService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class KPISectionController extends Controller
 {
+    public function __construct(private KPISectionService $service) {}
+
     public function index()
     {
-        $title = 'KPI Section';
+        $data = $this->service->getIndexData();
+        $data['kpiSectionUrls'] = [
+            'datatable' => route('kpisection.datatable'),
+            'store' => route('kpisection.store'),
+            'show' => route('kpisection.show', ['id' => ':id']),
+            'update' => route('kpisection.update', ['id' => ':id']),
+            'destroy' => route('kpisection.destroy', ['kpiSection' => ':id']),
+        ];
 
-        // dropdown modal
-        $kpiDepartments = KPIDepartment::orderBy('id', 'desc')->get();
-        $sections       = Section::orderBy('name')->get();
-
-        return view('pages.kpi.section_rev1', compact('title', 'kpiDepartments', 'sections'));
+        return view('pages.kpi.section_rev1', $data);
     }
 
     /**
      * DataTables AJAX
      */
-    public function dataTable(Request $request)
+    public function dataTable(KPISectionDataTableRequest $request): JsonResponse
     {
-        $rows = KPISection::with(['kpiDepartment', 'section'])
-            ->orderBy('id', 'desc')
-            ->get();
+        try {
+            $year = $request->validated()['year'] ?? null;
+            $data = $this->service->getDataTableRows($year);
 
-        $data = $rows->map(function ($kpi, $i) {
-            $monthKeys = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $data,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-            $months = [];
-            foreach ($monthKeys as $m) {
-                $months[$m] = [
-                    'value' => (int) $kpi->{$m},
-                    'label' => $kpi->{$m} ? 'Yes' : 'No',
-                ];
-            }
-
-            return [
-                'no' => $i + 1,
-                'id' => $kpi->id,
-
-                'year' => $kpi->year,
-                'kpi_department_id' => $kpi->kpi_department_id,
-                'kpi_department' => optional($kpi->kpiDepartment)->department_goals ?? '-',
-
-                'section_id' => $kpi->section_id,
-                'section' => optional($kpi->section)->name ?? '-',
-
-                'section_goals' => $kpi->section_goals,
-                'activities' => $kpi->activities,
-                'target_section' => $kpi->target_section,
-                'duration_days' => $kpi->duration_days,
-                'schedule_start' => optional($kpi->schedule_start)->format('Y-m-d'),
-                'schedule_end' => optional($kpi->schedule_end)->format('Y-m-d'),
-
-                // months
-                ...$months,
-
-                'revenue_cost' => $kpi->revenue_cost,
-                'unit_id' => $kpi->unit_id,
-                'description' => $kpi->description,
-            ];
-        });
-
-        return response()->json(['data' => $data]);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'year' => ['required', 'integer'],
-            'kpi_department_id' => ['required', 'exists:kpi_department,id'],
-            'section_id' => ['required', 'exists:section,id'],
-
-            'section_goals' => ['required', 'string'],
-            'activities' => ['nullable', 'string'],
-            'target_section' => ['nullable', 'string'],
-            'duration_days' => ['nullable', 'integer'],
-            'schedule_start' => ['nullable', 'date'],
-            'schedule_end' => ['nullable', 'date'],
-
-            'jan' => ['nullable'],
-            'feb' => ['nullable'],
-            'mar' => ['nullable'],
-            'apr' => ['nullable'],
-            'may' => ['nullable'],
-            'jun' => ['nullable'],
-            'jul' => ['nullable'],
-            'aug' => ['nullable'],
-            'sep' => ['nullable'],
-            'oct' => ['nullable'],
-            'nov' => ['nullable'],
-            'dec' => ['nullable'],
-
-            'revenue_cost' => ['nullable', 'string'],
-            'unit_id' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        $toBool = function ($val) {
-            if (is_null($val)) return false;
-            $val = strtolower((string) $val);
-            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
-        };
-
-        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-
-        $data = [
-            'year' => $validated['year'],
-            'kpi_department_id' => $validated['kpi_department_id'],
-            'section_id' => $validated['section_id'],
-
-            'section_goals' => $validated['section_goals'],
-            'activities' => $validated['activities'] ?? null,
-            'target_section' => $validated['target_section'] ?? null,
-            'duration_days' => $validated['duration_days'] ?? null,
-            'schedule_start' => $validated['schedule_start'] ?? null,
-            'schedule_end' => $validated['schedule_end'] ?? null,
-
-            'revenue_cost' => $validated['revenue_cost'] ?? null,
-            'unit_id' => $validated['unit_id'] ?? null,
-            'description' => $validated['description'] ?? null,
-        ];
-
-        foreach ($months as $m) {
-            $data[$m] = $toBool($request->input($m));
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        $kpi = KPISection::create($data);
-
-        return response()->json([
-            'status' => 'success',
-            'id' => $kpi->id,
-            'message' => 'KPI Section created successfully.',
-        ], 201);
     }
 
-    public function show($id)
+    public function store(StoreKPISectionRequest $request): JsonResponse
     {
-        $kpi = KPISection::with(['kpiDepartment', 'section'])->findOrFail($id);
+        try {
+            $data = KPISectionData::fromArray($request->validated());
+            $kpi = $this->service->create($data);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'id' => $kpi->id,
-                'year' => $kpi->year,
-                'kpi_department_id' => $kpi->kpi_department_id,
-                'section_id' => $kpi->section_id,
-                'section_goals' => $kpi->section_goals,
-                'activities' => $kpi->activities,
-                'target_section' => $kpi->target_section,
-                'duration_days' => $kpi->duration_days,
-                'schedule_start' => optional($kpi->schedule_start)->format('Y-m-d'),
-                'schedule_end' => optional($kpi->schedule_end)->format('Y-m-d'),
-                'jan' => (int) $kpi->jan,
-                'feb' => (int) $kpi->feb,
-                'mar' => (int) $kpi->mar,
-                'apr' => (int) $kpi->apr,
-                'may' => (int) $kpi->may,
-                'jun' => (int) $kpi->jun,
-                'jul' => (int) $kpi->jul,
-                'aug' => (int) $kpi->aug,
-                'sep' => (int) $kpi->sep,
-                'oct' => (int) $kpi->oct,
-                'nov' => (int) $kpi->nov,
-                'dec' => (int) $kpi->dec,
-                'revenue_cost' => $kpi->revenue_cost,
-                'unit_id' => $kpi->unit_id,
-                'description' => $kpi->description,
-            ],
-        ]);
-    }
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Section created successfully.',
+                'data' => ['id' => $kpi->id],
+            ], 201);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-    public function update(Request $request, $id)
-    {
-        $kpi = KPISection::findOrFail($id);
-
-        $validated = $request->validate([
-            'year' => ['required', 'integer'],
-            'kpi_department_id' => ['required', 'exists:kpi_department,id'],
-            'section_id' => ['required', 'exists:section,id'],
-
-            'section_goals' => ['required', 'string'],
-            'activities' => ['nullable', 'string'],
-            'target_section' => ['nullable', 'string'],
-            'duration_days' => ['nullable', 'integer'],
-            'schedule_start' => ['nullable', 'date'],
-            'schedule_end' => ['nullable', 'date'],
-
-            'jan' => ['nullable'],
-            'feb' => ['nullable'],
-            'mar' => ['nullable'],
-            'apr' => ['nullable'],
-            'may' => ['nullable'],
-            'jun' => ['nullable'],
-            'jul' => ['nullable'],
-            'aug' => ['nullable'],
-            'sep' => ['nullable'],
-            'oct' => ['nullable'],
-            'nov' => ['nullable'],
-            'dec' => ['nullable'],
-
-            'revenue_cost' => ['nullable', 'string'],
-            'unit_id' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        $toBool = function ($val) {
-            if (is_null($val)) return false;
-            $val = strtolower((string) $val);
-            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
-        };
-
-        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-
-        $kpi->fill([
-            'year' => $validated['year'],
-            'kpi_department_id' => $validated['kpi_department_id'],
-            'section_id' => $validated['section_id'],
-
-            'section_goals' => $validated['section_goals'],
-            'activities' => $validated['activities'] ?? null,
-            'target_section' => $validated['target_section'] ?? null,
-            'duration_days' => $validated['duration_days'] ?? null,
-            'schedule_start' => $validated['schedule_start'] ?? null,
-            'schedule_end' => $validated['schedule_end'] ?? null,
-
-            'revenue_cost' => $validated['revenue_cost'] ?? null,
-            'unit_id' => $validated['unit_id'] ?? null,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        foreach ($months as $m) {
-            $kpi->{$m} = $toBool($request->input($m));
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        $kpi->save();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'KPI Section updated successfully.',
-        ]);
     }
 
-    public function destroy($id)
+    public function show($id): JsonResponse
     {
-        $kpi = KPISection::findOrFail($id);
-        $kpi->delete();
+        try {
+            $kpi = $this->service->find((int) $id);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'KPI Section deleted successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $kpi,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function update(UpdateKPISectionRequest $request, $id): JsonResponse
+    {
+        try {
+            $data = KPISectionData::fromArray($request->validated());
+            $kpi = $this->service->update((int) $id, $data);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Section updated successfully.',
+                'data' => ['id' => $kpi->id],
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $this->service->delete((int) $id);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Section deleted successfully.',
+                'data' => ['id' => (int) $id],
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 }

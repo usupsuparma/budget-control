@@ -211,12 +211,28 @@
                             <div class="col-xl-12">
                                 <div class="card card-h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">KPI Division</h6>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <h6 class="mb-0">KPI Division</h6>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label for="kpi_year_filter" class="mb-0 fw-semibold"></label>
+                                                <select id="kpi_year_filter" class="form-select form-select-sm">
+                                                    @foreach ($kpiYears as $year)
+                                                    <option value="{{ $year }}" {{ (int) $year === (int) $currentYear ? 'selected' : '' }}>
+                                                        {{ $year }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div class="ms-auto d-flex gap-2">
 
                                         </div>
                                     </div>
                                     <div class="card-body">
+                                        <div id="kpi-division-config"
+                                            data-current-year="{{ $currentYear }}"
+                                            data-urls='@json($kpiDivisionUrls)'>
+                                        </div>
                                         <div class="row g-5">
                                             <div class="col-xl-12">
                                                 <div class="p-3">
@@ -1281,14 +1297,32 @@ $years = range(2023, date('Y') + 5);
 
 <script>
     $(document).ready(function() {
+        const kpiConfigEl = document.getElementById('kpi-division-config');
+        const kpiUrls = kpiConfigEl ? $(kpiConfigEl).data('urls') : {};
+        const currentYear = kpiConfigEl ? parseInt(kpiConfigEl.dataset.currentYear, 10) : null;
+        const yearFilter = $('#kpi_year_filter');
+
+        function resolveUrl(template, id) {
+            return template
+                .replace(':id', id)
+                .replace('%3Aid', id);
+        }
+
+        if (currentYear && (!yearFilter.val() || yearFilter.val() === '')) {
+            yearFilter.val(currentYear);
+        }
+
         var table = $('#kpi_division_table').DataTable({
             scrollX: true,
             scrollCollapse: true,
             autoWidth: true,
             processing: true,
             ajax: {
-                url: "{{ route('kpidivision.datatable') }}",
-                type: "GET"
+                url: kpiUrls.datatable,
+                type: "GET",
+                data: function(d) {
+                    d.year = yearFilter.val() || currentYear;
+                }
             },
             columns: [
                 // ACTION
@@ -1507,7 +1541,7 @@ $years = range(2023, date('Y') + 5);
                 if (result.isConfirmed) {
 
                     $.ajax({
-                        url: "{{ url('/kpidivision') }}/" + id,
+                        url: resolveUrl(kpiUrls.destroy, id),
                         method: "DELETE",
                         data: {
                             _token: "{{ csrf_token() }}"
@@ -1545,15 +1579,27 @@ $years = range(2023, date('Y') + 5);
                 }
             });
         });
+
+        yearFilter.on('change', function() {
+            refreshTable();
+        });
     });
 </script>
 
 <script>
     $(document).ready(function() {
-        const storeUrl = "{{ route('kpidivision.store') }}";
+        const kpiConfigEl = document.getElementById('kpi-division-config');
+        const kpiUrls = kpiConfigEl ? $(kpiConfigEl).data('urls') : {};
+        const storeUrl = kpiUrls.store;
         const csrfToken = "{{ csrf_token() }}";
-        const showUrlTemplate = "{{ url('kpidivision') }}/:id/show";
-        const updateUrlTemplate = "{{ url('kpidivision') }}/:id/update";
+        const showUrlTemplate = kpiUrls.show;
+        const updateUrlTemplate = kpiUrls.update;
+
+        function resolveUrl(template, id) {
+            return template
+                .replace(':id', id)
+                .replace('%3Aid', id);
+        }
 
         // MODE ADD
         $('#btn-add-kpi').on('click', function() {
@@ -1620,7 +1666,7 @@ $years = range(2023, date('Y') + 5);
             let extra = {};
 
             if (mode === 'edit' && id) {
-                url = updateUrlTemplate.replace(':id', id);
+                url = resolveUrl(updateUrlTemplate, id);
                 extra._method = 'PUT'; // spoofing method untuk Laravel
             }
 
@@ -1718,10 +1764,10 @@ $years = range(2023, date('Y') + 5);
             $('#extraLargeModelLabel').text('Edit KPI Division');
             $('#btn-save-kpi').text('Update').data('mode', 'edit');
 
-            const showUrl = showUrlTemplate.replace(':id', id);
+            const resolvedShowUrl = resolveUrl(showUrlTemplate, id);
 
             // ambil data detail dari backend
-            $.get(showUrl, function(res) {
+            $.get(resolvedShowUrl, function(res) {
                 const data = res.data || res; // sesuaikan dengan format response
 
                 const form = $('#kpiForm');

@@ -2,74 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CompanyPolicyDetail;
-use App\Models\Division;
-use App\Models\KPIDivision;
-use Illuminate\Http\Request;
+use App\DTOs\KPIDivisionData;
+use App\Exceptions\DomainException;
+use App\Http\Requests\InlineUpdateKPIDivisionRequest;
+use App\Http\Requests\KPIDivisionDataTableRequest;
+use App\Http\Requests\StoreKPIDivisionRequest;
+use App\Http\Requests\UpdateKPIDivisionRequest;
+use App\Services\KPIDivisionService\KPIDivisionService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class KPIDivisionController extends Controller
 {
+    public function __construct(private KPIDivisionService $service) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $title = 'KPI Division';
-        $companyPolicies = CompanyPolicyDetail::with('dokumen')
-            ->orderBy('id', 'desc')
-            ->get();
+        $data = $this->service->getIndexData();
+        $data['kpiDivisionUrls'] = [
+            'datatable' => route('kpidivision.datatable'),
+            'store' => route('kpidivision.store'),
+            'show' => route('kpidivision.show', ['id' => ':id']),
+            'update' => route('kpidivision.update', ['id' => ':id']),
+            'destroy' => route('kpidivision.destroy', ['id' => ':id']),
+            'inline' => route('kpidivision.inline', ['id' => ':id']),
+        ];
 
-        $divisions = Division::orderBy('name')->get();
-
-        return view('pages.kpi.division_rev1', compact('title', 'companyPolicies', 'divisions'));
+        return view('pages.kpi.division_rev1', $data);
     }
 
-    public function dataTable()
+    public function dataTable(KPIDivisionDataTableRequest $request): JsonResponse
     {
-        // Kalau butuh relasi, sekalian load
-        $kpis = KPIDivision::with(['companyPolicy', 'division'])
-            ->orderBy('id', 'desc')
-            ->get();
+        try {
+            $year = $request->validated()['year'] ?? null;
+            $rows = $this->service->getDataTableRows($year);
 
-        $no = 1;
-        $rows = [];
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $rows,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-        foreach ($kpis as $kpi) {
-            $rows[] = [
-                'id'              => $kpi->id,
-                'no'              => $no++,
-                'year'            => $kpi->year,
-                'company_policy'  => strip_tags(optional($kpi->companyPolicy)->strategic_goal ?? '-'),
-                'division'        => strip_tags(optional($kpi->division)->name ?? 'Division #'.$kpi->division_id),
-                'division_goals'  => $kpi->division_goals,
-                'target_division' => $kpi->target_division,
-                'duration_days'   => $kpi->duration_days,
-                'schedule_start'  => optional($kpi->schedule_start)->format('Y-m-d'),
-                'schedule_end'    => optional($kpi->schedule_end)->format('Y-m-d'),
-
-                // bulan (kalau masih mau pakai dari DB)
-                'jan' => (bool) $kpi->jan,
-                'feb' => (bool) $kpi->feb,
-                'mar' => (bool) $kpi->mar,
-                'apr' => (bool) $kpi->apr,
-                'may' => (bool) $kpi->may,
-                'jun' => (bool) $kpi->jun,
-                'jul' => (bool) $kpi->jul,
-                'aug' => (bool) $kpi->aug,
-                'sep' => (bool) $kpi->sep,
-                'oct' => (bool) $kpi->oct,
-                'nov' => (bool) $kpi->nov,
-                'dec' => (bool) $kpi->dec,
-
-                'revenue_cost' => $kpi->revenue_cost,
-                'pic'          => $kpi->pic,
-                'description'  => $kpi->description,
-            ];
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        return response()->json([
-            'data' => $rows, // format standar DataTables
-        ]);
     }
 
 
@@ -84,94 +77,68 @@ class KPIDivisionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreKPIDivisionRequest $request): JsonResponse
     {
-        // validasi 1 baris
-        $validated = $request->validate([
-            'year' => ['required', 'integer'],
-            'company_policy_detail_id' => ['required', 'exists:company_policy_detail,id'],
-            'division_id' => ['required', 'exists:division,id'],
+        try {
+            $data = KPIDivisionData::fromArray($request->validated());
+            $kpi = $this->service->create($data);
 
-            'division_goals' => ['required', 'string'],
-            'target_division' => ['nullable', 'string'],
-            'duration_days' => ['nullable', 'integer'],
-            'schedule_start' => ['nullable', 'date'],
-            'schedule_end' => ['nullable', 'date'],
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Division row created successfully.',
+                'data' => ['id' => $kpi->id],
+            ], 201);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-            'jan' => ['nullable'],
-            'feb' => ['nullable'],
-            'mar' => ['nullable'],
-            'apr' => ['nullable'],
-            'may' => ['nullable'],
-            'jun' => ['nullable'],
-            'jul' => ['nullable'],
-            'aug' => ['nullable'],
-            'sep' => ['nullable'],
-            'oct' => ['nullable'],
-            'nov' => ['nullable'],
-            'dec' => ['nullable'],
-
-            'revenue_cost' => ['nullable', 'string'],
-            'pic' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        $toBool = function ($val) {
-            if (is_null($val)) {
-                return false;
-            }
-            $val = strtolower((string) $val);
-
-            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
-        };
-
-        $kpi = KPIDivision::create([
-            'company_policy_detail_id' => $validated['company_policy_detail_id'],
-            'division_id' => $validated['division_id'],
-            'year' => $validated['year'],
-
-            'division_goals' => $validated['division_goals'],
-            'target_division' => $validated['target_division'] ?? null,
-            'duration_days' => $validated['duration_days'] ?? null,
-            'schedule_start' => $validated['schedule_start'] ?? null,
-            'schedule_end' => $validated['schedule_end'] ?? null,
-
-            'jan' => $toBool($request->jan),
-            'feb' => $toBool($request->feb),
-            'mar' => $toBool($request->mar),
-            'apr' => $toBool($request->apr),
-            'may' => $toBool($request->may),
-            'jun' => $toBool($request->jun),
-            'jul' => $toBool($request->jul),
-            'aug' => $toBool($request->aug),
-            'sep' => $toBool($request->sep),
-            'oct' => $toBool($request->oct),
-            'nov' => $toBool($request->nov),
-            'dec' => $toBool($request->dec),
-
-            'revenue_cost' => $validated['revenue_cost'] ?? null,
-            'pic' => $validated['pic'] ?? null,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'id' => $kpi->id,
-            'message' => 'KPI Division row created successfully.',
-        ], 201);
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        $kpi = KPIDivision::with(['companyPolicy', 'division'])->findOrFail($id);
+        try {
+            $kpi = $this->service->find((int) $id);
 
-        return response()->json([
-            'status' => 'success',
-            'data'   => $kpi,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $kpi,
+            ], 200);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 
 
@@ -186,195 +153,107 @@ class KPIDivisionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateKPIDivisionRequest $request, $id): JsonResponse
     {
-        $kpi = KPIDivision::findOrFail($id);
+        try {
+            $data = KPIDivisionData::fromArray($request->validated());
+            $kpi = $this->service->update((int) $id, $data);
 
-        // validasi sama seperti store
-        $validated = $request->validate([
-            'year' => ['required', 'integer'],
-            'company_policy_detail_id' => ['required', 'exists:company_policy_detail,id'],
-            'division_id' => ['required', 'exists:division,id'],
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Division row updated successfully.',
+                'data' => ['id' => $kpi->id],
+            ], 200);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-            'division_goals' => ['required', 'string'],
-            'target_division' => ['nullable', 'string'],
-            'duration_days' => ['nullable', 'integer'],
-            'schedule_start' => ['nullable', 'date'],
-            'schedule_end' => ['nullable', 'date'],
-
-            'jan' => ['nullable'],
-            'feb' => ['nullable'],
-            'mar' => ['nullable'],
-            'apr' => ['nullable'],
-            'may' => ['nullable'],
-            'jun' => ['nullable'],
-            'jul' => ['nullable'],
-            'aug' => ['nullable'],
-            'sep' => ['nullable'],
-            'oct' => ['nullable'],
-            'nov' => ['nullable'],
-            'dec' => ['nullable'],
-
-            'revenue_cost' => ['nullable', 'string'],
-            'pic' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        $toBool = function ($val) {
-            if (is_null($val)) {
-                return false;
-            }
-            $val = strtolower((string) $val);
-
-            return in_array($val, ['1', 'true', 'yes', 'y', 'ya'], true);
-        };
-
-        $kpi->update([
-            'company_policy_detail_id' => $validated['company_policy_detail_id'],
-            'division_id' => $validated['division_id'],
-            'year' => $validated['year'],
-
-            'division_goals' => $validated['division_goals'],
-            'target_division' => $validated['target_division'] ?? null,
-            'duration_days' => $validated['duration_days'] ?? null,
-            'schedule_start' => $validated['schedule_start'] ?? null,
-            'schedule_end' => $validated['schedule_end'] ?? null,
-
-            'jan' => $toBool($request->jan),
-            'feb' => $toBool($request->feb),
-            'mar' => $toBool($request->mar),
-            'apr' => $toBool($request->apr),
-            'may' => $toBool($request->may),
-            'jun' => $toBool($request->jun),
-            'jul' => $toBool($request->jul),
-            'aug' => $toBool($request->aug),
-            'sep' => $toBool($request->sep),
-            'oct' => $toBool($request->oct),
-            'nov' => $toBool($request->nov),
-            'dec' => $toBool($request->dec),
-
-            'revenue_cost' => $validated['revenue_cost'] ?? null,
-            'pic' => $validated['pic'] ?? null,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        return response()->json([
-            'status'  => 'success',
-            'id'      => $kpi->id,
-            'message' => 'KPI Division row updated successfully.',
-        ], 200);
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
-        $kpi = KpiDivision::find($id);
-
-        if (! $kpi) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data tidak ditemukan.',
-            ], 404);
-        }
-
         try {
-            $kpi->delete();
+            $this->service->delete((int) $id);
 
             return response()->json([
+                'success' => true,
                 'status' => 'success',
                 'message' => 'KPI Division berhasil dihapus.',
+                'data' => ['id' => (int) $id],
             ]);
-        } catch (\Throwable $e) {
+        } catch (DomainException $e) {
             return response()->json([
+                'success' => false,
                 'status' => 'error',
-                'message' => 'Gagal menghapus data: '.$e->getMessage(),
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
             ], 500);
         }
     }
 
-    public function inlineUpdate(Request $request, $id)
+    public function inlineUpdate(InlineUpdateKPIDivisionRequest $request, $id): JsonResponse
     {
-        $kpi = KpiDivision::find($id);
+        try {
+            $validated = $request->validated();
+            $result = $this->service->inlineUpdate(
+                (int) $id,
+                $validated['field'],
+                $validated['value'] ?? null
+            );
 
-        if (! $kpi) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Data tidak ditemukan.',
-            ], 404);
-        }
-
-        $field = $request->input('field');
-        $value = $request->input('value');
-
-        // daftar kolom yang boleh di-edit inline
-        $allowed = [
-            'year',
-            'division_goals',
-            'target_division',
-            'duration_days',
-            'schedule_start',
-            'schedule_end',
-            'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-            'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
-            'revenue_cost',
-            'pic',
-            'description',
-        ];
-
-        if (! in_array($field, $allowed, true)) {
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diperbarui.',
+                'data' => [
+                    'field' => $validated['field'],
+                    'value' => $result['value'],
+                    'display_value' => $result['display_value'],
+                ],
+            ]);
+        } catch (DomainException $e) {
             return response()->json([
+                'success' => false,
                 'status' => 'error',
-                'message' => 'Field tidak boleh diubah inline.',
-            ], 422);
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        // sedikit casting tipe
-        if ($field === 'year') {
-            $request->validate([
-                'value' => ['required', 'integer'],
-            ]);
-            $kpi->year = (int) $value;
-        } elseif ($field === 'duration_days') {
-            $kpi->duration_days = $value !== null ? (int) $value : null;
-        } elseif (in_array($field, ['schedule_start', 'schedule_end'], true)) {
-            $request->validate([
-                'value' => ['nullable', 'date'],
-            ]);
-            $kpi->{$field} = $value ?: null;
-        } elseif (in_array($field, ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], true)) {
-            // terima 1/0, yes/no, true/false
-            $toBool = function ($v) {
-                if ($v === null) {
-                    return false;
-                }
-                $v = strtolower((string) $v);
-
-                return in_array($v, ['1', 'true', 'yes', 'y', 'ya'], true);
-            };
-            $kpi->{$field} = $toBool($value);
-        } else {
-            // sisanya anggap string biasa
-            $kpi->{$field} = $value;
-        }
-
-        $kpi->save();
-
-        // tampilan text di tabel (misal for Yes/No)
-        $displayValue = $value;
-
-        if (in_array($field, ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], true)) {
-            $displayValue = $kpi->{$field} ? 'Yes' : 'No';
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Data berhasil diperbarui.',
-            'field' => $field,
-            'value' => $kpi->{$field},
-            'display_value' => $displayValue,
-        ]);
     }
 }

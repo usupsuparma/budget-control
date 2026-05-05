@@ -25,6 +25,12 @@ use App\Services\WorkplanImportService\WorkplanImportService;
 use App\Services\WorkplanImportService\WorkplanImportServiceImpl;
 use App\Services\PipIntegrationService\PipIntegrationService;
 use App\Services\PipIntegrationService\PipIntegrationServiceImpl;
+use App\Services\KPIDivisionService\KPIDivisionService;
+use App\Services\KPIDivisionService\KPIDivisionServiceImpl;
+use App\Services\KPIDepartmentService\KPIDepartmentService;
+use App\Services\KPIDepartmentService\KPIDepartmentServiceImpl;
+use App\Services\KPISectionService\KPISectionService;
+use App\Services\KPISectionService\KPISectionServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -53,6 +59,9 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(MasterDataService::class, MasterDataServiceImpl::class);
         $this->app->bind(WorkplanImportService::class, WorkplanImportServiceImpl::class);
         $this->app->bind(PipIntegrationService::class, PipIntegrationServiceImpl::class);
+        $this->app->bind(KPIDivisionService::class, KPIDivisionServiceImpl::class);
+        $this->app->bind(KPIDepartmentService::class, KPIDepartmentServiceImpl::class);
+        $this->app->bind(KPISectionService::class, KPISectionServiceImpl::class);
     }
 
     /**

@@ -196,12 +196,28 @@
                             <div class="col-xl-12">
                                 <div class="card card-h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">KPI Department</h6>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <h6 class="mb-0">KPI Section</h6>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label for="kpi_section_year_filter" class="mb-0 fw-semibold"></label>
+                                                <select id="kpi_section_year_filter" class="form-select form-select-sm">
+                                                    @foreach ($kpiYears as $year)
+                                                    <option value="{{ $year }}" {{ (int) $year === (int) $currentYear ? 'selected' : '' }}>
+                                                        {{ $year }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div class="ms-auto d-flex gap-2">
 
                                         </div>
                                     </div>
                                     <div class="card-body">
+                                        <div id="kpi-section-config"
+                                            data-current-year="{{ $currentYear }}"
+                                            data-urls='@json($kpiSectionUrls)'>
+                                        </div>
                                         <div class="row g-5">
                                             <div class="col-xl-12">
                                                 <div class="p-3">
@@ -752,11 +768,15 @@ $years = range(2023, date('Y') + 5);
 </script>
 
 <script>
-    const ajaxUrl = "{{ route('kpisection.datatable') }}";
-    const storeUrl = "{{ route('kpisection.store') }}";
-    const showUrlTemplate = "{{ url('kpisection') }}/:id/show";
-    const updateUrlTemplate = "{{ url('kpisection') }}/:id/update";
-    const deleteUrlTemplate = "{{ url('kpisection') }}/:id/destroy";
+    const kpiSectionConfigEl = document.getElementById('kpi-section-config');
+    const kpiSectionUrls = kpiSectionConfigEl ? $(kpiSectionConfigEl).data('urls') : {};
+    const currentSectionYear = kpiSectionConfigEl ? parseInt(kpiSectionConfigEl.dataset.currentYear, 10) : null;
+    const yearSectionFilter = $('#kpi_section_year_filter');
+    const ajaxUrl = kpiSectionUrls.datatable;
+    const storeUrl = kpiSectionUrls.store;
+    const showUrlTemplate = kpiSectionUrls.show;
+    const updateUrlTemplate = kpiSectionUrls.update;
+    const deleteUrlTemplate = kpiSectionUrls.destroy;
     const csrfToken = "{{ csrf_token() }}";
 
 
@@ -771,9 +791,25 @@ $years = range(2023, date('Y') + 5);
     }
 
     $(document).ready(function() {
+        function resolveUrl(template, id) {
+            return template
+                .replace(':id', id)
+                .replace('%3Aid', id);
+        }
+
+        if (currentSectionYear && (!yearSectionFilter.val() || yearSectionFilter.val() === '')) {
+            yearSectionFilter.val(currentSectionYear);
+        }
+
         const table = $('#kpi_section_table').DataTable({
             processing: true,
-            ajax: ajaxUrl,
+            ajax: {
+                url: ajaxUrl,
+                type: 'GET',
+                data: function(d) {
+                    d.year = yearSectionFilter.val() || currentSectionYear;
+                }
+            },
             scrollX: true,
             scrollCollapse: true,
             autoWidth: true,
@@ -968,7 +1004,7 @@ $years = range(2023, date('Y') + 5);
 
         $(document).on('click', '.btn-edit', function() {
             const id = $(this).data('id');
-            const url = showUrlTemplate.replace(':id', id);
+            const url = resolveUrl(showUrlTemplate, id);
 
             $.get(url, function(res) {
                 const d = res.data;
@@ -1071,7 +1107,7 @@ $years = range(2023, date('Y') + 5);
 
             let url = storeUrl;
             if (mode === 'edit' && id) {
-                url = updateUrlTemplate.replace(':id', id);
+                url = resolveUrl(updateUrlTemplate, id);
                 payload._method = 'PUT';
             }
 
@@ -1120,7 +1156,7 @@ $years = range(2023, date('Y') + 5);
                 if (!r.isConfirmed) return;
 
                 $.ajax({
-                    url: deleteUrlTemplate.replace(':id', id),
+                    url: resolveUrl(deleteUrlTemplate, id),
                     method: 'DELETE',
                     data: {
                         _token: csrfToken
@@ -1143,6 +1179,10 @@ $years = range(2023, date('Y') + 5);
                     }
                 });
             });
+        });
+
+        yearSectionFilter.on('change', function() {
+            refreshTable();
         });
 
     });

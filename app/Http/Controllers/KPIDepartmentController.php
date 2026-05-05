@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KPIDivision;
-use App\Models\KPIDepartment;
-use App\Models\Department;
-use Illuminate\Http\Request;
+use App\DTOs\KPIDepartmentData;
+use App\Exceptions\DomainException;
+use App\Http\Requests\KPIDepartmentDataTableRequest;
+use App\Http\Requests\StoreKPIDepartmentRequest;
+use App\Http\Requests\UpdateKPIDepartmentRequest;
+use App\Services\KPIDepartmentService\KPIDepartmentService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class KPIDepartmentController extends Controller
 {
+    public function __construct(private KPIDepartmentService $service) {}
     /**
      * Halaman utama KPI Department.
      * Hanya kirim data untuk dropdown (KPI Division & Department).
@@ -16,215 +21,183 @@ class KPIDepartmentController extends Controller
      */
     public function index()
     {
-        $title        = 'KPI Department';
-        $kpiDivisions = KPIDivision::orderBy('year')
-            ->orderBy('division_goals')
-            ->get();
+        $data = $this->service->getIndexData();
+        $data['kpiDepartmentUrls'] = [
+            'datatable' => route('kpidepartment.datatable'),
+            'store' => route('kpidepartment.store'),
+            'show' => route('kpidepartment.show', ['id' => ':id']),
+            'update' => route('kpidepartment.update', ['id' => ':id']),
+            'destroy' => route('kpidepartment.destroy', ['kpiDepartment' => ':id']),
+        ];
 
-        $departments  = Department::orderBy('name')->get();
-
-        return view('pages.kpi.department_rev1', [
-            'title'        => $title,
-            'kpiDivisions' => $kpiDivisions,
-            'departments'  => $departments,
-        ]);
+        return view('pages.kpi.department_rev1', $data);
     }
 
     /**
      * DataTables AJAX source.
      */
-    public function dataTable()
+    public function dataTable(KPIDepartmentDataTableRequest $request): JsonResponse
     {
-        $items = KPIDepartment::with(['kpiDivision', 'department'])
-            ->orderBy('id', 'desc')
-            ->get();
+        try {
+            $year = $request->validated()['year'] ?? null;
+            $rows = $this->service->getDataTableRows($year);
 
-        $rows = [];
-        $no   = 1;
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $rows,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-        foreach ($items as $row) {
-            $rows[] = [
-                'id'                   => $row->id,
-                'no'                   => $no++,
-                'year'                 => $row->year,
-                'kpi_division'         => optional($row->kpiDivision)->division_goals ?? '-',
-                'kpi_division_id'      => $row->kpi_division_id,
-                'department'           => optional($row->department)->name ?? '-',
-                'department_id'        => $row->department_id,
-                'department_goals'     => $row->department_goals,
-                'department_activities'=> $row->department_activities,
-                'target_department'    => $row->target_department,
-                'duration_days'        => $row->duration_days,
-                'schedule_start'       => optional($row->schedule_start)->format('Y-m-d'),
-                'schedule_end'         => optional($row->schedule_end)->format('Y-m-d'),
-                'jan'                  => (bool) $row->jan,
-                'feb'                  => (bool) $row->feb,
-                'mar'                  => (bool) $row->mar,
-                'apr'                  => (bool) $row->apr,
-                'may'                  => (bool) $row->may,
-                'jun'                  => (bool) $row->jun,
-                'jul'                  => (bool) $row->jul,
-                'aug'                  => (bool) $row->aug,
-                'sep'                  => (bool) $row->sep,
-                'oct'                  => (bool) $row->oct,
-                'nov'                  => (bool) $row->nov,
-                'dec'                  => (bool) $row->dec,
-                'revenue_cost'         => $row->revenue_cost,
-                'pic'                  => $row->pic,
-                'description'          => $row->description,
-            ];
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        return response()->json([
-            'data' => $rows,
-        ]);
-    }
-
-    /**
-     * Helper konversi input bulan (checkbox / select) ke boolean.
-     */
-    protected function toBool($val): bool
-    {
-        if ($val === null) {
-            return false;
-        }
-
-        $v = strtolower((string) $val);
-        return in_array($v, ['1', 'true', 'yes', 'y', 'ya'], true);
     }
 
     /**
      * Store (Create) – dipanggil dari modal Add.
      */
-    public function store(Request $request)
+    public function store(StoreKPIDepartmentRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'year'                 => ['required', 'integer'],
-            'kpi_division_id'      => ['required', 'exists:kpi_division,id'],
-            'department_id'        => ['required', 'exists:department,id'],
+        try {
+            $data = KPIDepartmentData::fromArray($request->validated());
+            $kpiDept = $this->service->create($data);
 
-            'department_goals'     => ['required', 'string'],
-            'department_activities'=> ['nullable', 'string'],
-            'target_department'    => ['nullable', 'string'],
-            'duration_days'        => ['nullable', 'integer'],
-            'schedule_start'       => ['nullable', 'date'],
-            'schedule_end'         => ['nullable', 'date'],
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Department row created successfully.',
+                'data' => ['id' => $kpiDept->id],
+            ], 201);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-            'revenue_cost'         => ['nullable', 'string'],
-            'pic'                  => ['nullable', 'string'],
-            'description'          => ['nullable', 'string'],
-
-            // bulan akan diproses manual dari request
-        ]);
-
-        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-
-        $data = [
-            'year'                  => $validated['year'],
-            'kpi_division_id'       => $validated['kpi_division_id'],
-            'department_id'         => $validated['department_id'],
-            'department_goals'      => $validated['department_goals'],
-            'department_activities' => $validated['department_activities'] ?? null,
-            'target_department'     => $validated['target_department'] ?? null,
-            'duration_days'         => $validated['duration_days'] ?? null,
-            'schedule_start'        => $validated['schedule_start'] ?? null,
-            'schedule_end'          => $validated['schedule_end'] ?? null,
-            'revenue_cost'          => $validated['revenue_cost'] ?? null,
-            'pic'                   => $validated['pic'] ?? null,
-            'description'           => $validated['description'] ?? null,
-        ];
-
-        foreach ($months as $m) {
-            $data[$m] = $this->toBool($request->input($m));
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        $kpiDept = KPIDepartment::create($data);
-
-        return response()->json([
-            'status'  => 'success',
-            'id'      => $kpiDept->id,
-            'message' => 'KPI Department row created successfully.',
-        ], 201);
     }
 
     /**
      * Show – untuk isi modal Edit lewat AJAX.
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        $kpiDept = KPIDepartment::with(['kpiDivision', 'department'])->findOrFail($id);
+        try {
+            $kpiDept = $this->service->find((int) $id);
 
-        return response()->json([
-            'status' => 'success',
-            'data'   => $kpiDept,
-        ]);
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data' => $kpiDept,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
      * Update – dipanggil dari modal Edit.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateKPIDepartmentRequest $request, $id): JsonResponse
     {
-        $kpiDept = KPIDepartment::findOrFail($id);
+        try {
+            $data = KPIDepartmentData::fromArray($request->validated());
+            $kpiDept = $this->service->update((int) $id, $data);
 
-        $validated = $request->validate([
-            'year'                 => ['required', 'integer'],
-            'kpi_division_id'      => ['required', 'exists:kpi_division,id'],
-            'department_id'        => ['required', 'exists:department,id'],
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Department row updated successfully.',
+                'data' => ['id' => $kpiDept->id],
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
 
-            'department_goals'     => ['required', 'string'],
-            'department_activities'=> ['nullable', 'string'],
-            'target_department'    => ['nullable', 'string'],
-            'duration_days'        => ['nullable', 'integer'],
-            'schedule_start'       => ['nullable', 'date'],
-            'schedule_end'         => ['nullable', 'date'],
-
-            'revenue_cost'         => ['nullable', 'string'],
-            'pic'                  => ['nullable', 'string'],
-            'description'          => ['nullable', 'string'],
-        ]);
-
-        $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-
-        $data = [
-            'year'                  => $validated['year'],
-            'kpi_division_id'       => $validated['kpi_division_id'],
-            'department_id'         => $validated['department_id'],
-            'department_goals'      => $validated['department_goals'],
-            'department_activities' => $validated['department_activities'] ?? null,
-            'target_department'     => $validated['target_department'] ?? null,
-            'duration_days'         => $validated['duration_days'] ?? null,
-            'schedule_start'        => $validated['schedule_start'] ?? null,
-            'schedule_end'          => $validated['schedule_end'] ?? null,
-            'revenue_cost'          => $validated['revenue_cost'] ?? null,
-            'pic'                   => $validated['pic'] ?? null,
-            'description'           => $validated['description'] ?? null,
-        ];
-
-        foreach ($months as $m) {
-            $data[$m] = $this->toBool($request->input($m));
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
         }
-
-        $kpiDept->update($data);
-
-        return response()->json([
-            'status'  => 'success',
-            'id'      => $kpiDept->id,
-            'message' => 'KPI Department row updated successfully.',
-        ]);
     }
 
     /**
      * Delete – hapus 1 baris KPI Department.
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
-        $kpiDept = KPIDepartment::findOrFail($id);
-        $kpiDept->delete();
+        try {
+            $this->service->delete((int) $id);
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'KPI Department berhasil dihapus.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'KPI Department berhasil dihapus.',
+                'data' => ['id' => (int) $id],
+            ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], $e->getCode() ?: 422);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Internal Server Error',
+                'data' => null,
+            ], 500);
+        }
     }
 }

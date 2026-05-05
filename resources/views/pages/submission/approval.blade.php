@@ -162,6 +162,12 @@
             width:       auto    !important;
             margin-top:  0       !important;
         }
+
+        /* FIS Modal — extra-wide beyond modal-xl */
+        #fisSubmitModal .modal-dialog {
+            max-width: 95vw;
+            width:     95vw;
+        }
     </style>
 @endsection
 
@@ -1044,7 +1050,7 @@
 
     {{-- === FIS SUBMIT MODAL (shown when last LPJ approver approves) === --}}
     <div class="modal fade" id="fisSubmitModal" tabindex="-1" aria-labelledby="fisSubmitModalLabel" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-xxl-down">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="fisSubmitModalLabel">

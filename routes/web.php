@@ -49,6 +49,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\WorkplanBudgetItemMasterApprovalController;
+use App\Http\Controllers\PipController;
 use App\Livewire\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -802,16 +803,18 @@ Route::middleware('auth')->group(function () {
                         ->name('userSubmission.lpj.submit');
                     Route::get('/transaction/{transactionId}', [SubmissionController::class, 'getLpjByTransaction'])
                         ->name('userSubmission.lpj.byTransaction');
+                Route::get('/pending', [SubmissionController::class, 'getPendingLpjApprovals'])
+                    ->name('userSubmission.lpj.pending');
+                Route::get('/counts', [SubmissionController::class, 'getLpjApprovalCounts'])
+                    ->name('userSubmission.lpj.counts');
                     Route::get('/{lpjId}/proof', [SubmissionController::class, 'viewLpjProof'])
                         ->name('userSubmission.lpj.proof');
                     Route::post('/{lpjId}/approve', [SubmissionController::class, 'approveLpj'])
                         ->name('userSubmission.lpj.approve');
+                Route::post('/{lpjId}/approve-with-fis', [SubmissionController::class, 'approveLpjWithFis'])
+                    ->name('userSubmission.lpj.approveWithFis');
                     Route::post('/{lpjId}/reject', [SubmissionController::class, 'rejectLpj'])
-                        ->name('userSubmission.lpj.reject');
-                    Route::get('/pending', [SubmissionController::class, 'getPendingLpjApprovals'])
-                        ->name('userSubmission.lpj.pending');
-                    Route::get('/counts', [SubmissionController::class, 'getLpjApprovalCounts'])
-                        ->name('userSubmission.lpj.counts');
+                    ->name('userSubmission.lpj.reject');
                 });
             });
 
@@ -1052,6 +1055,19 @@ Route::middleware('auth')->group(function () {
     /* ========================
         MASTER
     ======================== */
+
+    /* ========================
+        PIP / FIS INTEGRATION PROXY
+    ======================== */
+    Route::prefix('pip')->group(function () {
+        Route::get('/jenis-kas', [PipController::class, 'getJenisKas'])->name('pip.jenis-kas');
+        Route::get('/jenis-transaksi', [PipController::class, 'getJenisTransaksi'])->name('pip.jenis-transaksi');
+        Route::get('/cost-center', [PipController::class, 'getCostCenter'])->name('pip.cost-center');
+        Route::get('/vendor', [PipController::class, 'getVendor'])->name('pip.vendor');
+        Route::get('/ppn', [PipController::class, 'getPpn'])->name('pip.ppn');
+        Route::get('/tax', [PipController::class, 'getTax'])->name('pip.tax');
+        Route::get('/pph', [PipController::class, 'getPph'])->name('pip.pph');
+    });
 
     Route::prefix('employee')
         ->middleware('permission:employee.view')

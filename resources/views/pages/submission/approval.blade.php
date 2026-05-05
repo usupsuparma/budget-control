@@ -142,6 +142,26 @@
         #approvedTableBody tr:hover {
             background-color: rgba(13, 110, 253, 0.05);
         }
+
+        /*
+         * FIS Modal — Choices.js dropdown overflow fix.
+         *
+         * Choices.js sets  top: 100%  on its dropdown, which means
+         * "100% of the viewport height" when position:fixed — i.e. completely
+         * off-screen.  We therefore also force  top:0 / left:0 / width:auto
+         * as safe CSS defaults (dropdown is display:none when closed so these
+         * values are never visible). A single delegated JS listener then sets
+         * the exact coordinates synchronously on every showDropdown event,
+         * before the browser has a chance to paint.
+         */
+        #fisSubmitModal .choices__list--dropdown {
+            position:    fixed   !important;
+            z-index:     10001   !important;
+            top:         0       !important;
+            left:        0       !important;
+            width:       auto    !important;
+            margin-top:  0       !important;
+        }
     </style>
 @endsection
 
@@ -1017,6 +1037,107 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- === FIS SUBMIT MODAL (shown when last LPJ approver approves) === --}}
+    <div class="modal fade" id="fisSubmitModal" tabindex="-1" aria-labelledby="fisSubmitModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="fisSubmitModalLabel">
+                        <i class="ri-send-plane-line me-2"></i>Submit to FIS — Pengeluaran Reguler
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="fis_lpj_id">
+
+                    <div class="alert alert-info d-flex align-items-center mb-3">
+                        <i class="ri-information-line me-2 fs-5"></i>
+                        <span>Ini adalah persetujuan terakhir. Lengkapi data berikut sebelum mengirim ke FIS.</span>
+                    </div>
+
+                    {{-- Header Fields --}}
+                    <div class="card border mb-3">
+                        <div class="card-header bg-light fw-semibold">
+                            <i class="ri-file-list-3-line me-1"></i> Informasi Transaksi
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Tanggal <span class="text-danger">*</span></label>
+                                    <input type="date" id="fis_tgl" class="form-control" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Currency <span class="text-danger">*</span></label>
+                                    <select id="fis_currency" class="form-select">
+                                        <option value="IDR" selected>IDR</option>
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="SGD">SGD</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Rate <span class="text-danger">*</span></label>
+                                    <input type="number" id="fis_rate" class="form-control" value="1" min="0" step="0.01">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Approval Notes</label>
+                                    <input type="text" id="fis_notes" class="form-control" placeholder="Catatan persetujuan (opsional)">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jenis Kas <span class="text-danger">*</span></label>
+                                    <select id="fis_jenis_kas" class="form-select"></select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Keterangan</label>
+                                    <input type="text" id="fis_keterangan" class="form-control" placeholder="Keterangan transaksi...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Items --}}
+                    <div class="card border">
+                        <div class="card-header bg-light fw-semibold">
+                            <i class="ri-list-check me-1"></i> Detail Item
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0" id="fisItemsTable">
+                                    <thead class="table-light text-center" style="font-size:.8rem;">
+                                        <tr>
+                                            <th style="min-width:40px">#</th>
+                                            <th style="min-width:160px">Deskripsi</th>
+                                            <th style="min-width:90px">Nilai Aktual</th>
+                                            <th style="min-width:200px">Jenis Transaksi <span class="text-danger">*</span></th>
+                                            <th style="min-width:200px">Cost Center <span class="text-danger">*</span></th>
+                                            <th style="min-width:200px">Vendor <span class="text-danger">*</span></th>
+                                            <th style="min-width:120px">Referensi</th>
+                                            <th style="min-width:140px">PPN</th>
+                                            <th style="min-width:100px">Nilai PPN</th>
+                                            <th style="min-width:130px">Jenis Pajak</th>
+                                            <th style="min-width:140px">PPH</th>
+                                            <th style="min-width:100px">Nilai PPH</th>
+                                            <th style="min-width:130px">Tax Trx ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fisItemsBody">
+                                        <tr><td colspan="13" class="text-center text-muted py-3">Memuat data...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="fisSaveBtn" onclick="submitFisForm()">
+                        <i class="ri-send-plane-line me-1"></i> Approve & Submit ke FIS
+                    </button>
                 </div>
             </div>
         </div>
@@ -3023,14 +3144,24 @@
 
                 let actionHtml = '';
                 if (status === 'pending') {
+                    const totalLevels = parseInt(lpj.total_approval_levels || 0);
+                    const currentLevel = parseInt(lpj.current_approval_level || 0);
+                    const isLastApprover = (currentLevel + 1) >= totalLevels && totalLevels > 0;
+
+                    const approveBtn = isLastApprover
+                        ? `<button type="button" class="btn btn-success" onclick="openFisSubmitModal(${lpj.id}, ${transaction.id || 0})" title="Approve & Submit ke FIS">
+                               <i class="ri-send-plane-line me-1"></i>Approve & FIS
+                           </button>`
+                        : `<button type="button" class="btn btn-success" onclick="approveLpjSubmission(${lpj.id})" title="Approve">
+                               <i class="ri-check-line"></i>
+                           </button>`;
+
                     actionHtml = `
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-info" onclick="viewLpjDetail(${transaction.id})" title="View Detail">
                                 <i class="ri-eye-line"></i>
                             </button>
-                            <button type="button" class="btn btn-success" onclick="approveLpjSubmission(${lpj.id})" title="Approve">
-                                <i class="ri-check-line"></i>
-                            </button>
+                            ${approveBtn}
                             <button type="button" class="btn btn-danger" onclick="rejectLpjSubmission(${lpj.id})" title="Reject">
                                 <i class="ri-close-line"></i>
                             </button>
@@ -3298,6 +3429,374 @@
                         }
                     });
                 }
+            });
+        }
+
+        // ─── FIS (PIP) Submit Modal ──────────────────────────────────────────────
+
+        let fisCurrentLpjId   = null;
+        let fisCurrentTransId = null;
+        let fisJenisKasChoice = null;
+        const fisItemChoices  = {};   // { rowIdx: { jt, cc, vd } }
+
+        const FIS_URLS = {
+            jenisKas:       "{{ route('pip.jenis-kas') }}",
+            jenisTransaksi: "{{ route('pip.jenis-transaksi') }}",
+            costCenter:     "{{ route('pip.cost-center') }}",
+            vendor:         "{{ route('pip.vendor') }}",
+            ppn:            "{{ route('pip.ppn') }}",
+            pph:            "{{ route('pip.pph') }}",
+            tax:            "{{ route('pip.tax') }}",
+            approveWithFis: "{{ route('userSubmission.lpj.approveWithFis', ':lpjId') }}",
+        };
+
+        // ── Delegated Choices.js dropdown positioning (fires once, covers all rows) ──
+        // showDropdown bubbles from the hidden <select> up to the modal.
+        // We intercept it here and set the correct fixed coordinates so the
+        // dropdown is never clipped by overflow:auto ancestors.
+        document.getElementById('fisSubmitModal').addEventListener('showDropdown', function (e) {
+            const wrapper  = e.target && e.target.closest && e.target.closest('.choices');
+            if (!wrapper) return;
+            const dropdown = wrapper.querySelector('.choices__list--dropdown');
+            if (!dropdown) return;
+            const rect = wrapper.getBoundingClientRect();
+            dropdown.style.top   = rect.bottom + 'px';
+            dropdown.style.left  = rect.left   + 'px';
+            dropdown.style.width = rect.width  + 'px';
+        });
+
+        // ── One-time modal event listener (registered once at script load) ──────
+        $('#fisSubmitModal').on('shown.bs.modal', function () {
+            // Modal fully visible — safe to init Choices.js and fetch data
+            Promise.all([
+                initFisJenisKasChoice(),
+                loadFisTransactionItems(fisCurrentTransId),
+            ]).then(function () {
+                loadFisPpnOptions();
+                loadFisPphOptions();
+            });
+        });
+
+        // ── open trigger ─────────────────────────────────────────────────────────
+        function openFisSubmitModal(lpjId, transactionId) {
+            fisCurrentLpjId   = lpjId;
+            fisCurrentTransId = transactionId;
+
+            $('#fis_lpj_id').val(lpjId);
+            $('#fis_tgl').val(new Date().toISOString().slice(0, 10));
+            $('#fis_currency').val('IDR');
+            $('#fis_rate').val(1);
+            $('#fis_keterangan').val('');
+            $('#fis_notes').val('');
+            $('#fisItemsBody').html(
+                '<tr><td colspan="13" class="text-center text-muted py-3">' +
+                '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Memuat data item...</td></tr>'
+            );
+
+            // Destroy previous Choices instances and reset the underlying <select>
+            if (fisJenisKasChoice) {
+                try { fisJenisKasChoice.destroy(); } catch (e) {}
+                fisJenisKasChoice = null;
+            }
+            document.getElementById('fis_jenis_kas').innerHTML = '<option value="">-- Pilih Jenis Kas --</option>';
+
+            Object.values(fisItemChoices).forEach(function (instances) {
+                Object.values(instances).forEach(function (c) { try { c.destroy(); } catch (e) {} });
+            });
+            for (const k in fisItemChoices) delete fisItemChoices[k];
+
+            // Show the modal; data loading fires in shown.bs.modal handler above
+            const modalEl = document.getElementById('fisSubmitModal');
+            const modal   = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        // ── Jenis Kas header dropdown ─────────────────────────────────────────────
+        function initFisJenisKasChoice() {
+            return $.get(FIS_URLS.jenisKas).then(function (res) {
+                fisJenisKasChoice = new Choices('#fis_jenis_kas', {
+                    searchEnabled:    true,
+                    placeholder:      true,
+                    placeholderValue: '-- Pilih Jenis Kas --',
+                    itemSelectText:   '',
+                    shouldSort:       false,
+                    choices: (res.data || []).map(function (d) {
+                        return { value: d.kode, label: d.label };
+                    }),
+                });
+            }).catch(function () {
+                $('#fis_jenis_kas').html('<option value="">Gagal memuat data</option>');
+            });
+        }
+
+        // ── Load LPJ detail items ─────────────────────────────────────────────────
+        function loadFisTransactionItems(transactionId) {
+            if (!transactionId) return Promise.resolve();
+            const url = "{{ route('userSubmission.lpj.byTransaction', ':id') }}".replace(':id', transactionId);
+            return $.get(url).then(function (res) {
+                if (!res.success || !res.data) {
+                    $('#fisItemsBody').html('<tr><td colspan="13" class="text-center text-muted py-3">Data tidak ditemukan</td></tr>');
+                    return;
+                }
+                const details = res.data.transaction?.details || [];
+                renderFisItemRows(details);
+            }).catch(function () {
+                $('#fisItemsBody').html('<tr><td colspan="13" class="text-center text-danger py-3">Gagal memuat item transaksi</td></tr>');
+            });
+        }
+
+        // ── Render item rows + init per-row Choices ───────────────────────────────
+        function renderFisItemRows(details) {
+            if (!details.length) {
+                $('#fisItemsBody').html('<tr><td colspan="13" class="text-center text-muted py-3">Tidak ada item</td></tr>');
+                return;
+            }
+            let html = '';
+            details.forEach(function (detail, idx) {
+                const value = parseFloat(detail.fix_total || detail.estimated_total || 0);
+                html += `
+                    <tr data-detail-id="${detail.id}" data-row-idx="${idx}">
+                        <td class="text-center">${idx + 1}</td>
+                        <td>${escapeHtml(detail.goods_service_name || '-')}</td>
+                        <td class="text-end fw-semibold">${formatCurrency(value)}</td>
+                        <td><select id="fis_jt_${idx}" class="form-select form-select-sm"></select></td>
+                        <td><select id="fis_cc_${idx}" class="form-select form-select-sm"></select></td>
+                        <td><select id="fis_vd_${idx}" class="form-select form-select-sm"></select></td>
+                        <td><input type="text" class="form-control form-control-sm fis-reff" placeholder="INV-001"></td>
+                        <td>
+                            <select id="fis_ppn_${idx}" class="form-select form-select-sm fis-ppn" data-row="${idx}" data-value="${value}">
+                                <option value="">Pilih PPN</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="form-control form-control-sm fis-ppnval" value="0" min="0" step="0.01" readonly></td>
+                        <td>
+                            <select id="fis_tot_${idx}" class="form-select form-select-sm fis-tot" data-row="${idx}">
+                                <option value="">Pilih Tax</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select id="fis_pph_${idx}" class="form-select form-select-sm fis-pph" data-row="${idx}" data-value="${value}">
+                                <option value="">Pilih PPH</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="form-control form-control-sm fis-pphval" value="0" min="0" step="0.01" readonly></td>
+                        <td><input type="text" class="form-control form-control-sm fis-tax-trx-id" placeholder="TAX-001"></td>
+                    </tr>
+                `;
+            });
+            $('#fisItemsBody').html(html);
+
+            // Init Choices.js with pre-loaded data for each row
+            details.forEach(function (detail, idx) {
+                fisItemChoices[idx] = {
+                    jt: makeAjaxChoice(`fis_jt_${idx}`, FIS_URLS.jenisTransaksi, 'Cari jenis transaksi...', function (d) {
+                        return { value: d.kode, label: d.label };
+                    }),
+                    cc: makeAjaxChoice(`fis_cc_${idx}`, FIS_URLS.costCenter, 'Cari cost center...', function (d) {
+                        return { value: d.code, label: d.label };
+                    }),
+                    vd: makeAjaxChoice(`fis_vd_${idx}`, FIS_URLS.vendor, 'Cari vendor...', function (d) {
+                        return { value: String(d.id), label: d.label };
+                    }),
+                };
+            });
+        }
+
+        /**
+         * Creates a Choices.js instance on an AJAX-backed search <select>.
+         * Pre-loads initial options immediately (no keyword) so the dropdown
+         * shows items on first open without requiring the user to type.
+         * Re-queries the API when the user types 2+ characters.
+         */
+        function makeAjaxChoice(elId, url, placeholderText, mapFn) {
+            const instance = new Choices(`#${elId}`, {
+                searchEnabled:    true,
+                placeholder:      true,
+                placeholderValue: placeholderText,
+                itemSelectText:   '',
+                shouldSort:       false,
+                loadingText:      'Memuat...',
+                noResultsText:    'Tidak ada hasil',
+                noChoicesText:    'Ketik untuk mencari',
+            });
+
+            // Pre-load initial batch so dropdown is not empty on first open
+            $.get(url).then(function (res) {
+                instance.setChoices((res.data || []).map(mapFn), 'value', 'label', true);
+            });
+
+            // Re-fetch on search input (debounced)
+            let searchTimer = null;
+            document.getElementById(elId).addEventListener('search', function (evt) {
+                clearTimeout(searchTimer);
+                const kw = (evt.detail && evt.detail.value) ? evt.detail.value : '';
+                if (kw.length < 2) {
+                    // Restore initial data when search is cleared
+                    $.get(url).then(function (res) {
+                        instance.clearChoices();
+                        instance.setChoices((res.data || []).map(mapFn), 'value', 'label', true);
+                    });
+                    return;
+                }
+                searchTimer = setTimeout(function () {
+                    $.get(url, { keyword: kw }).then(function (res) {
+                        instance.clearChoices();
+                        instance.setChoices((res.data || []).map(mapFn), 'value', 'label', true);
+                    });
+                }, 350);
+            });
+
+            return instance;
+        }
+
+        // ── PPn / PPh / Tax options (plain <select>, no Choices.js needed) ────────
+        function loadFisPpnOptions() {
+            $.get(FIS_URLS.ppn).then(function (res) {
+                const opts = (res.data || []).map(function (d) {
+                    return `<option value="${d.ppn}">${d.label}</option>`;
+                }).join('');
+                $('.fis-ppn').each(function () {
+                    $(this).html('<option value="">Pilih PPN</option>' + opts);
+                });
+            });
+        }
+
+        function loadFisPphOptions() {
+            Promise.all([$.get(FIS_URLS.pph), $.get(FIS_URLS.tax)]).then(function (results) {
+                const pphOpts = (results[0].data || []).map(function (d) {
+                    return `<option value="${d.pph}">${d.label}</option>`;
+                }).join('');
+                const taxOpts = (results[1].data || []).map(function (d) {
+                    return `<option value="${d.code}">${d.label}</option>`;
+                }).join('');
+                $('.fis-pph').each(function () {
+                    $(this).html('<option value="">Pilih PPH</option>' + pphOpts);
+                });
+                $('.fis-tot').each(function () {
+                    $(this).html('<option value="">Pilih Jenis Pajak</option>' + taxOpts);
+                });
+            });
+        }
+
+        // ── Auto-calculate PPN / PPH values when rate is selected ─────────────────
+        $(document).on('change', '.fis-ppn', function () {
+            const baseValue = parseFloat($(this).data('value') || 0);
+            const ppnRate   = parseFloat($(this).val() || 0);
+            $(this).closest('tr').find('.fis-ppnval').val((baseValue * ppnRate).toFixed(2));
+        });
+
+        $(document).on('change', '.fis-pph', function () {
+            const baseValue = parseFloat($(this).data('value') || 0);
+            const pphRate   = parseFloat($(this).val() || 0);
+            $(this).closest('tr').find('.fis-pphval').val((baseValue * pphRate).toFixed(2));
+        });
+
+        // ── Submit FIS form ───────────────────────────────────────────────────────
+        function submitFisForm() {
+            const lpjId     = $('#fis_lpj_id').val();
+            const tgl       = $('#fis_tgl').val();
+            const jenisKas  = fisJenisKasChoice ? fisJenisKasChoice.getValue(true) : $('#fis_jenis_kas').val();
+            const currency  = $('#fis_currency').val();
+            const rate      = $('#fis_rate').val();
+            const keterangan = $('#fis_keterangan').val();
+            const notes     = $('#fis_notes').val();
+
+            if (!tgl || !jenisKas || !currency || !rate) {
+                Swal.fire({ icon: 'warning', title: 'Data tidak lengkap', text: 'Harap isi Tanggal, Jenis Kas, Currency, dan Rate.' });
+                return;
+            }
+
+            // Collect items
+            const items = [];
+            let valid = true;
+            $('#fisItemsBody tr').each(function () {
+                const row      = $(this);
+                const detailId = parseInt(row.data('detail-id'));
+                if (!detailId) return;
+                const idx = parseInt(row.data('row-idx'));
+
+                const jenisTransaksi  = fisItemChoices[idx]?.jt  ? fisItemChoices[idx].jt.getValue(true)  : row.find(`#fis_jt_${idx}`).val();
+                const costCenterCode  = fisItemChoices[idx]?.cc  ? fisItemChoices[idx].cc.getValue(true)  : row.find(`#fis_cc_${idx}`).val();
+                const vendorId        = fisItemChoices[idx]?.vd  ? fisItemChoices[idx].vd.getValue(true)  : row.find(`#fis_vd_${idx}`).val();
+
+                if (!jenisTransaksi || !costCenterCode || !vendorId) {
+                    valid = false;
+                    return false; // break $.each
+                }
+
+                items.push({
+                    detail_id:        detailId,
+                    jenis_transaksi:  jenisTransaksi,
+                    cost_center_code: costCenterCode,
+                    vendor_id:        vendorId,
+                    reff:             row.find('.fis-reff').val()        || null,
+                    ppn:              parseFloat(row.find('.fis-ppn').val())    || null,
+                    ppnval:           parseFloat(row.find('.fis-ppnval').val()) || null,
+                    tot:              row.find('.fis-tot').val()         || null,
+                    pph:              parseFloat(row.find('.fis-pph').val())    || null,
+                    pphval:           parseFloat(row.find('.fis-pphval').val()) || null,
+                    tax_trx_id:       row.find('.fis-tax-trx-id').val() || null,
+                });
+            });
+
+            if (!valid) {
+                Swal.fire({ icon: 'warning', title: 'Data item tidak lengkap', text: 'Harap isi Jenis Transaksi, Cost Center, dan Vendor untuk setiap item.' });
+                return;
+            }
+
+            Swal.fire({
+                title:              'Konfirmasi Approve & Submit ke FIS',
+                html:               'Tindakan ini akan menyetujui LPJ <strong>sekaligus</strong> mengirim data ke FIS. Lanjutkan?',
+                icon:               'question',
+                showCancelButton:   true,
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor:  '#6c757d',
+                confirmButtonText:  'Ya, Submit',
+                cancelButtonText:   'Batal',
+                showLoaderOnConfirm: true,
+                preConfirm: function () {
+                    const url = FIS_URLS.approveWithFis.replace(':lpjId', lpjId);
+                    return $.ajax({
+                        url:         url,
+                        type:        'POST',
+                        contentType: 'application/json',
+                        headers:     { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        data:        JSON.stringify({
+                            tgl:        tgl,
+                            jenis_kas:  jenisKas,
+                            currency:   currency,
+                            rate:       parseFloat(rate),
+                            keterangan: keterangan || null,
+                            notes:      notes      || null,
+                            items:      items,
+                        }),
+                    }).catch(function (xhr) {
+                        const err = xhr.responseJSON;
+                        Swal.showValidationMessage(err?.message || 'Terjadi kesalahan saat submit.');
+                    });
+                },
+                allowOutsideClick: function () { return !Swal.isLoading(); },
+            }).then(function (result) {
+                if (!result.isConfirmed || !result.value) return;
+
+                const response = result.value;
+                const fisOk    = response.fis_result?.success;
+
+                bootstrap.Modal.getInstance(document.getElementById('fisSubmitModal'))?.hide();
+
+                Swal.fire({
+                    icon:  response.success ? (fisOk ? 'success' : 'warning') : 'error',
+                    title: response.success ? 'LPJ Disetujui' : 'Gagal',
+                    html:  response.success
+                        ? (fisOk
+                            ? `<p>${response.message}</p><p class="text-success"><i class="ri-check-double-line me-1"></i>Data berhasil dikirim ke FIS.</p>`
+                            : `<p>${response.message}</p><p class="text-warning"><i class="ri-alert-line me-1"></i>LPJ disetujui, namun pengiriman ke FIS gagal: ${response.fis_result?.message || '-'}</p>`)
+                        : (response.message || 'Terjadi kesalahan'),
+                    confirmButtonColor: '#0d6efd',
+                });
+
+                loadPendingLpjApprovals();
+                loadBadgeCounts();
             });
         }
 

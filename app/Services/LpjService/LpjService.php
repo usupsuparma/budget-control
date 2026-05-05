@@ -82,4 +82,14 @@ interface LpjService
      * @return array ['success' => bool, 'data' => mixed]
      */
     public function getLpjByTransactionId(int $transactionId): array;
+
+    /**
+     * Determine whether the given approver's action will fully close the LPJ.
+     * Used to decide whether a FIS submission is required before approving.
+     *
+     * @param int $lpjSubmissionId
+     * @param int $employmentId Employment ID of the prospective approver
+     * @return bool
+     */
+    public function willBeFullyApprovedAfter(int $lpjSubmissionId, int $employmentId): bool;
 }

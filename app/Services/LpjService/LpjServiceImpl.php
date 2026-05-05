@@ -166,6 +166,26 @@ class LpjServiceImpl implements LpjService
     /**
      * Process an LPJ approval action.
      */
+    /**
+     * {@inheritdoc}
+     */
+    public function willBeFullyApprovedAfter(int $lpjSubmissionId, int $employmentId): bool
+    {
+        $lpj = TransactionLpjSubmission::with('approvalDetails')->find($lpjSubmissionId);
+
+        if (! $lpj || $lpj->isApproved() || $lpj->isRejected()) {
+            return false;
+        }
+
+        $currentPending = $lpj->getCurrentPendingApproval();
+
+        if (! $currentPending || (int) $currentPending->employment_id !== $employmentId) {
+            return false;
+        }
+
+        return ($lpj->current_approval_level + 1) >= $lpj->total_approval_levels;
+    }
+
     public function processApproval(int $lpjSubmissionId, string $action, int $employmentId, ?string $notes = null): array
     {
         try {

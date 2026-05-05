@@ -324,8 +324,6 @@ class CompanyPolicyController extends Controller
             <h3>MEMUTUSKAN:</h3>
             <p>' . e($request->decision_id) . '</p>
             <h3>Latar Belakang:</h3>' . $request->background_id;
-            print_r($contentsId);
-die();
 
         $positions = $request->signature_position ?? [];
         $names = $request->signature_name ?? [];
@@ -418,7 +416,7 @@ die();
 
         // return $pdf->download($fileName);
         // atau kalau mau preview di browser:
-        // return $pdf->stream($fileName);
-        return view('pages.company-policy.pdf', compact('policy'));
+        return $pdf->stream($fileName);
+        // return view('pages.company-policy.pdf', compact('policy'));
     }
 }

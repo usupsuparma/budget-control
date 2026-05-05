@@ -17,7 +17,11 @@ return new class extends Migration
             'modul_name' => 'Transaction',
             'menu_name' => 'Approval Submission',
         ])->first();
-        // creaate or update permission
+
+        if (!$modul) {
+            return; // stop kalau data tidak ada
+        }
+
         Permission::updateOrCreate(
             [
                 'modul_menu' => $modul->id,

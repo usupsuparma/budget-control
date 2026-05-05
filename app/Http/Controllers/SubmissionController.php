@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\LogService\LogService;
 use App\Services\LpjService\LpjService;
+use App\Services\PipIntegrationService\PipIntegrationService;
+use App\Services\PipIntegrationService\DTOs\PengeluaranRegulerData;
+use App\Services\PipIntegrationService\DTOs\PengeluaranRegulerItemData;
 use App\Services\SubmissionService\SubmissionService;
+use App\Models\Transaction;
 use App\Models\TransactionLpjSubmission;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -21,6 +25,7 @@ class SubmissionController extends Controller
         private readonly ApprovalTransactionService $approvalTransactionService,
         private readonly LpjService $lpjService,
         private readonly LogService $logService,
+        private readonly PipIntegrationService $pipService,
     ) {}
 
     /* ========================
@@ -745,6 +750,169 @@ class SubmissionController extends Controller
             'Content-Type' => $mimeType,
             'Content-Disposition' => 'inline; filename="'.$fileName.'"',
         ]);
+    }
+
+    /**
+     * Approve LPJ as the last approver AND submit pengeluaran reguler to FIS/PIP.
+     * Validates FIS form data, approves the LPJ, then forwards to PIP on full approval.
+     */
+    public function approveLpjWithFis(Request $request, $lpjId)
+    {
+        $validator = Validator::make($request->all(), [
+            'tgl'                      => 'required|date_format:Y-m-d',
+            'jenis_kas'                => 'required|string|max:50',
+            'currency'                 => 'required|string|max:10',
+            'rate'                     => 'required|integer|min:0',
+            'keterangan'               => 'nullable|string|max:500',
+            'notes'                    => 'nullable|string|max:500',
+            'items'                    => 'required|array|min:1',
+            'items.*.detail_id'        => 'required|integer',
+            'items.*.jenis_transaksi'  => 'required|string|max:50',
+            'items.*.cost_center_code' => 'required|string|max:50',
+            'items.*.vendor_id'        => 'required|string|max:50',
+            'items.*.reff'             => 'nullable|string|max:100',
+            'items.*.ppn'              => 'nullable|numeric|min:0',
+            'items.*.ppnval'           => 'nullable|numeric|min:0',
+            'items.*.tot'              => 'nullable|string|max:50',
+            'items.*.pph'              => 'nullable|numeric|min:0',
+            'items.*.pphval'           => 'nullable|numeric|min:0',
+            'items.*.tax_trx_id'       => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $user       = Auth::user();
+            $employment = $user->employment;
+
+            if (! $employment) {
+                return response()->json(['success' => false, 'message' => 'Employment data not found'], 400);
+            }
+
+            // Step 1: Peek at the LPJ to determine if this approval will fully close it,
+            //         so we know whether a FIS submission is required BEFORE committing.
+            $lpjSubmission = TransactionLpjSubmission::with('transaction.details')->find($lpjId);
+
+            if (! $lpjSubmission) {
+                return response()->json(['success' => false, 'message' => 'LPJ submission not found'], 404);
+            }
+
+            $willBeFullyApproved = $this->lpjService->willBeFullyApprovedAfter(
+                (int) $lpjId,
+                $employment->id
+            );
+
+            // Step 2: If this is the last approval, submit to FIS/PIP FIRST.
+            //         Only proceed with LPJ approval if FIS succeeds — keeping both atomic.
+            $fisResult = null;
+            if ($willBeFullyApproved) {
+                $transaction = $lpjSubmission->transaction;
+
+                // Budget snapshot for FIS payload
+                $budgetSnapshot = $transaction ? [
+                    'transaction_id'   => $transaction->id,
+                    'purpose'          => $transaction->purpose,
+                    'estimated_amount' => $transaction->estimated_amount,
+                    'actual_amount'    => $transaction->actual_amount,
+                    'unit_name'        => $transaction->unit_name,
+                    'details'          => $transaction->details->map(fn($d) => [
+                        'id'           => $d->id,
+                        'budget_name'  => $d->budget_name,
+                        'description'  => $d->goods_service_name,
+                        'fix_quantity' => $d->fix_quantity,
+                        'fix_price'    => $d->fix_price,
+                        'fix_total'    => $d->fix_total,
+                    ])->toArray(),
+                ] : null;
+
+                $detailsById = $transaction ? $transaction->details->keyBy('id') : collect();
+
+                $fisItems = array_map(function (array $item) use ($detailsById) {
+                    $detail = $detailsById->get($item['detail_id']);
+
+                    return new PengeluaranRegulerItemData(
+                        jenisTransaksi: $item['jenis_transaksi'],
+                        costCenterCode: $item['cost_center_code'],
+                        vendorId: (string) $item['vendor_id'],
+                        value: (float) ($detail?->fix_total ?? 0),
+                        reff: $item['reff'] ?? null,
+                        ppn: isset($item['ppn']) ? (float) $item['ppn'] : null,
+                        ppnval: isset($item['ppnval']) ? (float) $item['ppnval'] : null,
+                        tot: $item['tot'] ?? null,
+                        pph: isset($item['pph']) ? (float) $item['pph'] : null,
+                        pphval: isset($item['pphval']) ? (float) $item['pphval'] : null,
+                        taxTrxId: $item['tax_trx_id'] ?? null,
+                    );
+                }, $request->input('items'));
+
+                $fisData = new PengeluaranRegulerData(
+                    tgl: $request->input('tgl'),
+                    jenisKas: $request->input('jenis_kas'),
+                    currency: $request->input('currency'),
+                    rate: (int) $request->input('rate'),
+                    items: $fisItems,
+                    keterangan: $request->input('keterangan'),
+                    budget: $budgetSnapshot,
+                );
+
+                $fisResult = $this->pipService->submitPengeluaranReguler($fisData);
+
+                // FIS failed → abort entirely, do NOT approve the LPJ
+                if (! $fisResult->success) {
+                    Log::warning('FIS submission failed; LPJ approval aborted to preserve atomicity', [
+                        'lpj_submission_id' => $lpjId,
+                        'fis_response'      => $fisResult->toArray(),
+                    ]);
+
+                    return response()->json([
+                        'success'    => false,
+                        'message'    => 'Gagal mengirim data ke FIS/PIP: ' . $fisResult->message . '. Approval LPJ dibatalkan.',
+                        'fis_result' => $fisResult->toArray(),
+                    ], 422);
+                }
+            }
+
+            // Step 3: FIS succeeded (or not required) — now approve the LPJ
+            $approvalResult = $this->lpjService->processApproval(
+                (int) $lpjId,
+                'approve',
+                $employment->id,
+                $request->input('notes')
+            );
+
+            if (! $approvalResult['success']) {
+                // FIS was already submitted but LPJ approval failed — log critical inconsistency
+                if ($fisResult !== null) {
+                    Log::critical('FIS submitted but LPJ approval failed — manual reconciliation required', [
+                        'lpj_submission_id' => $lpjId,
+                        'fis_response'      => $fisResult->toArray(),
+                        'approval_error'    => $approvalResult['message'] ?? '',
+                    ]);
+                }
+
+                return response()->json($approvalResult, 422);
+            }
+
+            return response()->json([
+                'success'    => true,
+                'message'    => $approvalResult['message'],
+                'lpj'        => $approvalResult['data'],
+                'fis_result' => $fisResult?->toArray(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in approveLpjWithFis: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing approval: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

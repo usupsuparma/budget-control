@@ -3,6 +3,8 @@
 namespace App\Services\PipIntegrationService;
 
 use App\Services\PipIntegrationService\DTOs\PengeluaranRegulerData;
+use App\Services\PipIntegrationService\DTOs\PengeluaranRegulerResponseData;
+use App\Services\PipIntegrationService\DTOs\PipApiResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,63 +22,72 @@ class PipIntegrationServiceImpl implements PipIntegrationService
     /**
      * {@inheritdoc}
      */
-    public function getPph(): array
+    public function getPph(): PipApiResponse
     {
-        return $this->get('/get_pph.php');
+        return PipApiResponse::fromArray($this->get('/get_pph.php'));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getTax(?string $keyword = null): array
+    public function getTax(?string $keyword = null): PipApiResponse
     {
-        return $this->get('/get_tax.php', $keyword ? ['keyword' => $keyword] : []);
+        return PipApiResponse::fromArray($this->get('/get_tax.php', $keyword ? ['keyword' => $keyword] : []));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPpn(?string $keyword = null): array
+    public function getPpn(?string $keyword = null): PipApiResponse
     {
-        return $this->get('/get_ppn.php', $keyword ? ['keyword' => $keyword] : []);
+        return PipApiResponse::fromArray($this->get('/get_ppn.php', $keyword ? ['keyword' => $keyword] : []));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getVendor(?string $keyword = null): array
+    public function getVendor(?string $keyword = null): PipApiResponse
     {
-        return $this->get('/get_vendor.php', $keyword ? ['keyword' => $keyword] : []);
+        return PipApiResponse::fromArray($this->get('/get_vendor.php', $keyword ? ['keyword' => $keyword] : []));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getJenisTransaksi(?string $keyword = null): array
+    public function getJenisTransaksi(?string $keyword = null): PipApiResponse
     {
-        return $this->get('/get_jenis_transaksi.php', $keyword ? ['keyword' => $keyword] : []);
+        return PipApiResponse::fromArray($this->get('/get_jenis_transaksi.php', $keyword ? ['keyword' => $keyword] : []));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getJenisKas(?string $keyword = null): array
+    public function getJenisKas(?string $keyword = null): PipApiResponse
     {
-        return $this->get('/get_jenis_kas.php', $keyword ? ['keyword' => $keyword] : []);
+        return PipApiResponse::fromArray($this->get('/get_jenis_kas.php', $keyword ? ['keyword' => $keyword] : []));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function submitPengeluaranReguler(PengeluaranRegulerData $data): array
+    public function getCostCenter(?string $keyword = null): PipApiResponse
+    {
+        return PipApiResponse::fromArray($this->get('/get_cost_center.php', $keyword ? ['keyword' => $keyword] : []));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function submitPengeluaranReguler(PengeluaranRegulerData $data): PengeluaranRegulerResponseData
     {
         try {
             $payload = array_filter([
                 'tgl'        => $data->tgl,
                 'jenis_kas'  => $data->jenisKas,
                 'currency'   => $data->currency,
-                'rate'       => $data->rate,
+                'rate'       => (int) $data->rate,
                 'keterangan' => $data->keterangan,
+                'budget'     => $data->budget,
                 'items'      => array_map(
                     fn($item) => $item instanceof \App\Services\PipIntegrationService\DTOs\PengeluaranRegulerItemData
                         ? $item->toArray()
@@ -85,11 +96,17 @@ class PipIntegrationServiceImpl implements PipIntegrationService
                 ),
             ], fn($v) => $v !== null);
 
-            $response = Http::withToken($this->apiToken ?? '')
-                ->withHeaders(['Content-Type' => 'application/json'])
-                ->post($this->baseUrl . '/pengeluaran_reguler_submit.php', $payload);
+            Log::info('Submitting pengeluaran reguler to PIP', ['payload' => $payload]);
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . ($this->apiToken ?? '')
+            ])
+                ->post($this->baseUrl . '/api/' . '/pengeluaran_reguler_submit.php', $payload);
 
             $body = $response->json();
+
+            Log::info('Received response from PIP pengeluaran reguler submission', ['status' => $response->status(), 'body' => $body]);
 
             if ($response->failed() || ! ($body['success'] ?? false)) {
                 Log::warning('PIP submitPengeluaranReguler failed', [
@@ -97,26 +114,26 @@ class PipIntegrationServiceImpl implements PipIntegrationService
                     'response' => $body,
                 ]);
 
-                return [
+                return PengeluaranRegulerResponseData::fromArray([
                     'success' => false,
                     'message' => $body['message'] ?? 'PIP API request failed.',
                     'data'    => [],
-                ];
+                ]);
             }
 
-            return [
+            return PengeluaranRegulerResponseData::fromArray([
                 'success' => true,
                 'message' => $body['message'] ?? 'Pengeluaran reguler berhasil disimpan.',
                 'data'    => $body['data'] ?? [],
-            ];
+            ]);
         } catch (\Exception $e) {
             Log::error('PIP submitPengeluaranReguler exception', ['error' => $e->getMessage()]);
 
-            return [
+            return PengeluaranRegulerResponseData::fromArray([
                 'success' => false,
                 'message' => 'Gagal terhubung ke PIP: ' . $e->getMessage(),
                 'data'    => [],
-            ];
+            ]);
         }
     }
 
@@ -134,7 +151,11 @@ class PipIntegrationServiceImpl implements PipIntegrationService
     private function get(string $endpoint, array $params = []): array
     {
         try {
-            $response = Http::get($this->baseUrl . $endpoint, $params);
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . ($this->apiToken ?? '')
+            ])
+                ->get($this->baseUrl . '/api' . $endpoint, $params);
             $body     = $response->json();
 
             if ($response->failed() || ! ($body['success'] ?? false)) {

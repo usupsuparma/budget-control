@@ -15,11 +15,11 @@ class CompanyPolicyDetail extends Model
         'description',
         'target',
         'strategic_goal_id',
-        'description_id'
+        'description_id',
     ];
 
     public function dokumen()
     {
-        return $this->belongsTo(CompanyPolicy::class);
+        return $this->belongsTo(CompanyPolicy::class, 'company_policy_id');
     }
 }

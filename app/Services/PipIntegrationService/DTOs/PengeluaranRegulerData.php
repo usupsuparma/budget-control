@@ -13,16 +13,18 @@ readonly class PengeluaranRegulerData
      * @param  string                          $tgl        Tanggal transaksi (Y-m-d)
      * @param  string                          $jenisKas   Kode jenis kas (e.g. "1100.1.1.00.00")
      * @param  string                          $currency   Mata uang (e.g. "IDR", "USD")
-     * @param  float                           $rate       Kurs
+     * @param  int                             $rate       Kurs (bilangan bulat)
      * @param  PengeluaranRegulerItemData[]     $items      Detail item transaksi
      * @param  string|null                     $keterangan Keterangan transaksi
+     * @param  array|null                      $budget     Snapshot of transaction & budget data
      */
     public function __construct(
         public string  $tgl,
         public string  $jenisKas,
         public string  $currency,
-        public float   $rate,
+        public int     $rate,
         public array   $items,
         public ?string $keterangan = null,
+        public ?array  $budget = null,
     ) {}
 }

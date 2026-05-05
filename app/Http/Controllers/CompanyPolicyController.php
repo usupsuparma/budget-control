@@ -324,6 +324,8 @@ class CompanyPolicyController extends Controller
             <h3>MEMUTUSKAN:</h3>
             <p>' . e($request->decision_id) . '</p>
             <h3>Latar Belakang:</h3>' . $request->background_id;
+            print_r($contentsId);
+die();
 
         $positions = $request->signature_position ?? [];
         $names = $request->signature_name ?? [];
@@ -355,13 +357,13 @@ class CompanyPolicyController extends Controller
         $policy->update([
             'nama_dokumen' => 'Company Policy FY' . $request->tahun,
             'tahun' => $request->tahun,
-            'header' => $header,
-            'contents_en' => $contentsEn,
-            'contents_id' => $contentsId,
-            'prologue_en' => $request->prologue_en,
-            'prologue_id' => $request->prologue_id,
-            'closing_en' => $request->closing_en,
-            'closing_id' => $request->closing_id,
+            'header' => trim($header),
+            'contents_en' => trim($contentsEn),
+            'contents_id' => trim($contentsId),
+            'prologue_en' => trim($request->prologue_en),
+            'prologue_id' => trim($request->prologue_id),
+            'closing_en' => trim($request->closing_en),
+            'closing_id' => trim($request->closing_id),
             'signature' => $signature,
         ]);
 
@@ -416,7 +418,7 @@ class CompanyPolicyController extends Controller
 
         // return $pdf->download($fileName);
         // atau kalau mau preview di browser:
-        return $pdf->stream($fileName);
-        // return view('pages.company-policy.pdf', compact('policy'));
+        // return $pdf->stream($fileName);
+        return view('pages.company-policy.pdf', compact('policy'));
     }
 }

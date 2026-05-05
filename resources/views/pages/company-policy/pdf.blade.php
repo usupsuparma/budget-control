@@ -17,6 +17,10 @@
         h4 {
             margin: 0 0 5px 0;
         }
+        #cp_detail p{
+            margin-bottom: 0px;
+            margin-top: 0px;
+        }
 
         .section-title {
             margin-top: 15px;
@@ -112,7 +116,7 @@
     </table>
 
     {{-- COMPANY POLICY DETAILS (dynamic rows) --}}
-    <table class="policy-table">
+    <table class="policy-table" id="cp_detail">
         <tbody>
             <tr>
                 <td class="col-50"><b>Company Policy FY{{ $policy->tahun }}: </b></td>
@@ -123,14 +127,45 @@
                 <td class="col-50">{!! $policy->prologue_id !!}</td>
             </tr>
             @forelse($policy->details as $i => $detail)
-                <tr>
-                    <td class="col-50">{!! $detail->strategic_goal !!}</td>
-                    <td class="col-50">{!! $detail->strategic_goal_id !!}</td>
-                </tr>
-                <tr>
-                    <td class="col-50">{!! $detail->description !!}</td>
-                    <td class="col-50">{!! $detail->description_id !!}</td>
-                </tr>
+            <tr>
+                <td class="col-50">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="15" valign="top"><p>{{ $i + 1 }}.</p></td>
+                            <td valign="top">{!! $detail->strategic_goal !!}</td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td class="col-50">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="15" valign="top"><p>{{ $i + 1 }}.</p></td>
+                            <td valign="top">{!! $detail->strategic_goal_id !!}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="col-50">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="15" valign="top">&nbsp;</td>
+                            <td valign="top">{!! $detail->description !!}</td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td class="col-50">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="15" valign="top">&nbsp;</td>
+                            <td valign="top">{!! $detail->description_id !!}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
             @empty
             @endforelse
         </tbody>

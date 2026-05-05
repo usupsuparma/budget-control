@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         // Insert Modul Menu for Notifications
-        $modulId = DB::table('modul_menu')->insertGetId([
+        $modulId = DB::table('modul_menus')->insertGetId([
             'modul_name' => 'Settings',
             'menu_name' => 'Notifications',
             'created_at' => now(),
@@ -53,6 +53,6 @@ return new class extends Migration
             'setting.notification.category.view'
         ])->delete();
 
-        DB::table('modul_menu')->where('modul_name', 'Settings')->where('menu_name', 'Notifications')->delete();
+        DB::table('modul_menus')->where('modul_name', 'Settings')->where('menu_name', 'Notifications')->delete();
     }
 };

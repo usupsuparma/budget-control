@@ -13,11 +13,18 @@ class CompanyPolicy extends Model
         'tahun',
         'nama_dokumen',
         'file_path',
-        'header', 'contents_en', 'contents_id', 'prologue_en', 'prologue_id', 'closing_en', 'closing_id', 'signature'
+        'header',
+        'contents_en',
+        'contents_id',
+        'prologue_en',
+        'prologue_id',
+        'closing_en',
+        'closing_id',
+        'signature',
     ];
 
     public function details()
     {
-        return $this->hasMany(CompanyPolicyDetail::class);
+        return $this->hasMany(CompanyPolicyDetail::class, 'company_policy_id');
     }
 }

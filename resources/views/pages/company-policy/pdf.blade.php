@@ -111,20 +111,16 @@
         </tr>
     </table>
 
-    {{-- PROLOGUE --}}
-    <table class="policy-table">
-        <tr>
-            <td class="col-50">{!! $policy->prologue_en !!}</td>
-            <td class="col-50">{!! $policy->prologue_id !!}</td>
-        </tr>
-    </table>
-
     {{-- COMPANY POLICY DETAILS (dynamic rows) --}}
     <table class="policy-table">
         <tbody>
             <tr>
                 <td class="col-50"><b>Company Policy FY{{ $policy->tahun }}: </b></td>
                 <td class="col-50"><b>Company Policy Tahun {{ $policy->tahun }}: </b></td>
+            </tr>
+            <tr>
+                <td class="col-50">{!! $policy->prologue_en !!}</td>
+                <td class="col-50">{!! $policy->prologue_id !!}</td>
             </tr>
             @forelse($policy->details as $i => $detail)
                 <tr>

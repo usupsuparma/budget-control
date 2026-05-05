@@ -3460,9 +3460,11 @@
             const dropdown = wrapper.querySelector('.choices__list--dropdown');
             if (!dropdown) return;
             const rect = wrapper.getBoundingClientRect();
-            dropdown.style.top   = rect.bottom + 'px';
-            dropdown.style.left  = rect.left   + 'px';
-            dropdown.style.width = rect.width  + 'px';
+            // Must use setProperty with 'important' so inline style overrides
+            // the CSS  top: 0 !important / left: 0 !important  safe-default rules.
+            dropdown.style.setProperty('top',   rect.bottom + 'px', 'important');
+            dropdown.style.setProperty('left',  rect.left   + 'px', 'important');
+            dropdown.style.setProperty('width', rect.width  + 'px', 'important');
         });
 
         // ── One-time modal event listener (registered once at script load) ──────

@@ -298,44 +298,44 @@ Route::middleware('auth')->group(function () {
     /* ========================
         KPI Department
     ======================== */
-    Route::prefix('kpidepartment')
-        // ->middleware('permission:kpi.kpidepartment.view')
+    Route::prefix('KPIDepartement')
+        // ->middleware('permission:kpi.KPIDepartement.view')
         ->group(function () {
 
             Route::get('/', [KPIDepartmentController::class, 'index'])
-                ->name('kpidepartment.index');
+            ->name('KPIDepartement.index');
 
             Route::get('/datatable', [KPIDepartmentController::class, 'dataTable'])
-                // ->middleware('permission:kpi.kpidepartment.datatable')
-                ->name('kpidepartment.datatable');
+            // ->middleware('permission:kpi.KPIDepartement.datatable')
+            ->name('KPIDepartement.datatable');
 
             Route::get('/create', [KPIDepartmentController::class, 'create'])
-                // ->middleware('permission:kpi.kpidepartment.create')
-                ->name('kpidepartment.create');
+            // ->middleware('permission:kpi.KPIDepartement.create')
+            ->name('KPIDepartement.create');
 
             Route::post('/', [KPIDepartmentController::class, 'store'])
-                // ->middleware('permission:kpi.kpidepartment.create')
-                ->name('kpidepartment.store');
+            // ->middleware('permission:kpi.KPIDepartement.create')
+            ->name('KPIDepartement.store');
 
             Route::get('/{id}/edit', [KPIDepartmentController::class, 'edit'])
-                // ->middleware('permission:kpi.kpidepartment.edit')
-                ->name('kpidepartment.edit');
+            // ->middleware('permission:kpi.KPIDepartement.edit')
+            ->name('KPIDepartement.edit');
 
             Route::get('/{id}/show', [KPIDepartmentController::class, 'show'])
-                // ->middleware('permission:kpi.kpidepartment.edit')
-                ->name('kpidepartment.show');
+            // ->middleware('permission:kpi.KPIDepartement.edit')
+            ->name('KPIDepartement.show');
 
             Route::put('/{id}/update', [KPIDepartmentController::class, 'update'])
-                // ->middleware('permission:kpi.kpidepartment.edit')
-                ->name('kpidepartment.update');
+            // ->middleware('permission:kpi.KPIDepartement.edit')
+            ->name('KPIDepartement.update');
 
-            Route::delete('/{kpiDepartment}/destroy', [KPIDepartmentController::class, 'destroy'])
-                // ->middleware('permission:kpi.kpidepartment.delete')
-                ->name('kpidepartment.destroy');
+        Route::delete('/{KPIDepartement}/destroy', [KPIDepartmentController::class, 'destroy'])
+            // ->middleware('permission:kpi.KPIDepartement.delete')
+            ->name('KPIDepartement.destroy');
 
-            Route::patch('/{kpiDepartment}/inline', [KPIDepartmentController::class, 'inlineUpdate'])
-                // ->middleware('permission:kpi.kpidepartment.inline')
-                ->name('kpidepartment.inline');
+        Route::patch('/{KPIDepartement}/inline', [KPIDepartmentController::class, 'inlineUpdate'])
+            // ->middleware('permission:kpi.KPIDepartement.inline')
+            ->name('KPIDepartement.inline');
         });
 
     Route::prefix('kpidepartmentcompanypolicy')

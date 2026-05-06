@@ -1,7 +1,7 @@
 @php
     $dashboardRoutes = ['dashboard', 'dashboard.*', 'dash.executive', 'dash.executive.*'];
     $companyPolicyRoutes = ['company-policy.*'];
-    $kpiRoutes = ['sasaran-strategis.*', 'kpidivision.*', 'kpidepartment.*', 'kpisection.*'];
+    $kpiRoutes = ['sasaran-strategis.*', 'kpidivision.*', 'KPIDepartement.*', 'kpisection.*'];
     $salesPlanRoutes = ['production.*', 'marketing.*'];
     $budgetRoutes = [
         'workplan.*',
@@ -101,8 +101,8 @@
 
                     {{-- @can('kpi.department.view') --}}
                     <li class="pe-slide-item">
-                        <a href="{{ route('kpidepartment.index') }}"
-                            class="pe-nav-link {{ request()->routeIs('kpidepartment.*') ? 'active' : '' }}">
+                        <a href="{{ route('KPIDepartement.index') }}"
+                            class="pe-nav-link {{ request()->routeIs('KPIDepartement.*') ? 'active' : '' }}">
                             <i class="bi bi-check2-square"></i>
                             Departement
                         </a>

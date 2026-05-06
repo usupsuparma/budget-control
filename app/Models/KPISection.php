@@ -48,9 +48,9 @@ class KPISection extends Model
         'dec' => 'boolean',
     ];
 
-    public function kpiDepartment()
+    public function KPIDepartement()
     {
-        return $this->belongsTo(KPIDepartment::class, 'kpi_department_id');
+        return $this->belongsTo(KPIDepartement::class, 'kpi_department_id');
     }
 
     public function section()

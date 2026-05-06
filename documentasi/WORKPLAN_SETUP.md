@@ -9,7 +9,7 @@
 5. ✅ **View** - `work-plan.blade.php` dengan hierarchical layout
 6. ✅ **JavaScript** - `workplan.js` untuk dynamic interactions
 7. ✅ **Sidebar Menu** - Menu "Work Plan" di bawah Budget Control
-8. ✅ **Model Relations** - `KPIDepartment` dan `KPISection` → `workplans()`
+8. ✅ **Model Relations** - `KPIDepartement` dan `KPISection` → `workplans()`
 9. ✅ **CSRF Token** - Sudah ditambahkan di master layout
 
 ## Testing Checklist
@@ -111,7 +111,7 @@ app/
 │   └── KPIWorkPlanController.php         # Controller
 ├── Models/
 │   ├── KPIWorkPlan.php                   # Main Model
-│   ├── KPIDepartment.php                 # Updated with relations
+│   ├── KPIDepartement.php                 # Updated with relations
 │   └── KPISection.php                    # Updated with relations
 database/
 └── migrations/

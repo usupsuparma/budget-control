@@ -6,7 +6,7 @@ use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\KPIWorkPlan;
 use App\Models\KPIDivision;
-use App\Models\KPIDepartment;
+use App\Models\KPIDepartement;
 use App\Models\KPISection;
 use App\Models\Division;
 use App\Models\Section;
@@ -109,7 +109,7 @@ class KPIWorkPlanController extends Controller
             ];
 
             // Get KPI Department
-            $kpiDepartments = KPIDepartment::with(['department', 'workplans' => function ($q) {
+            $kpiDepartments = KPIDepartement::with(['department', 'workplans' => function ($q) {
                 $q->orderBy('created_at', 'desc');
             }])
                 ->where('kpi_division_id', $kpiDivision->id)

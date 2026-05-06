@@ -268,7 +268,7 @@ class WorkplanBudgetItem extends Model
     /**
      * Get the division_id associated with this budget item.
      * 
-     * Path: WorkplanBudgetItem -> KpiWorkplan -> KpiDepartment/KpiSection -> KpiDivision -> Division
+     * Path: WorkplanBudgetItem -> KpiWorkplan -> KPIDepartement/KpiSection -> KpiDivision -> Division
      * 
      * @return int|null
      */
@@ -280,14 +280,14 @@ class WorkplanBudgetItem extends Model
         }
 
         if ($workplan->kpi_type === 'department') {
-            $kpiDepartment = $workplan->kpiDepartment;
-            if ($kpiDepartment && $kpiDepartment->kpiDivision && $kpiDepartment->kpiDivision->division) {
-                return $kpiDepartment->kpiDivision->division_id;
+            $KPIDepartement = $workplan->KPIDepartement;
+            if ($KPIDepartement && $KPIDepartement->kpiDivision && $KPIDepartement->kpiDivision->division) {
+                return $KPIDepartement->kpiDivision->division_id;
             }
         } elseif ($workplan->kpi_type === 'section') {
             $kpiSection = $workplan->kpiSection;
-            if ($kpiSection && $kpiSection->kpiDepartment && $kpiSection->kpiDepartment->kpiDivision && $kpiSection->kpiDepartment->kpiDivision->division) {
-                return $kpiSection->kpiDepartment->kpiDivision->division_id;
+            if ($kpiSection && $kpiSection->KPIDepartement && $kpiSection->KPIDepartement->kpiDivision && $kpiSection->KPIDepartement->kpiDivision->division) {
+                return $kpiSection->KPIDepartement->kpiDivision->division_id;
             }
         }
 

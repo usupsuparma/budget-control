@@ -23,11 +23,11 @@ class KPIDepartmentController extends Controller
     {
         $data = $this->service->getIndexData();
         $data['kpiDepartmentUrls'] = [
-            'datatable' => route('kpidepartment.datatable'),
-            'store' => route('kpidepartment.store'),
-            'show' => route('kpidepartment.show', ['id' => ':id']),
-            'update' => route('kpidepartment.update', ['id' => ':id']),
-            'destroy' => route('kpidepartment.destroy', ['kpiDepartment' => ':id']),
+            'datatable' => route('KPIDepartement.datatable'),
+            'store' => route('KPIDepartement.store'),
+            'show' => route('KPIDepartement.show', ['id' => ':id']),
+            'update' => route('KPIDepartement.update', ['id' => ':id']),
+            'destroy' => route('KPIDepartement.destroy', ['KPIDepartement' => ':id']),
         ];
 
         return view('pages.kpi.department_rev1', $data);

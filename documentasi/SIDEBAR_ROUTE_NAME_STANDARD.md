@@ -23,7 +23,7 @@ Primary file:
 Important route groups:
 - Dashboard: `dashboard`, `dashboard.*`, `dash.executive`, `dash.executive.*`
 - Company Policy: `company-policy.*`
-- KPI: `sasaran-strategis.*`, `kpidivision.*`, `kpidepartment.*`, `kpisection.*`
+- KPI: `sasaran-strategis.*`, `kpidivision.*`, `KPIDepartement.*`, `kpisection.*`
 - Sales Plan: `production.*`, `marketing.*`
 - Budget: `workplan.*`, `anggaran.*`, `budget-admin.*`, `budget.admin.*`, `budget-user.*`, `pengajuan.anggaran.*`, `budget-resume.*`, `userSubmission.dueDate`, `userSubmission.dueDateData`, `budget.submission.*`
 - Transactions: `approvalSubmission.*` plus `userSubmission.*`, excluding Budget Due Date routes

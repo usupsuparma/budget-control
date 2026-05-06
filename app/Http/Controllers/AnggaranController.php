@@ -35,9 +35,9 @@ class AnggaranController extends Controller
                 // Check kpi_type from workplan
                 if ($item->workplan->kpi_type === 'department') {
                     // Load department relation
-                    $kpiDepartment = \App\Models\KPIDepartment::find($item->workplan->kpi_id);
-                    if ($kpiDepartment && $kpiDepartment->department) {
-                        $divisionName = $kpiDepartment->department->division->name ?? 'Unknown Division';
+                    $KPIDepartement = \App\Models\KPIDepartement::find($item->workplan->kpi_id);
+                    if ($KPIDepartement && $KPIDepartement->department) {
+                        $divisionName = $KPIDepartement->department->division->name ?? 'Unknown Division';
                     }
                 } elseif ($item->workplan->kpi_type === 'section') {
                     // Load section relation

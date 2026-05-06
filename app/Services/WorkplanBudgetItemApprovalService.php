@@ -872,8 +872,8 @@ class WorkplanBudgetItemApprovalService
             })
             ->map(function ($detail) {
                 $item = WorkplanBudgetItem::with([
-                    'workplan.kpiDepartment.department',
-                    'workplan.kpiDepartment.kpiDivision.division',
+                'workplan.KPIDepartement.department',
+                'workplan.KPIDepartement.kpiDivision.division',
                     'workplan.kpiSection.section.department',
                     'category',
                     'approvalRequest.details',
@@ -899,9 +899,9 @@ class WorkplanBudgetItemApprovalService
                 $divisionName = null;
                 $departmentName = null;
                 if ($item && $item->workplan) {
-                    if ($item->workplan->kpi_type === 'department' && $item->workplan->kpiDepartment) {
-                        $departmentName = $item->workplan->kpiDepartment->department?->name;
-                        $divisionName = $item->workplan->kpiDepartment->kpiDivision?->division?->name;
+                if ($item->workplan->kpi_type === 'department' && $item->workplan->KPIDepartement) {
+                    $departmentName = $item->workplan->KPIDepartement->department?->name;
+                    $divisionName = $item->workplan->KPIDepartement->kpiDivision?->division?->name;
                     } elseif ($item->workplan->kpi_type === 'section' && $item->workplan->kpiSection) {
                         $departmentName = $item->workplan->kpiSection->section?->department?->name;
                         $divisionName = $item->workplan->kpiSection->section?->department?->division?->name ?? null;

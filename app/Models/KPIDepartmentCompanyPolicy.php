@@ -30,7 +30,7 @@ class KPIDepartmentCompanyPolicy extends Model
     // join berdasarkan tahun (kpi_department.year = kpidepartment_company_policy.tahun)
     public function kpiDepartments()
     {
-        return $this->hasMany(KPIDepartment::class, 'year', 'tahun');
+        return $this->hasMany(KPIDepartement::class, 'year', 'tahun');
     }
 
     public function scopeForYear($query, $year)

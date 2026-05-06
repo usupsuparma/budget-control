@@ -31,8 +31,8 @@ class BudgetResumeController extends Controller
 
         // Build query for budget items
         $query = WorkplanBudgetItem::with([
-            'workplan.KPIDepartement.department.division',
-            'workplan.kpiSection.KPIDepartement.department.division',
+            'workplan.KPIDepartment.department.division',
+            'workplan.kpiSection.KPIDepartment.department.division',
             'category',
             'budgetCodeRelation'
         ])
@@ -53,8 +53,8 @@ class BudgetResumeController extends Controller
             $query->whereHas('workplan', function ($q) use ($divisionId) {
                 $q->where(function ($subQ) use ($divisionId) {
                     // For department KPI
-                    $subQ->where('kpi_type', 'App\Models\KPIDepartement')
-                        ->whereHas('KPIDepartement', function ($kpiQ) use ($divisionId) {
+                    $subQ->where('kpi_type', 'App\Models\KPIDepartment')
+                        ->whereHas('KPIDepartment', function ($kpiQ) use ($divisionId) {
                             $kpiQ->whereHas('department', function ($deptQ) use ($divisionId) {
                                 $deptQ->where('division_id', $divisionId);
                             });
@@ -63,7 +63,7 @@ class BudgetResumeController extends Controller
                     // For section KPI
                     $subQ->where('kpi_type', 'App\Models\KPISection')
                         ->whereHas('kpiSection', function ($kpiQ) use ($divisionId) {
-                        $kpiQ->whereHas('KPIDepartement.department', function ($deptQ) use ($divisionId) {
+                        $kpiQ->whereHas('KPIDepartment.department', function ($deptQ) use ($divisionId) {
                                 $deptQ->where('division_id', $divisionId);
                             });
                         });
@@ -116,10 +116,10 @@ class BudgetResumeController extends Controller
 
             // Determine division based on kpi_type
             $divisionName = 'N/A';
-            if ($workplan->kpi_type === 'department' && $workplan->KPIDepartement) {
-                $divisionName = $workplan->KPIDepartement->department->division->name ?? 'N/A';
+            if ($workplan->kpi_type === 'department' && $workplan->KPIDepartment) {
+                $divisionName = $workplan->KPIDepartment->department->division->name ?? 'N/A';
             } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
-                $divisionName = $workplan->kpiSection->KPIDepartement->department->division->name ?? 'N/A';
+                $divisionName = $workplan->kpiSection->KPIDepartment->department->division->name ?? 'N/A';
             }
 
             $categoryName = $item->category->name ?? 'Uncategorized';

@@ -8,7 +8,7 @@ use App\Models\BudgetCode;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\CompanyPolicyDetail;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use App\Models\KPIDivision;
 use App\Models\KPISection;
 use App\Models\KPIWorkPlan;
@@ -174,11 +174,11 @@ class WorkplanImportServiceImpl implements WorkplanImportService
 
         if ($orgInfo['type'] === 'department') {
             $department = $orgInfo['model'];
-            $KPIDepartement = $this->getOrCreateKpiDepartment($department, $year);
+            $KPIDepartment = $this->getOrCreateKpiDepartment($department, $year);
 
             $kpiWorkplan = KPIWorkPlan::firstOrCreate([
                 'kpi_type' => 'department',
-                'kpi_id'   => $KPIDepartement->id,
+                'kpi_id'   => $KPIDepartment->id,
                 'year'     => $year,
             ], [
                 'activity' => 'Generated Activity from CSV for Department ' . $department->name,
@@ -223,7 +223,7 @@ class WorkplanImportServiceImpl implements WorkplanImportService
         ]);
     }
 
-    private function getOrCreateKpiDepartment(Department $department, int $year): KPIDepartement
+    private function getOrCreateKpiDepartment(Department $department, int $year): KPIDepartment
     {
         $division = $department->division;
         $kpiDivision = null;
@@ -231,7 +231,7 @@ class WorkplanImportServiceImpl implements WorkplanImportService
             $kpiDivision = $this->getOrCreateKpiDivision($division, $year);
         }
 
-        return KPIDepartement::firstOrCreate([
+        return KPIDepartment::firstOrCreate([
             'department_id' => $department->id,
             'year'          => $year,
         ], [
@@ -248,16 +248,16 @@ class WorkplanImportServiceImpl implements WorkplanImportService
     private function getOrCreateKpiSection(Section $section, int $year): KPISection
     {
         $department = $section->department;
-        $KPIDepartement = null;
+        $KPIDepartment = null;
         if ($department) {
-            $KPIDepartement = $this->getOrCreateKpiDepartment($department, $year);
+            $KPIDepartment = $this->getOrCreateKpiDepartment($department, $year);
         }
 
         return KPISection::firstOrCreate([
             'section_id' => $section->id,
             'year'       => $year,
         ], [
-            'kpi_department_id' => $KPIDepartement ? $KPIDepartement->id : null,
+            'kpi_department_id' => $KPIDepartment ? $KPIDepartment->id : null,
             'section_goals'     => 'Generated Section Goals from Import',
             'activities'        => 'Generated Section Activities from Import',
             'target_section'    => 'Generated Target from Import',

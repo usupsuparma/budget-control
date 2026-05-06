@@ -8,7 +8,7 @@ use App\Models\CompanyPolicyDetail;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\KPIDivision;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use App\Services\KPIDepartmentService\KPIDepartmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -114,7 +114,7 @@ class KPIDepartmentServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $kpiDivision = $this->createKpiDivision($detail, $division, $previousYear);
 
-        KPIDepartement::create([
+        KPIDepartment::create([
             'kpi_division_id' => $kpiDivision->id,
             'department_id' => $department->id,
             'year' => $previousYear,

@@ -3,7 +3,7 @@
 namespace App\Services\KPIDepartmentService;
 
 use App\DTOs\KPIDepartmentData;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 
 interface KPIDepartmentService
 {
@@ -11,11 +11,11 @@ interface KPIDepartmentService
 
     public function getDataTableRows(?int $year): array;
 
-    public function create(KPIDepartmentData $data): KPIDepartement;
+    public function create(KPIDepartmentData $data): KPIDepartment;
 
-    public function update(int $id, KPIDepartmentData $data): KPIDepartement;
+    public function update(int $id, KPIDepartmentData $data): KPIDepartment;
 
-    public function find(int $id): KPIDepartement;
+    public function find(int $id): KPIDepartment;
 
     public function delete(int $id): void;
 }

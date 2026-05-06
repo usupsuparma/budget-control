@@ -76,7 +76,7 @@ class SubmissionServiceImpl implements SubmissionService
 
         // Filter workplans hanya untuk divisi user yang sedang login
         $divisionIds = $employment ? $employment->getDivisionIds() : [];
-        $workplans = KPIWorkPlan::with(['KPIDepartement', 'kpiSection'])
+        $workplans = KPIWorkPlan::with(['KPIDepartment', 'kpiSection'])
             ->whereDivisionIn($divisionIds)
             ->get();
 
@@ -132,7 +132,7 @@ class SubmissionServiceImpl implements SubmissionService
 
         $jobLevels = JobLevel::all();
         $jobPositions = JobPosition::all();
-        $workplans = KPIWorkPlan::with(['KPIDepartement', 'kpiSection'])->get();
+        $workplans = KPIWorkPlan::with(['KPIDepartment', 'kpiSection'])->get();
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 
@@ -585,7 +585,7 @@ class SubmissionServiceImpl implements SubmissionService
         $employment = Auth::user()->employment;
         $divisionIds = $employment ? $employment->getDivisionIds() : [];
 
-        $query = KPIWorkPlan::with(['KPIDepartement.department', 'kpiSection.section'])
+        $query = KPIWorkPlan::with(['KPIDepartment.department', 'kpiSection.section'])
             ->whereDivisionIn($divisionIds)
             ->orderBy('year', 'desc')
             ->orderBy('activity');
@@ -599,8 +599,8 @@ class SubmissionServiceImpl implements SubmissionService
         $formattedWorkplans = $workplans->map(function ($workplan) {
             $label = $workplan->activity . ' (' . $workplan->year . ')';
 
-            if ($workplan->kpi_type === 'department' && $workplan->KPIDepartement) {
-                $label .= ' - ' . ($workplan->KPIDepartement->department->department_name ?? '');
+            if ($workplan->kpi_type === 'department' && $workplan->KPIDepartment) {
+                $label .= ' - ' . ($workplan->KPIDepartment->department->department_name ?? '');
             } elseif ($workplan->kpi_type === 'section' && $workplan->kpiSection) {
                 $label .= ' - ' . ($workplan->kpiSection->section->section_name ?? '');
             }
@@ -954,7 +954,7 @@ class SubmissionServiceImpl implements SubmissionService
 
         $jobLevels = JobLevel::all();
         $jobPositions = JobPosition::all();
-        $workplans = KPIWorkPlan::with(['KPIDepartement', 'kpiSection'])->get();
+        $workplans = KPIWorkPlan::with(['KPIDepartment', 'kpiSection'])->get();
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
 

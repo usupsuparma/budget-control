@@ -41,12 +41,12 @@ class BudgetUserServiceImpl implements BudgetUserService
     public function getAllItems(int $divisionId, int $year): array
     {
         $workplans = KPIWorkPlan::with([
-            'KPIDepartement' => fn($q) => $q->with(['department', 'kpiDivision']),
+            'KPIDepartment' => fn($q) => $q->with(['department', 'kpiDivision']),
             'kpiSection'    => fn($q) => $q->with(['section.department']),
         ])
             ->where('year', $year)
             ->where(function ($query) use ($divisionId) {
-            $query->whereHas('KPIDepartement.kpiDivision', fn($q) => $q->where('division_id', $divisionId))
+            $query->whereHas('KPIDepartment.kpiDivision', fn($q) => $q->where('division_id', $divisionId))
                     ->orWhere(fn($q) => $q->whereHas(
                         'kpiSection.section.department',
                         fn($dq) => $dq->where('division_id', $divisionId)
@@ -307,15 +307,15 @@ class BudgetUserServiceImpl implements BudgetUserService
 
     public function getWorkplansDropdown(int $divisionId, int $year): array
     {
-        $workplans = KPIWorkPlan::with(['KPIDepartement.department', 'kpiSection.section'])
+        $workplans = KPIWorkPlan::with(['KPIDepartment.department', 'kpiSection.section'])
             ->where('year', $year)
             ->whereIn('kpi_type', ['department', 'section'])
             ->get()
             ->filter(function ($workplan) use ($divisionId) {
                 if ($workplan->kpi_type === 'department') {
-                return $workplan->KPIDepartement
-                    && $workplan->KPIDepartement->department
-                    && $workplan->KPIDepartement->department->division_id == $divisionId;
+                return $workplan->KPIDepartment
+                    && $workplan->KPIDepartment->department
+                    && $workplan->KPIDepartment->department->division_id == $divisionId;
                 }
                 if ($workplan->kpi_type === 'section') {
                     return $workplan->kpiSection
@@ -331,7 +331,7 @@ class BudgetUserServiceImpl implements BudgetUserService
                 'activity' => $workplan->activity,
                 'kpi_type' => $workplan->kpi_type,
                 'kpi_name' => $workplan->kpi_type === 'department'
-                ? ($workplan->KPIDepartement->department->name ?? '-')
+                ? ($workplan->KPIDepartment->department->name ?? '-')
                     : ($workplan->kpiSection->section->name ?? '-'),
                 'year'     => $workplan->year,
             ]);
@@ -342,21 +342,21 @@ class BudgetUserServiceImpl implements BudgetUserService
     public function getWorkplans(int $divisionId, int $year): array
     {
         $workplans = KPIWorkPlan::with([
-            'KPIDepartement' => fn($q) => $q->with(['department', 'kpiDivision']),
-            'kpiSection'    => fn($q) => $q->with(['section', 'KPIDepartement.kpiDivision']),
+            'KPIDepartment' => fn($q) => $q->with(['department', 'kpiDivision']),
+            'kpiSection'    => fn($q) => $q->with(['section', 'KPIDepartment.kpiDivision']),
         ])
             ->where('year', $year)
             ->where(function ($query) use ($divisionId) {
                 $query->where(function ($q) use ($divisionId) {
                     $q->where('kpi_type', 'department')
-                    ->whereHas('KPIDepartement', fn($dept) => $dept->whereHas(
+                    ->whereHas('KPIDepartment', fn($dept) => $dept->whereHas(
                             'kpiDivision',
                             fn($div) => $div->where('division_id', $divisionId)
                         ));
                 })->orWhere(function ($q) use ($divisionId) {
                     $q->where('kpi_type', 'section')
                         ->whereHas('kpiSection', fn($sect) => $sect->whereHas(
-                    'KPIDepartement',
+                    'KPIDepartment',
                             fn($dept) => $dept->whereHas(
                                 'kpiDivision',
                                 fn($div) => $div->where('division_id', $divisionId)

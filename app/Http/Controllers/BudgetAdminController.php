@@ -8,7 +8,7 @@ use App\Models\Division;
 use App\Models\Department;
 use App\Models\Section;
 use App\Models\KPIDivision;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\KPIWorkPlan;
 use App\Models\WorkplanBudgetItem;
@@ -85,14 +85,14 @@ class BudgetAdminController extends Controller
 
                     foreach ($departments as $department) {
                         // Check if department has KPI
-                        $KPIDepartement = KPIDepartement::whereHas('kpiDivision', function ($q) use ($division, $year) {
+                        $KPIDepartment = KPIDepartment::whereHas('kpiDivision', function ($q) use ($division, $year) {
                             $q->where('division_id', $division->id)
                                 ->where('year', $year);
                         })
                             ->where('department_id', $department->id)
                             ->first();
 
-                        $hasDeptKpi = !is_null($KPIDepartement);
+                        $hasDeptKpi = !is_null($KPIDepartment);
 
                         $departmentRow = [
                             'id' => 'department-' . $department->id,
@@ -101,7 +101,7 @@ class BudgetAdminController extends Controller
                             'type' => 'department',
                             'department_id' => $department->id,
                             'company_policy_url' => $hasDeptKpi ? route('company-policy.index') : null,
-                            'kpi_url' => $hasDeptKpi ? route('KPIDepartement.index', ['department_id' => $department->id, 'year' => $year]) : null,
+                            'kpi_url' => $hasDeptKpi ? route('KPIDepartment.index', ['department_id' => $department->id, 'year' => $year]) : null,
                             'workplan_url' => $hasDeptKpi ? route('workplan.index', ['division_id' => $division->id, 'year' => $year]) : null,
                             'plan_budget_url' => $hasDeptKpi ? route('budget-user.index', ['division_id' => $division->id, 'year' => $year]) : null,
                             'budget_url' => route('budget-resume.index', ['department_id' => $department->id, 'year' => $year]),
@@ -115,7 +115,7 @@ class BudgetAdminController extends Controller
 
                         foreach ($sections as $section) {
                             // Check if section has KPI
-                            $kpiSection = KPISection::whereHas('KPIDepartement.kpiDivision', function ($q) use ($division, $year) {
+                            $kpiSection = KPISection::whereHas('KPIDepartment.kpiDivision', function ($q) use ($division, $year) {
                                 $q->where('division_id', $division->id)
                                     ->where('year', $year);
                             })

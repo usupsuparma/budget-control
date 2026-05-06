@@ -6,7 +6,7 @@ use App\DTOs\KPIDepartmentData;
 use App\Exceptions\KPIDepartmentNotFoundException;
 use App\Models\Department;
 use App\Models\KPIDivision;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use Illuminate\Support\Facades\DB;
 
 class KPIDepartmentServiceImpl implements KPIDepartmentService
@@ -21,7 +21,7 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
         $departments = Department::orderBy('name')->get();
 
         $currentYear = now()->year;
-        $kpiYears = KPIDepartement::query()
+        $kpiYears = KPIDepartment::query()
             ->select('year')
             ->distinct()
             ->orderBy('year', 'desc')
@@ -42,7 +42,7 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
     {
         $filterYear = $year ?? now()->year;
 
-        $items = KPIDepartement::with(['kpiDivision', 'department'])
+        $items = KPIDepartment::with(['kpiDivision', 'department'])
             ->where('year', $filterYear)
             ->orderBy('id', 'desc')
             ->get();
@@ -86,14 +86,14 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
         return $rows;
     }
 
-    public function create(KPIDepartmentData $data): KPIDepartement
+    public function create(KPIDepartmentData $data): KPIDepartment
     {
         return DB::transaction(function () use ($data) {
-            return KPIDepartement::create($this->payloadFromData($data));
+            return KPIDepartment::create($this->payloadFromData($data));
         });
     }
 
-    public function update(int $id, KPIDepartmentData $data): KPIDepartement
+    public function update(int $id, KPIDepartmentData $data): KPIDepartment
     {
         return DB::transaction(function () use ($id, $data) {
             $kpiDept = $this->find($id);
@@ -103,9 +103,9 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
         });
     }
 
-    public function find(int $id): KPIDepartement
+    public function find(int $id): KPIDepartment
     {
-        $kpiDept = KPIDepartement::with(['kpiDivision', 'department'])->find($id);
+        $kpiDept = KPIDepartment::with(['kpiDivision', 'department'])->find($id);
 
         if (! $kpiDept) {
             throw new KPIDepartmentNotFoundException();
@@ -117,7 +117,7 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
     public function delete(int $id): void
     {
         DB::transaction(function () use ($id) {
-            $kpiDept = KPIDepartement::find($id);
+            $kpiDept = KPIDepartment::find($id);
 
             if (! $kpiDept) {
                 throw new KPIDepartmentNotFoundException();

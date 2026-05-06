@@ -8,7 +8,7 @@ use App\Models\CompanyPolicyDetail;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\KPIDivision;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Section;
 use App\Services\KPISectionService\KPISectionService;
@@ -82,9 +82,9 @@ class KPISectionServiceTest extends TestCase
         ]);
     }
 
-    private function createKpiDepartment(KPIDivision $kpiDivision, Department $department, int $year): KPIDepartement
+    private function createKpiDepartment(KPIDivision $kpiDivision, Department $department, int $year): KPIDepartment
     {
-        return KPIDepartement::create([
+        return KPIDepartment::create([
             'kpi_division_id' => $kpiDivision->id,
             'department_id' => $department->id,
             'year' => $year,
@@ -92,11 +92,11 @@ class KPISectionServiceTest extends TestCase
         ]);
     }
 
-    private function makeData(KPIDepartement $KPIDepartement, Section $section, int $year, array $overrides = []): KPISectionData
+    private function makeData(KPIDepartment $KPIDepartment, Section $section, int $year, array $overrides = []): KPISectionData
     {
         $payload = array_merge([
             'year' => $year,
-            'kpi_department_id' => $KPIDepartement->id,
+            'kpi_department_id' => $KPIDepartment->id,
             'section_id' => $section->id,
             'section_goals' => 'Section Goals ' . $year,
             'activities' => 'Activities ' . $year,
@@ -135,10 +135,10 @@ class KPISectionServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $section = $this->createSection($department);
         $kpiDivision = $this->createKpiDivision($detail, $division, $previousYear);
-        $KPIDepartement = $this->createKpiDepartment($kpiDivision, $department, $previousYear);
+        $KPIDepartment = $this->createKpiDepartment($kpiDivision, $department, $previousYear);
 
         KPISection::create([
-            'kpi_department_id' => $KPIDepartement->id,
+            'kpi_department_id' => $KPIDepartment->id,
             'section_id' => $section->id,
             'year' => $previousYear,
             'section_goals' => 'Section Goals ' . $previousYear,
@@ -163,10 +163,10 @@ class KPISectionServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $section = $this->createSection($department);
         $kpiDivision = $this->createKpiDivision($detail, $division, $currentYear);
-        $KPIDepartement = $this->createKpiDepartment($kpiDivision, $department, $currentYear);
+        $KPIDepartment = $this->createKpiDepartment($kpiDivision, $department, $currentYear);
 
-        $this->service->create($this->makeData($KPIDepartement, $section, $currentYear));
-        $this->service->create($this->makeData($KPIDepartement, $section, $previousYear, [
+        $this->service->create($this->makeData($KPIDepartment, $section, $currentYear));
+        $this->service->create($this->makeData($KPIDepartment, $section, $previousYear, [
             'schedule_start' => $previousYear . '-02-01',
             'schedule_end' => $previousYear . '-02-28',
         ]));
@@ -189,9 +189,9 @@ class KPISectionServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $section = $this->createSection($department);
         $kpiDivision = $this->createKpiDivision($detail, $division, $year);
-        $KPIDepartement = $this->createKpiDepartment($kpiDivision, $department, $year);
+        $KPIDepartment = $this->createKpiDepartment($kpiDivision, $department, $year);
 
-        $data = $this->makeData($KPIDepartement, $section, $year);
+        $data = $this->makeData($KPIDepartment, $section, $year);
         $kpi = $this->service->create($data);
 
         $this->assertDatabaseHas('kpi_section', [
@@ -213,11 +213,11 @@ class KPISectionServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $section = $this->createSection($department);
         $kpiDivision = $this->createKpiDivision($detail, $division, $year);
-        $KPIDepartement = $this->createKpiDepartment($kpiDivision, $department, $year);
+        $KPIDepartment = $this->createKpiDepartment($kpiDivision, $department, $year);
 
-        $kpi = $this->service->create($this->makeData($KPIDepartement, $section, $year));
+        $kpi = $this->service->create($this->makeData($KPIDepartment, $section, $year));
 
-        $updatedData = $this->makeData($KPIDepartement, $section, $year, [
+        $updatedData = $this->makeData($KPIDepartment, $section, $year, [
             'section_goals' => 'Updated Goals',
             'target_section' => '99%',
         ]);
@@ -241,9 +241,9 @@ class KPISectionServiceTest extends TestCase
         $department = $this->createDepartment($division);
         $section = $this->createSection($department);
         $kpiDivision = $this->createKpiDivision($detail, $division, $year);
-        $KPIDepartement = $this->createKpiDepartment($kpiDivision, $department, $year);
+        $KPIDepartment = $this->createKpiDepartment($kpiDivision, $department, $year);
 
-        $kpi = $this->service->create($this->makeData($KPIDepartement, $section, $year));
+        $kpi = $this->service->create($this->makeData($KPIDepartment, $section, $year));
 
         $this->service->delete($kpi->id);
 

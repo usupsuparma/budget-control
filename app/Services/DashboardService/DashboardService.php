@@ -34,7 +34,7 @@ interface DashboardService
      * Get budget realization breakdown per division for the given year.
      *
      * Chain: BudgetMutation → WorkplanBudgetItem → KpiWorkplan
-     *        → (KPIDepartement|KpiSection) → KpiDivision → Division
+     *        → (KPIDepartment|KpiSection) → KpiDivision → Division
      *
      * @param  int  $year
      * @return array<int, array{

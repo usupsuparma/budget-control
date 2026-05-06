@@ -4,7 +4,7 @@ namespace App\Services\KPISectionService;
 
 use App\DTOs\KPISectionData;
 use App\Exceptions\KPISectionNotFoundException;
-use App\Models\KPIDepartement;
+use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Section;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class KPISectionServiceImpl implements KPISectionService
     {
         $title = 'KPI Section';
 
-        $kpiDepartments = KPIDepartement::orderBy('id', 'desc')->get();
+        $kpiDepartments = KPIDepartment::orderBy('id', 'desc')->get();
         $sections = Section::orderBy('name')->get();
 
         $currentYear = now()->year;
@@ -40,7 +40,7 @@ class KPISectionServiceImpl implements KPISectionService
     {
         $filterYear = $year ?? now()->year;
 
-        $rows = KPISection::with(['KPIDepartement', 'section'])
+        $rows = KPISection::with(['KPIDepartment', 'section'])
             ->where('year', $filterYear)
             ->orderBy('id', 'desc')
             ->get();
@@ -63,7 +63,7 @@ class KPISectionServiceImpl implements KPISectionService
                 'id' => $kpi->id,
                 'year' => $kpi->year,
                 'kpi_department_id' => $kpi->kpi_department_id,
-                'kpi_department' => optional($kpi->KPIDepartement)->department_goals ?? '-',
+                'kpi_department' => optional($kpi->KPIDepartment)->department_goals ?? '-',
                 'section_id' => $kpi->section_id,
                 'section' => optional($kpi->section)->name ?? '-',
                 'section_goals' => $kpi->section_goals,
@@ -101,7 +101,7 @@ class KPISectionServiceImpl implements KPISectionService
 
     public function find(int $id): KPISection
     {
-        $kpi = KPISection::with(['KPIDepartement', 'section'])->find($id);
+        $kpi = KPISection::with(['KPIDepartment', 'section'])->find($id);
 
         if (! $kpi) {
             throw new KPISectionNotFoundException();

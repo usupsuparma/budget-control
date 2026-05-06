@@ -1449,7 +1449,7 @@ class Department extends Model
 
     public function kpiDepartments()
     {
-        return $this->hasMany(KPIDepartement::class, 'department_id');
+        return $this->hasMany(KPIDepartment::class, 'department_id');
     }
 }
 ```

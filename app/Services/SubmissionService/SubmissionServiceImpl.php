@@ -291,6 +291,7 @@ class SubmissionServiceImpl implements SubmissionService
             'jobLevel',
             'jobPosition',
             'unit',
+            'workplan',
             'lpjSubmission.approvalDetails.employment.employee',
         ])->findOrFail($id);
 

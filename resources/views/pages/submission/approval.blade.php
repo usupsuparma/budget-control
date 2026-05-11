@@ -869,6 +869,14 @@
                                             <td id="approval_purpose">-</td>
                                         </tr>
                                         <tr>
+                                            <td class="fw-semibold">Program</td>
+                                            <td id="approval_program">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Program ID</td>
+                                            <td id="approval_program_id">-</td>
+                                        </tr>
+                                        <tr>
                                             <td class="fw-semibold">Urgency</td>
                                             <td id="approval_urgency">-</td>
                                         </tr>
@@ -893,6 +901,10 @@
                                             <td class="fw-semibold">Approval Status</td>
                                             <td id="approval_status_badge">-</td>
                                         </tr>
+                                        <tr>
+                                            <td class="fw-semibold">Total Budget Balance</td>
+                                            <td class="text-info fw-bold" id="approval_total_budget_balance">-</td>
+                                        </tr>
                                     </table>
                                 </div>
                             </div>
@@ -912,6 +924,7 @@
                                             <th>No</th>
                                             <th>Item Description</th>
                                             <th>Budget Code</th>
+                                            <th class="text-end">Remaining Balance</th>
                                             <th class="text-center">Qty</th>
                                             <th class="text-end">Unit Price</th>
                                             <th class="text-end">Total</th>
@@ -919,7 +932,7 @@
                                     </thead>
                                     <tbody id="approval_items_body">
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">No items</td>
+                                            <td colspan="7" class="text-center text-muted">No items</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2044,9 +2057,8 @@
                         $('#view_job_level').text(data.job_level ? data.job_level.job_level_name : '-');
                         $('#view_job_position').text(data.job_position ? data.job_position.job_position_name :
                             '-');
-                        $('#view_program').text(data.program_id || '-');
-                        $('#view_unit').text(data.unit_name || '-');
-                        $('#view_purpose').text(data.purpose || '-');
+                        $('#view_program').text(data.workplan ? data.workplan.activity : (data.program_id || '-'));
+                        $('#view_unit').text(data.unit_name || '-');                        $('#view_purpose').text(data.purpose || '-');
                         $('#view_estimated_amount').html('<strong>' + formatCurrency(data.estimated_amount) +
                             '</strong>');
                         $('#view_status').html(getStatusBadge(data.status));
@@ -2651,6 +2663,8 @@
                         $('#approval_transaction_date').text(formatDate(data.transaction_date));
                         $('#approval_user_name').text(data.user_name || '-');
                         $('#approval_purpose').text(data.purpose || '-');
+                        $('#approval_program').text(data.workplan ? data.workplan.activity : (data.program_id || '-'));
+                        $('#approval_program_id').text(data.program_id || '-');
                         $('#approval_urgency').html(getUrgencyBadge(data.urgency));
                         $('#approval_estimated_amount').text(formatCurrency(data.estimated_amount));
 
@@ -2666,15 +2680,30 @@
                             $('#approval_level_info').text('-');
                         }
 
+                        // Calculate total budget balance from items
+                        let totalBalance = 0;
+                        if (data.details && data.details.length > 0) {
+                            data.details.forEach(function(item) {
+                                totalBalance += parseFloat(item.balance || 0);
+                            });
+                        }
+                        $('#approval_total_budget_balance').text(formatCurrency(totalBalance));
+
                         // Populate items
                         let itemsHtml = '';
                         if (data.details && data.details.length > 0) {
                             data.details.forEach(function(item, index) {
+                                // Determine balance status color
+                                const itemBalance = parseFloat(item.balance || 0);
+                                const itemTotal = parseFloat(item.estimated_total || 0);
+                                const balanceColor = itemBalance >= itemTotal ? 'text-success' : 'text-danger';
+                                
                                 itemsHtml += `
                                     <tr>
                                         <td>${index + 1}</td>
                                         <td>${item.goods_service_name || '-'}</td>
                                         <td>${item.budget_name || '-'}</td>
+                                        <td class="text-end ${balanceColor} fw-semibold">${formatCurrency(item.balance || 0)}</td>
                                         <td class="text-center">${item.estimated_quantity || 0}</td>
                                         <td class="text-end">${formatCurrency(item.estimated_price || 0)}</td>
                                         <td class="text-end fw-bold">${formatCurrency(item.estimated_total || 0)}</td>
@@ -2683,9 +2712,8 @@
                             });
                         } else {
                             itemsHtml =
-                                '<tr><td colspan="6" class="text-center text-muted">No items found</td></tr>';
-                        }
-                        $('#approval_items_body').html(itemsHtml);
+                                '<tr><td colspan="7" class="text-center text-muted">No items found</td></tr>';
+                        }                        $('#approval_items_body').html(itemsHtml);
 
                         // Show/hide approve and reject buttons based on status and permission
                         // Only show buttons if:

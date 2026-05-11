@@ -229,7 +229,7 @@ class EmployeeController extends Controller
             'employee_code'   => 'required|string|max:50|unique:employee,employee_code,' . $id,
             'email'           => 'required|email|max:150|unique:employee,email,' . $id,
             'job_position_id' => 'required|exists:job_position,id',
-            'role_name'       => 'required|string|exists:roles,name',
+            'role_name'       => 'required|string|exists:roles,id',
             'status'          => 'required|in:Active,Inactive',
         ], [
             // Pesan error dalam Bahasa Indonesia
@@ -259,7 +259,7 @@ class EmployeeController extends Controller
                 $jobPosition = JobPosition::findOrFail($request->job_position_id);
 
                 // Get role by name (from Spatie)
-                $role = Role::where('name', $request->role_name)->firstOrFail();
+                $role = Role::where('id', $request->role_name)->firstOrFail();
 
                 // Update Employee
                 $emp->update([

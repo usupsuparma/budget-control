@@ -22,7 +22,8 @@ class MasterController extends Controller
     public function index()
     {
         $title = 'Master Data';
-        return view('pages.settings.Settings', compact('title'));
+        $roles = Role::all();
+        return view('pages.settings.Settings', compact('title','roles'));
     }
 
     public function index2()

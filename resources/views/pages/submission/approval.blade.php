@@ -3589,9 +3589,12 @@
             }
             let html = '';
             details.forEach(function (detail, idx) {
-                const value = parseFloat(detail.fix_total || detail.estimated_total || 0);
+                const fixTotal = Number(detail.fix_total ?? 0);
+                const estimatedTotal = Number(detail.estimated_total ?? 0);
+                // Fallback ke estimated_total ketika fix_total masih 0 (belum finalisasi).
+                const value = fixTotal > 0 ? fixTotal : estimatedTotal;
                 html += `
-                    <tr data-detail-id="${detail.id}" data-row-idx="${idx}">
+                    <tr data-detail-id="${detail.id}" data-row-idx="${idx}" data-base-value="${value}">
                         <td class="text-center">${idx + 1}</td>
                         <td>${escapeHtml(detail.goods_service_name || '-')}</td>
                         <td class="text-end fw-semibold">${formatCurrency(value)}</td>
@@ -3765,6 +3768,7 @@
                     jenis_transaksi:  jenisTransaksi,
                     cost_center_code: costCenterCode,
                     vendor_id:        vendorId,
+                    value:            parseFloat(row.data('base-value')) || 0,
                     reff:             row.find('.fis-reff').val()        || null,
                     ppn:              parseFloat(row.find('.fis-ppn').val())    || null,
                     ppnval:           parseFloat(row.find('.fis-ppnval').val()) || null,

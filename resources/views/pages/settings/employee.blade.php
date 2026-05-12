@@ -187,10 +187,18 @@ $(document).ready(function () {
         show:   "{{ route('employee.show', ':id') }}",
     };
 
-    var ROLES = [
-        {id:'Admin',name:'Admin'},{id:'User',name:'User'},
-        {id:'Director',name:'Director'},{id:'Manager',name:'Manager'}
-    ];
+    // var ROLES = [
+    //     {id:'Admin',name:'Admin'},{id:'User',name:'User'},
+    //     {id:'Director',name:'Director'},{id:'Manager',name:'Manager'}
+    // ];
+    var ROLES = @json(
+        $roles->map(function($role){
+            return [
+                'id' => $role->id,
+                'name' => $role->name
+            ];
+        })
+    );
     var STATUSES = [{id:'Active',name:'Active'},{id:'Inactive',name:'Inactive'}];
 
     /* ---- DATATABLE ---- */
@@ -336,7 +344,7 @@ $(document).ready(function () {
         var emp     = _ep.employment || {};
         var jobPosId = emp.job_position_id || null;
         var upplineId = emp.uppline_id     || null;
-        var roleName = (_ep.roles && _ep.roles.length) ? _ep.roles[0].name : '';
+        var roleName = (_ep.roles && _ep.roles.length) ? _ep.roles[0].id : '';
         var status   = _ep.status || 'Active';
         var jobs     = (window.masterData && window.masterData.job_positions) ? window.masterData.job_positions : [];
 

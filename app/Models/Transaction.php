@@ -137,6 +137,11 @@ class Transaction extends Model
         return $this->belongsTo(JobPosition::class, 'job_position_id');
     }
 
+    public function workplan()
+    {
+        return $this->belongsTo(KPIWorkPlan::class, 'program_id');
+    }
+
     /**
      * Get the LPJ submission for this transaction.
      */

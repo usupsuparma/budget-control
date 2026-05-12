@@ -100,7 +100,7 @@ class KPIDivision extends Model
 
     public function kpiDepartments()
     {
-        return $this->hasMany(KpiDepartment::class, 'kpi_division_id');
+        return $this->hasMany(KPIDepartment::class, 'kpi_division_id');
     }
 
     public function companyPolicyByDivision()

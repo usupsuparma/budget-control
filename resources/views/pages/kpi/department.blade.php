@@ -142,9 +142,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    const storeUrl  = "{{ route('kpidepartment.store', ['kpiDivision' => 1, 'department' => 1]) }}";
-    const inlineUrl = "{{ route('kpidepartment.inline', ['kpiDivision' => 1, 'department' => 1, 'kpiDepartment' => '__ID__']) }}";
-    const deleteUrl = "{{ route('kpidepartment.destroy', ['kpiDivision' => 1, 'department' => 1, 'kpiDepartment' => '__ID__']) }}";
+    const storeUrl  = "{{ route('KPIDepartment.store', ['kpiDivision' => 1, 'department' => 1]) }}";
+    const inlineUrl = "{{ route('KPIDepartment.inline', ['kpiDivision' => 1, 'department' => 1, 'KPIDepartment' => '__ID__']) }}";
+    const deleteUrl = "{{ route('KPIDepartment.destroy', ['kpiDivision' => 1, 'department' => 1, 'KPIDepartment' => '__ID__']) }}";
     const csrfToken = "{{ csrf_token() }}";
 
     $(document).ready(function () {

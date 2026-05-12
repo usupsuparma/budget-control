@@ -770,6 +770,7 @@ class SubmissionController extends Controller
             'items.*.jenis_transaksi'  => 'required|string|max:50',
             'items.*.cost_center_code' => 'required|string|max:50',
             'items.*.vendor_id'        => 'required|string|max:50',
+            'items.*.value'            => 'nullable|numeric|min:0',
             'items.*.reff'             => 'nullable|string|max:100',
             'items.*.ppn'              => 'nullable|numeric|min:0',
             'items.*.ppnval'           => 'nullable|numeric|min:0',
@@ -835,12 +836,20 @@ class SubmissionController extends Controller
 
                 $fisItems = array_map(function (array $item) use ($detailsById) {
                     $detail = $detailsById->get($item['detail_id']);
+                    $fixTotal = (float) ($detail?->fix_total ?? 0);
+                    $estimatedTotal = (float) ($detail?->estimated_total ?? 0);
+                    $payloadValue = isset($item['value']) ? (float) $item['value'] : 0.0;
+
+                    // Prioritas: fix_total (jika > 0) -> estimated_total (jika > 0) -> payload value.
+                    $resolvedValue = $fixTotal > 0
+                        ? $fixTotal
+                        : ($estimatedTotal > 0 ? $estimatedTotal : $payloadValue);
 
                     return new PengeluaranRegulerItemData(
                         jenisTransaksi: $item['jenis_transaksi'],
                         costCenterCode: $item['cost_center_code'],
                         vendorId: (string) $item['vendor_id'],
-                        value: (float) ($detail?->fix_total ?? 0),
+                        value: $resolvedValue,
                         reff: $item['reff'] ?? null,
                         ppn: isset($item['ppn']) ? (float) $item['ppn'] : null,
                         ppnval: isset($item['ppnval']) ? (float) $item['ppnval'] : null,

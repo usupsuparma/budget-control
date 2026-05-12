@@ -77,7 +77,7 @@ class KPIWorkPlan extends Model
     /**
      * Scope to filter workplans by Division IDs.
      *
-     * Covers both kpi_type = 'department' (via kpiDepartment → department → division_id)
+     * Covers both kpi_type = 'department' (via KPIDepartment → department → division_id)
      * and kpi_type = 'section' (via kpiSection → section → department → division_id).
      *
      * If $divisionIds is empty, the scope returns no records (strict security — fail closed).
@@ -93,8 +93,8 @@ class KPIWorkPlan extends Model
         }
 
         return $query->where(function ($q) use ($divisionIds) {
-            // Workplan tipe 'department': filter via kpiDepartment → department → division_id
-            $q->whereHas('kpiDepartment.department', function ($subQ) use ($divisionIds) {
+            // Workplan tipe 'department': filter via KPIDepartment → department → division_id
+            $q->whereHas('KPIDepartment.department', function ($subQ) use ($divisionIds) {
                 $subQ->whereIn('division_id', $divisionIds);
             })
             // Workplan tipe 'section': filter via kpiSection → section → department → division_id
@@ -111,7 +111,7 @@ class KPIWorkPlan extends Model
     }
 
     // Explicit relationships
-    public function kpiDepartment()
+    public function KPIDepartment()
     {
         return $this->belongsTo(KPIDepartment::class, 'kpi_id');
     }

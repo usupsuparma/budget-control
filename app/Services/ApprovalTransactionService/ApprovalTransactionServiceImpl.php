@@ -893,9 +893,9 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
             $query = ApprovalRequestDetail::with([
                 'request.transaction.user',
                 'request.transaction.details',
+                'request.transaction.workplan',
                 'employment.employee'
-            ])
-            ->where('employment_id', $employmentId)
+            ])            ->where('employment_id', $employmentId)
             ->whereHas('request.module', fn($q) => $q->where('table_name', 'transactions'));
 
             // Filter by status
@@ -971,6 +971,7 @@ class ApprovalTransactionServiceImpl implements ApprovalTransactionService
                     'urgency' => $transaction->urgency,
                     'estimated_amount' => $transaction->estimated_amount,
                     'status' => $transaction->status,
+                    'workplan_activity' => $transaction->workplan->activity ?? null,
                     'can_approve' => $canApprove,
                     'can_approve_detail_id' => $detail->id,
                     'approval_status' => $detail->status,

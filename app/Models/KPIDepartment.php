@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class KpiDepartment extends Model
+class KPIDepartment extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -60,7 +60,7 @@ class KpiDepartment extends Model
 
     public function kpiSections()
     {
-        return $this->hasMany(KpiSection::class, 'kpi_department_id');
+        return $this->hasMany(KPISection::class, 'kpi_department_id');
     }
 
     public function workplans()

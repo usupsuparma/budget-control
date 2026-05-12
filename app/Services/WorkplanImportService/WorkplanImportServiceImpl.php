@@ -174,11 +174,11 @@ class WorkplanImportServiceImpl implements WorkplanImportService
 
         if ($orgInfo['type'] === 'department') {
             $department = $orgInfo['model'];
-            $kpiDepartment = $this->getOrCreateKpiDepartment($department, $year);
+            $KPIDepartment = $this->getOrCreateKpiDepartment($department, $year);
 
             $kpiWorkplan = KPIWorkPlan::firstOrCreate([
                 'kpi_type' => 'department',
-                'kpi_id'   => $kpiDepartment->id,
+                'kpi_id'   => $KPIDepartment->id,
                 'year'     => $year,
             ], [
                 'activity' => 'Generated Activity from CSV for Department ' . $department->name,
@@ -248,16 +248,16 @@ class WorkplanImportServiceImpl implements WorkplanImportService
     private function getOrCreateKpiSection(Section $section, int $year): KPISection
     {
         $department = $section->department;
-        $kpiDepartment = null;
+        $KPIDepartment = null;
         if ($department) {
-            $kpiDepartment = $this->getOrCreateKpiDepartment($department, $year);
+            $KPIDepartment = $this->getOrCreateKpiDepartment($department, $year);
         }
 
         return KPISection::firstOrCreate([
             'section_id' => $section->id,
             'year'       => $year,
         ], [
-            'kpi_department_id' => $kpiDepartment ? $kpiDepartment->id : null,
+            'kpi_department_id' => $KPIDepartment ? $KPIDepartment->id : null,
             'section_goals'     => 'Generated Section Goals from Import',
             'activities'        => 'Generated Section Activities from Import',
             'target_section'    => 'Generated Target from Import',

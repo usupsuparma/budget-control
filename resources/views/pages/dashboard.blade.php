@@ -9,7 +9,7 @@
 <div id="layout-wrapper">
 
     {{-- ── Notifications ─────────────────────────────────────── --}}
-    @if(!empty($notifications) && count($notifications) > 0)
+    @if(!empty($notifications) && count($notifications) > 0 && auth()->user()->can('view notifications'))
     <div class="row">
         <div class="col-12">
             <div class="card">

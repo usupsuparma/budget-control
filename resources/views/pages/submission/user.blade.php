@@ -484,23 +484,23 @@
                         <label class="form-label fw-semibold">Pilih Jenis Import</label>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card" id="cardTemplate" for="importTypeTemplate" style="cursor:pointer;">
+                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card border-primary" id="cardMacframe" for="importTypeMacframe" style="cursor:pointer;">
                                     <div class="d-flex align-items-center gap-3">
-                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeTemplate" value="template" checked>
+                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeMacframe" value="macframe" checked>
                                         <div>
-                                            <div class="fw-semibold"><i class="ri-file-excel-line text-success me-1"></i>Template Sistem</div>
-                                            <small class="text-muted">File template yang diunduh dari sistem ini</small>
+                                            <div class="fw-semibold"><i class="ri-file-transfer-line text-primary me-1"></i>MacframeGA</div>
+                                            <small class="text-muted">File export dari aplikasi MacframeGA</small>
                                         </div>
                                     </div>
                                 </label>
                             </div>
                             <div class="col-md-6">
-                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card" id="cardMacframe" for="importTypeMacframe" style="cursor:pointer;">
+                                <label class="d-block border rounded-3 p-3 cursor-pointer import-type-card border-secondary" id="cardTemplate" for="importTypeTemplate" style="cursor:pointer;">
                                     <div class="d-flex align-items-center gap-3">
-                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeMacframe" value="macframe">
+                                        <input class="form-check-input mt-0" type="radio" name="import_type" id="importTypeTemplate" value="template">
                                         <div>
-                                            <div class="fw-semibold"><i class="ri-file-transfer-line text-primary me-1"></i>MacframeGA</div>
-                                            <small class="text-muted">File export dari aplikasi MacframeGA</small>
+                                            <div class="fw-semibold"><i class="ri-file-excel-line text-success me-1"></i>Template Sistem</div>
+                                            <small class="text-muted">File template yang diunduh dari sistem ini</small>
                                         </div>
                                     </div>
                                 </label>
@@ -509,7 +509,7 @@
                     </div>
 
                     {{-- === Template Import Section === --}}
-                    <div id="sectionTemplate">
+                    <div id="sectionTemplate" class="d-none">
                         <form id="importForm" enctype="multipart/form-data">
                             <div class="alert alert-info mb-3">
                                 <i class="ri-information-line me-2"></i>
@@ -530,7 +530,7 @@
                     </div>
 
                     {{-- === MacframeGA Import Section === --}}
-                    <div id="sectionMacframe" class="d-none">
+                    <div id="sectionMacframe">
                         <div class="alert alert-primary mb-3">
                             <i class="ri-information-line me-2"></i>
                             Upload file Excel dari <strong>MacframeGA</strong>. Setelah diproses, Anda akan diminta memilih <strong>Program ID</strong> sebelum data disimpan.
@@ -546,11 +546,11 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                     {{-- Shown when type = template --}}
-                    <button type="submit" class="btn btn-primary" id="btnDoImport" form="importForm">
+                    <button type="submit" class="btn btn-primary d-none" id="btnDoImport" form="importForm">
                         <i class="ri-upload-line me-1"></i> Mulai Import
                     </button>
                     {{-- Shown when type = macframe --}}
-                    <button type="button" class="btn btn-primary d-none" id="btnProcessMacframe">
+                    <button type="button" class="btn btn-primary" id="btnProcessMacframe">
                         <i class="ri-search-line me-1"></i> Proses & Preview
                     </button>
                 </div>

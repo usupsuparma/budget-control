@@ -1,36 +1,36 @@
 @php
-    $dashboardRoutes = ['dashboard', 'dashboard.*', 'dash.executive', 'dash.executive.*'];
-    $companyPolicyRoutes = ['company-policy.*'];
-    $kpiRoutes = ['sasaran-strategis.*', 'kpidivision.*', 'KPIDepartment.*', 'kpisection.*'];
-    $salesPlanRoutes = ['production.*', 'marketing.*'];
-    $budgetRoutes = [
-        'workplan.*',
-        'anggaran.*',
-        'budget-admin.*',
-        'budget.admin.*',
-        'budget-user.*',
-        'pengajuan.anggaran.*',
-        'budget-resume.*',
-        'userSubmission.dueDate',
-        'userSubmission.dueDateData',
-        'budget.submission.*',
-    ];
-    $transactionActive = request()->routeIs('approvalSubmission.*')
-        || (
-            request()->routeIs('userSubmission.*')
-            && ! request()->routeIs('userSubmission.dueDate', 'userSubmission.dueDateData')
-        );
-    $settingRoutes = [
-        'master',
-        'master.*',
-        'users.*',
-        'code.*',
-        'setting.production.*',
-        'approval.*',
-        'auth.roles*',
-        'history',
-        'settingPriceVerificator.*',
-    ];
+$dashboardRoutes = ['dashboard', 'dashboard.*', 'dash.executive', 'dash.executive.*'];
+$companyPolicyRoutes = ['company-policy.*'];
+$kpiRoutes = ['sasaran-strategis.*', 'kpidivision.*', 'KPIDepartment.*', 'kpisection.*'];
+$salesPlanRoutes = ['production.*', 'marketing.*'];
+$budgetRoutes = [
+'workplan.*',
+'anggaran.*',
+'budget-admin.*',
+'budget.admin.*',
+'budget-user.*',
+'pengajuan.anggaran.*',
+'budget-resume.*',
+'userSubmission.dueDate',
+'userSubmission.dueDateData',
+'budget.submission.*',
+];
+$transactionActive = request()->routeIs('approvalSubmission.*')
+|| (
+request()->routeIs('userSubmission.*')
+&& ! request()->routeIs('userSubmission.dueDate', 'userSubmission.dueDateData')
+);
+$settingRoutes = [
+'master',
+'master.*',
+'users.*',
+'code.*',
+'setting.production.*',
+'approval.*',
+'auth.roles*',
+'history',
+'settingPriceVerificator.*',
+];
 @endphp
 
 <aside class="pe-app-sidebar" id="sidebar">
@@ -123,38 +123,7 @@
             </li>
             @endcanany
 
-            @canany(['production.view', 'marketing.view'])
-            <li class="pe-slide pe-has-sub">
-                <a href="#collapseSalesPlan"
-                    class="pe-nav-link {{ request()->routeIs(...$salesPlanRoutes) ? 'active' : '' }}"
-                    data-bs-toggle="collapse">
 
-                    <i class="bi bi-calculator pe-nav-icon"></i>
-                    <span class="pe-nav-content">Sales Plan</span>
-                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
-                </a>
-                <ul class="pe-slide-menu collapse {{ request()->routeIs(...$salesPlanRoutes) ? 'show' : '' }}"
-                    id="collapseSalesPlan" data-bs-parent="#sidebar">
-
-                    <li class="pe-slide pe-has-sub">
-                        <a href="{{ route('production.index') }}"
-                            class="pe-nav-link {{ request()->routeIs('production.*') ? 'active' : '' }}">
-                            <i class="bi bi-minecart-loaded pe-nav-icon"></i>
-                            <span class="pe-nav-content">Productions Plan</span>
-                        </a>
-                    </li>
-
-                    <li class="pe-slide pe-has-sub">
-                        <a href="{{ route('marketing.index') }}"
-                            class="pe-nav-link {{ request()->routeIs('marketing.*') ? 'active' : '' }}">
-                            <i class="bi bi-megaphone pe-nav-icon"></i>
-                            <span class="pe-nav-content">Marketing Plan</span>
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-            @endcanany
 
             {{-- BUDGET CONTROL --}}
             @can('budget.view')
@@ -391,6 +360,39 @@
                 </ul>
             </li>
             {{-- @endcanany --}}
+
+            @canany(['production.view', 'marketing.view'])
+            <li class="pe-slide pe-has-sub">
+                <a href="#collapseSalesPlan"
+                    class="pe-nav-link {{ request()->routeIs(...$salesPlanRoutes) ? 'active' : '' }}"
+                    data-bs-toggle="collapse">
+
+                    <i class="bi bi-calculator pe-nav-icon"></i>
+                    <span class="pe-nav-content">Sales Plan</span>
+                    <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+                </a>
+                <ul class="pe-slide-menu collapse {{ request()->routeIs(...$salesPlanRoutes) ? 'show' : '' }}"
+                    id="collapseSalesPlan" data-bs-parent="#sidebar">
+
+                    <li class="pe-slide pe-has-sub">
+                        <a href="{{ route('production.index') }}"
+                            class="pe-nav-link {{ request()->routeIs('production.*') ? 'active' : '' }}">
+                            <i class="bi bi-minecart-loaded pe-nav-icon"></i>
+                            <span class="pe-nav-content">Productions Plan</span>
+                        </a>
+                    </li>
+
+                    <li class="pe-slide pe-has-sub">
+                        <a href="{{ route('marketing.index') }}"
+                            class="pe-nav-link {{ request()->routeIs('marketing.*') ? 'active' : '' }}">
+                            <i class="bi bi-megaphone pe-nav-icon"></i>
+                            <span class="pe-nav-content">Marketing Plan</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            @endcanany
 
             {{-- SETTINGS --}}
             @canany(['setting.master.view', 'setting.users.view', 'setting.code.view', 'setting.price.view',

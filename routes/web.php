@@ -1512,7 +1512,7 @@ Route::middleware('auth')->group(function () {
         AUTHORIZATION
     ======================== */
     Route::prefix('authorization')
-        ->middleware('permission:authorization.view')
+        ->middleware('permission:authorization.view|setting.users.view')
         ->group(function () {
 
             Route::get('/roles', [AuthorizationController::class, 'roles'])->name('auth.roles');

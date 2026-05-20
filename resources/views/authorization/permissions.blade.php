@@ -202,7 +202,7 @@
     </div>
 </div>
 
-@push('scripts')
+@push('page-scripts')
 <script>
     $(document).ready(function() {
         // Initialize DataTable
@@ -232,23 +232,29 @@
         // Initialize Choices.js
         let modulMenuSelect, editModulMenuSelect;
 
-        if ($('#modul_menu').length) {
-            modulMenuSelect = new Choices('#modul_menu', {
-                searchEnabled: true,
-                itemSelectText: '',
-                shouldSort: false,
-                placeholderValue: '-- Select Module/Menu --',
-            });
-        }
+        const initChoices = () => {
+            if (typeof Choices === 'undefined') return;
 
-        if ($('#edit_modul_menu').length) {
-            editModulMenuSelect = new Choices('#edit_modul_menu', {
-                searchEnabled: true,
-                itemSelectText: '',
-                shouldSort: false,
-                placeholderValue: '-- Select Module/Menu --',
-            });
-        }
+            if ($('#modul_menu').length) {
+                modulMenuSelect = new Choices('#modul_menu', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Select Module/Menu --',
+                });
+            }
+
+            if ($('#edit_modul_menu').length) {
+                editModulMenuSelect = new Choices('#edit_modul_menu', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Select Module/Menu --',
+                });
+            }
+        };
+
+        initChoices();
 
         // Form submission with AJAX
         $(document).on('submit', '#permissionCreateForm', function(e) {

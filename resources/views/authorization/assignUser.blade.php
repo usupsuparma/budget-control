@@ -100,6 +100,33 @@
     </div>
 </div>
 
+<style>
+    .checkall-input.form-check-input {
+        width: 1.1rem;
+        height: 1.1rem;
+        border: 2px solid #6c757d;
+        border-radius: 0.3rem;
+        background-color: #ffffff;
+        cursor: pointer;
+        margin-top: 0.15rem;
+    }
+
+    .checkall-input.form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .checkall-input.form-check-input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+    }
+
+    .checkall-label {
+        color: #495057;
+        user-select: none;
+    }
+</style>
+
 <!-- ============================================================
      MODAL — ASSIGN ROLE TO USER
 =============================================================== -->
@@ -240,9 +267,17 @@
             <div class="modal-body">
                 <input type="hidden" id="perm_role_id">
 
-                <div class="alert alert-info py-2 px-3 mb-3">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Check permissions to grant access to this role.
+                <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Check permissions to grant access to this role.
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input checkall-input" type="checkbox" id="checkAllAll">
+                        <label class="form-check-label fw-bold checkall-label" for="checkAllAll">
+                            Check All
+                        </label>
+                    </div>
                 </div>
 
                 <div class="row" id="permissionList">
@@ -265,7 +300,7 @@
     </div>
 </div>
 
-@push('scripts')
+@push('page-scripts')
 <script>
     $(document).ready(function() {
         // Initialize tooltips
@@ -275,6 +310,8 @@
         let userSelect, roleSelect;
         
         const initChoices = () => {
+            if (typeof Choices === 'undefined') return;
+            
             if ($('#assign_user_select').length) {
                 userSelect = new Choices('#assign_user_select', {
                     searchEnabled: true,
@@ -572,15 +609,38 @@
 
                     // Build HTML
                     for (let module in grouped) {
-                        html += `<div class="col-12 mb-4">
-                        <h5 class="fw-bold text-primary border-bottom pb-2 mb-3 bg-light p-2 rounded">
-                            <i class="bi bi-folder2-open me-2"></i>${module}
-                        </h5>
+                        let moduleId = 'module_' + module.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                        html += `<div class="col-12 mb-4 module-container">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 bg-light p-2 rounded">
+                            <h5 class="fw-bold text-primary mb-0">
+                                <i class="bi bi-folder2-open me-2"></i>${module}
+                            </h5>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input checkAllModule checkall-input" type="checkbox" id="checkAll_${moduleId}">
+                                <label class="form-check-label fw-bold small checkall-label" for="checkAll_${moduleId}">
+                                    Check All Module
+                                </label>
+                            </div>
+                        </div>
                         <div class="ms-3">`;
 
                         for (let menu in grouped[module]) {
+                            let menuId = moduleId + '_' + menu.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                            html += `<div class="menu-container mb-3">`;
+
                             if (menu !== 'General') {
-                                html += `<h6 class="fw-bold text-secondary mb-2 mt-3"><i class="bi bi-chevron-right small me-1"></i>${menu}</h6>`;
+                                html += `
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold text-secondary mb-0">
+                                        <i class="bi bi-chevron-right small me-1"></i>${menu}
+                                    </h6>
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input checkAllMenu checkall-input" type="checkbox" id="checkAll_${menuId}">
+                                        <label class="form-check-label fw-bold checkall-label" for="checkAll_${menuId}" style="font-size: 11px;">
+                                            Check All Menu
+                                        </label>
+                                    </div>
+                                </div>`;
                             }
 
                             html += `<div class="row ms-2">`;
@@ -599,7 +659,7 @@
                                 </div>
                             `;
                             });
-                            html += `</div>`;
+                            html += `</div></div>`;
                         }
 
                         html += '</div></div>';
@@ -610,12 +670,90 @@
                     }
 
                     $('#permissionList').html(html);
+
+                    // Initialize Check All states
+                    updateAllCheckAllStates();
                 },
                 error: function(xhr) {
                     $('#permissionList').html('<div class="col-12 text-center text-danger py-4">Failed to load permissions</div>');
                 }
             });
         });
+
+        // ==============================
+        // 7b. CHECK ALL LOGIC
+        // ==============================
+        
+        // Update state of menu, module, and global check-all checkboxes
+        function updateAllCheckAllStates() {
+            $('.menu-container').each(function() {
+                let container = $(this);
+                let total = container.find('.permissionCheck').length;
+                let checked = container.find('.permissionCheck:checked').length;
+                container.find('.checkAllMenu').prop('checked', total > 0 && total === checked);
+            });
+
+            $('.module-container').each(function() {
+                let container = $(this);
+                let total = container.find('.permissionCheck').length;
+                let checked = container.find('.permissionCheck:checked').length;
+                container.find('.checkAllModule').prop('checked', total > 0 && total === checked);
+            });
+            
+            let totalAll = $('.permissionCheck').length;
+            let checkedAll = $('.permissionCheck:checked').length;
+            $('#checkAllAll').prop('checked', totalAll > 0 && totalAll === checkedAll);
+        }
+
+        // Global Check All change
+        $(document).on('change', '#checkAllAll', function() {
+            let isChecked = $(this).is(':checked');
+            $('.permissionCheck, .checkAllModule, .checkAllMenu').prop('checked', isChecked);
+        });
+
+        // Module Check All change
+        $(document).on('change', '.checkAllModule', function() {
+            let isChecked = $(this).is(':checked');
+            $(this).closest('.module-container').find('.permissionCheck, .checkAllMenu').prop('checked', isChecked);
+            updateGlobalCheckAll();
+        });
+
+        // Menu Check All change
+        $(document).on('change', '.checkAllMenu', function() {
+            let isChecked = $(this).is(':checked');
+            $(this).closest('.menu-container').find('.permissionCheck').prop('checked', isChecked);
+            
+            // Update Module Check All
+            let moduleContainer = $(this).closest('.module-container');
+            let totalModule = moduleContainer.find('.permissionCheck').length;
+            let checkedModule = moduleContainer.find('.permissionCheck:checked').length;
+            moduleContainer.find('.checkAllModule').prop('checked', totalModule > 0 && totalModule === checkedModule);
+
+            updateGlobalCheckAll();
+        });
+
+        // Individual Permission Check change
+        $(document).on('change', '.permissionCheck', function() {
+            // Update Menu Check All
+            let menuContainer = $(this).closest('.menu-container');
+            let totalMenu = menuContainer.find('.permissionCheck').length;
+            let checkedMenu = menuContainer.find('.permissionCheck:checked').length;
+            menuContainer.find('.checkAllMenu').prop('checked', totalMenu > 0 && totalMenu === checkedMenu);
+
+            // Update Module Check All
+            let moduleContainer = $(this).closest('.module-container');
+            let totalModule = moduleContainer.find('.permissionCheck').length;
+            let checkedModule = moduleContainer.find('.permissionCheck:checked').length;
+            moduleContainer.find('.checkAllModule').prop('checked', totalModule > 0 && totalModule === checkedModule);
+            
+            updateGlobalCheckAll();
+        });
+
+        function updateGlobalCheckAll() {
+            let totalAll = $('.permissionCheck').length;
+            let checkedAll = $('.permissionCheck:checked').length;
+            $('#checkAllAll').prop('checked', totalAll > 0 && totalAll === checkedAll);
+        }
 
         // ==============================
         // 8. SAVE PERMISSIONS

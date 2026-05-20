@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
+use Illuminate\Validation\Rule;
 use SessionHandler;
 
 class AuthorizationController extends Controller
@@ -75,16 +76,91 @@ class AuthorizationController extends Controller
 
     public function roleStore(Request $request)
     {
-        Role::create(['name' => $request->name]);
-        return response()->json(['success' => true]);
+        try {
+            $validated = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('roles', 'name')->where(fn($query) => $query->where('guard_name', 'web')),
+                ],
+            ]);
+
+            Role::create([
+                'name' => trim($validated['name']),
+                'guard_name' => 'web',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Role created successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->validator->errors()->first() ?: 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Exception $e) {
+            Log::error('Role Store Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal Server Error',
+            ], 500);
+        }
     }
 
     public function roleUpdate(Request $request, $id)
     {
-        Role::find($id)->update([
-            'name' => $request->name,
-        ]);
-        return response()->json(['success' => true]);
+        try {
+            $role = Role::find($id);
+            if (!$role) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role not found',
+                ], 404);
+            }
+
+            $validated = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('roles', 'name')
+                        ->where(fn($query) => $query->where('guard_name', $role->guard_name))
+                        ->ignore($role->id),
+                ],
+            ]);
+
+            $role->update([
+                'name' => trim($validated['name']),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Role updated successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->validator->errors()->first() ?: 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Exception $e) {
+            Log::error('Role Update Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal Server Error',
+            ], 500);
+        }
     }
 
     public function roleDelete($id)

@@ -10,8 +10,6 @@
 <link rel="stylesheet" href="{{ asset('assets/libs/quill/quill.snow.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/simplebar/simplebar.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.css">
 
 <style>
     #kpi_division_table {
@@ -677,9 +675,6 @@
 
 <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-<script src="https://cdn.datatables.net/2.3.5/js/dataTables.bootstrap5.js"></script>
 
 @php
 $years = range(2023, date('Y') + 5);
@@ -1759,26 +1754,35 @@ $years = range(2023, date('Y') + 5);
                 },
 
                 success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: (mode === 'edit') ? 'Updated' : 'Saved',
-                        text: (mode === 'edit') ?
-                            'KPI Division successfully updated.' : 'KPI Division successfully saved.',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-
-                    $("#extraLargeModel").modal('hide');
                     $("#kpiForm")[0].reset();
                     renderCompanyPolicyOptionsByYear(yearSelect.val());
 
                     if (typeof window.refreshKpiDivisionTable === 'function') {
                         window.refreshKpiDivisionTable();
                     }
+
+                    var swalTitle = (mode === 'edit') ? 'Updated' : 'Saved';
+                    var swalText  = (mode === 'edit')
+                        ? 'KPI Division successfully updated.'
+                        : 'KPI Division successfully saved.';
+
+                    // Wait for Bootstrap to FULLY close (backdrop removed) before showing Swal.
+                    // Calling Swal while modal backdrop is still animating out locks the screen.
+                    $("#extraLargeModel").one('hidden.bs.modal', function() {
+                        Swal.fire({
+                            icon: 'success',
+                            title: swalTitle,
+                            text: swalText,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    });
+
+                    $("#extraLargeModel").modal('hide');
                 },
 
                 error: function(xhr) {
-                    let msg = "Terjadi kesalahan saat menyimpan.";
+                    let msg = "An error occurred while saving.";
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         msg = xhr.responseJSON.message;
                     } else if (xhr.responseText) {

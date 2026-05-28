@@ -519,7 +519,7 @@ Swal.fire({ icon: 'error', title: 'Validasi Gagal', html: `<ul style='text-align
 
             $('#companyPolicyTable tbody').on('click', '.btn-delete', function() {
                 const id = $(this).data('id');
-                Swal.fire({ title: 'Hapus dokumen ini?', text: 'Dokumen dan semua policy point akan dihapus permanen.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d', confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal' })
+                Swal.fire({ title: 'Delete this document?', text: 'The document and all policy points will be permanently deleted.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d', confirmButtonText: 'Yes, delete', cancelButtonText: 'Cancel' })
                     .then((result) => { if (result.isConfirmed) $('#delete-form-' + id).submit(); });
             });
         });

@@ -637,7 +637,7 @@
 <script>
     Swal.fire({
         icon: 'success',
-        title: 'Berhasil!',
+        title: 'Success!',
         text: "{{ session('success') }}",
         timer: 2000,
         showConfirmButton: false
@@ -649,7 +649,7 @@
 <script>
     Swal.fire({
         icon: 'error',
-        title: 'Gagal!',
+        title: 'Failed!',
         text: "{{ session('error') }}",
     });
 </script>
@@ -981,8 +981,8 @@ $years = range(2023, date('Y') + 5);
             }).fail(function() {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Gagal',
-                    text: 'Gagal mengambil data untuk edit.'
+                    title: 'Failed',
+                    text: 'Failed to retrieve data for editing.'
                 });
             });
         });
@@ -1026,14 +1026,14 @@ $years = range(2023, date('Y') + 5);
                     cpTable.ajax.reload(null, false);
                     Swal.fire({
                         icon: 'success',
-                        title: 'Berhasil',
-                        text: 'Company Policy by KPI Division berhasil disimpan.',
+                        title: 'Success',
+                        text: 'Company Policy by KPI Division saved successfully.',
                         timer: 1500,
                         showConfirmButton: false
                     });
                 },
                 error: function(xhr) {
-                    let msg = 'Terjadi kesalahan.';
+                    let msg = 'An error occurred.';
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
                         msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
                     } else if (xhr.responseJSON?.message) {
@@ -1054,12 +1054,12 @@ $years = range(2023, date('Y') + 5);
             const id = $(this).data('id');
 
             Swal.fire({
-                title: 'Hapus data?',
-                text: 'Data Company Policy by KPI Division akan dihapus.',
+                title: 'Delete this record?',
+                text: 'The Company Policy by KPI Division record will be permanently deleted.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, hapus',
-                cancelButtonText: 'Batal'
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (!result.isConfirmed) return;
 
@@ -1070,7 +1070,7 @@ $years = range(2023, date('Y') + 5);
                         cpTable.ajax.reload(null, false);
                         Swal.fire({
                             icon: 'success',
-                            title: 'Terhapus',
+                            title: 'Deleted',
                             timer: 1200,
                             showConfirmButton: false
                         });
@@ -1078,9 +1078,9 @@ $years = range(2023, date('Y') + 5);
                     error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Gagal',
+                            title: 'Failed',
                             text: xhr.responseJSON?.message ??
-                                'Gagal menghapus data.'
+                                'Failed to delete the record.'
                         });
                     }
                 });
@@ -1524,7 +1524,7 @@ $years = range(2023, date('Y') + 5);
                 Swal.fire({
                     icon: 'success',
                     title: 'Deleted',
-                    text: 'Baris baru dibatalkan.',
+                    text: 'Unsaved row removed.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -1532,14 +1532,14 @@ $years = range(2023, date('Y') + 5);
             }
 
             Swal.fire({
-                title: 'Yakin hapus?',
-                text: "Data ini tidak bisa dikembalikan!",
+                title: 'Are you sure?',
+                text: "This action cannot be undone!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, hapus!',
-                cancelButtonText: 'Batal'
+                confirmButtonText: 'Yes, delete!',
+                cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
 
@@ -1555,7 +1555,7 @@ $years = range(2023, date('Y') + 5);
 
                                 Swal.fire({
                                     icon: 'success',
-                                    title: 'Terhapus',
+                                    title: 'Deleted',
                                     text: res.message,
                                     timer: 1500,
                                     showConfirmButton: false
@@ -1564,7 +1564,7 @@ $years = range(2023, date('Y') + 5);
                             } else {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Gagal',
+                                    title: 'Failed',
                                     text: res.message,
                                 });
                             }
@@ -1574,7 +1574,7 @@ $years = range(2023, date('Y') + 5);
                                 icon: 'error',
                                 title: 'Error',
                                 text: xhr.responseJSON?.message ||
-                                    'Gagal menghapus data.',
+                                    'Failed to delete the record.',
                             });
                         }
                     });

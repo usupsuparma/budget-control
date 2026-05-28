@@ -510,7 +510,7 @@
                                 <option value="Cost">Cost</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4 d-none">
                             <label class="form-label fw-semibold">PIC</label>
                             <select class="form-select new-pic">
                                 <option value="">Select</option>
@@ -1466,7 +1466,8 @@ $years = range(2023, date('Y') + 5);
                 },
                 {
                     data: 'pic',
-                    className: 'editable text-center'
+                    className: 'editable text-center',
+                    visible: false
                 },
                 {
                     data: 'description',

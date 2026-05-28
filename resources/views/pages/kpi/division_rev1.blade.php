@@ -330,7 +330,7 @@
                             <select name="company_policy_id" class="form-select" required>
                                 <option value="">Select Company Policy</option>
                                 @foreach ($companyPolicies as $cp)
-                                <option value="{{ $cp->id }}">
+                                <option value="{{ $cp->id }}" data-year="{{ $cp->dokumen->tahun ?? '' }}">
                                     {{ Str::limit(strip_tags($cp->strategic_goal), 60) }}
                                     {{ isset($cp->dokumen->tahun) ? $cp->dokumen->tahun : '' }}
                                 </option>
@@ -1505,6 +1505,9 @@ $years = range(2023, date('Y') + 5);
             table.ajax.reload(null, false); // false = tetap di page sekarang
         }
 
+        // Expose table refresh for other script blocks (Add/Edit modal script is in a separate closure).
+        window.refreshKpiDivisionTable = refreshTable;
+
         function deleteButtonHtml() {
             return '<button role="button" class="btn btn-danger btn-delete"><i class="bi bi-trash"></i></button>';
         }
@@ -1594,6 +1597,41 @@ $years = range(2023, date('Y') + 5);
         const csrfToken = "{{ csrf_token() }}";
         const showUrlTemplate = kpiUrls.show;
         const updateUrlTemplate = kpiUrls.update;
+        const kpiForm = $('#kpiForm');
+        const yearSelect = kpiForm.find("select[name='tahun']");
+        const policySelect = kpiForm.find("select[name='company_policy_id']");
+        const defaultPolicyPlaceholder = '<option value="">Select Company Policy</option>';
+        const allPolicyOptions = policySelect.find('option').not('[value=""]').map(function() {
+            const option = this;
+            return {
+                value: option.value,
+                text: option.text,
+                year: option.dataset.year || ''
+            };
+        }).get();
+
+        function renderCompanyPolicyOptionsByYear(selectedYear, selectedPolicyId = '') {
+            const normalizedYear = String(selectedYear || '').trim();
+            const filteredOptions = normalizedYear
+                ? allPolicyOptions.filter((item) => item.year === normalizedYear)
+                : [];
+
+            policySelect.html(defaultPolicyPlaceholder);
+
+            filteredOptions.forEach((item) => {
+                policySelect.append(new Option(item.text, item.value));
+            });
+
+            if (!filteredOptions.length) {
+                policySelect.append(new Option('No company policy available for selected year', '', false, false));
+            }
+
+            if (selectedPolicyId) {
+                policySelect.val(String(selectedPolicyId));
+            } else {
+                policySelect.val('');
+            }
+        }
 
         function resolveUrl(template, id) {
             return template
@@ -1601,15 +1639,27 @@ $years = range(2023, date('Y') + 5);
                 .replace('%3Aid', id);
         }
 
+        yearSelect.on('change', function() {
+            renderCompanyPolicyOptionsByYear($(this).val());
+        });
+
+        renderCompanyPolicyOptionsByYear(yearSelect.val());
+
         // MODE ADD
         $('#btn-add-kpi').on('click', function() {
             $('#kpiForm')[0].reset();
             $('#kpi_id').val('');
             $('#extraLargeModelLabel').text('Add New KPI Division');
             $('#btn-save-kpi').text('Save').data('mode', 'create');
+            renderCompanyPolicyOptionsByYear(yearSelect.val());
         });
 
         $("#btn-save-kpi").on("click", function() {
+
+            const saveButton = $(this);
+            if (saveButton.prop('disabled')) {
+                return;
+            }
 
             var form = $("#kpiForm");
             var mode = $(this).data('mode') || 'create';
@@ -1704,6 +1754,9 @@ $years = range(2023, date('Y') + 5);
                     pic: pic,
                     description: desc,
                 }, extra),
+                beforeSend: function() {
+                    saveButton.prop('disabled', true);
+                },
 
                 success: function(response) {
                     Swal.fire({
@@ -1717,12 +1770,10 @@ $years = range(2023, date('Y') + 5);
 
                     $("#extraLargeModel").modal('hide');
                     $("#kpiForm")[0].reset();
+                    renderCompanyPolicyOptionsByYear(yearSelect.val());
 
-                    if (typeof refreshTable === "function") {
-                        refreshTable();
-                    } else {
-                        // atau kalau tidak ada refreshTable, bisa location.reload();
-                        // location.reload();
+                    if (typeof window.refreshKpiDivisionTable === 'function') {
+                        window.refreshKpiDivisionTable();
                     }
                 },
 
@@ -1730,12 +1781,17 @@ $years = range(2023, date('Y') + 5);
                     let msg = "Terjadi kesalahan saat menyimpan.";
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         msg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        msg = 'Request failed. Please check server response/logs.';
                     }
                     Swal.fire({
                         icon: 'error',
                         title: 'Failed',
                         text: msg,
                     });
+                },
+                complete: function() {
+                    saveButton.prop('disabled', false);
                 }
             });
         });
@@ -1774,8 +1830,7 @@ $years = range(2023, date('Y') + 5);
 
                 // basic field
                 form.find("select[name='tahun']").val(data.year);
-                form.find("select[name='company_policy_id']")
-                    .val(data.company_policy_detail_id).trigger('change');
+                renderCompanyPolicyOptionsByYear(data.year, data.company_policy_detail_id);
                 form.find("select[name='division_id']")
                     .val(data.division_id).trigger('change');
 

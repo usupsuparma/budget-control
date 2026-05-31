@@ -1,35 +1,35 @@
-# name: Deploy Production
+name: Deploy Production
 
-# on:
-#   push:
-#     branches:
-#       - main
+on:
+  push:
+    branches:
+      - main
 
-# env:
-#   SERVER_USER: root
-#   SERVER_IP: 202.10.46.119
-#   SERVER_PORT: 22
+env:
+  SERVER_USER: root
+  SERVER_IP: 202.10.46.119
+  SERVER_PORT: 22
 
-# jobs:
-#   deploy_to_production:
-#     runs-on: ubuntu-latest
+jobs:
+  deploy_to_production:
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Run deploy script on server
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ env.SERVER_IP }}
-#           username: ${{ env.SERVER_USER }}
-#           key: ${{ secrets.SSH_PRIVATE_KEY }}
-#           port: ${{ env.SERVER_PORT }}
-#           script: |
-#             echo "🚀 Starting deployment to production..."
-#             cd /var/www/myApps/budgetControl
-#             git pull origin main
-#             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-#             php artisan migrate --force
-#             php artisan config:cache
-#             php artisan route:cache
-#             php artisan view:cache
-#             php artisan queue:restart
-#             echo "✅ Deployment finished."
+    steps:
+      - name: Run deploy script on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ env.SERVER_PORT }}
+          script: |
+            echo "🚀 Starting deployment to production..."
+            cd /var/www/myApps/budgetControl
+            git pull origin main
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan queue:restart
+            echo "✅ Deployment finished."

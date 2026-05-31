@@ -7,6 +7,7 @@ use App\Exceptions\KPIDepartmentNotFoundException;
 use App\Models\Department;
 use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class KPIDepartmentServiceImpl implements KPIDepartmentService
@@ -14,11 +15,23 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
     public function getIndexData(): array
     {
         $title = 'KPI Department';
-        $kpiDivisions = KPIDivision::orderBy('year')
-            ->orderBy('division_goals')
-            ->get();
+        $user = Auth::user();
+        $isAdmin = $this->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->getDivisionIds($user);
 
-        $departments = Department::orderBy('name')->get();
+        $kpiDivisionQuery = KPIDivision::query()
+            ->orderBy('year')
+            ->orderBy('division_goals');
+
+        $departmentQuery = Department::query()->orderBy('name');
+
+        if (! $isAdmin) {
+            $kpiDivisionQuery->whereIn('division_id', $divisionIds);
+            $departmentQuery->whereIn('division_id', $divisionIds);
+        }
+
+        $kpiDivisions = $kpiDivisionQuery->get();
+        $departments = $departmentQuery->get();
 
         $currentYear = now()->year;
         $kpiYears = KPIDepartment::query()
@@ -41,11 +54,20 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
     public function getDataTableRows(?int $year): array
     {
         $filterYear = $year ?? now()->year;
+        $user = Auth::user();
+        $isAdmin = $this->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->getDivisionIds($user);
 
-        $items = KPIDepartment::with(['kpiDivision', 'department'])
-            ->where('year', $filterYear)
-            ->orderBy('id', 'desc')
-            ->get();
+        $query = KPIDepartment::with(['kpiDivision', 'department'])
+            ->where('year', $filterYear);
+
+        if (! $isAdmin) {
+            $query->whereHas('kpiDivision', function ($q) use ($divisionIds) {
+                $q->whereIn('division_id', $divisionIds);
+            });
+        }
+
+        $items = $query->orderBy('id', 'desc')->get();
 
         $rows = [];
         $no = 1;
@@ -155,5 +177,25 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
             'pic' => $data->pic,
             'description' => $data->description,
         ];
+    }
+
+    private function isAdmin($user): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        return $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
+    }
+
+    private function getDivisionIds($user): array
+    {
+        $employment = $user?->employment;
+
+        if (! $employment) {
+            return [];
+        }
+
+        return $employment->getDivisionIds();
     }
 }

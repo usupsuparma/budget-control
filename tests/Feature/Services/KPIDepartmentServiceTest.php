@@ -7,10 +7,14 @@ use App\Models\CompanyPolicy;
 use App\Models\CompanyPolicyDetail;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\Employee;
+use App\Models\Employment;
+use App\Models\JobPosition;
 use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
 use App\Services\KPIDepartmentService\KPIDepartmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class KPIDepartmentServiceTest extends TestCase
@@ -59,6 +63,42 @@ class KPIDepartmentServiceTest extends TestCase
             'name' => 'Department A',
             'status' => 'active',
         ]);
+    }
+
+    private function actingAsNonAdminInDivision(Division $division): Employee
+    {
+        $employee = Employee::create([
+            'email' => 'non-admin-' . $division->id . '@example.test',
+            'password' => bcrypt('password'),
+            'first_name' => 'Non',
+            'last_name' => 'Admin',
+            'status' => 'active',
+        ]);
+
+        Role::findOrCreate('user', 'web');
+        $employee->assignRole('user');
+
+        $jobPosition = JobPosition::create([
+            'job_position_name' => 'Head Division',
+            'job_level_id' => 2,
+            'job_level_name' => 'Division',
+            'structure_id' => $division->id,
+            'structure_name' => $division->id,
+            'status' => 'active',
+        ]);
+
+        Employment::create([
+            'employee_id' => $employee->id,
+            'job_level_id' => '2',
+            'job_level_name' => 'Division',
+            'job_position_id' => (string) $jobPosition->id,
+            'job_position_name' => $jobPosition->job_position_name,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($employee, 'web');
+
+        return $employee;
     }
 
     private function createKpiDivision(CompanyPolicyDetail $detail, Division $division, int $year): KPIDivision
@@ -153,6 +193,62 @@ class KPIDepartmentServiceTest extends TestCase
         $rowsCurrent = $this->service->getDataTableRows(null);
         $this->assertCount(1, $rowsCurrent);
         $this->assertEquals($currentYear, $rowsCurrent[0]['year']);
+    }
+
+    public function test_get_data_table_rows_non_admin_only_sees_their_division_descendants(): void
+    {
+        $year = now()->year;
+        $policy = $this->createCompanyPolicy($year);
+        $detail = $this->createCompanyPolicyDetail($policy);
+
+        $myDivision = Division::create(['name' => 'Division Mine', 'status' => 'active']);
+        $otherDivision = Division::create(['name' => 'Division Other', 'status' => 'active']);
+        $myDepartment = Department::create(['division_id' => $myDivision->id, 'name' => 'Dept Mine', 'status' => 'active']);
+        $otherDepartment = Department::create(['division_id' => $otherDivision->id, 'name' => 'Dept Other', 'status' => 'active']);
+
+        $myKpiDivision = $this->createKpiDivision($detail, $myDivision, $year);
+        $otherKpiDivision = $this->createKpiDivision($detail, $otherDivision, $year);
+
+        $this->service->create($this->makeData($myKpiDivision, $myDepartment, $year, [
+            'department_goals' => 'Mine',
+        ]));
+        $this->service->create($this->makeData($otherKpiDivision, $otherDepartment, $year, [
+            'department_goals' => 'Other',
+        ]));
+
+        $this->actingAsNonAdminInDivision($myDivision);
+
+        $rows = $this->service->getDataTableRows($year);
+
+        $this->assertCount(1, $rows);
+        $this->assertEquals('Mine', $rows[0]['department_goals']);
+        $this->assertEquals($myKpiDivision->id, $rows[0]['kpi_division_id']);
+    }
+
+    public function test_get_index_data_non_admin_only_gets_scoped_kpi_divisions_and_departments(): void
+    {
+        $year = now()->year;
+        $policy = $this->createCompanyPolicy($year);
+        $detail = $this->createCompanyPolicyDetail($policy);
+
+        $myDivision = Division::create(['name' => 'Division Mine', 'status' => 'active']);
+        $otherDivision = Division::create(['name' => 'Division Other', 'status' => 'active']);
+        $myDepartment = Department::create(['division_id' => $myDivision->id, 'name' => 'Dept Mine', 'status' => 'active']);
+        Department::create(['division_id' => $otherDivision->id, 'name' => 'Dept Other', 'status' => 'active']);
+
+        $myKpiDivision = $this->createKpiDivision($detail, $myDivision, $year);
+        $otherKpiDivision = $this->createKpiDivision($detail, $otherDivision, $year);
+
+        $this->actingAsNonAdminInDivision($myDivision);
+
+        $data = $this->service->getIndexData();
+
+        $this->assertCount(1, $data['kpiDivisions']);
+        $this->assertEquals($myKpiDivision->id, $data['kpiDivisions']->first()->id);
+        $this->assertNotEquals($otherKpiDivision->id, $data['kpiDivisions']->first()->id);
+
+        $this->assertCount(1, $data['departments']);
+        $this->assertEquals($myDepartment->id, $data['departments']->first()->id);
     }
 
     public function test_create_and_find_kpi_department(): void

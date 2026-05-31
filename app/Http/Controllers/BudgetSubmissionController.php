@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BudgetSubmission;
 use App\Models\Division;
-use App\Models\KPIWorkPlan;
 use App\Models\BudgetCode;
+use App\Models\KPIWorkPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -66,13 +66,13 @@ class BudgetSubmissionController extends Controller
                 
                 $html .= '<tr>';
                 $html .= '<td>' . $no++ . '</td>';
-                $html .= '<td>' . $submission->submission_date->format('d/m/Y') . '</td>';
-                $html .= '<td>' . ($submission->division->name ?? '-') . '</td>';
+                $html .= '<td>' . e($submission->submission_date->format('d/m/Y')) . '</td>';
+                $html .= '<td>' . e($submission->division->name ?? '-') . '</td>';
                 $html .= '<td><span class="badge bg-' . $typeColor . '">' . $typeLabel . '</span></td>';
-                $html .= '<td><small>' . ($submission->workPlan->activity ?? '-') . '</small></td>';
-                $html .= '<td><small>' . \Illuminate\Support\Str::limit($submission->description, 50) . '</small></td>';
+                $html .= '<td><small>' . e($submission->workPlan->activity ?? '-') . '</small></td>';
+                $html .= '<td><small>' . e(\Illuminate\Support\Str::limit($submission->description ?? '', 50)) . '</small></td>';
                 $html .= '<td class="text-end">Rp ' . number_format($submission->estimation_amount, 0, ',', '.') . '</td>';
-                $html .= '<td><small>' . ($submission->budgetAccount->stock_code ?? '-') . ' | ' . ($submission->budgetAccount->name ?? '-') . '</small></td>';
+                $html .= '<td><small>' . e($submission->budgetAccount->stock_code ?? '-') . ' | ' . e($submission->budgetAccount->name ?? '-') . '</small></td>';
                 $html .= '<td><span class="badge bg-' . $statusColor . '">' . $statusLabel . '</span></td>';
                 
                 // Action buttons
@@ -94,9 +94,7 @@ class BudgetSubmissionController extends Controller
                 $html .= '</tr>';
             }
 
-            if ($budgetSubmissions->isEmpty()) {
-                $html = '<tr><td colspan="10" class="text-center">No data available</td></tr>';
-            }
+            // No data row is intentionally omitted — DataTables shows its own emptyTable message.
 
             return response()->json([
                 'success' => true,

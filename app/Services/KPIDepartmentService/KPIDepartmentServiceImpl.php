@@ -9,6 +9,7 @@ use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class KPIDepartmentServiceImpl implements KPIDepartmentService
 {
@@ -17,6 +18,11 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
         $title = 'KPI Department';
         $user = Auth::user();
         $isAdmin = $this->isAdmin($user);
+        Log::info('User accessing KPI Department index', [
+            'user_id' => $user?->id,
+            'roles' => $user?->getRoleNames()->values()->all() ?? [],
+            'is_admin' => $isAdmin,
+        ]);
         $divisionIds = $isAdmin ? [] : $this->getDivisionIds($user);
 
         $kpiDivisionQuery = KPIDivision::query()
@@ -185,7 +191,7 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
             return true;
         }
 
-        return $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
+        return $user->hasAnyRole(['Admin', 'admin', 'super-admin', 'Super Admin']);
     }
 
     private function getDivisionIds($user): array

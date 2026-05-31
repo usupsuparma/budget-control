@@ -562,14 +562,14 @@
                                                     <th class="month-header">Feb</th>
                                                     <th class="month-header">Mar</th>
                                                     <th class="month-header">Apr</th>
-                                                    <th class="month-header">Mei</th>
+                                                    <th class="month-header">May</th>
                                                     <th class="month-header">Jun</th>
                                                     <th class="month-header">Jul</th>
-                                                    <th class="month-header">Agu</th>
+                                                    <th class="month-header">Aug</th>
                                                     <th class="month-header">Sep</th>
-                                                    <th class="month-header">Okt</th>
+                                                    <th class="month-header">Oct</th>
                                                     <th class="month-header">Nov</th>
-                                                    <th class="month-header">Des</th>
+                                                    <th class="month-header">Dec</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="budgetItemsTableBody">
@@ -898,7 +898,7 @@
                                     <label for="priceEstimation" class="form-label fw-bold">Price Estimation</label>
                                     <input type="text" class="form-control" id="priceEstimation"
                                         name="price_estimation" placeholder="0" inputmode="decimal">
-                                    <small class="text-muted">Format: 1.000.000 atau 1000000</small>
+                                    <small class="text-muted">Format: 1,000,000 or 1000000</small>
                                 </div>
 
                                 <div class="mb-3">
@@ -911,7 +911,7 @@
                                     <label for="total" class="form-label fw-bold">Total</label>
                                     <input type="text" class="form-control bg-light" id="total" name="total"
                                         readonly value="0">
-                                    <small class="text-muted">Otomatis: Jumlah bulan × Price Estimation</small>
+                                    <small class="text-muted">Auto: Total months × Price Estimation</small>
                                 </div>
                             </div>
                         </div>
@@ -919,7 +919,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary btn-save-item" id="saveItemBtn">
-                        Simpan
+                        Save
                     </button>
                     <button type="button" class="btn btn-secondary" id="resetItemBtn">
                         Reset
@@ -977,15 +977,15 @@
                 <div class="modal-body">
                     <input type="hidden" id="rejectDetailId">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Alasan Penolakan <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Rejection Reason <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="rejectComments" rows="4" required
-                            placeholder="Masukkan alasan penolakan..."></textarea>
+                            placeholder="Enter rejection reason..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" onclick="confirmReject()">
-                        <i class="bi bi-x-circle me-1"></i>Tolak
+                        <i class="bi bi-x-circle me-1"></i>Reject
                     </button>
                 </div>
             </div>
@@ -1174,7 +1174,7 @@
                         <div class="alert alert-info">
                             <p class="mb-1"><strong>CSV Format:</strong></p>
                             <code>item_id,verified_price</code>
-                            <br><small>Contoh: 123,550000</small>
+                            <br><small>Example: 123,550000</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Choose CSV File</label>

@@ -168,7 +168,7 @@ function loadKpiData() {
         Swal.fire({
             icon: "warning",
             title: "Filter Required",
-            text: "Silakan pilih Divisi dan Tahun terlebih dahulu!",
+            text: "Please select a Division and Year first!",
         });
         return;
     }
@@ -574,8 +574,8 @@ function saveWorkplan(row) {
     if (!data.activity) {
         Swal.fire({
             icon: "warning",
-            title: "Perhatian",
-            text: "Activity harus diisi",
+            title: "Warning",
+            text: "Activity name is required!",
         });
         return;
     }
@@ -604,13 +604,13 @@ function saveWorkplan(row) {
                     toast: true,
                     position: "top-end",
                     icon: "success",
-                    title: "Work plan berhasil disimpan",
+                    title: "Work plan saved successfully",
                     showConfirmButton: false,
                     timer: 2000,
                     timerProgressBar: true,
                 });
             } else {
-                showError(response.message || "Gagal menyimpan work plan");
+                showError(response.message || "Failed to save work plan");
             }
         },
         error: function (xhr) {
@@ -715,14 +715,14 @@ function deleteWorkplan(row) {
     }
 
     Swal.fire({
-        title: "Konfirmasi",
-        text: "Apakah Anda yakin ingin menghapus work plan ini?",
+        title: "Confirmation",
+        text: "Are you sure you want to delete this work plan?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
-        confirmButtonText: "Ya, Hapus!",
-        cancelButtonText: "Batal",
+        confirmButtonText: "Yes, Delete!",
+        cancelButtonText: "Cancel",
     }).then((result) => {
         if (result.isConfirmed) {
             showLoading();
@@ -730,7 +730,9 @@ function deleteWorkplan(row) {
                 url: workplanRoutes.delete.replace(":id", workplanId),
                 method: "DELETE",
                 headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                        "content",
+                    ),
                 },
                 success: function (response) {
                     hideLoading();
@@ -752,7 +754,7 @@ function deleteWorkplan(row) {
                             toast: true,
                             position: "top-end",
                             icon: "success",
-                            title: "Work plan berhasil dihapus",
+                            title: "Work plan deleted successfully",
                             showConfirmButton: false,
                             timer: 2000,
                             timerProgressBar: true,
@@ -761,7 +763,7 @@ function deleteWorkplan(row) {
                 },
                 error: function (xhr) {
                     hideLoading();
-                    showError("Gagal menghapus work plan");
+                    showError("Failed to delete work plan");
                 },
             });
         }
@@ -770,14 +772,14 @@ function deleteWorkplan(row) {
 
 function approveWorkplan(workplanId) {
     Swal.fire({
-        title: "Konfirmasi Approval",
-        text: "Apakah Anda yakin ingin meng-approve work plan ini?",
+        title: "Approve Confirmation",
+        text: "Are you sure you want to approve this work plan?",
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#28a745",
         cancelButtonColor: "#6c757d",
-        confirmButtonText: "Ya, Approve!",
-        cancelButtonText: "Batal",
+        confirmButtonText: "Yes, Approve!",
+        cancelButtonText: "Cancel",
     }).then((result) => {
         if (result.isConfirmed) {
             showLoading();
@@ -785,13 +787,17 @@ function approveWorkplan(workplanId) {
                 url: workplanRoutes.approve.replace(":id", workplanId),
                 method: "POST",
                 headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                        "content",
+                    ),
                 },
                 success: function (response) {
                     hideLoading();
                     if (response.success) {
                         const row = $(`tr[data-workplan-id="${workplanId}"]`);
-                        row.find("input").prop("readonly", true).prop("disabled", true);
+                        row.find("input")
+                            .prop("readonly", true)
+                            .prop("disabled", true);
                         row.find(".action-column").html(`
                             <button class="btn btn-success btn-action btn-sm" disabled>
                                 <i class="bi bi-check-circle"></i> Approved
@@ -802,7 +808,7 @@ function approveWorkplan(workplanId) {
                             toast: true,
                             position: "top-end",
                             icon: "success",
-                            title: "Work plan berhasil di-approve",
+                            title: "Work plan approved successfully",
                             showConfirmButton: false,
                             timer: 2000,
                             timerProgressBar: true,
@@ -811,7 +817,7 @@ function approveWorkplan(workplanId) {
                 },
                 error: function (xhr) {
                     hideLoading();
-                    showError("Gagal approve work plan");
+                    showError("Failed to approve work plan");
                 },
             });
         }

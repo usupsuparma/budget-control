@@ -13,6 +13,7 @@ use App\Models\WorkplanBudgetItem;
 use App\Services\LogService\LogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class BudgetUserServiceImpl implements BudgetUserService
 {
@@ -210,25 +211,41 @@ class BudgetUserServiceImpl implements BudgetUserService
     {
         try {
             $deptCodes = session('department_codes', []);
+            Log::info('Searching budget codes', ['query' => $query, 'user_id' => Auth::id(), 'dept_codes' => $deptCodes]);
             $query     = trim($query);
 
-            $dbQuery = BudgetCode::active()
-                ->select('id', 'budget_code', 'name', 'inchargeCode')
-                ->where(function ($q) use ($query) {
-                    if ($query !== '') {
-                        $q->where('budget_code', 'LIKE', "%{$query}%")
-                            ->orWhere('name', 'LIKE', "%{$query}%");
-                    }
-                })
-                ->orderBy('budget_code');
+            $buildQuery = function (bool $useDeptFilter) use ($query, $deptCodes) {
+                $q = BudgetCode::active()
+                    ->select('id', 'budget_code', 'name', 'inchargeCode')
+                    ->where(function ($inner) use ($query) {
+                        if ($query !== '') {
+                            $inner->where('budget_code', 'LIKE', "%{$query}%")
+                                ->orWhere('name', 'LIKE', "%{$query}%");
+                        }
+                    })
+                    ->orderBy('budget_code');
 
-            if (! empty($deptCodes)) {
-                $dbQuery->whereIn('inchargeCode', $deptCodes);
+                if ($useDeptFilter && ! empty($deptCodes)) {
+                    $q->whereIn('inchargeCode', $deptCodes);
+                }
+
+                return $q;
+            };
+
+            $dbQuery = $buildQuery(true);
+            $total   = $dbQuery->count();
+
+            // Fallback: if dept filter yields nothing, remove the filter and show all.
+            // This handles cases where Department.code and BudgetCode.inchargeCode
+            // use different granularity (e.g. '6250' vs '6251'/'6252').
+            if ($total === 0 && ! empty($deptCodes)) {
+                $dbQuery = $buildQuery(false);
+                $total   = $dbQuery->count();
             }
 
-            $total  = $dbQuery->count();
             $offset = ($page - 1) * $limit;
             $data   = $dbQuery->offset($offset)->limit($limit)->get();
+            Log::info('Searched budget codes', ['query' => $query, 'user_id' => Auth::id(), 'total_results' => $total]);
 
             return [
                 'success'  => true,
@@ -238,6 +255,7 @@ class BudgetUserServiceImpl implements BudgetUserService
                 'total'    => $total,
             ];
         } catch (\Throwable $th) {
+            Log::info('Error searching budget codes: ' . $th->getMessage(), ['query' => $query, 'user_id' => Auth::id()]);
             return ['success' => false, 'message' => 'An error occurred while searching budget codes: ' . $th->getMessage()];
         }
     }
@@ -246,32 +264,47 @@ class BudgetUserServiceImpl implements BudgetUserService
     {
         try {
             $deptCodes = session('department_codes', []);
+            Log::info('Searching stock codes', ['query' => $query, 'user_id' => Auth::id(), 'dept_codes' => $deptCodes]);
             $query     = trim($query);
 
-            $dbQuery = StockCode::where('active', 1)
-                ->select('id', 'stock_code', 'name', 'unit', 'budget_code', 'product_line')
-                ->where(function ($q) use ($query) {
-                    if ($query !== '') {
-                        $q->where('stock_code', 'LIKE', "%{$query}%")
-                            ->orWhere('name', 'LIKE', "%{$query}%");
-                    }
-                })
-                ->orderBy('stock_code');
+            $buildQuery = function (bool $useDeptFilter) use ($query, $deptCodes) {
+                $q = StockCode::where('active', 1)
+                    ->select('id', 'stock_code', 'name', 'unit', 'budget_code', 'product_line')
+                    ->where(function ($inner) use ($query) {
+                        if ($query !== '') {
+                            $inner->where('stock_code', 'LIKE', "%{$query}%")
+                                ->orWhere('name', 'LIKE', "%{$query}%");
+                        }
+                    })
+                    ->orderBy('stock_code');
 
-            if (! empty($deptCodes)) {
-                $allowedBudgetCodes = Cache::remember(
-                    'allowed_budget_codes_' . md5(implode(',', $deptCodes)),
-                    3600,
-                    fn() => BudgetCode::active()->whereIn('inchargeCode', $deptCodes)->pluck('budget_code')
-                );
-                if ($allowedBudgetCodes->isNotEmpty()) {
-                    $dbQuery->whereIn('budget_code', $allowedBudgetCodes);
+                if ($useDeptFilter && ! empty($deptCodes)) {
+                    $allowedBudgetCodes = Cache::remember(
+                        'allowed_budget_codes_' . md5(implode(',', $deptCodes)),
+                        3600,
+                        fn() => BudgetCode::active()->whereIn('inchargeCode', $deptCodes)->pluck('budget_code')
+                    );
+                    if ($allowedBudgetCodes->isNotEmpty()) {
+                        $q->whereIn('budget_code', $allowedBudgetCodes);
+                    }
                 }
+
+                return $q;
+            };
+
+            $dbQuery = $buildQuery(true);
+            $total   = $dbQuery->count();
+
+            // Fallback: if dept filter yields nothing (e.g. Department.code vs inchargeCode
+            // granularity mismatch), remove the filter and return all matching the query.
+            if ($total === 0 && ! empty($deptCodes)) {
+                $dbQuery = $buildQuery(false);
+                $total   = $dbQuery->count();
             }
 
-            $total  = $dbQuery->count();
             $offset = ($page - 1) * $limit;
             $data   = $dbQuery->offset($offset)->limit($limit)->get();
+            Log::info('Searched stock codes', ['query' => $query, 'user_id' => Auth::id(), 'total_results' => $total]);
 
             return [
                 'success'  => true,
@@ -281,6 +314,7 @@ class BudgetUserServiceImpl implements BudgetUserService
                 'total'    => $total,
             ];
         } catch (\Throwable $th) {
+            Log::info('Error searching stock codes: ' . $th->getMessage(), ['query' => $query, 'user_id' => Auth::id()]);
             return ['success' => false, 'message' => 'An error occurred while searching stock codes: ' . $th->getMessage()];
         }
     }

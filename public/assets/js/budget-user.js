@@ -501,8 +501,6 @@ function openAddItemModalWithWorkplan(workplanId) {
 
     Promise.all([
         loadBudgetCategoriesAsync(),
-        loadBudgetCodesAsync(),
-        loadStockCodesAsync(),
         loadCostCentersAsync(),
         loadSuppliersAsync(),
         loadUnitsAsync(),
@@ -511,10 +509,14 @@ function openAddItemModalWithWorkplan(workplanId) {
         .then(() => {
             Swal.close();
             $("#itemModal").modal("show");
+            _initBudgetCodeSearchDropdown(null, null);
+            _initStockCodeSearchDropdown(null, null);
         })
         .catch(() => {
             Swal.close();
             $("#itemModal").modal("show");
+            _initBudgetCodeSearchDropdown(null, null);
+            _initStockCodeSearchDropdown(null, null);
         });
 }
 
@@ -541,8 +543,6 @@ function openAddItemModal() {
 
     Promise.all([
         loadBudgetCategoriesAsync(),
-        loadBudgetCodesAsync(),
-        loadStockCodesAsync(),
         loadCostCentersAsync(),
         loadSuppliersAsync(),
         loadUnitsAsync(),
@@ -550,11 +550,17 @@ function openAddItemModal() {
     ])
         .then(() => {
             Swal.close();
+            // Show modal first so elements are visible (display:block) before
+            // Choices.js initialises – prevents the widget from not rendering.
             $("#itemModal").modal("show");
+            _initBudgetCodeSearchDropdown(null, null);
+            _initStockCodeSearchDropdown(null, null);
         })
         .catch(() => {
             Swal.close();
             $("#itemModal").modal("show");
+            _initBudgetCodeSearchDropdown(null, null);
+            _initStockCodeSearchDropdown(null, null);
         });
 }
 
@@ -581,22 +587,22 @@ function editItemFromWorkplan(itemId, workplanId) {
 
     Promise.all([
         loadBudgetCategoriesAsync(),
-        loadBudgetCodesAsync(),
-        loadStockCodesAsync(),
         loadCostCentersAsync(),
         loadSuppliersAsync(),
         loadUnitsAsync(),
         loadWorkplansForDropdownWithSelectionAsync(workplanId),
     ])
         .then(() => {
-            populateItemForm(item);
             Swal.close();
+            // Show modal first so the elements are visible (display:block) before
+            // populateItemForm calls _initBudgetCode/StockCodeSearchDropdown.
             $("#itemModal").modal("show");
+            populateItemForm(item);
         })
         .catch(() => {
-            populateItemForm(item);
             Swal.close();
             $("#itemModal").modal("show");
+            populateItemForm(item);
         });
 }
 
@@ -623,23 +629,21 @@ function editItem(itemId) {
 
     Promise.all([
         loadBudgetCategoriesAsync(),
-        loadBudgetCodesAsync(),
-        loadStockCodesAsync(),
         loadCostCentersAsync(),
         loadSuppliersAsync(),
         loadUnitsAsync(),
         loadWorkplansForDropdownWithSelectionAsync(item.kpi_workplan_id),
     ])
         .then(() => {
-            populateItemForm(item);
             Swal.close();
             $("#itemModal").modal("show");
+            populateItemForm(item);
         })
         .catch((error) => {
             console.error("Error loading dropdown data:", error);
-            populateItemForm(item);
             Swal.close();
             $("#itemModal").modal("show");
+            populateItemForm(item);
         });
 }
 
@@ -833,9 +837,16 @@ function resetItemForm() {
         programIdChoices = null;
     }
 
-    // Re-init budget code & stock code dropdowns so they're ready for the next add/edit
-    _initBudgetCodeSearchDropdown(null, null);
-    _initStockCodeSearchDropdown(null, null);
+    // Re-init budget code & stock code dropdowns ONLY when the modal is already
+    // visible (e.g. the user clicked the Reset button while the modal is open).
+    // When called from the hidden.bs.modal handler the modal is display:none –
+    // initialising Choices.js inside a hidden element prevents it from rendering
+    // the widget correctly.  The actual init for the "open" flow is deferred to
+    // just after modal("show") inside each open/edit function.
+    if ($("#itemModal").is(":visible")) {
+        _initBudgetCodeSearchDropdown(null, null);
+        _initStockCodeSearchDropdown(null, null);
+    }
 }
 
 /**
@@ -1247,15 +1258,18 @@ function _initBudgetCodeSearchDropdown(preselectedCode, preselectedLabel) {
         select.choicesInstance.destroy();
         select.choicesInstance = null;
     }
-    [
-        "_choicesSearchHandler",
-        "_choicesChangeHandler",
-        "_showDropdownHandler",
-    ].forEach(function (key) {
-        if (select[key]) {
-            select[key] = null;
-        }
-    });
+    if (select._showDropdownHandler) {
+        select.removeEventListener("showDropdown", select._showDropdownHandler);
+        select._showDropdownHandler = null;
+    }
+    if (select._choicesSearchHandler) {
+        select.removeEventListener("search", select._choicesSearchHandler);
+        select._choicesSearchHandler = null;
+    }
+    if (select._choicesChangeHandler) {
+        select.removeEventListener("change", select._choicesChangeHandler);
+        select._choicesChangeHandler = null;
+    }
 
     select.innerHTML = '<option value="">Select budget code...</option>';
 
@@ -1462,22 +1476,18 @@ function _initStockCodeSearchDropdown(preselectedCode, preselectedLabel) {
         select.choicesInstance.destroy();
         select.choicesInstance = null;
     }
-    [
-        "_choicesSearchHandler",
-        "_choicesChangeHandler",
-        "_showDropdownHandler",
-    ].forEach(function (key) {
-        if (select[key]) {
-            select.removeEventListener(
-                key
-                    .replace("Handler", "")
-                    .replace("_choices", "")
-                    .replace("_show", "show"),
-                select[key],
-            );
-            select[key] = null;
-        }
-    });
+    if (select._showDropdownHandler) {
+        select.removeEventListener("showDropdown", select._showDropdownHandler);
+        select._showDropdownHandler = null;
+    }
+    if (select._choicesSearchHandler) {
+        select.removeEventListener("search", select._choicesSearchHandler);
+        select._choicesSearchHandler = null;
+    }
+    if (select._choicesChangeHandler) {
+        select.removeEventListener("change", select._choicesChangeHandler);
+        select._choicesChangeHandler = null;
+    }
 
     select.innerHTML = '<option value="">Select stock code...</option>';
 

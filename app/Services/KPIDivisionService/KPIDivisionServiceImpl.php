@@ -8,11 +8,14 @@ use App\Exceptions\KPIDivisionNotFoundException;
 use App\Models\CompanyPolicyDetail;
 use App\Models\Division;
 use App\Models\KPIDivision;
+use App\Services\UserRoleService\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class KPIDivisionServiceImpl implements KPIDivisionService
 {
+    public function __construct(private UserRoleService $userRoleService) {}
+
     public function getIndexData(): array
     {
         $title = 'KPI Division';
@@ -21,13 +24,12 @@ class KPIDivisionServiceImpl implements KPIDivisionService
             ->get();
 
         $user = Auth::user();
-        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
+        $isAdmin = $this->userRoleService->isAdmin($user);
 
         if ($isAdmin) {
             $divisions = Division::orderBy('name')->get();
         } else {
-            $employment = $user->employment;
-            $divisionIds = $employment ? $employment->getDivisionIds() : [];
+            $divisionIds = $this->userRoleService->getDivisionIds($user);
             $divisions = Division::whereIn('id', $divisionIds)->orderBy('name')->get();
         }
 
@@ -54,14 +56,13 @@ class KPIDivisionServiceImpl implements KPIDivisionService
         $filterYear = $year ?? now()->year;
 
         $user = Auth::user();
-        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
+        $isAdmin = $this->userRoleService->isAdmin($user);
 
         $query = KPIDivision::with(['companyPolicy', 'division'])
             ->where('year', $filterYear);
 
         if (! $isAdmin) {
-            $employment = $user->employment;
-            $divisionIds = $employment ? $employment->getDivisionIds() : [];
+            $divisionIds = $this->userRoleService->getDivisionIds($user);
             $query->whereIn('division_id', $divisionIds);
         }
 

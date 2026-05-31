@@ -14,6 +14,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
 - [Transaction Approval and LPJ Status Workflow](documentasi/TRANSACTION_APPROVAL_LPJ_STATUS_WORKFLOW.md) - Transaction status lifecycle, LPJ eligibility, and proof-file preview behavior.
 - [Sidebar Route Name Standard](documentasi/SIDEBAR_ROUTE_NAME_STANDARD.md) - Sidebar links and active/collapse states must use named routes.
+- [User Role Service](documentasi/USER_ROLE_SERVICE.md) - Single source of truth for admin/scoped role checks. Update `ADMIN_ROLES` constant here when role names change.
 
 ## Critical Architecture Patterns
 
@@ -86,6 +87,24 @@ if ($budget < $amount) {
     throw new InsufficientBudgetException("Saldo tidak mencukupi untuk unit ini.");
 }
 ```
+
+### Role-Based Access Control (UserRoleService)
+
+All admin vs. non-admin checks MUST go through `UserRoleService`. **NEVER** call `hasRole()` or `hasAnyRole()` inline in Services or Controllers for this purpose.
+
+```php
+// CORRECT
+$isAdmin = $this->userRoleService->isAdmin($user);
+$divisionIds = $this->userRoleService->getDivisionIds($user);
+
+// WRONG — do not do this
+$isAdmin = $user->hasRole('Admin') || $user->hasRole('super-admin');
+```
+
+**Admin roles** (sees all data) are defined exclusively in `UserRoleServiceImpl::ADMIN_ROLES`.
+When a role is renamed in the database, **only that constant needs to change**.
+
+See full reference: [User Role Service](documentasi/USER_ROLE_SERVICE.md)
 
 ### Approval System Architecture
 

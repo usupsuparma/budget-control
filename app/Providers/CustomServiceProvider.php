@@ -31,6 +31,8 @@ use App\Services\KPIDepartmentService\KPIDepartmentService;
 use App\Services\KPIDepartmentService\KPIDepartmentServiceImpl;
 use App\Services\KPISectionService\KPISectionService;
 use App\Services\KPISectionService\KPISectionServiceImpl;
+use App\Services\UserRoleService\UserRoleService;
+use App\Services\UserRoleService\UserRoleServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -62,6 +64,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(KPIDivisionService::class, KPIDivisionServiceImpl::class);
         $this->app->bind(KPIDepartmentService::class, KPIDepartmentServiceImpl::class);
         $this->app->bind(KPISectionService::class, KPISectionServiceImpl::class);
+        $this->app->bind(UserRoleService::class, UserRoleServiceImpl::class);
     }
 
     /**

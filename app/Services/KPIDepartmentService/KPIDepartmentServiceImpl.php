@@ -7,23 +7,26 @@ use App\Exceptions\KPIDepartmentNotFoundException;
 use App\Models\Department;
 use App\Models\KPIDivision;
 use App\Models\KPIDepartment;
+use App\Services\UserRoleService\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class KPIDepartmentServiceImpl implements KPIDepartmentService
 {
+    public function __construct(private UserRoleService $userRoleService) {}
+
     public function getIndexData(): array
     {
         $title = 'KPI Department';
         $user = Auth::user();
-        $isAdmin = $this->isAdmin($user);
+        $isAdmin = $this->userRoleService->isAdmin($user);
         Log::info('User accessing KPI Department index', [
             'user_id' => $user?->id,
             'roles' => $user?->getRoleNames()->values()->all() ?? [],
             'is_admin' => $isAdmin,
         ]);
-        $divisionIds = $isAdmin ? [] : $this->getDivisionIds($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
         $kpiDivisionQuery = KPIDivision::query()
             ->orderBy('year')
@@ -61,8 +64,8 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
     {
         $filterYear = $year ?? now()->year;
         $user = Auth::user();
-        $isAdmin = $this->isAdmin($user);
-        $divisionIds = $isAdmin ? [] : $this->getDivisionIds($user);
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
         $query = KPIDepartment::with(['kpiDivision', 'department'])
             ->where('year', $filterYear);
@@ -183,25 +186,5 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
             'pic' => $data->pic,
             'description' => $data->description,
         ];
-    }
-
-    private function isAdmin($user): bool
-    {
-        if (! $user) {
-            return true;
-        }
-
-        return $user->hasAnyRole(['Admin', 'admin', 'super-admin', 'Super Admin']);
-    }
-
-    private function getDivisionIds($user): array
-    {
-        $employment = $user?->employment;
-
-        if (! $employment) {
-            return [];
-        }
-
-        return $employment->getDivisionIds();
     }
 }

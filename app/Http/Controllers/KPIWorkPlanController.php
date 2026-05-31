@@ -10,42 +10,23 @@ use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Division;
 use App\Models\Section;
+use App\Services\UserRoleService\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class KPIWorkPlanController extends Controller
 {
+    public function __construct(private UserRoleService $userRoleService) {}
+
     public function index(Request $request)
     {
         $user = Auth::user();
-        $isAdmin = $user->hasRole('Admin') || $user->hasRole('admin') || $user->hasRole('super-admin');
+        $isAdmin = $this->userRoleService->isAdmin($user);
 
         $userDivisionId = null;
         if (!$isAdmin) {
-            $employment = $user->employment;
-            if ($employment) {
-                $jobPosition = $employment->jobPosition;
-                if ($jobPosition) {
-                    $levelId = (int)$jobPosition->job_level_id;
-                    $structureId = (int)$jobPosition->structure_id;
-
-                    switch ($levelId) {
-                        case 1: // Director
-                            $userDivisionId = Division::where('director_id', $structureId)->first()?->id;
-                            break;
-                        case 2: // Division
-                            $userDivisionId = $structureId;
-                            break;
-                        case 3: // Department
-                            $userDivisionId = Department::where('id', $structureId)->first()?->division_id;
-                            break;
-                        default: // Section/Staff/Non-Staff
-                            $section = Section::with('department')->find($structureId);
-                            $userDivisionId = $section?->department?->division_id;
-                            break;
-                    }
-                }
-            }
+            $divisionIds = $this->userRoleService->getDivisionIds($user);
+            $userDivisionId = $divisionIds[0] ?? null;
         }
 
         // Get unique divisions from KPI Division (ONLY divisions that have implemented KPIs)

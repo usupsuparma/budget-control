@@ -3,7 +3,7 @@
 @section('title', 'Work Plan | Budget Control')
 
 @section('title-sub', 'Work Plan')
-@section('pagetitle', 'Program Kerja (Work Plan)')
+@section('pagetitle', 'Work Plan')
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
@@ -359,9 +359,9 @@
                 <h6 class="mb-3">Filter KPI</h6>
                 <div class="row">
                     <div class="col-md-4" @if(!$isAdmin) style="display: none;" @endif>
-                        <label class="form-label">Divisi</label>
+                        <label class="form-label">Division</label>
                         <select id="filter_division" class="form-select">
-                            <option value="">-- Pilih Divisi --</option>
+                            <option value="">-- Select Division --</option>
                             @foreach($divisions as $div)
                             <option value="{{ $div->id }}" {{ $userDivisionId == $div->id ? 'selected' : '' }}>{{ $div->name }}</option>
                             @endforeach
@@ -369,14 +369,14 @@
                     </div>
                     @if(!$isAdmin)
                     <div class="col-md-4">
-                        <label class="form-label">Divisi</label>
+                        <label class="form-label">Division</label>
                         <input type="text" class="form-control" value="{{ $divisions->where('id', $userDivisionId)->first()->name ?? 'N/A' }}" readonly>
                     </div>
                     @endif
                     <div class="col-md-3">
-                        <label class="form-label">Tahun</label>
+                        <label class="form-label">Year</label>
                         <select id="filter_year" class="form-select">
-                            <option value="">-- Pilih Tahun --</option>
+                            <option value="">-- Select Year --</option>
                             @foreach($years as $year)
                             <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
                                 {{ $year }}
@@ -402,7 +402,7 @@
         <div class="col-xl-12">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0">Work Plan (Program Kerja)</h6>
+                    <h6 class="mb-0">Work Plan</h6>
                 </div>
                 <div class="card-body">
                     <div id="workplan-container" class="workplan-container" 
@@ -419,7 +419,7 @@
                          ]) }}">
                         <div class="no-data-message">
                             <i class="bi bi-info-circle" style="font-size: 48px;"></i>
-                            <p class="mt-3">Silakan pilih Divisi dan Tahun kemudian klik "Load KPI Data" untuk menampilkan data KPI dan Work Plan</p>
+                            <p class="mt-3">Please select a Division and Year, then click "Load KPI Data" to display KPI and Work Plan data.</p>
                         </div>
                     </div>
                 </div>
@@ -719,7 +719,7 @@
 <script>
     Swal.fire({
         icon: 'success',
-        title: 'Berhasil!',
+        title: 'Success!',
         text: "{{ session('success') }}",
         timer: 2000,
         showConfirmButton: false
@@ -731,7 +731,7 @@
 <script>
     Swal.fire({
         icon: 'error',
-        title: 'Gagal!',
+        title: 'Failed!',
         text: "{{ session('error') }}",
     });
 </script>

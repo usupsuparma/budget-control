@@ -191,12 +191,14 @@ function loadKpiData() {
                 currentKpiData = response.data;
                 renderKpiData(response.data);
             } else {
-                showError("Gagal memuat data KPI");
+                showError("Failed to load KPI data");
             }
         },
         error: function (xhr) {
             hideLoading();
-            showError("Terjadi kesalahan saat memuat data: " + xhr.responseText);
+            showError(
+                "An error occurred while loading data: " + xhr.responseText,
+            );
         },
     });
 }
@@ -209,7 +211,7 @@ function renderKpiData(data) {
         container.html(`
             <div class="no-data-message">
                 <i class="bi bi-inbox" style="font-size: 48px;"></i>
-                <p class="mt-3">Tidak ada data KPI untuk Divisi dan Tahun yang dipilih</p>
+                <p class="mt-3">No KPI data found for the selected Division and Year</p>
             </div>
         `);
         return;
@@ -222,7 +224,7 @@ function renderKpiData(data) {
             <div class="kpi-division-section mb-4" data-div-index="${divIndex}">
                 <div class="kpi-division-header d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>I. KPI DIVISI</strong> - ${division.division_goals || "N/A"}
+                        <strong>I. DIVISION KPI</strong> - ${division.division_goals || "N/A"}
                     </div>
                     <div>
                         <span class="badge bg-light text-dark me-2">Target: ${division.target_division || "N/A"}</span>
@@ -239,7 +241,8 @@ function renderKpiData(data) {
                 html += renderDepartment(dept, divIndex, deptIndex);
             });
         } else {
-            html += '<div class="alert alert-info m-3">Belum ada Department untuk KPI Divisi ini</div>';
+            html +=
+                '<div class="alert alert-info m-3">No departments available for this Division KPI</div>';
         }
 
         html += `
@@ -337,15 +340,15 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
                             <th class="month-cell">Feb</th>
                             <th class="month-cell">Mar</th>
                             <th class="month-cell">Apr</th>
-                            <th class="month-cell">Mei</th>
+                            <th class="month-cell">May</th>
                             <th class="month-cell">Jun</th>
                             <th class="month-cell">Jul</th>
-                            <th class="month-cell">Agu</th>
+                            <th class="month-cell">Aug</th>
                             <th class="month-cell">Sep</th>
-                            <th class="month-cell">Okt</th>
+                            <th class="month-cell">Oct</th>
                             <th class="month-cell">Nov</th>
-                            <th class="month-cell">Des</th>
-                            <th class="month-cell">Des</th>
+                            <th class="month-cell">Dec</th>
+                            <th class="month-cell">Desc</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -359,7 +362,7 @@ function renderWorkplanTable(kpiData, kpiType, kpiId, ...indexes) {
         html += `
             <tr class="no-data-row">
                 <td colspan="29" class="text-center text-muted py-3">
-                    <i>Belum ada work plan. Klik tombol "Add Work Plan" untuk menambahkan.</i>
+                    <i>No work plans yet. Click "Add Work Plan" to create one.</i>
                 </td>
             </tr>
         `;
@@ -388,16 +391,16 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
 
     if (isApproved) {
         html += `
-                <button class="btn btn-success btn-action btn-sm" disabled title="Sudah Disetujui">
+                <button class="btn btn-success btn-action btn-sm" disabled title="Already Approved">
                     <i class="bi bi-check-circle"></i>
                 </button>
         `;
     } else if (isNew) {
         html += `
-                <button class="btn btn-primary btn-action btn-save-workplan" title="Simpan Work Plan">
+                <button class="btn btn-primary btn-action btn-save-workplan" title="Save Work Plan">
                     <i class="bi bi-save"></i>
                 </button>
-                <button class="btn btn-danger btn-action btn-delete-workplan" title="Hapus Work Plan">
+                <button class="btn btn-danger btn-action btn-delete-workplan" title="Delete Work Plan">
                     <i class="bi bi-trash"></i>
                 </button>
         `;
@@ -406,14 +409,18 @@ function renderWorkplanRow(workplan, kpiType, kpiId, index) {
                 <button class="btn btn-primary btn-sm btn-action btn-edit-workplan" title="Edit Work Plan">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-danger btn-sm btn-action btn-delete-workplan" title="Hapus Work Plan">
+                <button class="btn btn-danger btn-sm btn-action btn-delete-workplan" title="Delete Work Plan">
                     <i class="bi bi-trash"></i>
                 </button>
-                ${workplan.status === "draft" ? `
-                <button class="btn btn-success btn-sm btn-action btn-approve-workplan" data-id="${workplan.id}" title="Setujui Work Plan">
+                ${
+                    workplan.status === "draft"
+                        ? `
+                <button class="btn btn-success btn-sm btn-action btn-approve-workplan" data-id="${workplan.id}" title="Approve Work Plan">
                     <i class="bi bi-check"></i>
                 </button>
-                ` : ""}
+                `
+                        : ""
+                }
         `;
     }
 
@@ -615,7 +622,7 @@ function saveWorkplan(row) {
         },
         error: function (xhr) {
             hideLoading();
-            let errorMsg = "Terjadi kesalahan saat menyimpan data";
+            let errorMsg = "An error occurred while saving data";
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMsg = xhr.responseJSON.message;
             }
@@ -705,7 +712,7 @@ function deleteWorkplan(row) {
                 tbody.html(`
                     <tr class="no-data-row">
                         <td colspan="29" class="text-center text-muted py-3">
-                            <i>Belum ada work plan. Klik tombol "Add Work Plan" untuk menambahkan.</i>
+                            <i>No work plans yet. Click "Add Work Plan" to create one.</i>
                         </td>
                     </tr>
                 `);
@@ -744,7 +751,7 @@ function deleteWorkplan(row) {
                                 tbody.html(`
                                     <tr class="no-data-row">
                                         <td colspan="29" class="text-center text-muted py-3">
-                                            <i>Belum ada work plan. Klik tombol "Add Work Plan" untuk menambahkan.</i>
+                                            <i>No work plans yet. Click "Add Work Plan" to create one.</i>
                                         </td>
                                     </tr>
                                 `);
@@ -971,7 +978,7 @@ function resetFilters() {
     $("#workplan-container").html(`
         <div class="no-data-message">
             <i class="bi bi-info-circle" style="font-size: 48px;"></i>
-            <p class="mt-3">Silakan pilih Divisi dan Tahun kemudian klik "Load KPI Data" untuk menampilkan data KPI dan Work Plan</p>
+            <p class="mt-3">Please select a Division and Year, then click "Load KPI Data" to display KPI and Work Plan data.</p>
         </div>
     `);
     currentKpiData = [];

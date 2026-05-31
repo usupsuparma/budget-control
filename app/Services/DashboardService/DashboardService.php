@@ -33,7 +33,7 @@ interface DashboardService
     /**
      * Get budget realization breakdown per division for the given year.
      *
-     * Chain: BudgetMutation → WorkplanBudgetItem → KpiWorkplan
+     * Chain: BudgetMutation → WorkplanBudgetItem → KPIWorkPlan
      *        → (KPIDepartment|KpiSection) → KpiDivision → Division
      *
      * @param  int  $year

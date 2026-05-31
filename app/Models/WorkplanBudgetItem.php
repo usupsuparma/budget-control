@@ -73,7 +73,7 @@ class WorkplanBudgetItem extends Model
     // Relationships
     public function workplan()
     {
-        return $this->belongsTo(KpiWorkplan::class, 'kpi_workplan_id');
+        return $this->belongsTo(KPIWorkPlan::class, 'kpi_workplan_id');
     }
 
     public function category()
@@ -268,7 +268,7 @@ class WorkplanBudgetItem extends Model
     /**
      * Get the division_id associated with this budget item.
      * 
-     * Path: WorkplanBudgetItem -> KpiWorkplan -> KPIDepartment/KpiSection -> KpiDivision -> Division
+     * Path: WorkplanBudgetItem -> KPIWorkPlan -> KPIDepartment/KpiSection -> KpiDivision -> Division
      * 
      * @return int|null
      */

@@ -309,7 +309,10 @@ Route::middleware('auth')->group(function () {
             // ->middleware('permission:kpi.KPIDepartment.datatable')
             ->name('KPIDepartment.datatable');
 
-            Route::get('/create', [KPIDepartmentController::class, 'create'])
+        Route::get('/kpi-divisions', [KPIDepartmentController::class, 'getKpiDivisionsForForm'])
+            ->name('KPIDepartment.kpiDivisions');
+
+        Route::get('/create', [KPIDepartmentController::class, 'create'])
             // ->middleware('permission:kpi.KPIDepartment.create')
             ->name('KPIDepartment.create');
 
@@ -380,7 +383,13 @@ Route::middleware('auth')->group(function () {
                 // ->middleware('permission:kpi.kpisection.datatable')
                 ->name('kpisection.datatable');
 
-            Route::get('/create', [KPISectionController::class, 'create'])
+        Route::get('/kpi-departments', [KPISectionController::class, 'getKpiDepartmentsForForm'])
+            ->name('kpisection.kpiDepartments');
+
+        Route::get('/sections', [KPISectionController::class, 'getSectionsForForm'])
+            ->name('kpisection.sections');
+
+        Route::get('/create', [KPISectionController::class, 'create'])
                 // ->middleware('permission:kpi.kpisection.create')
                 ->name('kpisection.create');
 

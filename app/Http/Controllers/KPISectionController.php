@@ -9,6 +9,7 @@ use App\Http\Requests\StoreKPISectionRequest;
 use App\Http\Requests\UpdateKPISectionRequest;
 use App\Services\KPISectionService\KPISectionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class KPISectionController extends Controller
@@ -19,14 +20,70 @@ class KPISectionController extends Controller
     {
         $data = $this->service->getIndexData();
         $data['kpiSectionUrls'] = [
-            'datatable' => route('kpisection.datatable'),
-            'store' => route('kpisection.store'),
-            'show' => route('kpisection.show', ['id' => ':id']),
-            'update' => route('kpisection.update', ['id' => ':id']),
-            'destroy' => route('kpisection.destroy', ['kpiSection' => ':id']),
+            'datatable'      => route('kpisection.datatable'),
+            'store'          => route('kpisection.store'),
+            'show'           => route('kpisection.show', ['id' => ':id']),
+            'update'         => route('kpisection.update', ['id' => ':id']),
+            'destroy'        => route('kpisection.destroy', ['kpiSection' => ':id']),
+            'kpiDepartments' => route('kpisection.kpiDepartments'),
+            'sections'       => route('kpisection.sections'),
         ];
 
         return view('pages.kpi.section_rev1', $data);
+    }
+
+    /**
+     * AJAX: KPI Departments filtered by year + user's division scope.
+     */
+    public function getKpiDepartmentsForForm(Request $request): JsonResponse
+    {
+        try {
+            $year = (int) ($request->query('year') ?: now()->year);
+            $departments = $this->service->getKpiDepartmentsByYear($year);
+
+            return response()->json([
+                'success' => true,
+                'status'  => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data'    => $departments,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Internal Server Error',
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX: Sections belonging to the selected KPI Department's department.
+     */
+    public function getSectionsForForm(Request $request): JsonResponse
+    {
+        try {
+            $kpiDepartmentId = (int) $request->query('kpi_department_id');
+            $sections = $this->service->getSectionsByKpiDepartment($kpiDepartmentId);
+
+            return response()->json([
+                'success' => true,
+                'status'  => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data'    => $sections,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Internal Server Error',
+                'data'    => null,
+            ], 500);
+        }
     }
 
     /**

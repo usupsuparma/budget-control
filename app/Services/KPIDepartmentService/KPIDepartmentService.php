@@ -11,6 +11,12 @@ interface KPIDepartmentService
 
     public function getDataTableRows(?int $year): array;
 
+    /**
+     * Return KPI Divisions filtered by year (and by user's division if not admin).
+     * Returns [{id, text}] for dropdown population.
+     */
+    public function getKpiDivisionsByYear(int $year): array;
+
     public function create(KPIDepartmentData $data): KPIDepartment;
 
     public function update(int $id, KPIDepartmentData $data): KPIDepartment;

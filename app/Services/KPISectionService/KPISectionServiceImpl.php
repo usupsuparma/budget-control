@@ -7,15 +7,28 @@ use App\Exceptions\KPISectionNotFoundException;
 use App\Models\KPIDepartment;
 use App\Models\KPISection;
 use App\Models\Section;
+use App\Services\UserRoleService\UserRoleService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class KPISectionServiceImpl implements KPISectionService
 {
+    public function __construct(private UserRoleService $userRoleService) {}
+
     public function getIndexData(): array
     {
         $title = 'KPI Section';
+        $user = Auth::user();
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
-        $kpiDepartments = KPIDepartment::orderBy('id', 'desc')->get();
+        $kpiDeptQuery = KPIDepartment::orderBy('id', 'desc');
+        if (! $isAdmin) {
+            $kpiDeptQuery->whereHas('kpiDivision', fn($q) => $q->whereIn('division_id', $divisionIds));
+        }
+        $kpiDepartments = $kpiDeptQuery->get();
+
         $sections = Section::orderBy('name')->get();
 
         $currentYear = now()->year;
@@ -33,17 +46,24 @@ class KPISectionServiceImpl implements KPISectionService
 
         rsort($kpiYears);
 
-        return compact('title', 'kpiDepartments', 'sections', 'kpiYears', 'currentYear');
+        return compact('title', 'kpiDepartments', 'sections', 'kpiYears', 'currentYear', 'isAdmin');
     }
 
     public function getDataTableRows(?int $year): array
     {
         $filterYear = $year ?? now()->year;
+        $user = Auth::user();
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
-        $rows = KPISection::with(['KPIDepartment', 'section'])
-            ->where('year', $filterYear)
-            ->orderBy('id', 'desc')
-            ->get();
+        $query = KPISection::with(['KPIDepartment', 'section'])
+            ->where('year', $filterYear);
+
+        if (! $isAdmin) {
+            $query->whereHas('KPIDepartment.kpiDivision', fn($q) => $q->whereIn('division_id', $divisionIds));
+        }
+
+        $rows = $query->orderBy('id', 'desc')->get();
 
         $data = [];
 
@@ -80,6 +100,42 @@ class KPISectionServiceImpl implements KPISectionService
         }
 
         return $data;
+    }
+
+    public function getKpiDepartmentsByYear(int $year): array
+    {
+        $user = Auth::user();
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
+
+        $query = KPIDepartment::where('year', $year)
+            ->orderBy('department_goals');
+
+        if (! $isAdmin) {
+            $query->whereHas('kpiDivision', fn($q) => $q->whereIn('division_id', $divisionIds));
+        }
+
+        return $query->get()->map(fn($dept) => [
+            'id'   => $dept->id,
+            'text' => '[' . $dept->year . '] ' . Str::limit($dept->department_goals, 80),
+        ])->toArray();
+    }
+
+    public function getSectionsByKpiDepartment(int $kpiDepartmentId): array
+    {
+        $kpiDept = KPIDepartment::find($kpiDepartmentId);
+
+        if (! $kpiDept) {
+            return [];
+        }
+
+        return Section::where('department_id', $kpiDept->department_id)
+            ->orderBy('name')
+            ->get()
+            ->map(fn($sec) => [
+                'id'   => $sec->id,
+                'text' => $sec->name,
+            ])->toArray();
     }
 
     public function create(KPISectionData $data): KPISection

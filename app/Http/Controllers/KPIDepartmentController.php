@@ -9,6 +9,7 @@ use App\Http\Requests\StoreKPIDepartmentRequest;
 use App\Http\Requests\UpdateKPIDepartmentRequest;
 use App\Services\KPIDepartmentService\KPIDepartmentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class KPIDepartmentController extends Controller
@@ -23,14 +24,42 @@ class KPIDepartmentController extends Controller
     {
         $data = $this->service->getIndexData();
         $data['kpiDepartmentUrls'] = [
-            'datatable' => route('KPIDepartment.datatable'),
-            'store' => route('KPIDepartment.store'),
-            'show' => route('KPIDepartment.show', ['id' => ':id']),
-            'update' => route('KPIDepartment.update', ['id' => ':id']),
-            'destroy' => route('KPIDepartment.destroy', ['KPIDepartment' => ':id']),
+            'datatable'    => route('KPIDepartment.datatable'),
+            'store'        => route('KPIDepartment.store'),
+            'show'         => route('KPIDepartment.show', ['id' => ':id']),
+            'update'       => route('KPIDepartment.update', ['id' => ':id']),
+            'destroy'      => route('KPIDepartment.destroy', ['KPIDepartment' => ':id']),
+            'kpiDivisions' => route('KPIDepartment.kpiDivisions'),
         ];
 
         return view('pages.kpi.department_rev1', $data);
+    }
+
+    /**
+     * AJAX endpoint: return KPI Divisions filtered by year (and user's division if not admin).
+     */
+    public function getKpiDivisionsForForm(Request $request): JsonResponse
+    {
+        try {
+            $year = (int) ($request->query('year') ?: now()->year);
+            $divisions = $this->service->getKpiDivisionsByYear($year);
+
+            return response()->json([
+                'success' => true,
+                'status'  => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data'    => $divisions,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Internal Server Error',
+                'data'    => null,
+            ], 500);
+        }
     }
 
     /**

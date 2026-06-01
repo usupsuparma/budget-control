@@ -57,7 +57,27 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
 
         rsort($kpiYears);
 
-        return compact('title', 'kpiDivisions', 'departments', 'kpiYears', 'currentYear');
+        return compact('title', 'kpiDivisions', 'departments', 'kpiYears', 'currentYear', 'isAdmin');
+    }
+
+    public function getKpiDivisionsByYear(int $year): array
+    {
+        $user = Auth::user();
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
+
+        $query = KPIDivision::query()
+            ->where('year', $year)
+            ->orderBy('division_goals');
+
+        if (! $isAdmin) {
+            $query->whereIn('division_id', $divisionIds);
+        }
+
+        return $query->get()->map(fn($div) => [
+            'id'   => $div->id,
+            'text' => '[' . $div->year . '] ' . $div->division_goals,
+        ])->toArray();
     }
 
     public function getDataTableRows(?int $year): array

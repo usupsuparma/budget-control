@@ -216,6 +216,7 @@
                                     <div class="card-body">
                                         <div id="kpi-section-config"
                                             data-current-year="{{ $currentYear }}"
+                                            data-is-admin="{{ $isAdmin ? 'true' : 'false' }}"
                                             data-urls='@json($kpiSectionUrls)'>
                                         </div>
                                         <div class="row g-5">
@@ -398,24 +399,15 @@
 
                         <div class="col-md-5">
                             <label class="form-label">KPI Department <span class="text-danger">*</span></label>
-                            <select name="kpi_department_id" class="form-select">
+                            <select name="kpi_department_id" id="kpi_department_select" class="form-select">
                                 <option value="">Select KPI Department</option>
-                                @foreach ($kpiDepartments as $kd)
-                                <option value="{{ $kd->id }}">
-                                    [{{ $kd->year }}]
-                                    {{ \Illuminate\Support\Str::limit($kd->department_goals, 80) }}
-                                </option>
-                                @endforeach
                             </select>
                         </div>
 
                         <div class="col-md-5">
                             <label class="form-label">Section <span class="text-danger">*</span></label>
-                            <select name="section_id" class="form-select">
+                            <select name="section_id" id="section_select" class="form-select">
                                 <option value="">Select Section</option>
-                                @foreach ($sections as $sec)
-                                <option value="{{ $sec->id }}">{{ $sec->name }}</option>
-                                @endforeach
                             </select>
                         </div>
 
@@ -771,12 +763,15 @@ $years = range(2023, date('Y') + 5);
     const kpiSectionConfigEl = document.getElementById('kpi-section-config');
     const kpiSectionUrls = kpiSectionConfigEl ? $(kpiSectionConfigEl).data('urls') : {};
     const currentSectionYear = kpiSectionConfigEl ? parseInt(kpiSectionConfigEl.dataset.currentYear, 10) : null;
+    const isAdminUser = kpiSectionConfigEl ? kpiSectionConfigEl.dataset.isAdmin === 'true' : false;
     const yearSectionFilter = $('#kpi_section_year_filter');
     const ajaxUrl = kpiSectionUrls.datatable;
     const storeUrl = kpiSectionUrls.store;
     const showUrlTemplate = kpiSectionUrls.show;
     const updateUrlTemplate = kpiSectionUrls.update;
     const deleteUrlTemplate = kpiSectionUrls.destroy;
+    const kpiDepartmentsBaseUrl = kpiSectionUrls.kpiDepartments;
+    const sectionsBaseUrl = kpiSectionUrls.sections;
     const csrfToken = "{{ csrf_token() }}";
 
 
@@ -796,6 +791,71 @@ $years = range(2023, date('Y') + 5);
                 .replace(':id', id)
                 .replace('%3Aid', id);
         }
+
+        // ── Load KPI Departments filtered by year + user's division scope ──
+        function loadKpiDepartments(year, selectedId) {
+            const url = kpiDepartmentsBaseUrl + '?year=' + encodeURIComponent(year);
+            const select = $('#kpi_department_select');
+            const sectionSelect = $('#section_select');
+
+            select.prop('disabled', true);
+            sectionSelect.empty().append('<option value="">Select Section</option>').prop('disabled', true);
+
+            $.get(url, function(res) {
+                select.empty().append('<option value="">Select KPI Department</option>');
+                if (res.success && res.data) {
+                    $.each(res.data, function(_, item) {
+                        select.append($('<option>', { value: item.id, text: item.text }));
+                    });
+                }
+                if (selectedId) {
+                    select.val(selectedId);
+                    if (select.val()) {
+                        loadSections(selectedId, null);
+                    }
+                }
+            }).always(function() {
+                select.prop('disabled', false);
+            });
+        }
+
+        // ── Load Sections belonging to the selected KPI Department's department ──
+        function loadSections(kpiDepartmentId, selectedId) {
+            if (!kpiDepartmentId) {
+                $('#section_select').empty().append('<option value="">Select Section</option>').prop('disabled', true);
+                return;
+            }
+            const url = sectionsBaseUrl + '?kpi_department_id=' + encodeURIComponent(kpiDepartmentId);
+            const select = $('#section_select');
+            select.prop('disabled', true);
+
+            $.get(url, function(res) {
+                select.empty().append('<option value="">Select Section</option>');
+                if (res.success && res.data) {
+                    $.each(res.data, function(_, item) {
+                        select.append($('<option>', { value: item.id, text: item.text }));
+                    });
+                }
+                if (selectedId) {
+                    select.val(selectedId);
+                }
+            }).always(function() {
+                select.prop('disabled', false);
+            });
+        }
+
+        // Reload departments when modal year changes
+        $('#modalKPISection').on('change', 'select[name="year"]', function() {
+            const year = $(this).val();
+            if (year) {
+                loadKpiDepartments(year, null);
+            }
+        });
+
+        // Reload sections when KPI Department changes
+        $('#modalKPISection').on('change', '#kpi_department_select', function() {
+            loadSections($(this).val(), null);
+        });
 
         if (currentSectionYear && (!yearSectionFilter.val() || yearSectionFilter.val() === '')) {
             yearSectionFilter.val(currentSectionYear);
@@ -999,6 +1059,13 @@ $years = range(2023, date('Y') + 5);
             $('#kpi_section_id').val('');
             $('#btn-save-kpi-section').data('mode', 'create').text('Save');
             $('#modalKPISectionLabel').text('Add KPI Section');
+
+            // Load departments for the currently selected modal year
+            const modalYear = $('#kpiSectionForm select[name="year"]').val() || currentSectionYear;
+            if (modalYear) {
+                loadKpiDepartments(modalYear, null);
+            }
+
             $('#modalKPISection').modal('show');
         });
 
@@ -1012,9 +1079,7 @@ $years = range(2023, date('Y') + 5);
                 $('#kpi_section_id').val(d.id);
 
                 $('select[name="year"]').val(d.year);
-                $('select[name="kpi_department_id"]').val(d.kpi_department_id);
-                $('select[name="section_id"]').val(d.section_id);
-
+                // KPI Department & Section loaded via cascading AJAX
                 $('textarea[name="section_goals"]').val(d.section_goals);
                 $('textarea[name="activities"]').val(d.activities);
                 $('input[name="target_section"]').val(d.target_section);
@@ -1035,6 +1100,15 @@ $years = range(2023, date('Y') + 5);
 
                 $('#btn-save-kpi-section').data('mode', 'edit');
                 $('#modalKPISectionLabel').text('Edit KPI Section');
+
+                // Load departments for the year, then pre-select dept (which triggers section load)
+                loadKpiDepartments(d.year, d.kpi_department_id);
+                // loadSections is called inside loadKpiDepartments after dept is pre-selected,
+                // but we also pre-pass section_id so it gets selected after sections load.
+                // Override: load sections explicitly with pre-selected section
+                setTimeout(function() {
+                    loadSections(d.kpi_department_id, d.section_id);
+                }, 300);
 
                 if (window.applyKpiDateFromDb) {
                     window.applyKpiDateFromDb(

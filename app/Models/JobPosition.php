@@ -29,6 +29,6 @@ class JobPosition extends Model
      */
     public function structure()
     {
-        return $this->belongsTo(Division::class, 'job_level_id', 'id');
+        return $this->belongsTo(Division::class, 'structure_id', 'id');
     }
 }

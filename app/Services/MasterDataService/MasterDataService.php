@@ -25,4 +25,6 @@ interface MasterDataService
      * Call this after any CRUD operation on Director, Division, Department, or Section.
      */
     public function forgetCache(): void;
+
+    public function getOrganizationTree(): Collection;
 }

@@ -709,11 +709,9 @@
                                 <select class="form-select" id="programId" name="program_id" required>
                                     <option value="">Select Program</option>
                                     @foreach ($workplans as $workplan)
-                                        @if ($workplan->year == date('Y'))
-                                            <option value="{{ $workplan->id }}">{{ $workplan->activity }} -
-                                                {{ $workplan->year }}
-                                            </option>
-                                        @endif
+                                        <option value="{{ $workplan->id }}">{{ $workplan->activity }} -
+                                            {{ $workplan->year }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>

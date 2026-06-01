@@ -70,10 +70,8 @@
                             <input type="password" class="form-control" id="create_password" name="password" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Uppline</label>
-                            <select class="form-select" id="create_uppline_id" name="uppline_id">
-                                <option value="">-- Select Uppline --</option>
-                            </select>
+                            <label class="form-label">Uppline <small class="text-muted">(auto)</small></label>
+                            <div id="create_uppline_info" class="form-control bg-light text-muted fst-italic">-- Pilih Job Position terlebih dahulu --</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Role <span class="text-danger">*</span></label>
@@ -134,10 +132,8 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Uppline</label>
-                            <select class="form-select" id="edit_uppline_id" name="uppline_id">
-                                <option value="">-- Select Uppline --</option>
-                            </select>
+                            <label class="form-label">Uppline <small class="text-muted">(auto)</small></label>
+                            <div id="edit_uppline_info" class="form-control bg-light text-muted fst-italic">-- Pilih Job Position terlebih dahulu --</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Status <span class="text-danger">*</span></label>
@@ -181,10 +177,11 @@ $(document).ready(function () {
     /* ---- ROUTES ---- */
     var R = {
         data:   "{{ route('employee.data') }}",
-        store:  "{{ route('employee.store') }}",
-        edit:   "{{ route('employee.edit', ':id') }}",
-        update: "{{ route('employee.update', ':id') }}",
-        show:   "{{ route('employee.show', ':id') }}",
+        store:          "{{ route('employee.store') }}",
+        edit:           "{{ route('employee.edit', ':id') }}",
+        update:         "{{ route('employee.update', ':id') }}",
+        show:           "{{ route('employee.show', ':id') }}",
+        resolveUppline: "{{ route('employee.resolve-uppline', ':jobPosId') }}",
     };
 
     // var ROLES = [
@@ -257,6 +254,30 @@ $(document).ready(function () {
     }
 
     /* ================================================================
+       UPPLINE AUTO-RESOLVER
+       Dipanggil saat user memilih Job Position di modal create/edit.
+       Mengambil uppline dari server berdasarkan hierarchy org,
+       lalu menampilkan nama uppline sebagai info read-only.
+       ================================================================ */
+    function loadUpplineInfo(jobPositionId, infoElementId) {
+        var $el = $('#' + infoElementId);
+        if (!jobPositionId) {
+            $el.text('-- Pilih Job Position terlebih dahulu --').removeClass('text-dark').addClass('text-muted fst-italic');
+            return;
+        }
+        $el.text('Memuat uppline...').removeClass('text-dark text-danger').addClass('text-muted fst-italic');
+        $.get(R.resolveUppline.replace(':jobPosId', jobPositionId), function(res) {
+            if (res.success && res.data) {
+                $el.text(res.data.name).removeClass('text-muted fst-italic text-danger').addClass('text-dark');
+            } else {
+                $el.text('Tidak ada uppline (posisi tertinggi)').removeClass('text-dark text-danger').addClass('text-muted fst-italic');
+            }
+        }).fail(function() {
+            $el.text('Gagal memuat uppline').removeClass('text-muted fst-italic text-dark').addClass('text-danger');
+        });
+    }
+
+    /* ================================================================
        CREATE MODAL
        ================================================================ */
     var C = {};  // store instance create modal
@@ -264,6 +285,7 @@ $(document).ready(function () {
 
     $('#btnCreateEmployee').on('click', function () {
         $('#employeeCreateForm')[0].reset();
+        $('#create_uppline_info').text('-- Pilih Job Position terlebih dahulu --').removeClass('text-dark text-danger').addClass('text-muted fst-italic');
         new bootstrap.Modal($CM).show();
     });
 
@@ -271,13 +293,10 @@ $(document).ready(function () {
         var jobs = (window.masterData && window.masterData.job_positions) ? window.masterData.job_positions : [];
         fill(makeChoices(C, 'create_job_position_id', '-- Select Job Position --'), jobs, null, 'name', '-- Select Job Position --');
         fill(makeChoices(C, 'create_role_name', '-- Select Role --'), ROLES, null, 'name', '-- Select Role --');
-        makeChoices(C, 'create_uppline_id', '-- Select Uppline --');
-        // Fetch list employee untuk uppline
-        $.get(R.data, {length:9999, start:0}, function(res) {
-            var list = (res && res.data) ? res.data.map(function(e) {
-                return {id: e.id, name: (e.first_name||'') + ' ' + (e.last_name||'') + ' (' + (e.employee_code||'') + ')'};
-            }) : [];
-            fill(C['create_uppline_id'], list, null, 'name', '-- Select Uppline --');
+
+        // Listen for job position change to auto-resolve uppline
+        C['create_job_position_id'].passedElement.element.addEventListener('change', function() {
+            loadUpplineInfo(this.value, 'create_uppline_info');
         });
     });
 
@@ -288,7 +307,6 @@ $(document).ready(function () {
         var fd = new FormData(this);
         fd.set('job_position_id', val(C, 'create_job_position_id'));
         fd.set('role_name',       val(C, 'create_role_name'));
-        fd.set('uppline_id',      val(C, 'create_uppline_id'));
 
         Swal.fire({ title:'Saving...', allowOutsideClick:false, didOpen:function(){ Swal.showLoading(); } });
         $.ajax({
@@ -341,9 +359,8 @@ $(document).ready(function () {
     });
 
     $EM.addEventListener('shown.bs.modal', function () {
-        var emp     = _ep.employment || {};
+        var emp      = _ep.employment || {};
         var jobPosId = emp.job_position_id || null;
-        var upplineId = emp.uppline_id     || null;
         var roleName = (_ep.roles && _ep.roles.length) ? _ep.roles[0].id : '';
         var status   = _ep.status || 'Active';
         var jobs     = (window.masterData && window.masterData.job_positions) ? window.masterData.job_positions : [];
@@ -351,13 +368,11 @@ $(document).ready(function () {
         fill(makeChoices(E, 'edit_job_position_id', '-- Select Job Position --'), jobs, jobPosId, 'name', '-- Select Job Position --');
         fill(makeChoices(E, 'edit_role_name', '-- Select Role --'), ROLES, roleName, 'name', '-- Select Role --');
         fill(makeChoices(E, 'edit_status', '-- Select Status --'), STATUSES, status, 'name', '-- Select Status --');
-        makeChoices(E, 'edit_uppline_id', '-- Select Uppline --');
 
-        $.get(R.data, {length:9999, start:0}, function(res) {
-            var list = (res && res.data) ? res.data.map(function(e) {
-                return {id: e.id, name: (e.first_name||'') + ' ' + (e.last_name||'') + ' (' + (e.employee_code||'') + ')'};
-            }) : [];
-            fill(E['edit_uppline_id'], list, upplineId, 'name', '-- Select Uppline --');
+        // Load current uppline info, then listen for job position change
+        loadUpplineInfo(jobPosId, 'edit_uppline_info');
+        E['edit_job_position_id'].passedElement.element.addEventListener('change', function() {
+            loadUpplineInfo(this.value, 'edit_uppline_info');
         });
     });
 
@@ -373,7 +388,6 @@ $(document).ready(function () {
             email:           $('#edit_email').val(),
             job_position_id: val(E, 'edit_job_position_id'),
             role_name:       val(E, 'edit_role_name'),
-            uppline_id:      val(E, 'edit_uppline_id'),
             status:          val(E, 'edit_status'),
         };
 

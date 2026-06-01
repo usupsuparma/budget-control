@@ -1074,6 +1074,8 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/data', [EmployeeController::class, 'getData'])
                 ->name('employee.data');
+        Route::get('/resolve-uppline/{jobPositionId}', [EmployeeController::class, 'resolveUppline'])
+            ->name('employee.resolve-uppline');
             Route::post('/create', [EmployeeController::class, 'store'])
                 ->name('employee.store')
                 ->middleware('permission:employee.create');

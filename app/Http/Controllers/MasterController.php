@@ -26,13 +26,6 @@ class MasterController extends Controller
         return view('pages.settings.Settings', compact('title','roles'));
     }
 
-    public function index2()
-    {
-        $title = 'Master Data';
-
-        return view('pages.settings.Settings', compact('title'));
-    }
-
     public function data(Request $request)
     {
         // ... (existing data code)

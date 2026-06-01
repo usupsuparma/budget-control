@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Employment;
 use App\Models\JobPosition;
+use App\Services\EmployeeService\EmployeeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
@@ -13,6 +14,9 @@ use Yajra\DataTables\DataTables;
 
 class EmployeeController extends Controller
 {
+    public function __construct(
+        protected EmployeeService $employeeService
+    ) {}
 
 
     public function getData()
@@ -118,9 +122,29 @@ class EmployeeController extends Controller
     }
 
 
+    /**
+     * AJAX: return the auto-resolved uppline employee for a given job position.
+     * Used by the edit/create form to display who the uppline will be.
+     */
+    public function resolveUppline(int $jobPositionId)
+    {
+        try {
+            $uppline = $this->employeeService->resolveUpplineForJobPosition($jobPositionId);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $uppline
+                    ? ['id' => $uppline->id, 'name' => $uppline->first_name . ' ' . $uppline->last_name]
+                    : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('EmployeeController@resolveUppline: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal resolve uppline.'], 500);
+        }
+    }
+
     public function store(Request $request)
     {
-        // Validasi dengan pesan error yang jelas
         $validated = $request->validate([
             'first_name'      => 'required|string|max:100',
             'last_name'       => 'required|string|max:100',
@@ -130,7 +154,6 @@ class EmployeeController extends Controller
             'job_position_id' => 'required|exists:job_position,id',
             'role_name'       => 'required|string|exists:roles,name',
         ], [
-            // Pesan error dalam Bahasa Indonesia
             'first_name.required'      => 'Nama depan wajib diisi',
             'first_name.max'           => 'Nama depan maksimal 100 karakter',
             'last_name.required'       => 'Nama belakang wajib diisi',
@@ -151,59 +174,14 @@ class EmployeeController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request) {
-
-                // Ambil data relasi
-                $jobPosition = JobPosition::findOrFail($request->job_position_id);
-
-                // Get role by name (from Spatie)
-                $role = Role::where('name', $request->role_name)->firstOrFail();
-
-                // 1️⃣ SIMPAN EMPLOYEE
-                $employee = Employee::create([
-                    'employee_code'    => $request->employee_code, // NIP
-                    'first_name'       => $request->first_name,
-                    'last_name'        => $request->last_name,
-                    'email'            => $request->email,
-                    'password'         => bcrypt($request->password),
-                    'job_position_id'  => $jobPosition->id,
-                    'status'           => 'Active',
-                ]);
-
-                // Assign role via Spatie
-                $employee->assignRole($role->name);
-
-                // 2️⃣ SIMPAN EMPLOYMENT (employee_id = FK ke employee.id)
-                Employment::create([
-                    'employee_id'        => $employee->id, // FK ke employee.id
-
-                    'organization_id'    => $jobPosition->organization->id ?? null,
-                    'organization_name'  => $jobPosition->organization->organization_name ?? null,
-
-                    'job_level_id'       => $jobPosition->job_level_id ?? null,
-                    'job_level_name'     => $jobPosition->job_level_name ?? null,
-
-                    'job_position_id'    => $jobPosition->id,
-                    'job_position_name'  => $jobPosition->job_position_name,
-
-                    'uppline_id'         => $request->uppline_id ?? null,
-                    'uppline_id_name'    => $request->uppline_name ?? null,
-
-                    'employment_status'  => 'Aktif',
-                    'status'             => 'Active',
-                ]);
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Employee & Employment created successfully'
-            ]);
+            $this->employeeService->createEmployee($validated);
+            return response()->json(['success' => true, 'message' => 'Employee created successfully.']);
         } catch (\Exception $e) {
             Log::error('EmployeeController@store: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan data employee. Silakan coba lagi.',
-                'error'   => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -211,17 +189,13 @@ class EmployeeController extends Controller
 
     public function edit($id)
     {
-        // Eager load roles for Spatie
         $emp = Employee::with(['employment', 'roles'])->findOrFail($id);
-
         return response()->json($emp);
     }
 
 
-
     public function update(Request $request, $id)
     {
-        // Validasi dengan pesan error yang jelas
         $validated = $request->validate([
             'first_name'      => 'required|string|max:100',
             'last_name'       => 'required|string|max:100',
@@ -231,7 +205,6 @@ class EmployeeController extends Controller
             'role_name'       => 'required|string|exists:roles,id',
             'status'          => 'required|in:Active,Inactive',
         ], [
-            // Pesan error dalam Bahasa Indonesia
             'first_name.required'      => 'Nama depan wajib diisi',
             'first_name.max'           => 'Nama depan maksimal 100 karakter',
             'last_name.required'       => 'Nama belakang wajib diisi',
@@ -252,57 +225,14 @@ class EmployeeController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request, $id) {
-
-                $emp = Employee::findOrFail($id);
-                $jobPosition = JobPosition::findOrFail($request->job_position_id);
-
-                // Get role by name (from Spatie)
-                $role = Role::where('id', $request->role_name)->firstOrFail();
-
-                // Update Employee
-                $emp->update([
-                    'first_name'      => $request->first_name,
-                    'last_name'       => $request->last_name,
-                    'employee_code'   => $request->employee_code, // NIP
-                    'email'           => $request->email,
-                    'status'          => $request->status,
-                ]);
-
-                // Sync role via Spatie (replaces all existing roles)
-                $emp->syncRoles([$role->name]);
-
-                // Ambil employment berdasarkan employee.id (FK)
-                $employment = Employment::where('employee_id', $emp->id)->first();
-
-                // Hanya update jika employment memang ada
-                if ($employment) {
-                    $employment->update([
-                        'job_position_id'   => $jobPosition->id,
-                        'job_position_name' => $jobPosition->job_position_name,
-
-                        'organization_id'   => $jobPosition->organization_id ?? null,
-                        'organization_name' => $jobPosition->organization_name ?? null,
-
-                        'job_level_id'      => $jobPosition->job_level_id ?? null,
-                        'job_level_name'    => $jobPosition->job_level_name ?? null,
-
-                        'uppline_id'        => $request->uppline_id ?? null,
-                        'uppline_id_name'   => $request->uppline_name ?? null,
-
-                        'employment_status' => $request->status === 'Active' ? 'Aktif' : 'Unaktif',
-                        'status'            => $request->status,
-                    ]);
-                }
-            });
-
-            return response()->json(['success' => true, 'message' => 'Employee updated successfully']);
+            $this->employeeService->updateEmployee((int) $id, $validated);
+            return response()->json(['success' => true, 'message' => 'Employee updated successfully.']);
         } catch (\Exception $e) {
             Log::error('EmployeeController@update: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengupdate data employee. Silakan coba lagi.',
-                'error'   => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -311,18 +241,14 @@ class EmployeeController extends Controller
     public function destroy($id)
     {
         DB::transaction(function () use ($id) {
-
             $emp = Employee::findOrFail($id);
-
-            // Soft delete employment (FK = employee.id)
             Employment::where('employee_id', $emp->id)->delete();
-
-            // Soft delete employee
             $emp->delete();
         });
 
         return response()->json(['success' => true]);
     }
+
 
 
 

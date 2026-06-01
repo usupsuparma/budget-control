@@ -43,36 +43,62 @@ class SettingPriceController extends Controller
 
     public function assignCode(Request $request)
     {
-        // Check for duplicate
-        $exists = PriceVerificationCode::where('price_verification_id', $request->price_verification_id)
-            ->where('remarks', $request->remarks)
-            ->where('inchargecode', $request->inchargecode)
-            ->exists();
+        $inchargecodes = (array) $request->inchargecode;
 
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This code already assigned to this verificator with same remarks'
-            ], 422);
+        if (empty($inchargecodes)) {
+            return response()->json(['success' => false, 'message' => 'Please select at least one incharge code'], 422);
         }
 
-        PriceVerificationCode::create([
-            'price_verification_id' => $request->price_verification_id,
-            'remarks' => $request->remarks,
-            'inchargecode' => $request->inchargecode,
-        ]);
+        $created = 0;
+        $skipped = 0;
 
-        return response()->json(['success' => true, 'message' => 'Code assigned successfully']);
+        foreach ($inchargecodes as $code) {
+            $exists = PriceVerificationCode::where('price_verification_id', $request->price_verification_id)
+                ->where('remarks', $request->remarks)
+                ->where('inchargecode', $code)
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                continue;
+            }
+
+            PriceVerificationCode::create([
+                'price_verification_id' => $request->price_verification_id,
+                'remarks'               => $request->remarks,
+                'inchargecode'          => $code,
+            ]);
+            $created++;
+        }
+
+        if ($created === 0) {
+            return response()->json(['success' => false, 'message' => 'All selected codes already assigned to this verificator'], 422);
+        }
+
+        $message = "{$created} code(s) assigned successfully";
+        if ($skipped > 0) {
+            $message .= ", {$skipped} duplicate(s) skipped";
+        }
+
+        return response()->json(['success' => true, 'message' => $message]);
     }
 
     public function updateCode(Request $request, $id)
     {
         $code = PriceVerificationCode::findOrFail($id);
 
+        // Accept either a plain string or first element of an array (from multi-select)
+        $inchargecodes = (array) $request->inchargecode;
+        $inchargecode  = $inchargecodes[0] ?? null;
+
+        if (!$inchargecode) {
+            return response()->json(['success' => false, 'message' => 'Please select an incharge code'], 422);
+        }
+
         // Check for duplicate (excluding current record)
         $exists = PriceVerificationCode::where('price_verification_id', $request->price_verification_id)
             ->where('remarks', $request->remarks)
-            ->where('inchargecode', $request->inchargecode)
+            ->where('inchargecode', $inchargecode)
             ->where('id', '!=', $id)
             ->exists();
 
@@ -85,8 +111,8 @@ class SettingPriceController extends Controller
 
         $code->update([
             'price_verification_id' => $request->price_verification_id,
-            'remarks' => $request->remarks,
-            'inchargecode' => $request->inchargecode,
+            'remarks'               => $request->remarks,
+            'inchargecode'          => $inchargecode,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Code updated successfully']);

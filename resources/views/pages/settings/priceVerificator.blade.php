@@ -187,10 +187,10 @@
 
                     <div class="mb-3">
                         <label>Incharge Code <span class="text-muted small">(filtered by remarks)</span></label>
-                        <select name="inchargecode" id="selectInchargeCode" class="form-select" required>
+                        <select name="inchargecode[]" id="selectInchargeCode" class="form-select" required multiple>
                             <option value="">Select Incharge Code</option>
                         </select>
-                        <small class="text-muted">Select Remarks first to filter options</small>
+                        <small class="text-muted" id="inchargeCodeHint">Select Remarks first, then pick one or more codes</small>
                     </div>
                 </div>
 
@@ -253,9 +253,21 @@
         let inchargeCodeChoices;
         let allBudgetCodes = @json($budgetCodes);
         
-        function initChoices(filteredCodes = null) {
+        function initChoices(filteredCodes = null, allowMultiple = true) {
             if (inchargeCodeChoices) {
                 inchargeCodeChoices.destroy();
+            }
+            
+            // Toggle multiple attribute based on mode
+            const selectEl = document.getElementById('selectInchargeCode');
+            if (allowMultiple) {
+                selectEl.setAttribute('multiple', 'multiple');
+                selectEl.name = 'inchargecode[]';
+                $('#inchargeCodeHint').text('Select Remarks first, then pick one or more codes');
+            } else {
+                selectEl.removeAttribute('multiple');
+                selectEl.name = 'inchargecode';
+                $('#inchargeCodeHint').text('Select Remarks first to filter options');
             }
             
             const codesToUse = filteredCodes || allBudgetCodes;
@@ -272,7 +284,7 @@
                 searchEnabled: true,
                 searchPlaceholderValue: 'Search incharge code...',
                 itemSelectText: 'Click to select',
-                removeItemButton: false,
+                removeItemButton: allowMultiple,
                 choices: choices,
                 shouldSort: false
             });
@@ -283,14 +295,15 @@
         // Filter Incharge Code when Remarks is selected
         $('#selectRemarks').on('change', function() {
             const selectedRemarks = $(this).val();
+            const isEditMode = !!$('#codeId').val();
             
             if (selectedRemarks) {
                 // Filter budget codes by remarks
                 const filteredCodes = allBudgetCodes.filter(bc => bc.remarks === selectedRemarks);
-                initChoices(filteredCodes);
+                initChoices(filteredCodes, !isEditMode);
             } else {
                 // Show all codes if no remarks selected
-                initChoices();
+                initChoices(null, !isEditMode);
             }
         });
 
@@ -324,11 +337,11 @@
 
         $('#modalAssignCode').on('show.bs.modal', function() {
             $('#codeId').val('');
-            $('#selectVerificatorForCode').val('').trigger('change');
-            $('#selectRemarks').val('').trigger('change');
+            $('#selectVerificatorForCode').val('');
+            $('#selectRemarks').val('');
             
-            // Reset to show all codes when modal opens
-            initChoices();
+            // Reset to multi-select add mode
+            initChoices(null, true);
             
             $('#modalAssignCode .modal-title').text('Assign Budget Type');
         });
@@ -404,6 +417,8 @@
             const url = id ? "{{ url('setting-price-verificator/code') }}/" + id : "{{ route('settingPriceVerificator.assignCode') }}";
             const method = id ? 'PUT' : 'POST';
 
+            Swal.showLoading();
+
             $.ajax({
                 url: url,
                 method: method,
@@ -413,6 +428,7 @@
                     showSuccess(response.message || 'Budget code berhasil disimpan');
                 },
                 error: function(xhr) {
+                    Swal.close();
                     const message = xhr.responseJSON?.message || 'Gagal menyimpan code';
                     showError(message);
                 }
@@ -426,15 +442,18 @@
             const inchargecode = $(this).data('inchargecode');
             
             $('#codeId').val(id);
-            $('#selectVerificatorForCode').val(verificatorId).trigger('change');
-            $('#selectRemarks').val(remarks).trigger('change');
+            $('#selectVerificatorForCode').val(verificatorId);
+            $('#selectRemarks').val(remarks);
             
-            // Filter codes based on remarks, then set value
+            // Filter codes by remarks and init as single-select (edit mode)
+            const filteredCodes = allBudgetCodes.filter(bc => bc.remarks === remarks);
+            initChoices(filteredCodes, false);
+            
             setTimeout(() => {
                 if (inchargeCodeChoices) {
                     inchargeCodeChoices.setChoiceByValue(inchargecode);
                 }
-            }, 100);
+            }, 50);
             
             $('#modalAssignCode .modal-title').text('Edit Budget Type');
             $('#modalAssignCode').modal('show');

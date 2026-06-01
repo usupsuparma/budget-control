@@ -477,18 +477,32 @@
                         {{-- Filter Section --}}
                         <div class="card filter-section mb-3">
                             <div class="card-body">
-                                <div class="row align-items-end">
+                                <div class="row g-3 align-items-end">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Division</label>
-                                        <select class="form-select" id="divisionFilter">
-                                            <option value="">Select Division</option>
+                                        <label class="form-label fw-semibold mb-1">
+                                            Division
+                                            @if (!($isAdmin ?? true))
+                                                <span class="badge bg-light text-secondary border ms-1" style="font-size:10px;font-weight:500;">
+                                                    <i class="ri-lock-line me-1"></i>Sesuai Akun
+                                                </span>
+                                            @endif
+                                        </label>
+                                        <select class="form-select" id="divisionFilter"
+                                            {{ !($isAdmin ?? true) ? 'disabled' : '' }}
+                                            style="{{ !($isAdmin ?? true) ? 'background-color:#f8f9fa;cursor:not-allowed;' : '' }}">
+                                            @if ($isAdmin ?? true)
+                                                <option value="">Select Division</option>
+                                            @endif
                                             @foreach ($divisions ?? [] as $division)
-                                                <option value="{{ $division->id }}">{{ $division->name }}</option>
+                                                <option value="{{ $division->id }}"
+                                                    {{ in_array($division->id, $userDivisionIds ?? []) ? 'selected' : '' }}>
+                                                    {{ $division->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Year</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold mb-1">Year</label>
                                         <select class="form-select" id="yearFilter">
                                             <option value="">Select Year</option>
                                             @foreach ($years as $year)
@@ -497,7 +511,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-5 d-flex align-items-end gap-2">
                                         <button type="button" class="btn btn-primary" id="loadBudgetBtn" disabled>
                                             <i class="bi bi-table me-2"></i>Load Budget Data
                                         </button>

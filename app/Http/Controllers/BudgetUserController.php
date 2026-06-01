@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\BudgetUserService\BudgetUserService;
 use App\Services\LogService\LogService;
+use App\Services\UserRoleService\UserRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -11,11 +12,13 @@ class BudgetUserController extends Controller
 {
     protected BudgetUserService $budgetUserService;
     protected LogService $logService;
+    protected UserRoleService $userRoleService;
 
-    public function __construct(BudgetUserService $budgetUserService, LogService $logService)
+    public function __construct(BudgetUserService $budgetUserService, LogService $logService, UserRoleService $userRoleService)
     {
         $this->budgetUserService = $budgetUserService;
         $this->logService = $logService;
+        $this->userRoleService = $userRoleService;
     }
 
     /**
@@ -23,11 +26,15 @@ class BudgetUserController extends Controller
      */
     public function index(Request $request)
     {
+        $user      = auth()->user();
+        $isAdmin   = $this->userRoleService->isAdmin($user);
         $result    = $this->budgetUserService->getDivisions();
         $divisions = $result['data'];
         $years     = range(date('Y') + 2, date('Y') - 5);
 
-        return view('pages.budget.budget-user', compact('years', 'divisions'));
+        $userDivisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
+
+        return view('pages.budget.budget-user', compact('years', 'divisions', 'isAdmin', 'userDivisionIds'));
     }
 
     /**

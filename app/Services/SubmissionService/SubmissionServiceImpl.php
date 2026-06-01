@@ -15,6 +15,7 @@ use App\Models\ApprovalRequestDetail;
 use App\Services\ApprovalTransactionService\ApprovalTransactionService;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
+use App\Services\UserRoleService\UserRoleService;
 use App\Exports\SubmissionTemplateExport;
 use App\Imports\SubmissionImport;
 use App\Imports\MacframeImport;
@@ -34,6 +35,7 @@ class SubmissionServiceImpl implements SubmissionService
         private readonly ApprovalTransactionService $approvalTransactionService,
         private readonly BudgetLedgerService $budgetLedgerService,
         private readonly LogService $logService,
+        private readonly UserRoleService $userRoleService,
     ) {}
 
     /* ========================
@@ -45,6 +47,7 @@ class SubmissionServiceImpl implements SubmissionService
         $userId = Auth::id();
         $employee = Auth::user();
         $employment = $employee->employment;
+        $isAdmin = $this->userRoleService->isAdmin($employee);
 
         $newSubmission = $this->model->where('user_id', $userId)
             ->where('status', Transaction::STATUS_SUBMISSION)->count();
@@ -74,11 +77,12 @@ class SubmissionServiceImpl implements SubmissionService
         $jobLevels = JobLevel::all();
         $jobPositions = JobPosition::all();
 
-        // Filter workplans hanya untuk divisi user yang sedang login
-        $divisionIds = $employment ? $employment->getDivisionIds() : [];
-        $workplans = KPIWorkPlan::with(['KPIDepartment', 'kpiSection'])
-            ->whereDivisionIn($divisionIds)
-            ->get();
+        $workplansQuery = KPIWorkPlan::with(['KPIDepartment', 'kpiSection']);
+        if (! $isAdmin) {
+            $divisionIds = $this->userRoleService->getDivisionIds($employee);
+            $workplansQuery->whereDivisionIn($divisionIds);
+        }
+        $workplans = $workplansQuery->get();
 
         $budgetCodes = WorkplanBudgetItem::with('budgetCodeRelation')->get();
         $units = Unit::all();
@@ -582,14 +586,18 @@ class SubmissionServiceImpl implements SubmissionService
             $kpiType = 'department';
         }
 
-        // Restrict workplans hanya untuk divisi user yang sedang login (security: fail closed)
-        $employment = Auth::user()->employment;
-        $divisionIds = $employment ? $employment->getDivisionIds() : [];
+        $user = Auth::user();
+        $isAdmin = $this->userRoleService->isAdmin($user);
+        $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
         $query = KPIWorkPlan::with(['KPIDepartment.department', 'kpiSection.section'])
-            ->whereDivisionIn($divisionIds)
             ->orderBy('year', 'desc')
             ->orderBy('activity');
+
+        if (! $isAdmin) {
+            // Non-admin wajib dibatasi ke divisi login (fail closed via scope).
+            $query->whereDivisionIn($divisionIds);
+        }
 
         if ($kpiType) {
             $query->where('kpi_type', $kpiType);

@@ -153,6 +153,14 @@ if ($isAdmin) {
 | `KPIDivisionServiceImpl` | `hasRole('Admin') \|\| hasRole('admin') \|\| hasRole('super-admin')` | `$userRoleService->isAdmin($user)` |
 | `KPIDepartmentServiceImpl` | Private `isAdmin()` + `getDivisionIds()` lokal | Inject `UserRoleService` |
 | `KPIWorkPlanController` | Inline switch-case + `hasRole` | `$userRoleService->isAdmin()` + `getDivisionIds()` |
+| `SubmissionServiceImpl` | Scope program berbasis `employment->getDivisionIds()` langsung | `isAdmin()` untuk bypass scope + `getDivisionIds()` untuk non-admin |
+
+### Dampak Perilaku di Submission
+
+- Halaman `submission/user`:
+  - **Admin** melihat semua `Program ID` (semua divisi).
+  - **Non-admin** hanya melihat `Program ID` sesuai divisi login.
+- Endpoint AJAX `userSubmission.programs` mengikuti aturan yang sama.
 
 ---
 

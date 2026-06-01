@@ -11,6 +11,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 
 **Key Documentation:**
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
+- [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md) - Bug fix history and rules for level-aware Division name resolution (`getDivisionName()`).
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
 - [Transaction Approval and LPJ Status Workflow](documentasi/TRANSACTION_APPROVAL_LPJ_STATUS_WORKFLOW.md) - Transaction status lifecycle, LPJ eligibility, and proof-file preview behavior.
 - [Sidebar Route Name Standard](documentasi/SIDEBAR_ROUTE_NAME_STANDARD.md) - Sidebar links and active/collapse states must use named routes.
@@ -183,6 +184,7 @@ Every feature change, workflow change, status mapping change, API/route change, 
 12. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
 13. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
 14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `documentasi/` file and, when the rule is durable, `GEMINI.md` in the same change set.
+15. **Level-Aware Division Resolution:** NEVER use `$jobPosition->structure` (i.e. `JobPosition::structure()`) directly to display a Division name. It is only valid for L2. For all levels use `Employment::getDivisionName()`. See [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md).
 
 ## Technology Stack
 - Laravel 12 (PHP 8.2+)

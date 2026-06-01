@@ -98,3 +98,17 @@ $levelName = $employment->job_level_name;
 | 2 (Division) | Division ID | Division -> Department |
 | 3 (Department) | Department ID | Department |
 | 4 (Section) | Section ID | Department -> Section |
+
+---
+
+## Menampilkan Nama Division Karyawan
+
+Gunakan method `getDivisionName()` pada `App\Models\Employment` untuk mendapatkan nama Division yang benar pada semua level jabatan:
+
+```php
+$divisionName = $employment->getDivisionName(); // Level-aware traversal
+```
+
+**Jangan** gunakan `$employment->jobPosition->structure->name` secara langsung — relasi `JobPosition::structure()` hanya valid untuk L2 (Division Manager). Untuk L3+ relasi tersebut akan me-resolve ke entitas yang salah karena `structure_id` di level tersebut menunjuk ke Department atau Section, bukan Division.
+
+Lihat: [Employee Division Display Fix](EMPLOYEE_DIVISION_DISPLAY_FIX.md) untuk detail bug dan solusi lengkap.

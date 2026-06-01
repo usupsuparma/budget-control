@@ -124,7 +124,7 @@
             columns: [
                 { data: 'id', name: 'id' },
                 { data: 'name', name: 'name' },
-                { data: 'department', name: 'department' },
+                { data: 'department_name', name: 'department_name' },
                 { data: 'status_badge', name: 'status', orderable: false, searchable: false },
                 { data: 'action', name: 'action', orderable: false, searchable: false }
             ],

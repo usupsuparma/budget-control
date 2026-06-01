@@ -21,6 +21,11 @@ class SectionController extends Controller
             ->addColumn('department_name', function ($row) {
                 return $row->department->name ?? '-';
             })
+            ->filterColumn('department_name', function ($query, $keyword) {
+                $query->whereHas('department', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
 
             ->addColumn('status_badge', function ($row) {
                 return $row->status === 'Active'

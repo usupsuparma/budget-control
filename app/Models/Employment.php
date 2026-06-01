@@ -280,4 +280,50 @@ class Employment extends Model
                 return ($section->department->division_id) ? [$section->department->division_id] : [];
         }
     }
+
+    /**
+     * Resolve the Division name for display based on job level hierarchy.
+     *
+     *   L1 Director  → structure_id = director.id  → first division under that director
+     *   L2 Division  → structure_id = division.id  → that division's name
+     *   L3 Department→ structure_id = department.id → parent division's name
+     *   L4+ Section  → structure_id = section.id   → section → department → division name
+     *
+     * Returns '-' if unresolvable.
+     */
+    public function getDivisionName(): string
+    {
+        $jobPosition = $this->jobPosition;
+
+        if (! $jobPosition || ! $jobPosition->structure_id) {
+            return '-';
+        }
+
+        $levelId     = (int) $jobPosition->job_level_id;
+        $structureId = (int) $jobPosition->structure_id;
+
+        switch ($levelId) {
+            case 1: // Director → return first division under this director
+                $div = Division::where('director_id', $structureId)->orderBy('name')->first();
+                return $div ? $div->name : '-';
+
+            case 2: // Division → structure_id IS the division
+                $div = Division::find($structureId);
+                return $div ? $div->name : '-';
+
+            case 3: // Department → get parent division
+                $dept = Department::find($structureId);
+                if (! $dept || ! $dept->division_id) return '-';
+                $div = Division::find($dept->division_id);
+                return $div ? $div->name : '-';
+
+            default: // Section (4), Staff, Non-Staff → section → department → division
+                $section = Section::find($structureId);
+                if (! $section || ! $section->department_id) return '-';
+                $dept = Department::find($section->department_id);
+                if (! $dept || ! $dept->division_id) return '-';
+                $div = Division::find($dept->division_id);
+                return $div ? $div->name : '-';
+        }
+    }
 }

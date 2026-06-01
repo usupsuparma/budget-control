@@ -191,11 +191,11 @@
                             <button type="button" class="btn btn-outline-primary" id="btnImport">
                                 <i class="ri-upload-line"></i> Import
                             </button>
-                            @if (isset($employment->job_level_id) && in_array($employment->job_level_id, [3, 4]))
+                            {{-- @if (isset($employment->job_level_id) && in_array($employment->job_level_id, [3, 4])) --}}
                                 <button type="button" class="btn btn-success" id="btnAddData">
                                     <i class="ri-add-line"></i> Add Data
                                 </button>
-                            @endif
+                            {{-- @endif --}}
                         </div>
                     </div>
                 </div>

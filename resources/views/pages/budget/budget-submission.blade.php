@@ -149,9 +149,13 @@
                                 <div class="col-sm-9">
                                     <select class="form-select" id="division_id" name="division_id" required>
                                         <option value="">Select Division</option>
+                                        @php
+                                            // Get primary division ID from user's employment
+                                            $userDivisionId = auth()->user()?->employment?->division_id ?? auth()->user()->division_id ?? null;
+                                        @endphp
                                         @foreach ($divisions as $division)
                                             <option value="{{ $division->id }}"
-                                                {{ (Auth::user()->division_id ?? '') == $division->id ? 'selected' : '' }}>
+                                                {{ (count($divisions) == 1 || $userDivisionId == $division->id) ? 'selected' : '' }}>
                                                 {{ $division->name }}
                                             </option>
                                         @endforeach
@@ -583,11 +587,19 @@
             document.getElementById('budgetSubmissionForm').reset();
             document.getElementById('submission_id').value = '';
             document.getElementById('form_method').value = 'POST';
-            document.getElementById('budgetSubmissionModalLabel').textContent = 'Add Budget Submission';
+            document.getElementById('budgetSubmissionModalLabel').textContent = 'Add Budget Movement';
             document.getElementById('submission_date').value = '{{ date('Y-m-d') }}';
 
             // Reset choices
-            if (divisionChoice) divisionChoice.setChoiceByValue('');
+            if (divisionChoice) {
+                // Keep the default selected option if it exists
+                const defaultOption = document.querySelector('#division_id option[selected]');
+                if (defaultOption) {
+                    divisionChoice.setChoiceByValue(defaultOption.value);
+                } else {
+                    divisionChoice.setChoiceByValue('');
+                }
+            }
             if (workPlanChoice) workPlanChoice.setChoiceByValue('');
             if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue('');
         }

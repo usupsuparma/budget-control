@@ -66,6 +66,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(KPISectionService::class, KPISectionServiceImpl::class);
         $this->app->bind(UserRoleService::class, UserRoleServiceImpl::class);
         $this->app->bind(\App\Services\EmployeeService\EmployeeService::class, \App\Services\EmployeeService\EmployeeServiceImpl::class);
+        $this->app->bind(\App\Services\BudgetSubmissionService\BudgetSubmissionService::class, \App\Services\BudgetSubmissionService\BudgetSubmissionServiceImpl::class);
     }
 
     /**

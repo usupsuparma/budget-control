@@ -2,35 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BudgetSubmission;
-use App\Models\Division;
 use App\Models\BudgetCode;
-use App\Models\KPIWorkPlan;
+use App\Services\BudgetSubmissionService\BudgetSubmissionService;
+use App\Services\BudgetSubmissionService\DTOs\BudgetSubmissionData;
+use App\Http\Requests\StoreBudgetSubmissionRequest;
+use App\Http\Requests\UpdateBudgetSubmissionRequest;
+use App\Exceptions\DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 class BudgetSubmissionController extends Controller
 {
+    public function __construct(
+        private readonly BudgetSubmissionService $budgetSubmissionService
+    ) {}
+
     public function index()
     {
         $user = Auth::user();
-        $budgetSubmissions = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
-            ->orderBy('submission_date', 'desc')
-            ->paginate(15);
+        $data = $this->budgetSubmissionService->getIndexData($user);
 
-        $divisions = Division::get();
-        $workPlans = KPIWorkPlan::orderBy('year', 'desc')
-            ->orderBy('activity')
-            ->get();
-        // budgetCodes will be loaded via AJAX
-        return view('pages.budget.budget-submission', compact(
-            'budgetSubmissions',
-            'divisions',
-            'workPlans',
-            'user'
-        ));
+        return view('pages.budget.budget-submission', $data);
     }
 
     /**
@@ -39,9 +32,8 @@ class BudgetSubmissionController extends Controller
     public function getData(Request $request)
     {
         try {
-            $budgetSubmissions = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
-                ->orderBy('submission_date', 'desc')
-                ->get();
+            $user = Auth::user();
+            $budgetSubmissions = $this->budgetSubmissionService->getAjaxData($user);
 
             $html = '';
             $no = 1;
@@ -94,8 +86,6 @@ class BudgetSubmissionController extends Controller
                 $html .= '</tr>';
             }
 
-            // No data row is intentionally omitted — DataTables shows its own emptyTable message.
-
             return response()->json([
                 'success' => true,
                 'html' => $html,
@@ -109,46 +99,14 @@ class BudgetSubmissionController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(StoreBudgetSubmissionRequest $request)
     {
-        DB::beginTransaction();
         try {
-            $validated = $request->validate([
-                'division_id' => 'required|exists:division,id',
-                'submission_date' => 'required|date',
-                'type' => 'required|in:add,relocation',
-                'work_plan_id' => 'required|exists:kpi_workplans,id',
-                'budget_account_id' => 'required',
-                'estimation_amount' => 'required|numeric|min:0',
-                'description' => 'nullable|string',
-            ]);
-
             $user = Auth::user();
-            if (!$user) {
-                throw new \Exception('User not authenticated. Please login again.');
-            }
-
-            $division = Division::find($validated['division_id']);
-            if (!$division) {
-                throw new \Exception('Division not found. Please select a valid division.');
-            }
-
-            BudgetSubmission::create([
-                'user_id' => $user->id,
-                'division_id' => $validated['division_id'],
-                'division_name' => $division->name,
-                'work_plan_id' => $validated['work_plan_id'],
-                'submission_date' => $validated['submission_date'],
-                'type' => $validated['type'],
-                'budget_account_id' => $validated['budget_account_id'],
-                'estimation_amount' => $validated['estimation_amount'],
-                'description' => $validated['description'],
-                'status' => 0, // Pending
-            ]);
-
-            DB::commit();
+            $data = BudgetSubmissionData::fromArray($request->validated());
             
-            // Check if AJAX request
+            $this->budgetSubmissionService->store($data, $user);
+            
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -158,26 +116,18 @@ class BudgetSubmissionController extends Controller
             
             return redirect()->route('budget.submission.index')
                 ->with('success', 'Budget submission created successfully.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollback();
-            
-            // Check if AJAX request
+        } catch (DomainException $e) {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed. Please check the form and try again.',
-                    'errors' => $e->errors()
+                    'message' => $e->getMessage()
                 ], 422);
             }
             
             return redirect()->back()
-                ->withErrors($e->errors())
                 ->withInput()
-                ->with('error', 'Validation failed. Please check the form and try again.');
+                ->with('error', $e->getMessage());
         } catch (\Exception $e) {
-            DB::rollback();
-            
-            // Check if AJAX request
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -194,37 +144,17 @@ class BudgetSubmissionController extends Controller
     public function edit($id)
     {
         try {
-            $budgetSubmission = BudgetSubmission::with('budgetAccount')->findOrFail($id);
-            
-            // Check if user can edit (only pending submissions)
-            if ($budgetSubmission->status != 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending submissions can be edited. This submission has already been ' . 
-                                ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.'
-                ], 403);
-            }
-
-            $budgetAccountText = null;
-            if ($budgetSubmission->budgetAccount) {
-                $budgetAccountText = $budgetSubmission->budgetAccount->stock_code . ' - ' . $budgetSubmission->budgetAccount->name;
-            }
+            $data = $this->budgetSubmissionService->edit($id);
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $budgetSubmission->id,
-                    'division_id' => $budgetSubmission->division_id,
-                    'submission_date' => $budgetSubmission->submission_date->format('Y-m-d'),
-                    'type' => $budgetSubmission->type,
-                    'work_plan_id' => $budgetSubmission->work_plan_id,
-                    'budget_account_id' => $budgetSubmission->budget_account_id,
-                    'budget_account_text' => $budgetAccountText,
-                    'estimation_amount' => $budgetSubmission->estimation_amount,
-                    'description' => $budgetSubmission->description,
-                    'status' => $budgetSubmission->status,
-                ]
+                'data' => $data
             ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -238,47 +168,13 @@ class BudgetSubmissionController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateBudgetSubmissionRequest $request, $id)
     {
-        DB::beginTransaction();
         try {
-            $budgetSubmission = BudgetSubmission::findOrFail($id);
-
-            // Check if user can edit
-            if ($budgetSubmission->status != 0) {
-                throw new \Exception('Only pending submissions can be edited. This submission has already been ' . 
-                                    ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.');
-            }
-
-            $validated = $request->validate([
-                'division_id' => 'required|exists:division,id',
-                'submission_date' => 'required|date',
-                'type' => 'required|in:add,relocation',
-                'work_plan_id' => 'required|exists:kpi_workplans,id',
-                'budget_account_id' => 'required',
-                'estimation_amount' => 'required|numeric|min:0',
-                'description' => 'nullable|string',
-            ]);
-
-            $division = Division::find($validated['division_id']);
-            if (!$division) {
-                throw new \Exception('Division not found. Please select a valid division.');
-            }
-
-            $budgetSubmission->update([
-                'division_id' => $validated['division_id'],
-                'division_name' => $division->name,
-                'work_plan_id' => $validated['work_plan_id'],
-                'submission_date' => $validated['submission_date'],
-                'type' => $validated['type'],
-                'budget_account_id' => $validated['budget_account_id'],
-                'estimation_amount' => $validated['estimation_amount'],
-                'description' => $validated['description'],
-            ]);
-
-            DB::commit();
+            $data = BudgetSubmissionData::fromArray($request->validated());
             
-            // Check if AJAX request
+            $this->budgetSubmissionService->update($id, $data);
+            
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -288,46 +184,32 @@ class BudgetSubmissionController extends Controller
             
             return redirect()->route('budget.submission.index')
                 ->with('success', 'Budget submission updated successfully.');
+        } catch (DomainException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollback();
-            
-            // Check if AJAX request
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Budget submission not found. It may have been deleted.'
                 ], 404);
             }
-            
             return redirect()->route('budget.submission.index')
                 ->with('error', 'Budget submission not found. It may have been deleted.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollback();
-            
-            // Check if AJAX request
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed. Please check the form and try again.',
-                    'errors' => $e->errors()
-                ], 422);
-            }
-            
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput()
-                ->with('error', 'Validation failed. Please check the form and try again.');
         } catch (\Exception $e) {
-            DB::rollback();
-            
-            // Check if AJAX request
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to update budget submission: ' . $e->getMessage()
                 ], 500);
             }
-            
             return redirect()->route('budget.submission.index')
                 ->with('error', 'Failed to update budget submission: ' . $e->getMessage());
         }
@@ -335,34 +217,24 @@ class BudgetSubmissionController extends Controller
 
     public function destroy($id)
     {
-        DB::beginTransaction();
         try {
-            $budgetSubmission = BudgetSubmission::findOrFail($id);
+            $this->budgetSubmissionService->destroy($id);
 
-            // Check if user can delete (only pending submissions)
-            if ($budgetSubmission->status != 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending submissions can be deleted. This submission has already been ' . 
-                                ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.'
-                ], 403);
-            }
-
-            $budgetSubmission->delete();
-
-            DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Budget submission deleted successfully.'
             ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Budget submission not found. It may have been already deleted.'
             ], 404);
         } catch (\Exception $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete budget submission: ' . $e->getMessage()
@@ -372,33 +244,24 @@ class BudgetSubmissionController extends Controller
 
     public function approve($id)
     {
-        DB::beginTransaction();
         try {
-            $budgetSubmission = BudgetSubmission::findOrFail($id);
+            $this->budgetSubmissionService->approve($id);
 
-            if ($budgetSubmission->status != 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending submissions can be approved. This submission has already been ' . 
-                                ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.'
-                ], 403);
-            }
-
-            $budgetSubmission->update(['status' => 1]);
-
-            DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Budget submission approved successfully.'
             ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Budget submission not found. It may have been deleted.'
             ], 404);
         } catch (\Exception $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to approve budget submission: ' . $e->getMessage()
@@ -408,33 +271,24 @@ class BudgetSubmissionController extends Controller
 
     public function reject($id)
     {
-        DB::beginTransaction();
         try {
-            $budgetSubmission = BudgetSubmission::findOrFail($id);
+            $this->budgetSubmissionService->reject($id);
 
-            if ($budgetSubmission->status != 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending submissions can be rejected. This submission has already been ' . 
-                                ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.'
-                ], 403);
-            }
-
-            $budgetSubmission->update(['status' => 2]);
-
-            DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Budget submission rejected successfully.'
             ]);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Budget submission not found. It may have been deleted.'
             ], 404);
         } catch (\Exception $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reject budget submission: ' . $e->getMessage()

@@ -80,6 +80,24 @@ class KPIDepartmentServiceImpl implements KPIDepartmentService
         ])->toArray();
     }
 
+    public function getDepartmentsByKpiDivision(int $kpiDivisionId): array
+    {
+        $kpiDivision = KPIDivision::find($kpiDivisionId);
+        
+        if (!$kpiDivision) {
+            return [];
+        }
+
+        return Department::where('division_id', $kpiDivision->division_id)
+            ->orderBy('name')
+            ->get()
+            ->map(fn($dept) => [
+                'id' => $dept->id,
+                'text' => $dept->name,
+            ])
+            ->toArray();
+    }
+
     public function getDataTableRows(?int $year): array
     {
         $filterYear = $year ?? now()->year;

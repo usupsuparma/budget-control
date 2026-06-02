@@ -480,7 +480,11 @@
 
                         <div class="col-md-4">
                             <label class="form-label">Revenue/Cost</label>
-                            <input type="text" name="revenue_cost" class="form-control" required>
+                            <select name="revenue_cost" class="form-select" required>
+                                <option value="">Select</option>
+                                <option value="Revenue">Revenue</option>
+                                <option value="Cost">Cost</option>
+                            </select>
                         </div>
 
                         <div class="col-md-4" hidden>
@@ -765,6 +769,7 @@ $years = range(2023, date('Y') + 5);
     const updateUrlTpl = kpiDeptUrls.update;
     const deleteUrlTpl = kpiDeptUrls.destroy;
     const kpiDivisionsBaseUrl = kpiDeptUrls.kpiDivisions;
+    const departmentsByDivisionBaseUrl = kpiDeptUrls.departmentsByDivision;
     const csrfToken = "{{ csrf_token() }}";
 
     let mode = 'create'; // 'create' | 'edit'
@@ -793,6 +798,38 @@ $years = range(2023, date('Y') + 5);
                 }
                 if (selectedId) {
                     select.val(selectedId);
+                } else {
+                    // Trigger change to reset dependent department select if needed
+                    select.trigger('change');
+                }
+            }).always(function() {
+                select.prop('disabled', false);
+            });
+        }
+
+        // ── Load Departments filtered by KPI Division ──
+        function loadDepartments(kpiDivisionId, selectedDeptId) {
+            const select = $('select[name="department_id"]');
+            
+            if (!kpiDivisionId) {
+                select.empty().append('<option value="">Select Department</option>');
+                return;
+            }
+
+            const url = departmentsByDivisionBaseUrl + '?kpi_division_id=' + encodeURIComponent(kpiDivisionId);
+            select.prop('disabled', true);
+
+            $.get(url, function(res) {
+                select.empty().append('<option value="">Select Department</option>');
+                if (res.success && res.data) {
+                    $.each(res.data, function(_, item) {
+                        select.append(
+                            $('<option>', { value: item.id, text: item.text })
+                        );
+                    });
+                }
+                if (selectedDeptId) {
+                    select.val(selectedDeptId);
                 }
             }).always(function() {
                 select.prop('disabled', false);
@@ -804,7 +841,15 @@ $years = range(2023, date('Y') + 5);
             const year = $(this).val();
             if (year) {
                 loadKpiDivisions(year, null);
+            } else {
+                $('#kpi_division_select').empty().append('<option value="">Select KPI Division</option>').trigger('change');
             }
+        });
+
+        // Reload departments when KPI Division changes
+        $('#kpi_division_select').on('change', function() {
+            const kpiDivisionId = $(this).val();
+            loadDepartments(kpiDivisionId, null);
         });
 
         if (currentDeptYear && (!yearDeptFilter.val() || yearDeptFilter.val() === '')) {
@@ -1010,6 +1055,7 @@ $years = range(2023, date('Y') + 5);
             $('#btn-save-kpi-dept').text('Save');
             $('#kpi_department_id').val('');
             $('#kpiDepartmentForm')[0].reset();
+            $('select[name="department_id"]').empty().append('<option value="">Select Department</option>');
 
             // Load divisions for the currently selected modal year
             const modalYear = $('#kpiDepartmentForm select[name="year"]').val() || currentDeptYear;
@@ -1059,6 +1105,9 @@ $years = range(2023, date('Y') + 5);
 
                 // Load divisions for this year then pre-select
                 loadKpiDivisions(d.year, d.kpi_division_id);
+                
+                // Load departments for this division then pre-select
+                loadDepartments(d.kpi_division_id, d.department_id);
 
                 if (window.applyKpiDateFromDb) {
                     window.applyKpiDateFromDb(
@@ -1112,7 +1161,7 @@ $years = range(2023, date('Y') + 5);
                 duration_days: form.find('[name="duration_days"]').val(),
                 schedule_start: form.find('[name="schedule_start"]').val(),
                 schedule_end: form.find('[name="schedule_end"]').val(),
-                revenue_cost: form.find('[name="revenue_cost"]').val().trim(),
+                revenue_cost: form.find('[name="revenue_cost"]').val() || "",
                 pic: form.find('[name="pic"]').val().trim(),
                 description: form.find('[name="description"]').val().trim(),
             };

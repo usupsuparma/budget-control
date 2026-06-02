@@ -17,6 +17,12 @@ interface KPIDepartmentService
      */
     public function getKpiDivisionsByYear(int $year): array;
 
+    /**
+     * Return Departments filtered by KPI Division ID (actually filters by the underlying division_id).
+     * Returns [{id, text}] for dropdown population.
+     */
+    public function getDepartmentsByKpiDivision(int $kpiDivisionId): array;
+
     public function create(KPIDepartmentData $data): KPIDepartment;
 
     public function update(int $id, KPIDepartmentData $data): KPIDepartment;

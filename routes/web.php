@@ -312,6 +312,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/kpi-divisions', [KPIDepartmentController::class, 'getKpiDivisionsForForm'])
             ->name('KPIDepartment.kpiDivisions');
 
+        Route::get('/departments-by-division', [KPIDepartmentController::class, 'getDepartmentsByDivision'])
+            ->name('KPIDepartment.departmentsByDivision');
+
         Route::get('/create', [KPIDepartmentController::class, 'create'])
             // ->middleware('permission:kpi.KPIDepartment.create')
             ->name('KPIDepartment.create');

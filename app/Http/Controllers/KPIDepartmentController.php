@@ -30,6 +30,7 @@ class KPIDepartmentController extends Controller
             'update'       => route('KPIDepartment.update', ['id' => ':id']),
             'destroy'      => route('KPIDepartment.destroy', ['KPIDepartment' => ':id']),
             'kpiDivisions' => route('KPIDepartment.kpiDivisions'),
+            'departmentsByDivision' => route('KPIDepartment.departmentsByDivision'),
         ];
 
         return view('pages.kpi.department_rev1', $data);
@@ -49,6 +50,33 @@ class KPIDepartmentController extends Controller
                 'status'  => 'success',
                 'message' => 'Data berhasil diambil.',
                 'data'    => $divisions,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Internal Server Error',
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX endpoint: return Departments filtered by KPI Division ID.
+     */
+    public function getDepartmentsByDivision(Request $request): JsonResponse
+    {
+        try {
+            $kpiDivisionId = $request->query('kpi_division_id');
+            $departments = $this->service->getDepartmentsByKpiDivision((int)$kpiDivisionId);
+
+            return response()->json([
+                'success' => true,
+                'status'  => 'success',
+                'message' => 'Data berhasil diambil.',
+                'data'    => $departments,
             ]);
         } catch (\Throwable $e) {
             Log::error($e);

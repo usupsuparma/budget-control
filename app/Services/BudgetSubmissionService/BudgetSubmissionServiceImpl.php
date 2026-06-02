@@ -30,11 +30,7 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
             $query->whereIn('id', $divisionIds);
         })->get();
 
-        $workPlans = KPIWorkPlan::orderBy('year', 'desc')
-            ->orderBy('activity')
-            ->get();
-
-        return compact('budgetSubmissions', 'divisions', 'workPlans', 'user', 'isAdmin');
+        return compact('budgetSubmissions', 'divisions', 'user', 'isAdmin');
     }
 
     public function getAjaxData(mixed $user): Collection

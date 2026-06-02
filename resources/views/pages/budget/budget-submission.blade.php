@@ -176,7 +176,8 @@
                                         class="text-danger">*</span></label>
                                 <div class="col-sm-9">
                                     <input type="date" class="form-control" id="submission_date"
-                                        name="submission_date" value="{{ date('Y-m-d') }}" required>
+                                        name="submission_date" value="{{ date('Y-m-d') }}"
+                                        min="{{ date('Y') }}-01-01" max="{{ date('Y') }}-12-31" required>
                                 </div>
                             </div>
 
@@ -201,12 +202,7 @@
                                         class="text-danger">*</span></label>
                                 <div class="col-sm-9">
                                     <select class="form-select" id="work_plan_id" name="work_plan_id" required>
-                                        <option value="">Select Work Plan</option>
-                                        @foreach ($workPlans as $workPlan)
-                                            <option value="{{ $workPlan->id }}">
-                                                [{{ $workPlan->year }}] {{ $workPlan->activity }}
-                                            </option>
-                                        @endforeach
+                                        <option value="">Select Division first</option>
                                     </select>
                                 </div>
                             </div>
@@ -305,6 +301,16 @@
                 placeholder: true,
                 placeholderValue: 'Select Work Plan'
             });
+
+            // Handle division change to filter work plans
+            document.getElementById('division_id').addEventListener('change', function(e) {
+                loadWorkPlans(e.detail.value);
+            });
+
+            // Initial load of work plans if division is already selected
+            if (document.getElementById('division_id').value) {
+                loadWorkPlans(document.getElementById('division_id').value);
+            }
 
             // Initialize Choices.js for Budget Account (will be populated after AJAX loads)
             budgetAccountChoice = new Choices('#budget_account_id', {
@@ -583,6 +589,74 @@
                 });
         }
 
+        /**
+         * Load work plans filtered by division via AJAX
+         */
+        function loadWorkPlans(divisionId, selectedWorkPlanId = null) {
+            if (!divisionId) {
+                if (workPlanChoice) {
+                    workPlanChoice.clearStore();
+                    workPlanChoice.setChoices([{
+                        value: '',
+                        label: 'Select Division first',
+                        disabled: true,
+                        selected: true
+                    }], 'value', 'label', true);
+                }
+                return;
+            }
+
+            // Show loading state
+            if (workPlanChoice) {
+                workPlanChoice.clearStore();
+                workPlanChoice.setChoices([{
+                    value: '',
+                    label: 'Loading work plans...',
+                    disabled: true
+                }], 'value', 'label', true);
+            }
+
+            return fetch(`{{ route('budget.submission.workplansByDivision') }}?division_id=${divisionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (workPlanChoice) {
+                        workPlanChoice.clearStore();
+
+                        if (data.length === 0) {
+                            workPlanChoice.setChoices([{
+                                value: '',
+                                label: 'No approved work plans found for this year',
+                                disabled: true,
+                                selected: true
+                            }], 'value', 'label', true);
+                        } else {
+                            workPlanChoice.setChoices([{
+                                value: '',
+                                label: 'Select Work Plan',
+                                disabled: true,
+                                selected: !selectedWorkPlanId
+                            }], 'value', 'label', true);
+
+                            workPlanChoice.setChoices(data.map(item => ({
+                                value: String(item.value),
+                                label: item.label,
+                                selected: selectedWorkPlanId && String(item.value) === String(selectedWorkPlanId)
+                            })), 'value', 'label', false);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading work plans:', error);
+                    if (workPlanChoice) {
+                        workPlanChoice.setChoices([{
+                            value: '',
+                            label: 'Error loading work plans',
+                            disabled: true
+                        }], 'value', 'label', true);
+                    }
+                });
+        }
+
         function resetForm() {
             document.getElementById('budgetSubmissionForm').reset();
             document.getElementById('submission_id').value = '';
@@ -595,12 +669,14 @@
                 // Keep the default selected option if it exists
                 const defaultOption = document.querySelector('#division_id option[selected]');
                 if (defaultOption) {
-                    divisionChoice.setChoiceByValue(defaultOption.value);
+                    const val = defaultOption.value;
+                    divisionChoice.setChoiceByValue(val);
+                    loadWorkPlans(val);
                 } else {
                     divisionChoice.setChoiceByValue('');
+                    loadWorkPlans('');
                 }
             }
-            if (workPlanChoice) workPlanChoice.setChoiceByValue('');
             if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue('');
         }
 
@@ -621,7 +697,11 @@
                         document.getElementById('budgetSubmissionModalLabel').textContent = 'Edit Budget Submission';
 
                         // Set form values
-                        if (divisionChoice) divisionChoice.setChoiceByValue(String(data.division_id));
+                        if (divisionChoice) {
+                            divisionChoice.setChoiceByValue(String(data.division_id));
+                            // Load work plans and select the current one
+                            loadWorkPlans(data.division_id, data.work_plan_id);
+                        }
 
                         // Set date directly (already in Y-m-d format from controller)
                         document.getElementById('submission_date').value = data.submission_date;
@@ -632,8 +712,6 @@
                         } else {
                             document.getElementById('type_relocation').checked = true;
                         }
-
-                        if (workPlanChoice) workPlanChoice.setChoiceByValue(String(data.work_plan_id));
 
                         // Set budget account - with a slight delay to ensure Choices.js is ready
                         if (budgetAccountChoice && data.budget_account_id) {

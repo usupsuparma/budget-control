@@ -462,6 +462,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/budget-codes', [BudgetSubmissionController::class, 'getBudgetCodes'])
             ->name('budget.submission.budgetCodes');
 
+        Route::get('/workplans-by-division', [BudgetSubmissionController::class, 'getWorkPlansByDivision'])
+            ->name('budget.submission.workplansByDivision');
+
         Route::post('/', [BudgetSubmissionController::class, 'store'])
             ->name('budget.submission.store');
 

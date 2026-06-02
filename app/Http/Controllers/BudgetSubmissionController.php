@@ -297,6 +297,34 @@ class BudgetSubmissionController extends Controller
     }
 
     /**
+     * Get workplans filtered by division and current year
+     */
+    public function getWorkPlansByDivision(Request $request)
+    {
+        $divisionId = $request->get('division_id');
+        $year = date('Y');
+
+        if (!$divisionId) {
+            return response()->json([]);
+        }
+
+        $workPlans = \App\Models\KPIWorkPlan::whereDivisionIn([$divisionId])
+            ->where('year', $year)
+            ->where('status', 'approved')
+            ->select('id', 'activity', 'year')
+            ->orderBy('activity')
+            ->get()
+            ->map(function($wp) {
+                return [
+                    'value' => $wp->id,
+                    'label' => '[' . $wp->year . '] ' . $wp->activity
+                ];
+            });
+
+        return response()->json($workPlans);
+    }
+
+    /**
      * Get all budget codes for dropdown (simple AJAX)
      */
     public function getAllBudgetCodes()

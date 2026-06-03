@@ -78,7 +78,7 @@ class BudgetSubmissionController extends Controller
                     $html .= '<button type="button" class="btn btn-sm btn-success" onclick="approveSubmission(' . $submission->id . ')" title="Approve">';
                     $html .= '<i class="ri-check-line"></i></button>';
                 } else {
-                    $html .= '<button type="button" class="btn btn-sm btn-secondary" disabled>';
+                    $html .= '<button type="button" class="btn btn-sm btn-info" onclick="viewBudgetSubmissionDetail(' . $submission->id . ')" title="View Detail">';
                     $html .= '<i class="ri-eye-line"></i></button>';
                 }
                 
@@ -95,6 +95,42 @@ class BudgetSubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load table data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $submission = \App\Models\BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $submission->id,
+                    'submission_date' => $submission->submission_date->format('d/m/Y'),
+                    'division' => $submission->division->name ?? '-',
+                    'type_label' => $submission->type_label,
+                    'work_plan' => $submission->workPlan->activity ?? '-',
+                    'budget_account' => trim(($submission->budgetAccount->stock_code ?? '-') . ' | ' . ($submission->budgetAccount->name ?? '-')),
+                    'description' => $submission->description ?? '-',
+                    'estimation_amount' => (int) $submission->estimation_amount,
+                    'status_label' => $submission->status_label,
+                    'status_color' => $submission->status_color,
+                    'created_by' => $submission->user?->first_name ?: ($submission->user?->full_name ?? '-'),
+                    'status' => (int) $submission->status
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Budget submission not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load budget submission detail: ' . $e->getMessage()
             ], 500);
         }
     }

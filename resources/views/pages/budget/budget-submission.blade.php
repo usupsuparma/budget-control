@@ -115,7 +115,13 @@
                                                         </button>
                                                     </div>
                                                 @else
-                                                    <span class="text-muted">-</span>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-info"
+                                                            onclick="viewBudgetSubmissionDetail({{ $submission->id }})"
+                                                            title="View Detail">
+                                                            <i class="ri-eye-line"></i>
+                                                        </button>
+                                                    </div>
                                                 @endif
                                             </td>
                                         </tr>
@@ -239,6 +245,41 @@
                             <button type="submit" class="btn btn-primary">Save</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Submission Detail Modal -->
+        <div class="modal fade" id="budgetSubmissionDetailModal" tabindex="-1" aria-labelledby="budgetSubmissionDetailModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="budgetSubmissionDetailModalLabel">Budget Movement Detail</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Date</dt>
+                            <dd class="col-sm-8" id="detailSubmissionDate">-</dd>
+                            <dt class="col-sm-4">Division</dt>
+                            <dd class="col-sm-8" id="detailSubmissionDivision">-</dd>
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8" id="detailSubmissionType">-</dd>
+                            <dt class="col-sm-4">Work Plan</dt>
+                            <dd class="col-sm-8" id="detailSubmissionWorkPlan">-</dd>
+                            <dt class="col-sm-4">Budget Account</dt>
+                            <dd class="col-sm-8" id="detailSubmissionBudgetAccount">-</dd>
+                            <dt class="col-sm-4">Estimation</dt>
+                            <dd class="col-sm-8" id="detailSubmissionAmount">-</dd>
+                            <dt class="col-sm-4">Description</dt>
+                            <dd class="col-sm-8" id="detailSubmissionDescription">-</dd>
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8" id="detailSubmissionStatus">-</dd>
+                            <dt class="col-sm-4">Created By</dt>
+                            <dd class="col-sm-8" id="detailSubmissionCreator">-</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
@@ -802,6 +843,54 @@
                         text: 'Failed to load submission data. Please try again.'
                     });
                 });
+        }
+
+        function viewBudgetSubmissionDetail(id) {
+            fetch(`/budget-submission/${id}/detail`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (!result.success) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Failed!',
+                            text: result.message
+                        });
+                        return;
+                    }
+
+                    const data = result.data;
+                    document.getElementById('detailSubmissionDate').textContent = data.submission_date || '-';
+                    document.getElementById('detailSubmissionDivision').textContent = data.division || '-';
+                    document.getElementById('detailSubmissionType').textContent = data.type_label || '-';
+                    document.getElementById('detailSubmissionWorkPlan').textContent = data.work_plan || '-';
+                    document.getElementById('detailSubmissionBudgetAccount').textContent = data.budget_account || '-';
+                    document.getElementById('detailSubmissionAmount').textContent = formatIdr(data.estimation_amount || 0);
+                    document.getElementById('detailSubmissionDescription').textContent = data.description || '-';
+                    document.getElementById('detailSubmissionCreator').textContent = data.created_by || '-';
+
+                    const statusBadge = `<span class=\"badge bg-${data.status_color}\">${data.status_label}</span>`;
+                    document.getElementById('detailSubmissionStatus').innerHTML = statusBadge;
+
+                    const modal = new bootstrap.Modal(document.getElementById('budgetSubmissionDetailModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error loading budget submission detail:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to load budget submission detail.'
+                    });
+                });
+        }
+
+        function formatIdr(value) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value || 0));
         }
 
         function deleteSubmission(id) {

@@ -474,6 +474,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [BudgetSubmissionController::class, 'edit'])
             ->name('budget.submission.edit');
 
+        Route::get('/{id}/detail', [BudgetSubmissionController::class, 'show'])
+            ->name('budget.submission.detail');
+
         Route::put('/{id}', [BudgetSubmissionController::class, 'update'])
             ->name('budget.submission.update');
 

@@ -10,7 +10,7 @@ use App\Http\Requests\UpdateBudgetSubmissionRequest;
 use App\Exceptions\DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class BudgetSubmissionController extends Controller
 {
@@ -327,21 +327,75 @@ class BudgetSubmissionController extends Controller
     /**
      * Get all budget codes for dropdown (simple AJAX)
      */
-    public function getAllBudgetCodes()
+    public function getAllBudgetCodes(Request $request)
     {
-        $budgetCodes = Cache::remember('budget_codes_all', 3600, function() {
-            return BudgetCode::select('id', 'stock_code', 'name')
-                ->orderBy('stock_code')
-                ->get()
-                ->map(function($code) {
-                    return [
-                        'value' => $code->id,
-                        'label' => $code->stock_code . ' - ' . $code->name
-                    ];
-                });
-        });
+        $query = trim((string) $request->get('q', ''));
+        $page = max(1, (int) $request->get('page', 1));
+        $limit = min(100, max(1, (int) $request->get('limit', 20)));
+        $selectedId = $request->get('id');
 
-        return response()->json($budgetCodes);
+        $codeColumn = Schema::hasColumn('budget_code', 'budget_code') ? 'budget_code' : 'stock_code';
+
+        // Optional single fetch for edit mode
+        if (!empty($selectedId)) {
+            $selected = BudgetCode::select('id', $codeColumn, 'name')
+                ->where('id', $selectedId)
+                ->first();
+
+            if (! $selected) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'has_more' => false,
+                    'page' => 1,
+                    'total' => 0,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [[
+                    'value' => (string) $selected->id,
+                    'label' => $selected->{$codeColumn} . ' - ' . $selected->name
+                ]],
+                'has_more' => false,
+                'page' => 1,
+                'total' => 1,
+            ]);
+        }
+
+        $queryBuilder = BudgetCode::query()
+            ->select('id', $codeColumn, 'name');
+
+        if (!empty($query)) {
+            $queryBuilder->where(function($builder) use ($query, $codeColumn) {
+                $builder->where($codeColumn, 'like', '%' . $query . '%')
+                    ->orWhere('name', 'like', '%' . $query . '%');
+            });
+        }
+
+        $queryBuilder->orderBy($codeColumn);
+
+        $total = $queryBuilder->count();
+        $offset = ($page - 1) * $limit;
+        $budgetCodes = $queryBuilder->skip($offset)->take($limit)->get()
+            ->map(function($code) use ($codeColumn) {
+                $codeValue = $code->{$codeColumn};
+                return [
+                    'value' => (string) $code->id,
+                    'label' => $codeValue . ' - ' . $code->name
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $budgetCodes,
+            'has_more' => (($offset + $limit) < $total),
+            'page' => $page,
+            'total' => $total,
+            'query' => $query,
+            'limit' => $limit,
+        ]);
     }
 
     /**

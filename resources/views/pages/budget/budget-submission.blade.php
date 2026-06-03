@@ -277,16 +277,18 @@
 
     <script>
         let divisionChoice, workPlanChoice, budgetAccountChoice;
-        let budgetCodesData = [];
-        let budgetCodesLoaded = false;
+        let budgetAccountQuery = '';
+        let budgetAccountPage = 1;
+        let budgetAccountLoading = false;
+        let budgetAccountHasMore = true;
+        let budgetAccountSearchTimer;
+        let budgetAccountScrollBound = false;
+        const budgetAccountPageSize = 20;
         let dataTable;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize DataTable
             initDataTable();
-
-            // Load budget codes immediately on page load
-            loadBudgetCodes();
 
             divisionChoice = new Choices('#division_id', {
                 searchEnabled: true,
@@ -312,14 +314,8 @@
                 loadWorkPlans(document.getElementById('division_id').value);
             }
 
-            // Initialize Choices.js for Budget Account (will be populated after AJAX loads)
-            budgetAccountChoice = new Choices('#budget_account_id', {
-                searchEnabled: true,
-                removeItemButton: false,
-                placeholder: true,
-                placeholderValue: 'Select Budget Account',
-                searchPlaceholderValue: 'Search budget account...'
-            });
+            // Initialize budget account dropdown with server-side search + pagination
+            initBudgetAccountChoices();
 
             // Handle form submission with AJAX
             document.getElementById('budgetSubmissionForm').addEventListener('submit', handleFormSubmit);
@@ -481,111 +477,183 @@
         }
 
         /**
-         * Load budget codes via AJAX with localStorage caching (1 day)
+         * Initialize budget account select with server-side pagination + infinite scroll
          */
-        function loadBudgetCodes() {
-            const CACHE_KEY = 'budgetCodes_cache';
-            const CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+        function initBudgetAccountChoices() {
+            const selectEl = document.getElementById('budget_account_id');
 
-            // Show loading state
-            if (budgetAccountChoice) {
-                budgetAccountChoice.setChoices([{
-                    value: '',
-                    label: 'Loading budget accounts...',
-                    disabled: true
-                }], 'value', 'label', true);
+            if (!selectEl) {
+                return;
             }
 
-            // Check if data exists in localStorage and is not expired
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (cachedData) {
-                try {
-                    const parsedCache = JSON.parse(cachedData);
-                    const now = new Date().getTime();
+            selectEl.innerHTML = '<option value="">Select Budget Account</option>';
 
-                    // Check if cache is still valid (less than 1 day old)
-                    if (parsedCache.timestamp && (now - parsedCache.timestamp) < CACHE_DURATION) {
-                        console.log('Loading budget codes from cache');
+            budgetAccountChoice = new Choices(selectEl, {
+                searchEnabled: true,
+                searchChoices: false,
+                removeItemButton: false,
+                placeholder: true,
+                placeholderValue: 'Select Budget Account',
+                searchPlaceholderValue: 'Search budget account...',
+                shouldSort: false
+            });
 
-                        // Use cached data
-                        budgetCodesData = parsedCache.data;
-                        budgetCodesLoaded = true;
+            function bindScrollListener() {
+                if (budgetAccountScrollBound) return;
+                budgetAccountScrollBound = true;
 
-                        if (budgetAccountChoice) {
-                            // Clear existing choices
-                            budgetAccountChoice.clearStore();
+                const listEl = budgetAccountChoice.choiceList && budgetAccountChoice.choiceList.element;
+                if (!listEl) return;
 
-                            // Add placeholder
-                            budgetAccountChoice.setChoices([{
-                                value: '',
-                                label: 'Select Budget Account',
-                                disabled: true,
-                                selected: true
-                            }], 'value', 'label', true);
-
-                            // Add all budget codes
-                            budgetAccountChoice.setChoices(parsedCache.data, 'value', 'label', false);
+                listEl.addEventListener('scroll', function() {
+                    const threshold = 60;
+                    if (
+                        listEl.scrollTop + listEl.clientHeight >=
+                        listEl.scrollHeight - threshold
+                    ) {
+                        if (!budgetAccountLoading && budgetAccountHasMore) {
+                            budgetAccountPage++;
+                            fetchBudgetAccountCodes(budgetAccountQuery, budgetAccountPage, false);
                         }
-
-                        return Promise.resolve(parsedCache.data);
-                    } else {
-                        console.log('Cache expired, fetching fresh data');
                     }
-                } catch (e) {
-                    console.warn('Error parsing cached data:', e);
-                    localStorage.removeItem(CACHE_KEY);
-                }
+                });
             }
 
-            // Fetch from API if no valid cache
-            return fetch('{{ route('budget.submission.budgetCodesAll') }}')
+            function triggerLoad() {
+                budgetAccountPage = 1;
+                budgetAccountHasMore = true;
+                fetchBudgetAccountCodes(budgetAccountQuery, 1, true);
+                bindScrollListener();
+            }
+
+            selectEl.addEventListener('showDropdown', triggerLoad);
+
+            // Fallback to container click in case showDropdown doesn't fire first time
+            setTimeout(function() {
+                const containerEl = budgetAccountChoice.containerOuter && budgetAccountChoice.containerOuter.element;
+                if (!containerEl) return;
+                containerEl.addEventListener('click', function() {
+                    if (budgetAccountChoice.isOpen) {
+                        triggerLoad();
+                    }
+                });
+            }, 0);
+
+            selectEl.addEventListener('search', function(e) {
+                const query = (e && e.detail && e.detail.value) ? e.detail.value : '';
+                clearTimeout(budgetAccountSearchTimer);
+                budgetAccountSearchTimer = setTimeout(() => {
+                    budgetAccountQuery = query;
+                    budgetAccountPage = 1;
+                    budgetAccountHasMore = true;
+                    fetchBudgetAccountCodes(budgetAccountQuery, 1, true);
+                }, 300);
+            });
+
+            // Reload page 1 when input is cleared
+            setTimeout(function() {
+                const inputEl = budgetAccountChoice.input && budgetAccountChoice.input.element;
+                if (!inputEl) return;
+
+                inputEl.addEventListener('input', function() {
+                    if (this.value === '') {
+                        clearTimeout(budgetAccountSearchTimer);
+                        budgetAccountQuery = '';
+                        budgetAccountPage = 1;
+                        budgetAccountHasMore = true;
+                        fetchBudgetAccountCodes('', 1, true);
+                    }
+                });
+            }, 0);
+        }
+
+        function normalizeLabel(item) {
+            const record = item || {};
+            const code = record.budget_code || record.stock_code || record.value || '-';
+            const name = record.name || '';
+            return `${code} - ${name}`.trim().replace(/ - $/, '');
+        }
+
+        /**
+         * Fetch budget accounts with pagination
+         */
+        function fetchBudgetAccountCodes(query, page, replace = false) {
+            if (budgetAccountLoading) return;
+            if (!replace && !budgetAccountHasMore) return;
+
+            if (!budgetAccountChoice) return;
+
+            budgetAccountLoading = true;
+            const params = new URLSearchParams({
+                q: query || '',
+                page: String(page),
+                limit: String(budgetAccountPageSize),
+            });
+
+            fetch('{{ route('budget.submission.budgetCodesAll') }}?' + params.toString())
                 .then(response => response.json())
-                .then(data => {
-                    budgetCodesData = data;
-                    budgetCodesLoaded = true;
+                .then(payload => {
+                    if (!payload || !payload.success) {
+                        budgetAccountLoading = false;
+                        return;
+                    }
 
-                    // Store in localStorage with timestamp
-                    try {
-                        const cacheObject = {
-                            data: data,
-                            timestamp: new Date().getTime()
+                    budgetAccountHasMore = payload.has_more || false;
+                    const results = payload.data || [];
+                    const choices = results.map(item => {
+                        const value = String(item.value);
+                        const label = item.label || normalizeLabel(item);
+                        return {
+                            value,
+                            label,
                         };
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-                        console.log('Budget codes cached successfully');
-                    } catch (e) {
-                        console.warn('Error caching budget codes:', e);
-                    }
+                    });
 
-                    if (budgetAccountChoice) {
-                        // Clear existing choices
-                        budgetAccountChoice.clearStore();
-
-                        // Add placeholder
-                        budgetAccountChoice.setChoices([{
-                            value: '',
-                            label: 'Select Budget Account',
-                            disabled: true,
-                            selected: true
-                        }], 'value', 'label', true);
-
-                        // Add all budget codes
-                        budgetAccountChoice.setChoices(data, 'value', 'label', false);
-                    }
-
-                    console.log('Budget codes loaded from API:', data.length);
-                    return data;
+                    budgetAccountChoice.setChoices(choices, 'value', 'label', replace);
                 })
                 .catch(error => {
-                    console.error('Error loading budget codes:', error);
-                    budgetCodesLoaded = false;
-                    if (budgetAccountChoice) {
-                        budgetAccountChoice.setChoices([{
-                            value: '',
-                            label: 'Error loading budget accounts',
-                            disabled: true
-                        }], 'value', 'label', true);
+                    console.error('Error loading budget account options:', error);
+                })
+                .finally(() => {
+                    budgetAccountLoading = false;
+                });
+        }
+
+        /**
+         * Ensure a selected budget account exists in dropdown when editing existing submission
+         */
+        function ensureBudgetAccountChoiceSelected(budgetAccountId) {
+            if (!budgetAccountChoice || !budgetAccountId) {
+                return Promise.resolve();
+            }
+
+            const target = String(budgetAccountId);
+            const store = budgetAccountChoice._store || {};
+            const existingChoices = Array.isArray(store.choices) ? store.choices : [];
+            const exists = existingChoices.some(item => String(item.value) === target);
+
+            if (exists) {
+                budgetAccountChoice.setChoiceByValue(target);
+                return Promise.resolve();
+            }
+
+            const params = new URLSearchParams({ id: target });
+
+            return fetch('{{ route('budget.submission.budgetCodesAll') }}?' + params.toString())
+                .then(response => response.json())
+                .then(payload => {
+                    if (!payload || !payload.success || !payload.data || payload.data.length === 0) {
+                        return;
                     }
-                    throw error;
+
+                    const item = payload.data[0];
+                    const choiceItem = {
+                        value: String(item.value),
+                        label: item.label || normalizeLabel(item),
+                    };
+
+                    budgetAccountChoice.setChoices([choiceItem], 'value', 'label', false);
+                    budgetAccountChoice.setChoiceByValue(String(item.value));
                 });
         }
 
@@ -681,12 +749,7 @@
         }
 
         function editSubmission(id) {
-            // Ensure budget codes are loaded first
-            const loadPromise = budgetCodesLoaded ? Promise.resolve() : loadBudgetCodes();
-
-            loadPromise.then(() => {
-                    return fetch(`/budget-submission/${id}/edit`);
-                })
+            fetch(`/budget-submission/${id}/edit`)
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
@@ -713,11 +776,8 @@
                             document.getElementById('type_relocation').checked = true;
                         }
 
-                        // Set budget account - with a slight delay to ensure Choices.js is ready
                         if (budgetAccountChoice && data.budget_account_id) {
-                            setTimeout(() => {
-                                budgetAccountChoice.setChoiceByValue(String(data.budget_account_id));
-                            }, 100);
+                            ensureBudgetAccountChoiceSelected(data.budget_account_id);
                         }
 
                         document.getElementById('description').value = data.description || '';

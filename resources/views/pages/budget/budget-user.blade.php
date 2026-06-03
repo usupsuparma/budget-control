@@ -597,7 +597,7 @@
                     </div>
                     <!-- END TAB 1: Budget Items -->
 
-                    <!-- TAB 2: Verification -->
+    <!-- TAB 2: Verification -->
                     <div class="tab-pane fade" id="verification">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -649,6 +649,29 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-clock-history me-2"></i>Verification History
+                                    <span class="badge bg-success ms-2" id="verificationHistoryCountHeader">0</span>
+                                </h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                    onclick="loadVerifiedVerificationItems()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="verifiedVerificationContainer">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading verification history...</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1143,6 +1166,29 @@
         </div>
     </div>
 
+    {{-- Modal: Verification History Detail --}}
+    <div class="modal fade" id="verificationHistoryModal" tabindex="-1" aria-labelledby="verificationHistoryModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="verificationHistoryModalLabel">
+                        <i class="bi bi-check2-circle me-2"></i>Verification Detail
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="verificationHistoryDetails" class="p-3 bg-light rounded mb-3"></div>
+                    <div id="verificationHistorySummary"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal: Bulk Verify --}}
     <div class="modal fade" id="bulkVerifyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -1248,6 +1294,7 @@
         let currentVerifyItemId = null;
         let currentVerifyItemData = null;
         let pendingVerificationItems = [];
+        let verifiedVerificationItems = [];
 
         // Handle tab changes
         $(document).ready(function() {
@@ -1255,6 +1302,7 @@
                 const targetTab = $(e.target).attr('href');
                 if (targetTab === '#verification') {
                     loadPendingVerificationItems();
+                    loadVerifiedVerificationItems();
                 }
                 if (targetTab === '#approvalTab') {
                     loadPendingApprovalItems();
@@ -1444,6 +1492,221 @@
         }
 
         /**
+         * Load verification history (already verified by current user)
+         */
+        function loadVerifiedVerificationItems() {
+            $('#verifiedVerificationContainer').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading verification history...</p>
+            </div>
+        `);
+
+            $.ajax({
+                url: '/budget-verification/verified',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        verifiedVerificationItems = response.data || [];
+                        const count = response.count || verifiedVerificationItems.length;
+                        $('#verificationHistoryCountHeader').text(count);
+                        renderVerifiedVerificationItems(verifiedVerificationItems);
+                    } else {
+                        $('#verificationHistoryCountHeader').text('0');
+                        $('#verifiedVerificationContainer').html(`
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>${response.message || 'Failed to load verification history.'}
+                        </div>
+                    `);
+                    }
+                },
+                error: function() {
+                    $('#verificationHistoryCountHeader').text('0');
+                    $('#verifiedVerificationContainer').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-2"></i>Error loading verification history. Please try again.
+                    </div>
+                `);
+                }
+            });
+        }
+
+        /**
+         * Render verification history items
+         */
+        function renderVerifiedVerificationItems(items) {
+            if (!items || items.length === 0) {
+                $('#verifiedVerificationContainer').html(`
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history fs-1 text-secondary"></i>
+                    <h5 class="mt-3 text-muted">No Verification History</h5>
+                    <p class="text-muted">You have not verified any budget item yet.</p>
+                </div>
+            `);
+                return;
+            }
+
+            let html = `
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" id="verifiedVerificationItemsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="width: 40px;">#</th>
+                            <th>Reference</th>
+                            <th>Description</th>
+                            <th>Workplan</th>
+                            <th>Division / Department</th>
+                            <th>Verified At</th>
+                            <th class="text-end">Verified Total</th>
+                            <th class="text-center" style="width:90px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let rowNumber = 1;
+            items.forEach((verification, index) => {
+                const item = verification.item;
+                if (!item) return;
+
+                html += `
+                <tr>
+                    <td class="text-center">${rowNumber++}</td>
+                    <td>
+                        <span class="fw-semibold text-primary" style="font-size:12px;">${verification.reference_number || '-'}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold" style="font-size:13px;">${item.description || '-'}</div>
+                        <small class="text-muted">${item.stock_code || ''} ${item.budget_code ? '| ' + item.budget_code : ''}</small>
+                    </td>
+                    <td>
+                        <div style="font-size:12px;">${item.workplan_activity || '-'}</div>
+                        <small class="text-muted">Year: ${item.workplan_year || '-'}</small>
+                    </td>
+                    <td>
+                        <div style="font-size:12px;">${item.division_name || '-'}</div>
+                        <small class="text-muted">${item.department_name || '-'}</small>
+                    </td>
+                    <td style="font-size:12px;">${formatApprovalDate(verification.verified_at)}</td>
+                    <td class="text-end fw-bold" style="font-size:12px;">${formatApprovalCurrency(item.total_budget || 0)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="showVerifiedVerificationDetail(${index})" title="Detail">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+            $('#verifiedVerificationContainer').html(html);
+        }
+
+        /**
+         * Show detailed verification history item
+         */
+        function showVerifiedVerificationDetail(index) {
+            const verification = verifiedVerificationItems[index];
+            if (!verification || !verification.item) return;
+
+            const item = verification.item;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthKeys = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+            let monthlyHtml = '';
+            monthKeys.forEach((m, i) => {
+                const val = item.monthly ? (item.monthly[m] || 0) : 0;
+                if (val > 0) {
+                    monthlyHtml += `<span class="badge bg-light text-dark me-1 mb-1">${months[i]}: ${val}</span>`;
+                }
+            });
+
+            const detailsHtml = `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted" style="width:140px;">Reference</td><td class="fw-semibold">${verification.reference_number || '-'}</td></tr>
+                        <tr><td class="text-muted">Description</td><td class="fw-semibold">${item.description || '-'}</td></tr>
+                        <tr><td class="text-muted">Workplan</td><td>${item.workplan_activity || '-'} (${item.workplan_year || '-'})</td></tr>
+                        <tr><td class="text-muted">Division</td><td>${item.division_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Department</td><td>${item.department_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Category</td><td><span class="badge ${categoryColor(item.category_type)}">${item.category_type || '-'}</span></td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted" style="width:140px;">Stock Code</td><td>${item.stock_code || '-'}</td></tr>
+                        <tr><td class="text-muted">Budget Code</td><td>${item.budget_code || '-'}</td></tr>
+                        <tr><td class="text-muted">Cost Center</td><td>${item.cost_center || '-'}</td></tr>
+                        <tr><td class="text-muted">Supplier</td><td>${item.supplier_name || '-'}</td></tr>
+                        <tr><td class="text-muted">Verified At</td><td>${formatApprovalDate(verification.verified_at)}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Estimated Price Per Unit</small>
+                            <div class="fw-bold">${formatApprovalCurrency(item.price_estimation || 0)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Verified Total</small>
+                            <div class="fw-bold text-success">${formatApprovalCurrency(item.total_budget || 0)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-primary bg-opacity-10 border-0">
+                        <div class="card-body py-2 px-3 text-center">
+                            <small class="text-muted">Total Qty</small>
+                            <div class="fw-bold text-primary">${item.total_qty || 0}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-2"><small class="text-muted">Verified Price Per Unit:</small> <span class="fw-semibold">${formatApprovalCurrency(item.unit_price || 0)}</span></div>
+            <div class="mb-2"><small class="text-muted">Notes:</small><div>${verification.notes || '-'}</div></div>
+            ${monthlyHtml ? `<div class="mb-2"><small class="text-muted">Monthly Activity:</small><br>${monthlyHtml}</div>` : ''}
+        `;
+            $('#verificationHistoryDetails').html(detailsHtml);
+            $('#verificationHistorySummary').html(`
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="text-muted">Item Info</h6>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <div><strong>Status:</strong> <span class="badge bg-success">Verified</span></div>
+                            <div><strong>Verification ID:</strong> #${verification.verification_id || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            $('#verificationHistoryModal').modal('show');
+        }
+
+        function categoryColor(type) {
+            const categoryColors = {
+                'Routine': 'bg-secondary',
+                'Turn Around': 'bg-info',
+                'Carry Over': 'bg-warning',
+                'Multi Year': 'bg-primary',
+            };
+            return categoryColors[type] || 'bg-secondary';
+        }
+
+        /**
          * Bulk actions modals and confirmations
          */
         function openBulkVerifyModal() {
@@ -1492,6 +1755,7 @@
                     if (response.success) {
                         Swal.fire('Success!', response.message, 'success');
                         loadPendingVerificationItems();
+                        loadVerifiedVerificationItems();
                         if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
                             loadAllBudgetItems();
                         }
@@ -1556,6 +1820,7 @@
                     if (response.success) {
                         Swal.fire('Rejected!', response.message, 'success');
                         loadPendingVerificationItems();
+                        loadVerifiedVerificationItems();
                         if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
                             loadAllBudgetItems();
                         }
@@ -1598,6 +1863,7 @@
                     if (response.success) {
                         Swal.fire('Import Complete!', response.message, 'success');
                         loadPendingVerificationItems();
+                        loadVerifiedVerificationItems();
                         if (typeof loadAllBudgetItems === 'function' && selectedDivisionId) {
                             loadAllBudgetItems();
                         }
@@ -1779,6 +2045,7 @@
                             showConfirmButton: false
                         });
                         loadPendingVerificationItems();
+                        loadVerifiedVerificationItems();
                         // Also refresh budget items if on that tab
                         if (selectedDivisionId && selectedYear) {
                             loadAllBudgetItems();
@@ -1847,6 +2114,7 @@
                             showConfirmButton: false
                         });
                         loadPendingVerificationItems();
+                        loadVerifiedVerificationItems();
                         // Also refresh budget items if on that tab
                         if (selectedDivisionId && selectedYear) {
                             loadAllBudgetItems();

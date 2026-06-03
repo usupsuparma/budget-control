@@ -23,6 +23,6 @@ class WorkplanBudgetVerification extends Model
 
     public function verifier()
     {
-        return $this->belongsTo(Employee::class, 'verifier_id', 'employee_id');
+        return $this->belongsTo(Employee::class, 'verifier_id', 'id');
     }
 }

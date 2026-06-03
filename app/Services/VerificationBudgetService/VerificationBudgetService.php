@@ -40,6 +40,13 @@ interface VerificationBudgetService
     public function getMyPendingVerifications(): array;
 
     /**
+     * Get verification history for items verified by current user
+     * 
+     * @return array
+     */
+    public function getMyVerifiedVerifications(): array;
+
+    /**
      * Get verification status for an item
      * 
      * @param int $itemId WorkplanBudgetItem ID

@@ -416,6 +416,121 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     }
 
     /**
+     * Get verification history for current verifier
+     */
+    public function getMyVerifiedVerifications(): array
+    {
+        try {
+            $employee = Auth::user();
+            $verifierId = $employee?->id; // Employee.id (PK)
+
+            if (!$verifierId) {
+                return [
+                    'success' => false,
+                    'message' => 'Employee tidak ditemukan.',
+                    'data' => [],
+                ];
+            }
+
+            $verifications = WorkplanBudgetVerification::with([
+                'verifier',
+                'workplanBudgetItem.workplan.KPIDepartment.department',
+                'workplanBudgetItem.workplan.KPIDepartment.kpiDivision.division',
+                'workplanBudgetItem.workplan.kpiSection.section.department',
+                'workplanBudgetItem.workplan.kpiSection.section.department.division',
+                'workplanBudgetItem.category',
+            ])
+                ->where('verifier_id', $verifierId)
+                ->where('verified_price_total', '>', 0)
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(function ($verification) {
+                    $item = $verification->workplanBudgetItem;
+
+                    if (!$item) {
+                        return null;
+                    }
+
+                    $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+                    $totalQty = 0;
+                    $monthlyData = [];
+                    foreach ($months as $m) {
+                        $val = (int) ($item->{"activity_$m"} ?? 0);
+                        $totalQty += $val;
+                        $monthlyData[$m] = $val;
+                    }
+
+                    $divisionName = null;
+                    $departmentName = null;
+                    if ($item->workplan) {
+                        if ($item->workplan->kpi_type === 'department' && $item->workplan->KPIDepartment) {
+                            $departmentName = $item->workplan->KPIDepartment->department?->name;
+                            $divisionName = $item->workplan->KPIDepartment->kpiDivision?->division?->name;
+                        } elseif ($item->workplan->kpi_type === 'section' && $item->workplan->kpiSection) {
+                            $departmentName = $item->workplan->kpiSection->section?->department?->name;
+                            $divisionName = $item->workplan->kpiSection->section?->department?->division?->name;
+                        }
+                    }
+
+                    $verifiedUnitPrice = $totalQty > 0
+                        ? (float) $verification->verified_price_total / $totalQty
+                        : 0;
+
+                    return [
+                        'verification_id' => $verification->id,
+                        'item_id' => $item->id,
+                        'reference_number' => $item->budget_code,
+                        'verified_at' => $verification->created_at?->format('Y-m-d H:i:s'),
+                        'notes' => $verification->notes,
+                        'item' => [
+                            'id' => $item->id,
+                            'description' => $item->description,
+                            'category_type' => $item->category_type,
+                            'category_name' => $item->category?->name,
+                            'stock_code' => $item->stock_code,
+                            'budget_code' => $item->budget_code,
+                            'cost_center' => $item->cost_center,
+                            'supplier_name' => $item->supplier_name,
+                            'unit_name' => $item->unit_name,
+                            'cons_rate' => $item->cons_rate,
+                            'price_estimation' => $item->price_estimation,
+                            'price_final' => $item->price_final,
+                            'verification_status' => $item->verification_status,
+                            'total_qty' => $totalQty,
+                            'unit_price' => $verifiedUnitPrice,
+                            'total_budget' => (float) $verification->verified_price_total,
+                            'monthly' => $monthlyData,
+                            'workplan_activity' => $item->workplan?->activity,
+                            'workplan_year' => $item->workplan?->year,
+                            'division_name' => $divisionName,
+                            'department_name' => $departmentName,
+                        ],
+                    ];
+                })
+                ->filter()
+                ->values();
+
+            return [
+                'success' => true,
+                'message' => 'Data berhasil dimuat.',
+                'data' => $verifications->toArray(),
+                'count' => $verifications->count(),
+            ];
+        } catch (Exception $e) {
+            Log::error('VerificationBudgetService.getMyVerifiedVerifications', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal memuat data: ' . $e->getMessage(),
+                'data' => [],
+                'count' => 0,
+            ];
+        }
+    }
+
+    /**
      * Get verification status for an item
      */
     public function getVerificationStatus(int $itemId): array

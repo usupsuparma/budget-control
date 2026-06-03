@@ -156,6 +156,15 @@ class VerificationBudgetController extends Controller
     }
 
     /**
+     * Get verified items by current user
+     */
+    public function myVerifiedVerifications()
+    {
+        $result = $this->verificationService->getMyVerifiedVerifications();
+        return response()->json($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
      * Get verification status for an item
      */
     public function getStatus(int $itemId)

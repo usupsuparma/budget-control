@@ -1364,6 +1364,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/pending', [VerificationBudgetController::class, 'myPendingVerifications'])
                 ->name('verification.budget.pending');
 
+            // Get verification history for current user
+            Route::get('/verified', [VerificationBudgetController::class, 'myVerifiedVerifications'])
+                ->name('verification.budget.verified');
+
             // Submit item for verification (from budget-user)
             Route::post('/{itemId}/submit', [VerificationBudgetController::class, 'submitForVerification'])
                 ->name('verification.budget.submit');

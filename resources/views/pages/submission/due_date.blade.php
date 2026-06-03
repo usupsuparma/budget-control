@@ -61,7 +61,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1">
-                                    <h6 class="text-muted mb-1 fw-bold">Overdue Transaksi</h6>
+                                    <h6 class="text-muted mb-1 fw-bold">Overdue Transactions</h6>
                                     <h4 class="mb-0 fw-extrabold text-danger" id="dueDateCountText">{{ $dueDateCount }}</h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -70,7 +70,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-muted mt-2 mb-0 small">Submission > H+2 / LPJ > H+7</p>
+                            <p class="text-muted mt-2 mb-0 small">Submission > D+2 / Accountability Report > D+7</p>
                         </div>
                     </div>
                 </div>
@@ -81,9 +81,9 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label">Tahun</label>
+                            <label class="form-label">Year</label>
                             <select id="filterYear" class="form-select">
-                                <option value="all">Semua Tahun</option>
+                                <option value="all">All Years</option>
                                 @foreach ($years as $year)
                                     <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>
                                         {{ $year }}
@@ -105,7 +105,7 @@
                 <div class="card card-h-100">
                     <div class="card-header bg-white">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="ri-calendar-todo-line me-2 text-danger"></i>Daftar Transaksi Overdue Submission & LPJ</h5>
+                            <h5 class="mb-0"><i class="ri-calendar-todo-line me-2 text-danger"></i>Overdue Submission & Accountability Report Transactions</h5>
                         </div>
                     </div>
                     <div class="card-body">
@@ -247,7 +247,7 @@
                     <div class="tracking-timeline" id="timeline"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -259,7 +259,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="lpjModalLabel">
-                        <i class="ri-file-text-line me-2"></i>Laporan Pertanggungjawaban (LPJ)
+                        <i class="ri-file-text-line me-2"></i>Accountability Report (LPJ)
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
@@ -347,7 +347,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success" id="btnSubmitLpj"><i class="ri-save-line me-1"></i>Submit LPJ</button>
+                        <button type="submit" class="btn btn-success" id="btnSubmitLpj"><i class="ri-save-line me-1"></i>Submit Accountability Report</button>
                     </div>
                 </form>
             </div>

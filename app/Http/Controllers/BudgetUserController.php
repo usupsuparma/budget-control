@@ -452,6 +452,28 @@ class BudgetUserController extends Controller
     }
 
     /**
+     * Get approval items that have been approved by current user
+     */
+    public function getApprovedApprovals(Request $request)
+    {
+        try {
+            $result = $this->budgetUserService->getApprovedApprovals();
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            $this->logService->create('Error loading approved approval history: ' . $e->getMessage(), [
+                'class' => __CLASS__,
+                'function' => __FUNCTION__,
+            ], 'error');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load approval history: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get workplans for dropdown (AJAX) - Department and Section only
      */
     public function getWorkplansDropdown(Request $request)

@@ -191,4 +191,11 @@ interface BudgetUserService
      * @return array ['success' => bool, 'message' => string]
      */
     public function deleteItemForWorkplan(int $workplanId, int $itemId): array;
+
+    /**
+     * Get approval history for items approved by current user.
+     *
+     * @return array ['success' => bool, 'data' => mixed, 'count' => int]
+     */
+    public function getApprovedApprovals(): array;
 }

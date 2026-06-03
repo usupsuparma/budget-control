@@ -917,6 +917,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [BudgetUserController::class, 'index'])
                 ->name('budget-user.index');
 
+            Route::get('/approvals/approved', [BudgetUserController::class, 'getApprovedApprovals'])
+                ->name('budget-user.approvals.approved');
+
             // New endpoints for all items
             Route::get('/items/all', [BudgetUserController::class, 'getAllItems'])
                 ->name('budget-user.items.all');

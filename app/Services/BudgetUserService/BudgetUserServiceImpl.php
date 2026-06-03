@@ -4,6 +4,8 @@ namespace App\Services\BudgetUserService;
 
 use App\Models\BudgetCategory;
 use App\Models\BudgetCode;
+use App\Models\ApprovalRequestDetail;
+use App\Models\Employment;
 use App\Models\KPIDivision;
 use App\Models\KPIWorkPlan;
 use App\Models\StockCode;
@@ -576,5 +578,126 @@ class BudgetUserServiceImpl implements BudgetUserService
         );
 
         return ['success' => true, 'message' => 'Budget item deleted successfully'];
+    }
+
+    public function getApprovedApprovals(): array
+    {
+        $employee = Auth::user();
+
+        if (! $employee || ! $employee->employment) {
+            return [
+                'success' => false,
+                'message' => 'User does not have a valid employment',
+                'data' => [],
+                'count' => 0,
+            ];
+        }
+
+        $employmentId = $employee->employment->id;
+
+        $approvedDetails = ApprovalRequestDetail::with([
+            'request.module',
+            'request.details',
+            'employment.employee',
+        ])
+            ->where('employment_id', $employmentId)
+            ->where('status', 'approved')
+            ->whereHas('request', fn ($q) => $q->whereHas('module', fn ($q2) => $q2->where('table_name', 'workplan_budget_items')))
+            ->orderByDesc('approved_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($detail) {
+                $item = WorkplanBudgetItem::with([
+                    'workplan.KPIDepartment.department',
+                    'workplan.KPIDepartment.kpiDivision.division',
+                    'workplan.kpiSection.section.department',
+                    'category',
+                ])->find($detail->request->reference_id ?? null);
+
+                if (! $item) {
+                    return null;
+                }
+
+                $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+                $totalQty = 0;
+                $monthlyData = [];
+                foreach ($months as $m) {
+                    $val = (int) ($item->{"activity_$m"} ?? 0);
+                    $totalQty += $val;
+                    $monthlyData[$m] = $val;
+                }
+
+                $isVerified = $item->verification_status === 'verified' && $item->price_final && (float) $item->price_final > 0;
+                $unitPrice = $isVerified ? (float) $item->price_final : (float) ($item->price_estimation ?? 0);
+                $totalBudget = $unitPrice * $totalQty;
+
+                $divisionName = null;
+                $departmentName = null;
+                if ($item->workplan) {
+                    if ($item->workplan->kpi_type === 'department' && $item->workplan->KPIDepartment) {
+                        $departmentName = $item->workplan->KPIDepartment->department?->name;
+                        $divisionName = $item->workplan->KPIDepartment->kpiDivision?->division?->name;
+                    } elseif ($item->workplan->kpi_type === 'section' && $item->workplan->kpiSection) {
+                        $departmentName = $item->workplan->kpiSection->section?->department?->name;
+                        $divisionName = $item->workplan->kpiSection->section?->department?->division?->name;
+                    }
+                }
+
+                $timelineDetails = [];
+                if ($detail->request && $detail->request->details) {
+                    $timelineDetails = $detail->request->details
+                        ->sortBy('level_sequence')
+                        ->map(fn ($d) => [
+                            'id' => $d->id,
+                            'level_sequence' => $d->level_sequence,
+                            'employment_name' => $d->employment_name,
+                            'status' => $d->status,
+                            'approved_at' => $d->approved_at?->format('Y-m-d H:i:s'),
+                        ])->values()->toArray();
+                }
+
+                return [
+                    'detail_id' => $detail->id,
+                    'request_id' => $detail->request_id,
+                    'reference_number' => $detail->request->reference_number,
+                    'level' => $detail->level_sequence,
+                    'total_levels' => $detail->request->total_levels,
+                    'approved_at' => $detail->approved_at?->format('Y-m-d H:i:s'),
+                    'requester_name' => Employment::with('employee')->find($detail->request->requester_id)?->employee?->name ?? '-',
+                    'timeline' => $timelineDetails,
+                    'item' => [
+                        'id' => $item->id,
+                        'description' => $item->description,
+                        'category_type' => $item->category_type,
+                        'category_name' => $item->category?->name,
+                        'stock_code' => $item->stock_code,
+                        'budget_code' => $item->budget_code,
+                        'cost_center' => $item->cost_center,
+                        'supplier_name' => $item->supplier_name,
+                        'unit_name' => $item->unit_name,
+                        'cons_rate' => $item->cons_rate,
+                        'price_estimation' => $item->price_estimation,
+                        'price_final' => $item->price_final,
+                        'verification_status' => $item->verification_status,
+                        'total' => $item->total,
+                        'total_qty' => $totalQty,
+                        'unit_price' => $unitPrice,
+                        'total_budget' => $totalBudget,
+                        'monthly' => $monthlyData,
+                        'workplan_activity' => $item->workplan?->activity,
+                        'workplan_year' => $item->workplan?->year,
+                        'division_name' => $divisionName,
+                        'department_name' => $departmentName,
+                    ],
+                ];
+            })
+            ->filter()
+            ->values();
+
+        return [
+            'success' => true,
+            'data' => $approvedDetails->toArray(),
+            'count' => $approvedDetails->count(),
+        ];
     }
 }

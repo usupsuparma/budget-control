@@ -101,7 +101,7 @@ class EmployeeServiceImpl implements EmployeeService
     {
         return DB::transaction(function () use ($data) {
             $jobPosition = JobPosition::findOrFail($data['job_position_id']);
-            $role        = Role::where('name', $data['role_name'])->firstOrFail();
+            $role        = Role::where('id', $data['role_name'])->firstOrFail();
 
             $employee = Employee::create([
                 'employee_code' => $data['employee_code'],

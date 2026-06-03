@@ -152,7 +152,7 @@ class EmployeeController extends Controller
             'email'           => 'required|email|max:150|unique:employee,email',
             'password'        => 'required|string|min:6',
             'job_position_id' => 'required|exists:job_position,id',
-            'role_name'       => 'required|string|exists:roles,name',
+            'role_name'       => 'required|string|exists:roles,id',
         ], [
             'first_name.required'      => 'Nama depan wajib diisi',
             'first_name.max'           => 'Nama depan maksimal 100 karakter',

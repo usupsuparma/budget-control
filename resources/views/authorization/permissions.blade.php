@@ -1,3 +1,7 @@
+@php
+    $existingPermissionNames = collect($permissions ?? [])->pluck('name')->all();
+@endphp
+
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Permission Management</h5>
@@ -122,9 +126,18 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Route/Key Name</label>
-                        <input type="text" name="name" class="form-control"
-                            placeholder="e.g., dashboard.view" required>
-                        <div class="form-text">Unique key for permission (used in middleware)</div>
+                        <select name="name" id="permission_name" class="form-select" required>
+                            <option value="">-- Select Route/Key Name --</option>
+                            @forelse($routePermissionKeys ?? [] as $permissionKey)
+                            @php($isPermissionAlreadyAdded = in_array($permissionKey, $existingPermissionNames, true))
+                            <option value="{{ $permissionKey }}" @disabled($isPermissionAlreadyAdded)>
+                                {{ $permissionKey }}{{ $isPermissionAlreadyAdded ? ' (already added)' : '' }}
+                            </option>
+                            @empty
+                            <option value="" disabled>No permission middleware keys found</option>
+                            @endforelse
+                        </select>
+                        <div class="form-text">Source: active <code>permission:*</code> middleware in <code>routes/web.php</code></div>
                     </div>
                 </form>
             </div>
@@ -185,8 +198,14 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Route/Key Name</label>
-                        <input type="text" name="name" id="edit_name" class="form-control"
-                            placeholder="e.g., dashboard.view" required>
+                        <select name="name" id="edit_name" class="form-select" required>
+                            <option value="">-- Select Route/Key Name --</option>
+                            @forelse($routePermissionKeys ?? [] as $permissionKey)
+                            <option value="{{ $permissionKey }}">{{ $permissionKey }}</option>
+                            @empty
+                            <option value="" disabled>No permission middleware keys found</option>
+                            @endforelse
+                        </select>
                     </div>
                 </form>
             </div>
@@ -230,7 +249,8 @@
         $('[data-bs-toggle="tooltip"]').tooltip();
 
         // Initialize Choices.js
-        let modulMenuSelect, editModulMenuSelect;
+        const routePermissionKeys = @json(array_values($routePermissionKeys ?? []));
+        let modulMenuSelect, editModulMenuSelect, permissionNameSelect, editPermissionNameSelect;
 
         const initChoices = () => {
             if (typeof Choices === 'undefined') return;
@@ -250,6 +270,24 @@
                     itemSelectText: '',
                     shouldSort: false,
                     placeholderValue: '-- Select Module/Menu --',
+                });
+            }
+
+            if ($('#permission_name').length) {
+                permissionNameSelect = new Choices('#permission_name', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Select Route/Key Name --',
+                });
+            }
+
+            if ($('#edit_name').length) {
+                editPermissionNameSelect = new Choices('#edit_name', {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholderValue: '-- Select Route/Key Name --',
                 });
             }
         };
@@ -278,6 +316,7 @@
                         // Show success message dengan Bootstrap alert
                         $('#modalAddPermission').modal('hide');
                         if(modulMenuSelect) modulMenuSelect.setChoiceByValue('');
+                        if(permissionNameSelect) permissionNameSelect.setChoiceByValue('');
 
                         // Tampilkan alert sukses
                         showAlert('success', 'Success!', response.message || 'Permission created successfully!');
@@ -335,7 +374,19 @@
             let modulMenuName = $(this).data('modul-menu-name');
 
             $('#edit_id').val(id);
-            $('#edit_name').val(name);
+            if (editPermissionNameSelect) {
+                if (name && !routePermissionKeys.includes(String(name))) {
+                    editPermissionNameSelect.setChoices([{
+                        value: String(name),
+                        label: `${name} (existing, not in routes/web.php)`,
+                        selected: true
+                    }], 'value', 'label', false);
+                }
+
+                editPermissionNameSelect.setChoiceByValue(String(name));
+            } else {
+                $('#edit_name').val(name);
+            }
             
             if (editModulMenuSelect) {
                 editModulMenuSelect.setChoiceByValue(String(modulMenu));
@@ -369,6 +420,7 @@
                     if (response.success) {
                         $('#modalEditPermission').modal('hide');
                         if(editModulMenuSelect) editModulMenuSelect.setChoiceByValue('');
+                        if(editPermissionNameSelect) editPermissionNameSelect.setChoiceByValue('');
                         showAlert('success', 'Success!', response.message || 'Permission updated successfully!');
                         setTimeout(function() {
                             location.reload();

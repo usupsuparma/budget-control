@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Spatie\Permission\Models\Role;
+use App\Helpers\PermissionHelper;
 use App\Models\Permission;
 use App\Models\Employee;
 use App\Models\Employment;
@@ -176,8 +177,9 @@ class AuthorizationController extends Controller
     {
         $permissions = Permission::with('modul')->orderBy('id', 'desc')->get(); // Update eager load
         $moduls = ModulMenu::all(); // Ini sudah benar!
+        $routePermissionKeys = PermissionHelper::routePermissionKeys();
 
-        return view('authorization.permissions', compact('permissions', 'moduls'));
+        return view('authorization.permissions', compact('permissions', 'moduls', 'routePermissionKeys'));
     }
 
     public function permissionStore(Request $request)
@@ -186,10 +188,19 @@ class AuthorizationController extends Controller
             Log::info('Permission Store Request:', $request->all());
 
             // Validasi dengan nama tabel yang benar: 'modul_menu' (bukan 'modul_menus')
+            $routePermissionKeys = PermissionHelper::routePermissionKeys();
+
             $validator = FacadesValidator::make($request->all(), [
                 'modul_menu' => 'required|exists:modul_menu,id', // ← PERBAIKI DI SINI
-                'name' => 'required|string|unique:permissions,name',
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::in($routePermissionKeys),
+                    Rule::unique('permissions', 'name'),
+                ],
                 'modul_menu_name' => 'required|string'
+            ], [
+                'name.in' => 'Route/Key Name harus dipilih dari permission middleware aktif di routes/web.php.'
             ]);
 
             if ($validator->fails()) {
@@ -235,10 +246,31 @@ class AuthorizationController extends Controller
         try {
             Log::info('Permission Update Request:', ['id' => $id, 'data' => $request->all()]);
 
+            $permission = Permission::find($id);
+            if (!$permission) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permission not found'
+                ], 404);
+            }
+
+            $routePermissionKeys = PermissionHelper::routePermissionKeys();
+            $allowedPermissionKeys = array_values(array_unique(array_merge(
+                $routePermissionKeys,
+                [$permission->name]
+            )));
+
             $validator = FacadesValidator::make($request->all(), [
                 'modul_menu' => 'required|exists:modul_menu,id',
-                'name' => 'required|string|unique:permissions,name,' . $id,
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::in($allowedPermissionKeys),
+                    Rule::unique('permissions', 'name')->ignore($permission->id),
+                ],
                 'modul_menu_name' => 'required|string'
+            ], [
+                'name.in' => 'Route/Key Name harus dipilih dari permission middleware aktif di routes/web.php.'
             ]);
 
             if ($validator->fails()) {
@@ -248,14 +280,6 @@ class AuthorizationController extends Controller
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
                 ], 422);
-            }
-
-            $permission = Permission::find($id);
-            if (!$permission) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Permission not found'
-                ], 404);
             }
 
             $permission->update([

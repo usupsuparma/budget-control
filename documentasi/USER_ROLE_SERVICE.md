@@ -200,6 +200,27 @@ public const SCOPED_ROLES = [
 
 ---
 
+## Permission Route/Key Name
+
+Halaman `resources/views/authorization/permissions.blade.php` tidak lagi memakai input teks bebas untuk `Route/Key Name`.
+Field tersebut memakai select Choices.js yang opsinya dibaca dari middleware aktif `permission:*` di `routes/web.php`.
+
+Contoh sumber:
+
+```php
+->middleware('permission:setting.users.view')
+->middleware('permission:authorization.view|setting.users.view')
+```
+
+Kunci permission dengan separator pipe (`|`) akan dipecah menjadi opsi individual.
+Line route yang dikomentari tidak ikut masuk ke daftar opsi, sehingga permission baru hanya bisa dibuat dari middleware yang benar-benar aktif.
+Pada modal Add, key route yang sudah ada di tabel permission tetap ditampilkan tetapi disabled dengan label `(already added)` agar tidak mudah membuat duplikasi.
+
+Validasi server-side di `AuthorizationController` juga memakai daftar yang sama. Artinya request manual/AJAX yang mengirim key di luar `routes/web.php` akan ditolak.
+Untuk edit data lama, key lama tetap boleh disimpan ulang agar permission existing yang belum selaras dengan route tidak langsung rusak saat hanya mengubah display name atau module.
+
+---
+
 ## Testing Mandate
 
 Setiap perubahan pada `UserRoleServiceImpl` **harus disertai** test di `tests/Unit/Services/UserRoleServiceTest.php` yang mencakup:

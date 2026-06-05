@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PermissionHelper;
 use App\Models\Employee;
 use App\Models\ModulMenu;
 use App\Models\Permission;
@@ -19,6 +20,7 @@ class UsersController extends Controller
             ->get();
         $permissions = Permission::with('modul')->OrderBy('id', 'DESC')->get();
         $moduls = ModulMenu::orderBy('modul_name')->orderBy('menu_name')->get();
-        return view('pages.settings.users', compact('employees', 'title', 'roles', 'permissions', 'moduls'));
+        $routePermissionKeys = PermissionHelper::routePermissionKeys();
+        return view('pages.settings.users', compact('employees', 'title', 'roles', 'permissions', 'moduls', 'routePermissionKeys'));
     }
 }

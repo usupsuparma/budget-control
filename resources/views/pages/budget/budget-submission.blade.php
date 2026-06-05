@@ -93,7 +93,7 @@
                         <ul class="nav nav-tabs card-header-tabs" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link active" href="#dataTab" data-bs-toggle="tab" role="tab">
-                                    Data (Budget Movement List)
+                                    Budget Movement
                                 </a>
                             </li>
                             <li class="nav-item">

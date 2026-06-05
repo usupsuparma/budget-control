@@ -22,7 +22,13 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
         $isAdmin = $this->userRoleService->isAdmin($user);
         $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
-        $budgetSubmissions = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
+        $budgetSubmissions = BudgetSubmission::with([
+                'user',
+                'division',
+                'workPlan',
+                'budgetAccount',
+                'latestApprovalRequest',
+            ])
             ->orderBy('submission_date', 'desc')
             ->paginate(15);
 
@@ -35,7 +41,13 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
 
     public function getAjaxData(mixed $user): Collection
     {
-        return BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
+        return BudgetSubmission::with([
+                'user',
+                'division',
+                'workPlan',
+                'budgetAccount',
+                'latestApprovalRequest',
+            ])
             ->orderBy('submission_date', 'desc')
             ->get();
     }
@@ -70,10 +82,9 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
     public function edit(int $id): array
     {
         $budgetSubmission = BudgetSubmission::with('budgetAccount')->findOrFail($id);
-            
-        if ($budgetSubmission->status != 0) {
-            throw new DomainException('Only pending submissions can be edited. This submission has already been ' . 
-                                     ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.');
+
+        if (! $budgetSubmission->canBeEdited()) {
+            throw new DomainException('Submission ini tidak dapat diedit karena status tidak dapat diubah atau sedang dalam proses approval.');
         }
 
         $budgetAccountText = null;
@@ -99,9 +110,8 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
     {
         $budgetSubmission = BudgetSubmission::findOrFail($id);
 
-        if ($budgetSubmission->status != 0) {
-            throw new DomainException('Only pending submissions can be edited. This submission has already been ' . 
-                                     ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.');
+        if (! $budgetSubmission->canBeEdited()) {
+            throw new DomainException('Submission ini tidak dapat diubah karena status tidak dapat diubah atau sedang dalam proses approval.');
         }
 
         $division = Division::find($data->division_id);
@@ -127,9 +137,8 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
     {
         $budgetSubmission = BudgetSubmission::findOrFail($id);
 
-        if ($budgetSubmission->status != 0) {
-            throw new DomainException('Only pending submissions can be deleted. This submission has already been ' . 
-                                     ($budgetSubmission->status == 1 ? 'approved' : 'rejected') . '.');
+        if (! $budgetSubmission->canBeDeleted()) {
+            throw new DomainException('Submission ini tidak dapat dihapus karena status tidak dapat diubah atau sedang dalam proses approval.');
         }
 
         DB::transaction(function () use ($budgetSubmission) {

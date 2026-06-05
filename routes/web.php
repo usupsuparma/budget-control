@@ -459,6 +459,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/data', [BudgetSubmissionController::class, 'getData'])
             ->name('budget.submission.data');
 
+        Route::get('/approvals/pending', [BudgetSubmissionController::class, 'pendingApprovals'])
+            ->name('budget.submission.approvals.pending');
+        Route::get('/approvals/approved', [BudgetSubmissionController::class, 'approvedApprovals'])
+            ->name('budget.submission.approvals.approved');
+        Route::post('/approvals/bulk-process', [BudgetSubmissionController::class, 'bulkProcessApprovals'])
+            ->name('budget.submission.approvals.bulk-process');
+
         Route::get('/budget-codes-all', [BudgetSubmissionController::class, 'getAllBudgetCodes'])
             ->name('budget.submission.budgetCodesAll');
 
@@ -477,11 +484,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/detail', [BudgetSubmissionController::class, 'show'])
             ->name('budget.submission.detail');
 
+        Route::post('/{id}/submit', [BudgetSubmissionController::class, 'submitForApproval'])
+            ->name('budget.submission.submit');
+
         Route::put('/{id}', [BudgetSubmissionController::class, 'update'])
             ->name('budget.submission.update');
 
         Route::delete('/{id}', [BudgetSubmissionController::class, 'destroy'])
             ->name('budget.submission.destroy');
+
+        Route::post('/detail/{detailId}/approve', [BudgetSubmissionController::class, 'approveDetail'])
+            ->name('budget.submission.approval.detail.approve');
+        Route::post('/detail/{detailId}/reject', [BudgetSubmissionController::class, 'rejectDetail'])
+            ->name('budget.submission.approval.detail.reject');
 
         Route::post('/{id}/approve', [BudgetSubmissionController::class, 'approve'])
             ->name('budget.submission.approve');

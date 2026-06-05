@@ -3,19 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Models\BudgetCode;
+use App\Models\BudgetSubmission;
+use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalService;
 use App\Services\BudgetSubmissionService\BudgetSubmissionService;
 use App\Services\BudgetSubmissionService\DTOs\BudgetSubmissionData;
+use App\Exceptions\DomainException;
 use App\Http\Requests\StoreBudgetSubmissionRequest;
 use App\Http\Requests\UpdateBudgetSubmissionRequest;
-use App\Exceptions\DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class BudgetSubmissionController extends Controller
 {
     public function __construct(
-        private readonly BudgetSubmissionService $budgetSubmissionService
+        private readonly BudgetSubmissionService $budgetSubmissionService,
+        private readonly BudgetSubmissionApprovalService $budgetSubmissionApprovalService
     ) {}
 
     public function index()
@@ -39,49 +44,41 @@ class BudgetSubmissionController extends Controller
             $no = 1;
 
             foreach ($budgetSubmissions as $submission) {
-                $statusColor = match($submission->status) {
-                    0 => 'warning',
-                    1 => 'success',
-                    2 => 'danger',
-                    default => 'secondary'
-                };
-                
-                $statusLabel = match($submission->status) {
-                    0 => 'Pending',
-                    1 => 'Approved',
-                    2 => 'Rejected',
-                    default => 'Unknown'
-                };
-                
+                $statusLabel = $submission->approval_progress_label;
+                $statusColor = $submission->status_color;
+                if ($submission->isPending() && $submission->hasPendingApproval()) {
+                    $statusColor = 'info';
+                }
+
                 $typeColor = $submission->type == 'add' ? 'info' : 'secondary';
                 $typeLabel = $submission->type == 'add' ? 'Add Budget' : 'Relocation';
-                
+
                 $html .= '<tr>';
                 $html .= '<td>' . $no++ . '</td>';
                 $html .= '<td>' . e($submission->submission_date->format('d/m/Y')) . '</td>';
                 $html .= '<td>' . e($submission->division->name ?? '-') . '</td>';
                 $html .= '<td><span class="badge bg-' . $typeColor . '">' . $typeLabel . '</span></td>';
                 $html .= '<td><small>' . e($submission->workPlan->activity ?? '-') . '</small></td>';
-                $html .= '<td><small>' . e(\Illuminate\Support\Str::limit($submission->description ?? '', 50)) . '</small></td>';
+                $html .= '<td><small>' . e(Str::limit($submission->description ?? '', 50)) . '</small></td>';
                 $html .= '<td class="text-end">Rp ' . number_format($submission->estimation_amount, 0, ',', '.') . '</td>';
                 $html .= '<td><small>' . e($submission->budgetAccount->stock_code ?? '-') . ' | ' . e($submission->budgetAccount->name ?? '-') . '</small></td>';
-                $html .= '<td><span class="badge bg-' . $statusColor . '">' . $statusLabel . '</span></td>';
+                $html .= '<td><span class="badge bg-' . $statusColor . '">' . e($statusLabel) . '</span></td>';
                 
                 // Action buttons
                 $html .= '<td><div class="btn-group" role="group">';
-                
-                if ($submission->status == 0) { // Pending
+
+                if ($submission->canBeEdited()) {
                     $html .= '<button type="button" class="btn btn-sm btn-warning" onclick="editSubmission(' . $submission->id . ')" title="Edit">';
                     $html .= '<i class="ri-edit-line"></i></button>';
                     $html .= '<button type="button" class="btn btn-sm btn-danger" onclick="deleteSubmission(' . $submission->id . ')" title="Delete">';
                     $html .= '<i class="ri-delete-bin-line"></i></button>';
-                    $html .= '<button type="button" class="btn btn-sm btn-success" onclick="approveSubmission(' . $submission->id . ')" title="Approve">';
-                    $html .= '<i class="ri-check-line"></i></button>';
+                    $html .= '<button type="button" class="btn btn-sm btn-primary" onclick="submitForApproval(' . $submission->id . ')" title="Submit for Approval">';
+                    $html .= '<i class="ri-send-plane-2-line"></i></button>';
                 } else {
                     $html .= '<button type="button" class="btn btn-sm btn-info" onclick="viewBudgetSubmissionDetail(' . $submission->id . ')" title="View Detail">';
                     $html .= '<i class="ri-eye-line"></i></button>';
                 }
-                
+
                 $html .= '</div></td>';
                 $html .= '</tr>';
             }
@@ -99,10 +96,161 @@ class BudgetSubmissionController extends Controller
         }
     }
 
+    public function submitForApproval(int $id)
+    {
+        try {
+            $result = $this->budgetSubmissionApprovalService->submitForApproval($id);
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Throwable $e) {
+            Log::error('BudgetSubmissionController.submitForApproval error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengajukan approval: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function approveDetail(Request $request, int $detailId)
+    {
+        try {
+            $request->validate([
+                'comments' => 'nullable|string|max:1000',
+            ]);
+
+            $employmentId = $this->getEmploymentIdForCurrentUser();
+            if (! $employmentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data employment Anda tidak ditemukan.',
+                ], 403);
+            }
+
+            $result = $this->budgetSubmissionApprovalService->processApproval(
+                $detailId,
+                'approve',
+                $employmentId,
+                $request->input('comments')
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Throwable $e) {
+            Log::error('BudgetSubmissionController.approveDetail error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses approval: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function rejectDetail(Request $request, int $detailId)
+    {
+        try {
+            $request->validate([
+                'comments' => 'required|string|max:1000',
+            ]);
+
+            $employmentId = $this->getEmploymentIdForCurrentUser();
+            if (! $employmentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data employment Anda tidak ditemukan.',
+                ], 403);
+            }
+
+            $result = $this->budgetSubmissionApprovalService->processApproval(
+                $detailId,
+                'reject',
+                $employmentId,
+                $request->input('comments')
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Throwable $e) {
+            Log::error('BudgetSubmissionController.rejectDetail error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses penolakan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function bulkProcessApprovals(Request $request)
+    {
+        try {
+            $request->validate([
+                'detail_ids' => 'required|array|min:1',
+                'detail_ids.*' => 'integer|exists:approval_request_details,id',
+                'action' => 'required|in:approve,reject',
+                'comments' => 'nullable|string|max:1000',
+            ]);
+
+            if ($request->input('action') === 'reject' && ! $request->filled('comments')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Alasan penolakan wajib diisi untuk bulk reject.',
+                ], 422);
+            }
+
+            $employmentId = $this->getEmploymentIdForCurrentUser();
+            if (! $employmentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data employment Anda tidak ditemukan.',
+                ], 403);
+            }
+
+            $result = $this->budgetSubmissionApprovalService->bulkProcessApproval(
+                $request->input('detail_ids'),
+                $request->input('action'),
+                $employmentId,
+                $request->input('comments')
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Throwable $e) {
+            Log::error('BudgetSubmissionController.bulkProcessApprovals error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses bulk approval: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function pendingApprovals()
+    {
+        $employmentId = $this->getEmploymentIdForCurrentUser();
+        if (! $employmentId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data employment Anda tidak ditemukan.',
+            ], 403);
+        }
+
+        return response()->json(
+            $this->budgetSubmissionApprovalService->getPendingApprovalsForUser($employmentId)
+        );
+    }
+
+    public function approvedApprovals()
+    {
+        $employmentId = $this->getEmploymentIdForCurrentUser();
+        if (! $employmentId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data employment Anda tidak ditemukan.',
+            ], 403);
+        }
+
+        return response()->json(
+            $this->budgetSubmissionApprovalService->getApprovedApprovalsForUser($employmentId)
+        );
+    }
+
     public function show($id)
     {
         try {
-            $submission = \App\Models\BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
+            $submission = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
                 ->findOrFail($id);
 
             return response()->json([
@@ -217,7 +365,6 @@ class BudgetSubmissionController extends Controller
                     'message' => 'Budget submission updated successfully.'
                 ]);
             }
-            
             return redirect()->route('budget.submission.index')
                 ->with('success', 'Budget submission updated successfully.');
         } catch (DomainException $e) {
@@ -340,7 +487,7 @@ class BudgetSubmissionController extends Controller
         $divisionId = $request->get('division_id');
         $year = date('Y');
 
-        if (!$divisionId) {
+        if (! $divisionId) {
             return response()->json([]);
         }
 
@@ -373,7 +520,7 @@ class BudgetSubmissionController extends Controller
         $codeColumn = Schema::hasColumn('budget_code', 'budget_code') ? 'budget_code' : 'stock_code';
 
         // Optional single fetch for edit mode
-        if (!empty($selectedId)) {
+        if (! empty($selectedId)) {
             $selected = BudgetCode::select('id', $codeColumn, 'name')
                 ->where('id', $selectedId)
                 ->first();
@@ -403,7 +550,7 @@ class BudgetSubmissionController extends Controller
         $queryBuilder = BudgetCode::query()
             ->select('id', $codeColumn, 'name');
 
-        if (!empty($query)) {
+        if (! empty($query)) {
             $queryBuilder->where(function($builder) use ($query, $codeColumn) {
                 $builder->where($codeColumn, 'like', '%' . $query . '%')
                     ->orWhere('name', 'like', '%' . $query . '%');
@@ -461,7 +608,7 @@ class BudgetSubmissionController extends Controller
         $query = BudgetCode::query();
 
         // If there's a search term, filter by stock_code or name
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('stock_code', 'like', '%' . $search . '%')
                   ->orWhere('name', 'like', '%' . $search . '%');
@@ -492,5 +639,12 @@ class BudgetSubmissionController extends Controller
                 'more' => ($page * $perPage) < $total
             ]
         ]);
+    }
+
+    protected function getEmploymentIdForCurrentUser(): ?int
+    {
+        $employee = Auth::user();
+
+        return $employee?->employment?->id;
     }
 }

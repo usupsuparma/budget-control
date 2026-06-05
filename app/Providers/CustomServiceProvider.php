@@ -15,6 +15,8 @@ use App\Services\StockCodeService\StockCodeService;
 use App\Services\StockCodeService\StockCodeServiceImpl;
 use App\Services\BudgetUserService\BudgetUserService;
 use App\Services\BudgetUserService\BudgetUserServiceImpl;
+use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalService;
+use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalServiceImpl;
 use App\Services\NotificationService\NotificationService;
 use App\Services\NotificationService\NotificationServiceImpl;
 use App\Services\DashboardService\DashboardService;
@@ -67,6 +69,10 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(UserRoleService::class, UserRoleServiceImpl::class);
         $this->app->bind(\App\Services\EmployeeService\EmployeeService::class, \App\Services\EmployeeService\EmployeeServiceImpl::class);
         $this->app->bind(\App\Services\BudgetSubmissionService\BudgetSubmissionService::class, \App\Services\BudgetSubmissionService\BudgetSubmissionServiceImpl::class);
+        $this->app->bind(
+            BudgetSubmissionApprovalService::class,
+            BudgetSubmissionApprovalServiceImpl::class
+        );
     }
 
     /**

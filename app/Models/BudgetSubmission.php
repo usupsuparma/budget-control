@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BudgetSubmission extends Model
 {
@@ -35,6 +37,19 @@ class BudgetSubmission extends Model
     public function user()
     {
         return $this->belongsTo(Employee::class, 'user_id');
+    }
+
+    public function approvalRequests(): HasMany
+    {
+        return $this->hasMany(ApprovalRequest::class, 'reference_id')
+            ->whereHas('module', fn($q) => $q->where('table_name', 'budget_submissions'));
+    }
+
+    public function latestApprovalRequest(): HasOne
+    {
+        return $this->hasOne(ApprovalRequest::class, 'reference_id')
+            ->whereHas('module', fn($q) => $q->where('table_name', 'budget_submissions'))
+            ->latest('id');
     }
 
     public function division()
@@ -111,6 +126,30 @@ class BudgetSubmission extends Model
     public function isPending()
     {
         return $this->status === 0;
+    }
+
+    public function hasPendingApproval(): bool
+    {
+        return $this->latestApprovalRequest && $this->latestApprovalRequest->status === 'pending';
+    }
+
+    public function canBeEdited(): bool
+    {
+        return $this->status === 0 && ! $this->hasPendingApproval();
+    }
+
+    public function canBeDeleted(): bool
+    {
+        return $this->canBeEdited();
+    }
+
+    public function getApprovalProgressLabelAttribute(): string
+    {
+        if ($this->latestApprovalRequest && $this->latestApprovalRequest->status === 'pending') {
+            return 'In Approval Process';
+        }
+
+        return $this->status_label;
     }
 
     public function isApproved()

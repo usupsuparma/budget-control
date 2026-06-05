@@ -17,6 +17,21 @@ interface BudgetSubmissionService
     public function getAjaxData(mixed $user): \Illuminate\Database\Eloquent\Collection;
 
     /**
+     * Get a single submission detail for display.
+     */
+    public function show(int $id): array;
+
+    /**
+     * Get approved workplans by division for the movement form.
+     */
+    public function getWorkPlansByDivision(?int $divisionId): array;
+
+    /**
+     * Get workplan budget items for the movement form dropdown.
+     */
+    public function getBudgetItemsForDropdown(array $filters): array;
+
+    /**
      * Store a new budget submission.
      */
     public function store(BudgetSubmissionData $data, mixed $user): void;

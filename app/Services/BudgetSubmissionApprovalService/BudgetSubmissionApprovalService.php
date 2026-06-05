@@ -20,6 +20,11 @@ interface BudgetSubmissionApprovalService
     public function bulkProcessApproval(array $detailIds, string $action, int $approverId, ?string $comments = null): array;
 
     /**
+     * Get approval timeline for one budget submission.
+     */
+    public function getApprovalTimelineForSubmission(int $submissionId): array;
+
+    /**
      * Get pending approval tasks for user (employment id).
      */
     public function getPendingApprovalsForUser(int $employmentId): array;

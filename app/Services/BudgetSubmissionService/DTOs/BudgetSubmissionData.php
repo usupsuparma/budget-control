@@ -10,6 +10,7 @@ readonly class BudgetSubmissionData
         public string $type,
         public int $work_plan_id,
         public int|string $budget_account_id,
+        public int|string|null $source_budget_account_id,
         public float $estimation_amount,
         public ?string $description = null
     ) {}
@@ -22,6 +23,7 @@ readonly class BudgetSubmissionData
             type: $data['type'],
             work_plan_id: (int) $data['work_plan_id'],
             budget_account_id: $data['budget_account_id'],
+            source_budget_account_id: $data['source_budget_account_id'] ?? null,
             estimation_amount: (float) $data['estimation_amount'],
             description: $data['description'] ?? null
         );

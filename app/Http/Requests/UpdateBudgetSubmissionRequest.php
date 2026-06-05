@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateBudgetSubmissionRequest extends FormRequest
 {
@@ -32,8 +33,19 @@ class UpdateBudgetSubmissionRequest extends FormRequest
             ],
             'type' => ['required', 'in:add,relocation'],
             'work_plan_id' => ['required', 'exists:kpi_workplans,id'],
-            'budget_account_id' => ['required'], 
-            'estimation_amount' => ['required', 'numeric', 'min:0'],
+            'budget_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('workplan_budget_items', 'id')->whereNull('deleted_at'),
+            ],
+            'source_budget_account_id' => [
+                'nullable',
+                'required_if:type,relocation',
+                'integer',
+                'different:budget_account_id',
+                Rule::exists('workplan_budget_items', 'id')->whereNull('deleted_at'),
+            ],
+            'estimation_amount' => ['required', 'numeric', 'min:0.01'],
             'description' => ['nullable', 'string'],
         ];
     }

@@ -81,6 +81,10 @@
         .submission-item-details dd {
             margin-bottom: 0.45rem;
         }
+
+        .approval-status-badge {
+            cursor: pointer;
+        }
     </style>
 @endsection
 
@@ -171,13 +175,21 @@
                                                     <td class="text-end">Rp {{ number_format($submission->estimation_amount, 0, ',', '.') }}
                                                     </td>
                                                     <td>
-                                                        <small>{{ $submission->budgetAccount->stock_code ?? '-' }} |
-                                                            {{ $submission->budgetAccount->name ?? '-' }}</small>
+                                                        <small>{{ $submission->budget_account_label }}</small>
                                                     </td>
                                                     <td>
-                                                        <span class="badge bg-{{ $submission->status == 0 ? ($submission->hasPendingApproval() ? 'info' : 'warning') : $submission->status_color }}">
-                                                            {{ $submission->approval_progress_label }}
-                                                        </span>
+                                                        @if ($submission->isPending() && $submission->hasPendingApproval())
+                                                            <button type="button"
+                                                                class="badge bg-info border-0 approval-status-badge"
+                                                                onclick="showBudgetSubmissionApprovalTimeline({{ $submission->id }})"
+                                                                title="View approval progress">
+                                                                {{ $submission->approval_progress_label }}
+                                                            </button>
+                                                        @else
+                                                            <span class="badge bg-{{ $submission->status == 0 ? 'warning' : $submission->status_color }}">
+                                                                {{ $submission->approval_progress_label }}
+                                                            </span>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         @if ($submission->canBeEdited())
@@ -325,12 +337,22 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-3 d-none" id="source_budget_account_row">
+                                <label for="source_budget_account_id" class="col-sm-3 col-form-label">Source Budget Account <span
+                                        class="text-danger">*</span></label>
+                                <div class="col-sm-9">
+                                    <select class="form-select" id="source_budget_account_id" name="source_budget_account_id">
+                                        <option value="">Select relocation type first</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="row mb-3">
                                 <label for="budget_account_id" class="col-sm-3 col-form-label">Budget Account <span
                                         class="text-danger">*</span></label>
                                 <div class="col-sm-9">
                                     <select class="form-select" id="budget_account_id" name="budget_account_id" required>
-                                        <option value="">Loading budget accounts...</option>
+                                        <option value="">Select work plan first</option>
                                     </select>
                                 </div>
                             </div>
@@ -343,11 +365,12 @@
                             </div>
 
                             <div class="row mb-3">
-                                <label for="estimation_amount" class="col-sm-3 col-form-label">Estimation <span
+                                <label for="estimation_amount_display" class="col-sm-3 col-form-label">Estimation <span
                                         class="text-danger">*</span></label>
                                 <div class="col-sm-9">
-                                    <input type="number" class="form-control" id="estimation_amount"
-                                        name="estimation_amount" min="0" required>
+                                    <input type="text" class="form-control" id="estimation_amount_display"
+                                        inputmode="numeric" autocomplete="off" placeholder="0" required>
+                                    <input type="hidden" id="estimation_amount" name="estimation_amount">
                                 </div>
                             </div>
                         </div>
@@ -383,6 +406,8 @@
                                 <dd class="col-sm-8" id="detailSubmissionWorkPlan">-</dd>
                                 <dt class="col-sm-4">Budget Account</dt>
                                 <dd class="col-sm-8" id="detailSubmissionBudgetAccount">-</dd>
+                                <dt class="col-sm-4" id="detailSourceBudgetAccountLabel">Source Budget Account</dt>
+                                <dd class="col-sm-8" id="detailSourceBudgetAccount">-</dd>
                                 <dt class="col-sm-4">Estimation</dt>
                                 <dd class="col-sm-8" id="detailSubmissionAmount">-</dd>
                                 <dt class="col-sm-4">Description</dt>
@@ -447,6 +472,7 @@
                 'store' => route('budget.submission.store'),
                 'edit' => route('budget.submission.edit', ['id' => '__ID__']),
                 'detail' => route('budget.submission.detail', ['id' => '__ID__']),
+                'approvalTimeline' => route('budget.submission.approval.timeline', ['id' => '__ID__']),
                 'update' => route('budget.submission.update', ['id' => '__ID__']),
                 'destroy' => route('budget.submission.destroy', ['id' => '__ID__']),
                 'submit' => route('budget.submission.submit', ['id' => '__ID__']),
@@ -501,13 +527,19 @@
         const ROUTES = routeConfigElement ? JSON.parse(routeConfigElement.dataset.routes) : {};
         const CSRF_TOKEN = routeConfigElement ? routeConfigElement.dataset.csrf : '';
 
-        let divisionChoice, workPlanChoice, budgetAccountChoice;
+        let divisionChoice, workPlanChoice, budgetAccountChoice, sourceBudgetAccountChoice;
         let budgetAccountQuery = '';
         let budgetAccountPage = 1;
         let budgetAccountLoading = false;
         let budgetAccountHasMore = true;
         let budgetAccountSearchTimer;
         let budgetAccountScrollBound = false;
+        let sourceBudgetAccountQuery = '';
+        let sourceBudgetAccountPage = 1;
+        let sourceBudgetAccountLoading = false;
+        let sourceBudgetAccountHasMore = true;
+        let sourceBudgetAccountSearchTimer;
+        let sourceBudgetAccountScrollBound = false;
         const budgetAccountPageSize = 20;
         let dataTable;
         let pendingApprovals = [];
@@ -545,11 +577,22 @@
                 loadWorkPlans(e.target.value);
             });
 
+            document.getElementById('work_plan_id').addEventListener('change', function() {
+                resetBudgetItemChoices();
+            });
+
+            document.querySelectorAll('input[name="type"]').forEach(input => {
+                input.addEventListener('change', toggleMovementTypeFields);
+            });
+
             if (document.getElementById('division_id').value) {
                 loadWorkPlans(document.getElementById('division_id').value);
             }
 
             initBudgetAccountChoices();
+            initSourceBudgetAccountChoices();
+            toggleMovementTypeFields();
+            initEstimationAmountFormatter();
 
             document.getElementById('budgetSubmissionForm').addEventListener('submit', handleFormSubmit);
 
@@ -637,6 +680,7 @@
             e.preventDefault();
 
             const form = e.target;
+            syncEstimationAmount();
             const formData = new FormData(form);
             const submissionId = document.getElementById('submission_id').value;
 
@@ -700,6 +744,104 @@
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = oldText;
                 });
+        }
+
+        function getEstimationDigits(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function formatEstimationAmount(value) {
+            const digits = getEstimationDigits(value);
+            if (!digits) return '';
+
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function setEstimationAmount(value) {
+            const displayEl = document.getElementById('estimation_amount_display');
+            const hiddenEl = document.getElementById('estimation_amount');
+            const digits = getEstimationDigits(value);
+
+            if (displayEl) {
+                displayEl.value = formatEstimationAmount(digits);
+            }
+
+            if (hiddenEl) {
+                hiddenEl.value = digits;
+            }
+        }
+
+        function syncEstimationAmount() {
+            const displayEl = document.getElementById('estimation_amount_display');
+            if (!displayEl) return;
+
+            setEstimationAmount(displayEl.value);
+        }
+
+        function initEstimationAmountFormatter() {
+            const displayEl = document.getElementById('estimation_amount_display');
+            if (!displayEl) return;
+
+            displayEl.addEventListener('input', function() {
+                const cursorAtEnd = this.selectionStart === this.value.length;
+                setEstimationAmount(this.value);
+                if (cursorAtEnd) {
+                    this.setSelectionRange(this.value.length, this.value.length);
+                }
+            });
+
+            displayEl.addEventListener('blur', syncEstimationAmount);
+        }
+
+        function getSelectedWorkPlanId() {
+            return document.getElementById('work_plan_id').value || '';
+        }
+
+        function setChoicePlaceholder(choice, label) {
+            if (!choice) return;
+            choice.clearStore();
+            choice.setChoices([{
+                value: '',
+                label,
+                disabled: true,
+                selected: true
+            }], 'value', 'label', true);
+        }
+
+        function resetBudgetItemChoices() {
+            const hasWorkPlan = Boolean(getSelectedWorkPlanId());
+            setChoicePlaceholder(
+                budgetAccountChoice,
+                hasWorkPlan ? 'Select Budget Account' : 'Select work plan first'
+            );
+            setChoicePlaceholder(
+                sourceBudgetAccountChoice,
+                hasWorkPlan ? 'Select Source Budget Account' : 'Select work plan first'
+            );
+            budgetAccountQuery = '';
+            budgetAccountPage = 1;
+            budgetAccountHasMore = true;
+            sourceBudgetAccountQuery = '';
+            sourceBudgetAccountPage = 1;
+            sourceBudgetAccountHasMore = true;
+        }
+
+        function toggleMovementTypeFields() {
+            const isRelocation = document.getElementById('type_relocation').checked;
+            const sourceRow = document.getElementById('source_budget_account_row');
+            const sourceSelect = document.getElementById('source_budget_account_id');
+
+            if (sourceRow) {
+                sourceRow.classList.toggle('d-none', !isRelocation);
+            }
+
+            if (sourceSelect) {
+                sourceSelect.required = isRelocation;
+            }
+
+            if (!isRelocation && sourceBudgetAccountChoice) {
+                sourceBudgetAccountChoice.setChoiceByValue('');
+            }
         }
 
         function initBudgetAccountChoices() {
@@ -791,12 +933,17 @@
             if (budgetAccountLoading) return;
             if (!replace && !budgetAccountHasMore) return;
             if (!budgetAccountChoice) return;
+            if (!getSelectedWorkPlanId()) {
+                setChoicePlaceholder(budgetAccountChoice, 'Select work plan first');
+                return;
+            }
 
             budgetAccountLoading = true;
             const params = new URLSearchParams({
                 q: query || '',
                 page: String(page),
                 limit: String(budgetAccountPageSize),
+                work_plan_id: getSelectedWorkPlanId(),
             });
 
             fetch(`${ROUTES.budgetCodesAll}?${params.toString()}`)
@@ -846,6 +993,148 @@
                 });
         }
 
+        function initSourceBudgetAccountChoices() {
+            const selectEl = document.getElementById('source_budget_account_id');
+            if (!selectEl) return;
+
+            selectEl.innerHTML = '<option value="">Select Source Budget Account</option>';
+
+            sourceBudgetAccountChoice = new Choices(selectEl, {
+                searchEnabled: true,
+                searchChoices: false,
+                removeItemButton: false,
+                placeholder: true,
+                placeholderValue: 'Select Source Budget Account',
+                searchPlaceholderValue: 'Search source budget account...',
+                shouldSort: false
+            });
+
+            function bindScrollListener() {
+                if (sourceBudgetAccountScrollBound) return;
+                sourceBudgetAccountScrollBound = true;
+
+                const listEl = sourceBudgetAccountChoice.choiceList && sourceBudgetAccountChoice.choiceList.element;
+                if (!listEl) return;
+
+                listEl.addEventListener('scroll', function() {
+                    const threshold = 60;
+                    if (listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - threshold) {
+                        if (!sourceBudgetAccountLoading && sourceBudgetAccountHasMore) {
+                            sourceBudgetAccountPage++;
+                            fetchSourceBudgetAccountCodes(sourceBudgetAccountQuery, sourceBudgetAccountPage, false);
+                        }
+                    }
+                });
+            }
+
+            function triggerLoad() {
+                sourceBudgetAccountPage = 1;
+                sourceBudgetAccountHasMore = true;
+                fetchSourceBudgetAccountCodes(sourceBudgetAccountQuery, 1, true);
+                bindScrollListener();
+            }
+
+            selectEl.addEventListener('showDropdown', triggerLoad);
+            setTimeout(function() {
+                const containerEl = sourceBudgetAccountChoice.containerOuter && sourceBudgetAccountChoice.containerOuter.element;
+                if (!containerEl) return;
+                containerEl.addEventListener('click', function() {
+                    if (sourceBudgetAccountChoice.isOpen) {
+                        triggerLoad();
+                    }
+                });
+            }, 0);
+
+            selectEl.addEventListener('search', function(e) {
+                const query = (e && e.detail && e.detail.value) ? e.detail.value : '';
+                clearTimeout(sourceBudgetAccountSearchTimer);
+                sourceBudgetAccountSearchTimer = setTimeout(() => {
+                    sourceBudgetAccountQuery = query;
+                    sourceBudgetAccountPage = 1;
+                    sourceBudgetAccountHasMore = true;
+                    fetchSourceBudgetAccountCodes(sourceBudgetAccountQuery, 1, true);
+                }, 300);
+            });
+
+            setTimeout(function() {
+                const inputEl = sourceBudgetAccountChoice.input && sourceBudgetAccountChoice.input.element;
+                if (!inputEl) return;
+                inputEl.addEventListener('input', function() {
+                    if (this.value === '') {
+                        clearTimeout(sourceBudgetAccountSearchTimer);
+                        sourceBudgetAccountQuery = '';
+                        sourceBudgetAccountPage = 1;
+                        sourceBudgetAccountHasMore = true;
+                        fetchSourceBudgetAccountCodes('', 1, true);
+                    }
+                });
+            }, 0);
+        }
+
+        function fetchSourceBudgetAccountCodes(query, page, replace = false) {
+            if (sourceBudgetAccountLoading) return;
+            if (!replace && !sourceBudgetAccountHasMore) return;
+            if (!sourceBudgetAccountChoice) return;
+            if (!getSelectedWorkPlanId()) {
+                setChoicePlaceholder(sourceBudgetAccountChoice, 'Select work plan first');
+                return;
+            }
+
+            sourceBudgetAccountLoading = true;
+            const params = new URLSearchParams({
+                q: query || '',
+                page: String(page),
+                limit: String(budgetAccountPageSize),
+                work_plan_id: getSelectedWorkPlanId(),
+            });
+
+            fetch(`${ROUTES.budgetCodesAll}?${params.toString()}`)
+                .then(response => response.json())
+                .then(payload => {
+                    if (!payload || !payload.success) return;
+                    sourceBudgetAccountHasMore = payload.has_more || false;
+                    const results = payload.data || [];
+                    const choices = results.map(item => ({
+                        value: String(item.value),
+                        label: item.label || normalizeLabel(item),
+                    }));
+                    sourceBudgetAccountChoice.setChoices(choices, 'value', 'label', replace);
+                })
+                .catch(() => {})
+                .finally(() => {
+                    sourceBudgetAccountLoading = false;
+                });
+        }
+
+        function ensureSourceBudgetAccountChoiceSelected(budgetAccountId) {
+            if (!sourceBudgetAccountChoice || !budgetAccountId) return Promise.resolve();
+
+            const target = String(budgetAccountId);
+            const store = sourceBudgetAccountChoice._store || {};
+            const existingChoices = Array.isArray(store.choices) ? store.choices : [];
+            const exists = existingChoices.some(item => String(item.value) === target);
+
+            if (exists) {
+                sourceBudgetAccountChoice.setChoiceByValue(target);
+                return Promise.resolve();
+            }
+
+            const params = new URLSearchParams({ id: target });
+
+            return fetch(`${ROUTES.budgetCodesAll}?${params.toString()}`)
+                .then(response => response.json())
+                .then(payload => {
+                    if (!payload || !payload.success || !payload.data || payload.data.length === 0) return;
+
+                    const item = payload.data[0];
+                    sourceBudgetAccountChoice.setChoices([{
+                        value: String(item.value),
+                        label: item.label || normalizeLabel(item),
+                    }], 'value', 'label', false);
+                    sourceBudgetAccountChoice.setChoiceByValue(String(item.value));
+                });
+        }
+
         function loadWorkPlans(divisionId, selectedWorkPlanId = null) {
             if (!divisionId) {
                 if (workPlanChoice) {
@@ -857,7 +1146,8 @@
                         selected: true
                     }], 'value', 'label', true);
                 }
-                return;
+                resetBudgetItemChoices();
+                return Promise.resolve();
             }
 
             if (workPlanChoice) {
@@ -868,6 +1158,8 @@
                     disabled: true
                 }], 'value', 'label', true);
             }
+
+            resetBudgetItemChoices();
 
             return fetch(`${ROUTES.workplansByDivision}?division_id=${divisionId}`)
                 .then(response => response.json())
@@ -919,6 +1211,7 @@
             document.getElementById('form_method').value = 'POST';
             document.getElementById('budgetSubmissionModalLabel').textContent = 'Add Budget Movement';
             document.getElementById('submission_date').value = '{{ date('Y-m-d') }}';
+            setEstimationAmount('');
 
             if (divisionChoice) {
                 const selectedDefault = document.querySelector('#division_id option[selected]');
@@ -932,6 +1225,8 @@
             }
 
             if (budgetAccountChoice) budgetAccountChoice.setChoiceByValue('');
+            if (sourceBudgetAccountChoice) sourceBudgetAccountChoice.setChoiceByValue('');
+            toggleMovementTypeFields();
         }
 
         function editSubmission(id) {
@@ -953,11 +1248,12 @@
                     document.getElementById('budgetSubmissionModalLabel').textContent = 'Edit Budget Submission';
                     document.getElementById('submission_date').value = data.submission_date;
                     document.getElementById('description').value = data.description || '';
-                    document.getElementById('estimation_amount').value = data.estimation_amount;
+                    setEstimationAmount(data.estimation_amount);
 
+                    let workPlanLoad = Promise.resolve();
                     if (divisionChoice) {
                         divisionChoice.setChoiceByValue(String(data.division_id));
-                        loadWorkPlans(data.division_id, data.work_plan_id);
+                        workPlanLoad = loadWorkPlans(data.division_id, data.work_plan_id);
                     }
 
                     if (data.type === 'add') {
@@ -966,9 +1262,16 @@
                         document.getElementById('type_relocation').checked = true;
                     }
 
-                    if (budgetAccountChoice && data.budget_account_id) {
-                        ensureBudgetAccountChoiceSelected(data.budget_account_id);
-                    }
+                    toggleMovementTypeFields();
+
+                    workPlanLoad.then(() => Promise.all([
+                        budgetAccountChoice && data.budget_account_id
+                            ? ensureBudgetAccountChoiceSelected(data.budget_account_id)
+                            : Promise.resolve(),
+                        sourceBudgetAccountChoice && data.source_budget_account_id
+                            ? ensureSourceBudgetAccountChoiceSelected(data.source_budget_account_id)
+                            : Promise.resolve()
+                    ]));
 
                     const modal = new bootstrap.Modal(document.getElementById('budgetSubmissionModal'));
                     modal.show();
@@ -1006,6 +1309,12 @@
                     document.getElementById('detailSubmissionType').textContent = data.type_label || '-';
                     document.getElementById('detailSubmissionWorkPlan').textContent = data.work_plan || '-';
                     document.getElementById('detailSubmissionBudgetAccount').textContent = data.budget_account || '-';
+                    const sourceLabel = document.getElementById('detailSourceBudgetAccountLabel');
+                    const sourceValue = document.getElementById('detailSourceBudgetAccount');
+                    const showSource = (data.source_budget_account && data.source_budget_account !== '-');
+                    sourceLabel.classList.toggle('d-none', !showSource);
+                    sourceValue.classList.toggle('d-none', !showSource);
+                    sourceValue.textContent = data.source_budget_account || '-';
                     document.getElementById('detailSubmissionAmount').textContent = formatIdr(data.estimation_amount || 0);
                     document.getElementById('detailSubmissionDescription').textContent = data.description || '-';
                     document.getElementById('detailSubmissionCreator').textContent = data.created_by || '-';
@@ -1524,6 +1833,91 @@
                 });
         }
 
+        function showBudgetSubmissionApprovalTimeline(submissionId) {
+            fetch(routeWithId(ROUTES.approvalTimeline, submissionId), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (!result.success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Approval Progress',
+                            text: result.message || 'Approval timeline is not available.'
+                        });
+                        return;
+                    }
+
+                    const item = result.data || {};
+                    const submission = item.submission || {};
+                    const refNo = item.reference_number || '-';
+                    const requester = item.requester_name || '-';
+                    const currentApprover = item.current_approver || '-';
+                    const levelText = `${item.current_level || 0} / ${item.total_levels || 0}`;
+
+                    $('#submissionApprovalTimelineModalLabel').text('Approval Progress');
+                    $('#submissionApprovalItemDetails').html(`
+                        <table class="table table-sm table-borderless mb-0 submission-item-details">
+                            <tr><td>Ref Number</td><td class="fw-semibold">${refNo}</td></tr>
+                            <tr><td>Submission</td><td>${submission.description || '-'}</td></tr>
+                            <tr><td>Division</td><td>${submission.division_name || '-'}</td></tr>
+                            <tr><td>Work Plan</td><td>${submission.work_plan_activity || '-'}</td></tr>
+                            ${submission.source_budget_account && submission.source_budget_account !== '-' ? `<tr><td>Source Budget Account</td><td>${submission.source_budget_account}</td></tr>` : ''}
+                            <tr><td>Budget Account</td><td>${submission.budget_account || '-'}</td></tr>
+                            <tr><td>Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
+                            <tr><td>Requester</td><td>${requester}</td></tr>
+                            <tr><td>Current Level</td><td><span class="badge bg-info">${levelText}</span></td></tr>
+                            <tr><td>Current Approver</td><td class="fw-semibold">${currentApprover}</td></tr>
+                        </table>
+                    `);
+
+                    const timeline = item.timeline || [];
+                    if (!timeline.length) {
+                        $('#submissionApprovalTimeline').html(`<div class="text-muted">No timeline.</div>`);
+                    } else {
+                        const nextPending = timeline.find(t => t.status === 'pending');
+                        let timelineHtml = '';
+                        timeline.forEach(detailItem => {
+                            const isCurrent = nextPending && nextPending.id === detailItem.id;
+                            const className = getSubmissionTimelineClass(detailItem.status, isCurrent);
+                            const phase = detailItem.phase ? `<span class="text-muted ms-2">${detailItem.phase}</span>` : '';
+                            timelineHtml += `
+                                <div class="timeline-item ${className} ${isCurrent ? 'current' : ''}">
+                                    <div>
+                                        <strong>Level ${detailItem.level_sequence || '-'}</strong>
+                                        ${phase}
+                                        <span class="badge bg-${getSubmissionTimelineBadge(detailItem.status)} ms-2">
+                                            ${detailItem.status}
+                                        </span>
+                                    </div>
+                                    <div>${detailItem.employment_name || '-'}</div>
+                                    <div class="small text-muted">${detailItem.approved_at ? toDateLabel(detailItem.approved_at) : '-'}</div>
+                                </div>
+                            `;
+                        });
+                        $('#submissionApprovalTimeline').html(timelineHtml);
+                    }
+
+                    $('#submissionApprovalModalFooter').html(
+                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>'
+                    );
+
+                    const modal = new bootstrap.Modal(document.getElementById('submissionApprovalTimelineModal'));
+                    modal.show();
+                })
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load approval progress.'
+                    });
+                });
+        }
+
         function showSubmissionApprovalDetail(index, mode) {
             const list = mode === 'history' ? approvedApprovals : pendingApprovals;
             const item = list[index];
@@ -1535,11 +1929,14 @@
             const requester = detail.requester_name || '-';
             const refNo = detail.reference_number || '-';
 
+            $('#submissionApprovalTimelineModalLabel').text('Approval Detail');
+
             const detailsHtml = `
                 <table class="table table-sm table-borderless mb-0 submission-item-details">
                     <tr><td>Ref Number</td><td class="fw-semibold">${refNo}</td></tr>
                     <tr><td>Submission</td><td>${submission.description || '-'}</td></tr>
                     <tr><td>Division</td><td>${submission.division_name || '-'}</td></tr>
+                    ${submission.source_budget_account && submission.source_budget_account !== '-' ? `<tr><td>Source Budget Account</td><td>${submission.source_budget_account}</td></tr>` : ''}
                     <tr><td>Budget Account</td><td>${submission.budget_account || '-'}</td></tr>
                     <tr><td>Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
                     <tr><td>Requester</td><td>${requester}</td></tr>

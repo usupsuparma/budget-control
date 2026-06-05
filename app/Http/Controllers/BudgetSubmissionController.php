@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BudgetCode;
-use App\Models\BudgetSubmission;
 use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalService;
 use App\Services\BudgetSubmissionService\BudgetSubmissionService;
 use App\Services\BudgetSubmissionService\DTOs\BudgetSubmissionData;
@@ -13,7 +11,6 @@ use App\Http\Requests\UpdateBudgetSubmissionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class BudgetSubmissionController extends Controller
@@ -49,6 +46,12 @@ class BudgetSubmissionController extends Controller
                 if ($submission->isPending() && $submission->hasPendingApproval()) {
                     $statusColor = 'info';
                 }
+                $statusHtml = '<span class="badge bg-' . $statusColor . '">' . e($statusLabel) . '</span>';
+                if ($submission->isPending() && $submission->hasPendingApproval()) {
+                    $statusHtml = '<button type="button" class="badge bg-info border-0 approval-status-badge" '
+                        . 'onclick="showBudgetSubmissionApprovalTimeline(' . $submission->id . ')" '
+                        . 'title="View approval progress">' . e($statusLabel) . '</button>';
+                }
 
                 $typeColor = $submission->type == 'add' ? 'info' : 'secondary';
                 $typeLabel = $submission->type == 'add' ? 'Add Budget' : 'Relocation';
@@ -61,8 +64,8 @@ class BudgetSubmissionController extends Controller
                 $html .= '<td><small>' . e($submission->workPlan->activity ?? '-') . '</small></td>';
                 $html .= '<td><small>' . e(Str::limit($submission->description ?? '', 50)) . '</small></td>';
                 $html .= '<td class="text-end">Rp ' . number_format($submission->estimation_amount, 0, ',', '.') . '</td>';
-                $html .= '<td><small>' . e($submission->budgetAccount->stock_code ?? '-') . ' | ' . e($submission->budgetAccount->name ?? '-') . '</small></td>';
-                $html .= '<td><span class="badge bg-' . $statusColor . '">' . e($statusLabel) . '</span></td>';
+                $html .= '<td><small>' . e($submission->budget_account_label) . '</small></td>';
+                $html .= '<td>' . $statusHtml . '</td>';
                 
                 // Action buttons
                 $html .= '<td><div class="btn-group" role="group">';
@@ -92,6 +95,22 @@ class BudgetSubmissionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load table data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function approvalTimeline(int $id)
+    {
+        try {
+            $result = $this->budgetSubmissionApprovalService->getApprovalTimelineForSubmission($id);
+
+            return response()->json($result, $result['success'] ? 200 : 404);
+        } catch (\Throwable $e) {
+            Log::error('BudgetSubmissionController.approvalTimeline error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat approval timeline: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -250,25 +269,11 @@ class BudgetSubmissionController extends Controller
     public function show($id)
     {
         try {
-            $submission = BudgetSubmission::with(['user', 'division', 'workPlan', 'budgetAccount'])
-                ->findOrFail($id);
+            $data = $this->budgetSubmissionService->show((int) $id);
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $submission->id,
-                    'submission_date' => $submission->submission_date->format('d/m/Y'),
-                    'division' => $submission->division->name ?? '-',
-                    'type_label' => $submission->type_label,
-                    'work_plan' => $submission->workPlan->activity ?? '-',
-                    'budget_account' => trim(($submission->budgetAccount->stock_code ?? '-') . ' | ' . ($submission->budgetAccount->name ?? '-')),
-                    'description' => $submission->description ?? '-',
-                    'estimation_amount' => (int) $submission->estimation_amount,
-                    'status_label' => $submission->status_label,
-                    'status_color' => $submission->status_color,
-                    'created_by' => $submission->user?->first_name ?: ($submission->user?->full_name ?? '-'),
-                    'status' => (int) $submission->status
-                ]
+                'data' => $data,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -484,160 +489,37 @@ class BudgetSubmissionController extends Controller
      */
     public function getWorkPlansByDivision(Request $request)
     {
-        $divisionId = $request->get('division_id');
-        $year = date('Y');
-
-        if (! $divisionId) {
-            return response()->json([]);
-        }
-
-        $workPlans = \App\Models\KPIWorkPlan::whereDivisionIn([$divisionId])
-            ->where('year', $year)
-            ->where('status', 'approved')
-            ->select('id', 'activity', 'year')
-            ->orderBy('activity')
-            ->get()
-            ->map(function($wp) {
-                return [
-                    'value' => $wp->id,
-                    'label' => '[' . $wp->year . '] ' . $wp->activity
-                ];
-            });
-
-        return response()->json($workPlans);
+        return response()->json(
+            $this->budgetSubmissionService->getWorkPlansByDivision($request->integer('division_id') ?: null)
+        );
     }
 
     /**
-     * Get all budget codes for dropdown (simple AJAX)
+     * Get workplan budget items for dropdown (legacy route name retained).
      */
     public function getAllBudgetCodes(Request $request)
     {
-        $query = trim((string) $request->get('q', ''));
-        $page = max(1, (int) $request->get('page', 1));
-        $limit = min(100, max(1, (int) $request->get('limit', 20)));
-        $selectedId = $request->get('id');
-
-        $codeColumn = Schema::hasColumn('budget_code', 'budget_code') ? 'budget_code' : 'stock_code';
-
-        // Optional single fetch for edit mode
-        if (! empty($selectedId)) {
-            $selected = BudgetCode::select('id', $codeColumn, 'name')
-                ->where('id', $selectedId)
-                ->first();
-
-            if (! $selected) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [],
-                    'has_more' => false,
-                    'page' => 1,
-                    'total' => 0,
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => [[
-                    'value' => (string) $selected->id,
-                    'label' => $selected->{$codeColumn} . ' - ' . $selected->name
-                ]],
-                'has_more' => false,
-                'page' => 1,
-                'total' => 1,
-            ]);
-        }
-
-        $queryBuilder = BudgetCode::query()
-            ->select('id', $codeColumn, 'name');
-
-        if (! empty($query)) {
-            $queryBuilder->where(function($builder) use ($query, $codeColumn) {
-                $builder->where($codeColumn, 'like', '%' . $query . '%')
-                    ->orWhere('name', 'like', '%' . $query . '%');
-            });
-        }
-
-        $queryBuilder->orderBy($codeColumn);
-
-        $total = $queryBuilder->count();
-        $offset = ($page - 1) * $limit;
-        $budgetCodes = $queryBuilder->skip($offset)->take($limit)->get()
-            ->map(function($code) use ($codeColumn) {
-                $codeValue = $code->{$codeColumn};
-                return [
-                    'value' => (string) $code->id,
-                    'label' => $codeValue . ' - ' . $code->name
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'data' => $budgetCodes,
-            'has_more' => (($offset + $limit) < $total),
-            'page' => $page,
-            'total' => $total,
-            'query' => $query,
-            'limit' => $limit,
-        ]);
+        return response()->json(
+            $this->budgetSubmissionService->getBudgetItemsForDropdown($request->all())
+        );
     }
 
     /**
-     * Get budget codes with pagination and search for AJAX requests
+     * Get workplan budget items with Select2-compatible response (legacy route name retained).
      */
     public function getBudgetCodes(Request $request)
     {
-        $search = $request->get('search', '');
-        $page = $request->get('page', 1);
-        $id = $request->get('id', null);
-        $perPage = 30; // Load 30 items per request
-
-        // If requesting specific ID (for edit mode)
-        if ($id) {
-            $budgetCode = BudgetCode::find($id);
-            if ($budgetCode) {
-                return response()->json([
-                    'results' => [[
-                        'id' => $budgetCode->id,
-                        'text' => $budgetCode->stock_code . ' - ' . $budgetCode->name
-                    ]]
-                ]);
-            }
-            return response()->json(['results' => []]);
-        }
-
-        $query = BudgetCode::query();
-
-        // If there's a search term, filter by stock_code or name
-        if (! empty($search)) {
-            $query->where(function($q) use ($search) {
-                $q->where('stock_code', 'like', '%' . $search . '%')
-                  ->orWhere('name', 'like', '%' . $search . '%');
-            });
-        }
-
-        // Get total count for pagination
-        $total = $query->count();
-
-        // Get paginated results
-        $budgetCodes = $query->select('id', 'stock_code', 'name')
-            ->orderBy('stock_code')
-            ->skip(($page - 1) * $perPage)
-            ->take($perPage)
-            ->get();
-
-        // Format for Select2
-        $results = $budgetCodes->map(function($code) {
-            return [
-                'id' => $code->id,
-                'text' => $code->stock_code . ' - ' . $code->name
-            ];
-        });
+        $payload = $this->budgetSubmissionService->getBudgetItemsForDropdown($request->all());
+        $results = collect($payload['data'] ?? [])->map(fn ($item) => [
+            'id' => $item['value'],
+            'text' => $item['label'],
+        ]);
 
         return response()->json([
             'results' => $results,
             'pagination' => [
-                'more' => ($page * $perPage) < $total
-            ]
+                'more' => $payload['has_more'] ?? false,
+            ],
         ]);
     }
 

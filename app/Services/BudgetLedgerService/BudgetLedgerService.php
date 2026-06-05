@@ -41,6 +41,17 @@ interface BudgetLedgerService
     public function recordLpjSettlementMutations(int $transactionId, int $lpjSubmissionId): array;
 
     /**
+     * Record budget movement after a budget submission is fully approved.
+     *
+     * Add budget: CREDIT target budget item.
+     * Relocation: DEBIT source budget item and CREDIT target budget item.
+     *
+     * @param int $submissionId budget_submissions.id
+     * @return array ['success' => bool, 'message' => string, 'data' => mixed]
+     */
+    public function recordBudgetSubmissionMovement(int $submissionId): array;
+
+    /**
      * Validate if budget has sufficient balance for a transaction before approval.
      * Checks each transaction_detail.estimated_total against the current_balance
      * of its linked workplan_budget_item.
@@ -52,7 +63,7 @@ interface BudgetLedgerService
 
     /**
      * Get current balance for a specific workplan_budget_item.
-     * Formula: initial_budget - total_debit + total_credit
+     * Formula: total_credit - total_debit.
      * 
      * @param int $budgetItemId workplan_budget_items.id
      * @return array ['success' => bool, 'data' => ['initial_budget', 'total_debit', 'total_credit', 'current_balance']]

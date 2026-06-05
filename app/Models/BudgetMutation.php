@@ -24,6 +24,7 @@ class BudgetMutation extends Model
         'transaction_id',
         'transaction_detail_id',
         'transaction_lpj_submission_id',
+        'budget_submission_id',
         'mutation_type',
         'amount',
         'category',
@@ -45,6 +46,9 @@ class BudgetMutation extends Model
     const CATEGORY_CASH_ADVANCE = 'CASH_ADVANCE';
     const CATEGORY_LPJ_REFUND = 'LPJ_REFUND';
     const CATEGORY_LPJ_REIMBURSE = 'LPJ_REIMBURSE';
+    const CATEGORY_BUDGET_AMENDMENT = 'BUDGET_AMENDMENT';
+    const CATEGORY_BUDGET_RELOCATION_OUT = 'BUDGET_RELOCATION_OUT';
+    const CATEGORY_BUDGET_RELOCATION_IN = 'BUDGET_RELOCATION_IN';
 
     // ========== RELATIONSHIPS ==========
 
@@ -66,6 +70,11 @@ class BudgetMutation extends Model
     public function lpjSubmission()
     {
         return $this->belongsTo(TransactionLpjSubmission::class, 'transaction_lpj_submission_id');
+    }
+
+    public function budgetSubmission()
+    {
+        return $this->belongsTo(BudgetSubmission::class, 'budget_submission_id');
     }
 
     // ========== SCOPES ==========

@@ -31,7 +31,9 @@ return new class extends Migration
             $table->unique(['name', 'guard_name']);
         });
 
-        DB::statement("ALTER TABLE {$tableNames['permissions']} ROW_FORMAT=DYNAMIC;");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE {$tableNames['permissions']} ROW_FORMAT=DYNAMIC;");
+        }
 
         // -----------------------------------
         // ROLES TABLE
@@ -59,7 +61,9 @@ return new class extends Migration
             }
         });
 
-        DB::statement("ALTER TABLE {$tableNames['roles']} ROW_FORMAT=DYNAMIC;");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE {$tableNames['roles']} ROW_FORMAT=DYNAMIC;");
+        }
 
         // -----------------------------------
         // MODEL_HAS_PERMISSIONS

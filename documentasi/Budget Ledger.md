@@ -32,13 +32,14 @@ CREATE TABLE budget_mutations (
     transaction_id BIGINT UNSIGNED NULL,
     transaction_detail_id BIGINT UNSIGNED NULL,
     transaction_lpj_submission_id BIGINT UNSIGNED NULL,
+    budget_submission_id BIGINT UNSIGNED NULL,
     
     -- 3. INTI LEDGER
     mutation_type ENUM('D', 'C') NOT NULL COMMENT 'D=Debit (Keluar/Penggunaan), C=Credit (Masuk/Refund/Initial)',
     amount DECIMAL(19, 4) NOT NULL DEFAULT 0.0000,
     
     -- 4. METADATA
-    category VARCHAR(50) NOT NULL COMMENT 'INITIAL_BUDGET, CASH_ADVANCE, LPJ_REFUND, LPJ_REIMBURSE, AMENDMENT',
+    category VARCHAR(50) NOT NULL COMMENT 'INITIAL_BUDGET, CASH_ADVANCE, LPJ_REFUND, LPJ_REIMBURSE, BUDGET_AMENDMENT, BUDGET_RELOCATION_OUT, BUDGET_RELOCATION_IN',
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -47,6 +48,7 @@ CREATE TABLE budget_mutations (
     FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
     FOREIGN KEY (transaction_detail_id) REFERENCES transaction_details(id) ON DELETE CASCADE,
     FOREIGN KEY (transaction_lpj_submission_id) REFERENCES transaction_lpj_submissions(id) ON DELETE SET NULL,
+    FOREIGN KEY (budget_submission_id) REFERENCES budget_submissions(id) ON DELETE SET NULL,
     
     -- Index untuk performa hitung saldo
     INDEX idx_ledger_calc (workplan_budget_item_id, mutation_type)
@@ -129,7 +131,37 @@ foreach ($details as $detail) {
 
 ```
 
-### Fase Tambahan: Revisi Anggaran (Optional)
+### Fase Tambahan: Budget Movement / Revisi Anggaran
+
+**Trigger:** Dokumen `budget_submissions` disetujui penuh melalui approval chain.
+
+Budget movement memiliki dua tipe:
+
+1. **Add Budget**
+   * `budget_submissions.budget_account_id` menunjuk ke `workplan_budget_items.id` tujuan.
+   * Saat approved, insert satu mutasi:
+     * `mutation_type`: **'C'**
+     * `category`: **'BUDGET_AMENDMENT'**
+     * `amount`: `budget_submissions.estimation_amount`
+     * `budget_submission_id`: ID submission
+
+2. **Relocation Budget**
+   * `budget_submissions.source_budget_account_id` menunjuk ke `workplan_budget_items.id` sumber.
+   * `budget_submissions.budget_account_id` menunjuk ke `workplan_budget_items.id` tujuan.
+   * Saat approved, insert dua mutasi dalam satu transaksi database:
+     * Sumber: `mutation_type` **'D'**, `category` **'BUDGET_RELOCATION_OUT'**
+     * Tujuan: `mutation_type` **'C'**, `category` **'BUDGET_RELOCATION_IN'**
+   * Source dan target tidak boleh sama.
+   * Source dan target wajib merupakan budget item approved dari workplan yang dipilih pada submission.
+   * Saldo source wajib cukup berdasarkan rumus pure ledger sebelum mutasi dicatat.
+
+`budget_submission_id` digunakan sebagai referensi idempotency. Jika approval final terpanggil ulang, service tidak boleh membuat mutasi budget movement ganda.
+
+**Catatan UI:** Field `Estimation` pada form Budget Movement ditampilkan dengan separator ribuan format Indonesia (contoh `1.000.000`) untuk mengurangi salah input. Nilai yang dikirim ke backend tetap angka mentah tanpa separator (contoh `1000000`) agar validasi numeric dan pencatatan ledger tetap konsisten.
+
+Pada daftar Budget Movement, status `In Approval Process` dapat diklik untuk membuka modal progress approval. Modal ini menampilkan nomor approval request, posisi level saat ini, approver yang sedang menunggu aksi, dan semua approver pada timeline beserta statusnya.
+
+### Fase Tambahan Lama: Top Up Anggaran Manual (Optional)
 
 Jika di masa depan ada penambahan anggaran (*Top Up*), Anda cukup insert baris baru:
 

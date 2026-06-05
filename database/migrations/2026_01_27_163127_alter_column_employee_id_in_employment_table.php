@@ -17,12 +17,14 @@ return new class extends Migration
     {
         // Step 1: Update employment.employee_id from NIP to employee.id
         // The current employee_id contains NIP which matches employee.employee_id (akan jadi employee_code)
-        DB::statement("
-            UPDATE employment e
-            INNER JOIN employee emp ON e.employee_id = emp.employee_id
-            SET e.employee_id = emp.id
-            WHERE e.employee_id IS NOT NULL
-        ");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("
+                UPDATE employment e
+                INNER JOIN employee emp ON e.employee_id = emp.employee_id
+                SET e.employee_id = emp.id
+                WHERE e.employee_id IS NOT NULL
+            ");
+        }
 
         // Step 2: Change column type
         Schema::table('employment', function (Blueprint $table) {
@@ -42,11 +44,13 @@ return new class extends Migration
 
         // Step 2: Revert employment.employee_id from id back to NIP (employee_code)
         // At this point, employee.employee_id has been renamed back to employee_id from employee_code
-        DB::statement("
-            UPDATE employment e
-            INNER JOIN employee emp ON e.employee_id = emp.id
-            SET e.employee_id = emp.employee_id
-            WHERE e.employee_id IS NOT NULL
-        ");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("
+                UPDATE employment e
+                INNER JOIN employee emp ON e.employee_id = emp.id
+                SET e.employee_id = emp.employee_id
+                WHERE e.employee_id IS NOT NULL
+            ");
+        }
     }
 };

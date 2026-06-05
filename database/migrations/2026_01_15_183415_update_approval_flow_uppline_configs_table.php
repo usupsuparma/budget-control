@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::table('approval_flow_uppline_configs', function (Blueprint $table) {
             // Make division_id nullable if not already
-            if (Schema::hasColumn('approval_flow_uppline_configs', 'division_id')) {
+            if (DB::getDriverName() === 'mysql' && Schema::hasColumn('approval_flow_uppline_configs', 'division_id')) {
                 DB::statement('ALTER TABLE approval_flow_uppline_configs MODIFY division_id BIGINT UNSIGNED NULL');
             }
             

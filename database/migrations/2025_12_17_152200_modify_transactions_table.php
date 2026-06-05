@@ -25,7 +25,7 @@ return new class extends Migration
             
             
             // Indexes
-            $table->index(['status', 'current_approval_level'], 'idx_status_level');
+            $table->index(['status', 'current_approval_level'], 'idx_transactions_status_level');
             $table->index('approval_completed_at');
         });
     }
@@ -38,7 +38,7 @@ return new class extends Migration
          Schema::table('transactions', function (Blueprint $table) {
            
             // drop index
-            $table->dropIndex('idx_status_level');
+            $table->dropIndex('idx_transactions_status_level');
             $table->dropIndex(['approval_completed_at']);
             
             $table->dropColumn([

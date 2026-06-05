@@ -14,6 +14,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 - [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md) - Bug fix history and rules for level-aware Division name resolution (`getDivisionName()`).
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
 - [Transaction Approval and LPJ Status Workflow](documentasi/TRANSACTION_APPROVAL_LPJ_STATUS_WORKFLOW.md) - Transaction status lifecycle, LPJ eligibility, and proof-file preview behavior.
+- [Budget Ledger](documentasi/Budget Ledger.md) - Pure ledger source of truth, budget mutation categories, and balance formula.
 - [Sidebar Route Name Standard](documentasi/SIDEBAR_ROUTE_NAME_STANDARD.md) - Sidebar links and active/collapse states must use named routes.
 - [User Role Service](documentasi/USER_ROLE_SERVICE.md) - Single source of truth for admin/scoped role checks. Update `ADMIN_ROLES` constant here when role names change.
 
@@ -115,6 +116,17 @@ Two-phase sequential approval with immutable snapshots:
 
 **Snapshot Rule:**
 When an approval request is created, MUST save a JSON snapshot of the source data (e.g., in `approval_flow_details`) to ensure history remains valid even if master data changes.
+
+### Budget Movement Architecture
+
+Budget Movement / Budget Submission uses `workplan_budget_items` as the budget account source. `budget_submissions.budget_account_id` is the target `workplan_budget_items.id`; relocation also requires `source_budget_account_id` as the source `workplan_budget_items.id`.
+Source and target budget items must be approved and belong to the selected `budget_submissions.work_plan_id`.
+
+When a budget submission is fully approved, approval MUST record append-only rows in `budget_mutations` before marking the submission as approved:
+- Add Budget: one CREDIT mutation with category `BUDGET_AMENDMENT`.
+- Relocation: one DEBIT mutation from source with category `BUDGET_RELOCATION_OUT` and one CREDIT mutation to target with category `BUDGET_RELOCATION_IN`.
+
+Relocation must validate source balance using `BudgetLedgerService::getBudgetBalance()` and must be idempotent through `budget_mutations.budget_submission_id`.
 
 ### Eager Loading Standard (Anti N+1)
 

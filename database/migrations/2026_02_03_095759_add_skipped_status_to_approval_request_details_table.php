@@ -16,7 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         // MySQL specific: Modify ENUM to add 'skipped' value
-        DB::statement("ALTER TABLE approval_request_details MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'skipped') DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE approval_request_details MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'skipped') DEFAULT 'pending'");
+        }
     }
 
     /**
@@ -30,6 +32,8 @@ return new class extends Migration
             ->update(['status' => 'pending']);
             
         // Then modify ENUM back to original values
-        DB::statement("ALTER TABLE approval_request_details MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE approval_request_details MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
+        }
     }
 };

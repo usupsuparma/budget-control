@@ -3,6 +3,7 @@
 namespace App\Services\BudgetLedgerService;
 
 use App\Models\BudgetMutation;
+use App\Models\BudgetSubmission;
 use App\Models\Transaction;
 use App\Models\WorkplanBudgetItem;
 use Exception;
@@ -275,6 +276,159 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
     }
 
     /**
+     * Record Add Budget or Relocation Budget mutations from approved budget submission.
+     */
+    public function recordBudgetSubmissionMovement(int $submissionId): array
+    {
+        try {
+            return DB::transaction(function () use ($submissionId) {
+                $submission = BudgetSubmission::lockForUpdate()->find($submissionId);
+
+                if (! $submission) {
+                    return ['success' => false, 'message' => 'Budget submission tidak ditemukan.'];
+                }
+
+                $existingMutationCount = BudgetMutation::where('budget_submission_id', $submissionId)->count();
+                if ($existingMutationCount > 0) {
+                    return [
+                        'success' => true,
+                        'message' => 'Mutasi budget movement untuk submission ini sudah pernah dicatat.',
+                        'data' => BudgetMutation::where('budget_submission_id', $submissionId)->get(),
+                    ];
+                }
+
+                $amount = (float) $submission->estimation_amount;
+                if ($amount <= 0) {
+                    return ['success' => false, 'message' => 'Nilai budget movement harus lebih dari 0.'];
+                }
+
+                $budgetItemIds = collect([
+                    $submission->budget_account_id,
+                    $submission->source_budget_account_id,
+                ])
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                $budgetItems = WorkplanBudgetItem::whereIn('id', $budgetItemIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                $targetBudgetItem = $budgetItems->get($submission->budget_account_id);
+                if (! $targetBudgetItem) {
+                    return ['success' => false, 'message' => 'Budget item tujuan tidak ditemukan.'];
+                }
+
+                $targetValidation = $this->validateSubmissionBudgetItem($targetBudgetItem, $submission->work_plan_id, 'tujuan');
+                if (! $targetValidation['success']) {
+                    return $targetValidation;
+                }
+
+                if ($submission->type === 'add') {
+                    $mutation = BudgetMutation::create([
+                        'workplan_budget_item_id' => $targetBudgetItem->id,
+                        'transaction_id' => null,
+                        'transaction_detail_id' => null,
+                        'transaction_lpj_submission_id' => null,
+                        'budget_submission_id' => $submission->id,
+                        'mutation_type' => BudgetMutation::TYPE_CREDIT,
+                        'amount' => $amount,
+                        'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
+                        'description' => 'Add Budget Movement #' . $submission->id . ': ' . BudgetSubmission::formatBudgetItemLabel($targetBudgetItem),
+                        'created_at' => now(),
+                    ]);
+
+                    return [
+                        'success' => true,
+                        'message' => 'Mutasi add budget berhasil dicatat.',
+                        'data' => [$mutation],
+                    ];
+                }
+
+                if ($submission->type !== 'relocation') {
+                    return ['success' => false, 'message' => 'Tipe budget movement tidak valid.'];
+                }
+
+                $sourceBudgetItem = $budgetItems->get($submission->source_budget_account_id);
+                if (! $sourceBudgetItem) {
+                    return ['success' => false, 'message' => 'Budget item sumber relocation tidak ditemukan.'];
+                }
+
+                if ($sourceBudgetItem->id === $targetBudgetItem->id) {
+                    return ['success' => false, 'message' => 'Budget item sumber dan tujuan relocation tidak boleh sama.'];
+                }
+
+                $sourceValidation = $this->validateSubmissionBudgetItem($sourceBudgetItem, $submission->work_plan_id, 'sumber');
+                if (! $sourceValidation['success']) {
+                    return $sourceValidation;
+                }
+
+                $balanceResult = $this->getBudgetBalance($sourceBudgetItem->id);
+                if (! $balanceResult['success']) {
+                    return $balanceResult;
+                }
+
+                $currentBalance = (float) $balanceResult['data']['current_balance'];
+                if ($amount > $currentBalance) {
+                    return [
+                        'success' => false,
+                        'message' => 'Saldo budget sumber tidak mencukupi. Saldo tersedia Rp '
+                            . number_format($currentBalance, 0, ',', '.')
+                            . ', nilai relocation Rp '
+                            . number_format($amount, 0, ',', '.')
+                            . '.',
+                    ];
+                }
+
+                $sourceMutation = BudgetMutation::create([
+                    'workplan_budget_item_id' => $sourceBudgetItem->id,
+                    'transaction_id' => null,
+                    'transaction_detail_id' => null,
+                    'transaction_lpj_submission_id' => null,
+                    'budget_submission_id' => $submission->id,
+                    'mutation_type' => BudgetMutation::TYPE_DEBIT,
+                    'amount' => $amount,
+                    'category' => BudgetMutation::CATEGORY_BUDGET_RELOCATION_OUT,
+                    'description' => 'Relocation Budget Movement #' . $submission->id . ' keluar ke '
+                        . BudgetSubmission::formatBudgetItemLabel($targetBudgetItem),
+                    'created_at' => now(),
+                ]);
+
+                $targetMutation = BudgetMutation::create([
+                    'workplan_budget_item_id' => $targetBudgetItem->id,
+                    'transaction_id' => null,
+                    'transaction_detail_id' => null,
+                    'transaction_lpj_submission_id' => null,
+                    'budget_submission_id' => $submission->id,
+                    'mutation_type' => BudgetMutation::TYPE_CREDIT,
+                    'amount' => $amount,
+                    'category' => BudgetMutation::CATEGORY_BUDGET_RELOCATION_IN,
+                    'description' => 'Relocation Budget Movement #' . $submission->id . ' masuk dari '
+                        . BudgetSubmission::formatBudgetItemLabel($sourceBudgetItem),
+                    'created_at' => now(),
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Mutasi relocation budget berhasil dicatat.',
+                    'data' => [$sourceMutation, $targetMutation],
+                ];
+            });
+        } catch (Exception $e) {
+            Log::error('Failed to record budget submission movement: '.$e->getMessage(), [
+                'submission_id' => $submissionId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal mencatat mutasi budget movement: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Validate if budget has sufficient balance for a transaction before approval.
      * Golden Rule #2: Check estimated_total <= current_balance per detail.
      */
@@ -352,49 +506,43 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
     /**
      * Get current balance for a specific workplan_budget_item.
-     * Formula: initial_budget - total_debit + total_credit
+     * Formula: total_credit - total_debit.
      *
-     * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
-     * to prevent double counting (initial_budget is already from wbi.total).
+     * INITIAL_BUDGET is already a CREDIT entry in pure ledger mode.
      */
     public function getBudgetBalance(int $budgetItemId): array
     {
         try {
-            $result = DB::table('workplan_budget_items as wbi')
-                ->leftJoin('budget_mutations as bm', 'wbi.id', '=', 'bm.workplan_budget_item_id')
-                ->where('wbi.id', $budgetItemId)
-                ->whereNull('wbi.deleted_at')
-                ->groupBy('wbi.id', 'wbi.description', 'wbi.total')
-                ->selectRaw("
-                    wbi.id,
-                    wbi.description,
-                    CAST(wbi.total AS DECIMAL(19,4)) AS initial_budget,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_debit,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_credit,
-                    (
-                        CAST(wbi.total AS DECIMAL(19,4))
-                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
-                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
-                    ) AS current_balance
-                ")
-                ->first();
+            $budgetItem = WorkplanBudgetItem::find($budgetItemId);
 
-            if (! $result) {
+            if (! $budgetItem) {
                 return [
                     'success' => false,
                     'message' => 'Budget item tidak ditemukan.',
                 ];
             }
 
+            $totalDebit = (float) BudgetMutation::byBudgetItem($budgetItemId)
+                ->debit()
+                ->sum('amount');
+            $totalCredit = (float) BudgetMutation::byBudgetItem($budgetItemId)
+                ->credit()
+                ->sum('amount');
+            $initialBudget = (float) BudgetMutation::byBudgetItem($budgetItemId)
+                ->credit()
+                ->byCategory(BudgetMutation::CATEGORY_INITIAL_BUDGET)
+                ->sum('amount');
+
             return [
                 'success' => true,
                 'data' => [
-                    'id' => $result->id,
-                    'description' => $result->description,
-                    'initial_budget' => (float) $result->initial_budget,
-                    'total_debit' => (float) $result->total_debit,
-                    'total_credit' => (float) $result->total_credit,
-                    'current_balance' => (float) $result->current_balance,
+                    'id' => $budgetItem->id,
+                    'description' => $budgetItem->description,
+                    'initial_budget' => $initialBudget,
+                    'planned_budget' => (float) $budgetItem->total,
+                    'total_debit' => $totalDebit,
+                    'total_credit' => $totalCredit,
+                    'current_balance' => $totalCredit - $totalDebit,
                 ],
             ];
         } catch (Exception $e) {
@@ -490,9 +638,6 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
 
     /**
      * Get balance overview for multiple budget items (dashboard use).
-     *
-     * IMPORTANT: Excludes INITIAL_BUDGET mutations from debit/credit calculation
-     * to prevent double counting (initial_budget is already from wbi.total).
      */
     public function getBulkBudgetBalances(array $budgetItemIds): array
     {
@@ -509,13 +654,13 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 ->selectRaw("
                     wbi.id,
                     wbi.description,
-                    CAST(wbi.total AS DECIMAL(19,4)) AS initial_budget,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_debit,
-                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS total_credit,
+                    CAST(wbi.total AS DECIMAL(19,4)) AS planned_budget,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category = 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0) AS initial_budget,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0) AS total_debit,
+                    COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0) AS total_credit,
                     (
-                        CAST(wbi.total AS DECIMAL(19,4))
-                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
-                        + COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' AND bm.category != 'INITIAL_BUDGET' THEN bm.amount ELSE 0 END), 0)
+                        COALESCE(SUM(CASE WHEN bm.mutation_type = 'C' THEN bm.amount ELSE 0 END), 0)
+                        - COALESCE(SUM(CASE WHEN bm.mutation_type = 'D' THEN bm.amount ELSE 0 END), 0)
                     ) AS current_balance
                 ")
                 ->get();
@@ -525,6 +670,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                     'id' => $item->id,
                     'description' => $item->description,
                     'initial_budget' => (float) $item->initial_budget,
+                    'planned_budget' => (float) $item->planned_budget,
                     'total_debit' => (float) $item->total_debit,
                     'total_credit' => (float) $item->total_credit,
                     'current_balance' => (float) $item->current_balance,
@@ -546,5 +692,24 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 'data' => [],
             ];
         }
+    }
+
+    private function validateSubmissionBudgetItem(WorkplanBudgetItem $budgetItem, int $workPlanId, string $role): array
+    {
+        if ((int) $budgetItem->kpi_workplan_id !== $workPlanId) {
+            return [
+                'success' => false,
+                'message' => "Budget item {$role} tidak sesuai dengan workplan yang dipilih.",
+            ];
+        }
+
+        if (! $budgetItem->isApproved()) {
+            return [
+                'success' => false,
+                'message' => "Budget item {$role} belum approved.",
+            ];
+        }
+
+        return ['success' => true, 'message' => 'OK'];
     }
 }

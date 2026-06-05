@@ -22,6 +22,7 @@ class BudgetSubmission extends Model
         'submission_date',
         'type', // enum('type', ['add', 'relocation']);
         'budget_account_id',
+        'source_budget_account_id',
         'estimation_amount',
         'description',
         'status',
@@ -64,7 +65,33 @@ class BudgetSubmission extends Model
 
     public function budgetAccount()
     {
-        return $this->belongsTo(BudgetCode::class, 'budget_account_id');
+        return $this->belongsTo(WorkplanBudgetItem::class, 'budget_account_id');
+    }
+
+    public function sourceBudgetAccount()
+    {
+        return $this->belongsTo(WorkplanBudgetItem::class, 'source_budget_account_id');
+    }
+
+    public function getBudgetAccountLabelAttribute(): string
+    {
+        return self::formatBudgetItemLabel($this->budgetAccount);
+    }
+
+    public function getSourceBudgetAccountLabelAttribute(): string
+    {
+        return self::formatBudgetItemLabel($this->sourceBudgetAccount);
+    }
+
+    public static function formatBudgetItemLabel(?WorkplanBudgetItem $budgetItem): string
+    {
+        if (! $budgetItem) {
+            return '-';
+        }
+
+        $code = $budgetItem->budget_code ?: ($budgetItem->stock_code ?: 'No Code');
+
+        return trim($code . ' - ' . $budgetItem->description);
     }
 
     // Scopes

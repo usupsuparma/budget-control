@@ -484,6 +484,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/detail', [BudgetSubmissionController::class, 'show'])
             ->name('budget.submission.detail');
 
+        Route::get('/{id}/approval-timeline', [BudgetSubmissionController::class, 'approvalTimeline'])
+            ->name('budget.submission.approval.timeline');
+
         Route::post('/{id}/submit', [BudgetSubmissionController::class, 'submitForApproval'])
             ->name('budget.submission.submit');
 

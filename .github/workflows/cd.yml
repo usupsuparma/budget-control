@@ -1,0 +1,59 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-auth-api
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: SSH and deploy app
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 60s
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+
+            cd /var/www/myApps/budgetControl
+
+            echo "Pull latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Install production dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            
+            echo "Run database migration..."
+            php artisan migrate --force
+
+            echo "Clear and cache configuration, routes, and views..."
+            php artisan config:cache
+
+            echo "Cache routes and views..."
+            php artisan route:cache
+
+            echo "Cache views and restart queues..."
+            php artisan view:cache
+
+            echo "Restarting queues..."
+            php artisan queue:restart
+
+            echo "✅ Deployment finished."

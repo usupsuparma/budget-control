@@ -33,10 +33,14 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     public function submitForVerification(int $itemId): array
     {
         try {
-            $item = WorkplanBudgetItem::findOrFail($itemId);
+            DB::beginTransaction();
+
+            $item = WorkplanBudgetItem::lockForUpdate()->findOrFail($itemId);
 
             // Validate item can be submitted
             if ($item->status !== 'draft') {
+                DB::rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Hanya item dengan status draft yang dapat disubmit untuk verifikasi.',
@@ -44,6 +48,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             }
 
             if ($item->verification_status === 'pending') {
+                DB::rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Item sudah dalam proses verifikasi.',
@@ -51,6 +57,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             }
 
             if ($item->verification_status === 'verified') {
+                DB::rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Item sudah terverifikasi.',
@@ -59,6 +67,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             // Validate cost_center exists
             if (empty($item->cost_center)) {
+                DB::rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Cost center belum diisi. Silakan edit item terlebih dahulu.',
@@ -69,13 +79,13 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             $verifierIds = $this->getVerifiersByCostCenter($item->cost_center);
 
             if (empty($verifierIds)) {
+                DB::rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Tidak ditemukan verifikator untuk cost center: ' . $item->cost_center . '. Silakan hubungi admin untuk mengatur mapping verifikator.',
                 ];
             }
-
-            DB::beginTransaction();
 
             // Clear existing candidates (if any)
             WorkplanBudgetApprover::where('workplan_budget_item_id', $itemId)->delete();
@@ -93,7 +103,9 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                     $verifierId,
                     'verification',
                     'Permintaan Verifikasi Budget',
-                    "Ada item budget baru yang perlu diverifikasi: {$item->description}"
+                    "Ada item budget baru yang perlu diverifikasi: {$item->description}",
+                    'workplan_budget_item_verification',
+                    $itemId
                 );
             }
 
@@ -175,6 +187,18 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 ];
             }
 
+            $deletedReferencedNotifications = $this->notificationService->deleteByReference(
+                'verification',
+                'workplan_budget_item_verification',
+                $itemId
+            );
+
+            $deletedLegacyNotifications = $this->notificationService->deleteMatching(
+                'verification',
+                'Permintaan Verifikasi Budget',
+                ["Ada item budget baru yang perlu diverifikasi: {$item->description}"]
+            );
+
             $deletedCandidates = WorkplanBudgetApprover::where('workplan_budget_item_id', $itemId)->delete();
 
             $item->update([
@@ -188,6 +212,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             Log::info('Budget item verification cancelled', [
                 'item_id' => $itemId,
                 'deleted_candidates' => $deletedCandidates,
+                'deleted_referenced_notifications' => $deletedReferencedNotifications,
+                'deleted_legacy_notifications' => $deletedLegacyNotifications,
                 'user_id' => Auth::id(),
             ]);
 
@@ -197,6 +223,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 'data' => [
                     'item_id' => $itemId,
                     'deleted_candidates' => $deletedCandidates,
+                    'deleted_notifications' => $deletedReferencedNotifications + $deletedLegacyNotifications,
                 ],
             ];
         } catch (Exception $e) {

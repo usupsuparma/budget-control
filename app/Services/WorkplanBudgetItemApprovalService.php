@@ -169,7 +169,9 @@ class WorkplanBudgetItemApprovalService
                 $firstApprover['employment_id'],
                 'approval',
                 'Permintaan Approval Workplan Budget',
-                "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.')
+                "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.'),
+                'workplan_budget_item_approval',
+                $itemId
             );
 
             return [
@@ -700,7 +702,9 @@ class WorkplanBudgetItemApprovalService
                     $request->requester_id,
                     'approval',
                     'Workplan Budget Disetujui',
-                    "Workplan Budget Item Anda: {$item->description} telah disetujui sepenuhnya."
+                    "Workplan Budget Item Anda: {$item->description} telah disetujui sepenuhnya.",
+                    'workplan_budget_item_approval',
+                    $item->id
                 );
             }
 
@@ -728,7 +732,9 @@ class WorkplanBudgetItemApprovalService
                     $nextApprover->employment_id,
                     'approval',
                     'Permintaan Approval Workplan Budget',
-                    "Ada permintaan approval baru untuk Workplan Budget Item: " . ($item->description ?? 'N/A')
+                    "Ada permintaan approval baru untuk Workplan Budget Item: " . ($item->description ?? 'N/A'),
+                    'workplan_budget_item_approval',
+                    $request->reference_id
                 );
             }
 
@@ -776,7 +782,9 @@ class WorkplanBudgetItemApprovalService
                 $request->requester_id,
                 'approval',
                 'Workplan Budget Ditolak',
-                "Workplan Budget Item Anda: {$item->description} telah ditolak oleh {$detail->employment_name}."
+                "Workplan Budget Item Anda: {$item->description} telah ditolak oleh {$detail->employment_name}.",
+                'workplan_budget_item_approval',
+                $item->id
             );
         }
 
@@ -986,6 +994,37 @@ class WorkplanBudgetItemApprovalService
 
             DB::beginTransaction();
 
+            $item = WorkplanBudgetItem::find($itemId);
+            $pendingDetails = ApprovalRequestDetail::with('employment')
+                ->where('request_id', $request->id)
+                ->where('status', 'pending')
+                ->get();
+            $pendingEmployeeIds = $pendingDetails
+                ->pluck('employment.employee_id')
+                ->filter()
+                ->values()
+                ->all();
+
+            $deletedReferencedNotifications = $this->notificationService->deleteByReference(
+                'approval',
+                'workplan_budget_item_approval',
+                $itemId,
+                $pendingEmployeeIds
+            );
+
+            $deletedLegacyNotifications = 0;
+            if ($item) {
+                $deletedLegacyNotifications = $this->notificationService->deleteMatching(
+                    'approval',
+                    'Permintaan Approval Workplan Budget',
+                    [
+                        "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.'),
+                        "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description}",
+                    ],
+                    $pendingEmployeeIds
+                );
+            }
+
             // Update request status
             $request->update([
                 'status' => 'cancelled',
@@ -998,7 +1037,6 @@ class WorkplanBudgetItemApprovalService
                 ->update(['status' => 'cancelled']);
 
             // Update item status back to draft
-            $item = WorkplanBudgetItem::find($itemId);
             if ($item) {
                 $item->update(['status' => 'draft']);
             }
@@ -1008,6 +1046,9 @@ class WorkplanBudgetItemApprovalService
             return [
                 'success' => true,
                 'message' => 'Approval request berhasil dibatalkan.',
+                'data' => [
+                    'deleted_notifications' => $deletedReferencedNotifications + $deletedLegacyNotifications,
+                ],
             ];
 
         } catch (Exception $e) {

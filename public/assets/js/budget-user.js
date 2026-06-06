@@ -2775,6 +2775,10 @@ function cancelVerification(itemId) {
                         if (typeof loadPendingVerificationItems === "function") {
                             loadPendingVerificationItems();
                         }
+
+                        if (typeof loadNotifications === "function") {
+                            loadNotifications();
+                        }
                     } else {
                         showToast(
                             response.message ||

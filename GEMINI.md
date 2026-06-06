@@ -10,7 +10,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 3. **Status 4 (Completed):** Final state set via external API/Webhook (`/api/v1/webhook/transaction/complete`) to synchronize with external payment/finance systems.
 
 **Key Documentation:**
-- [Budget User Cancel Verification Flow](documentation/BUDGET_USER_CANCEL_VERIFICATION_FLOW.md) - Cancel pending price verification before verifier processing, reset item editability, and regenerate verifier snapshot on resubmit.
+- [Budget User Cancel Verification Flow](documentation/BUDGET_USER_CANCEL_VERIFICATION_FLOW.md) - Cancel pending price verification before verifier processing, clean stale workflow notifications, reset item editability, and regenerate verifier snapshot on resubmit.
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md) - Bug fix history and rules for level-aware Division name resolution (`getDivisionName()`).
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
@@ -160,6 +160,16 @@ try {
     return response()->json(['success' => false, 'message' => 'Internal Server Error'], 500);
 }
 ```
+
+### Workflow Notification References
+
+Notifications created for workflow tasks that can be cancelled, rejected, resubmitted, or otherwise invalidated MUST include `notifications.reference_type` and `notifications.reference_id`.
+
+When a workflow is moved backward or cancelled, the same service method that changes the workflow status MUST also delete or invalidate pending task notifications for users who no longer need to act.
+
+Examples:
+- Budget item verification uses `reference_type = workplan_budget_item_verification` and `reference_id = workplan_budget_items.id`.
+- Budget item approval uses `reference_type = workplan_budget_item_approval` and `reference_id = workplan_budget_items.id`.
 
 ### Blade & JavaScript Standard
 

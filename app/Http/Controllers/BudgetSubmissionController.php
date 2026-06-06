@@ -63,7 +63,7 @@ class BudgetSubmissionController extends Controller
                 $html .= '<td><span class="badge bg-' . $typeColor . '">' . $typeLabel . '</span></td>';
                 $html .= '<td><small>' . e($submission->workPlan->activity ?? '-') . '</small></td>';
                 $html .= '<td><small>' . e(Str::limit($submission->description ?? '', 50)) . '</small></td>';
-                $html .= '<td class="text-end">Rp ' . number_format($submission->estimation_amount, 0, ',', '.') . '</td>';
+                $html .= '<td class="text-end">' . $this->formatBudgetSubmissionAmountHtml($submission) . '</td>';
                 $html .= '<td><small>' . e($submission->budget_account_label) . '</small></td>';
                 $html .= '<td>' . $statusHtml . '</td>';
                 
@@ -136,6 +136,7 @@ class BudgetSubmissionController extends Controller
             $request->validate([
                 'comments' => 'nullable|string|max:1000',
                 'source_budget_account_id' => 'nullable|integer|exists:workplan_budget_items,id',
+                'approved_amount' => 'nullable|numeric|min:0.01',
             ]);
 
             $employmentId = $this->getEmploymentIdForCurrentUser();
@@ -153,6 +154,9 @@ class BudgetSubmissionController extends Controller
                 $request->input('comments'),
                 $request->filled('source_budget_account_id')
                     ? $request->integer('source_budget_account_id')
+                    : null,
+                $request->filled('approved_amount')
+                    ? (float) $request->input('approved_amount')
                     : null
             );
 
@@ -532,5 +536,19 @@ class BudgetSubmissionController extends Controller
         $employee = Auth::user();
 
         return $employee?->employment?->id;
+    }
+
+    private function formatBudgetSubmissionAmountHtml($submission): string
+    {
+        $requested = 'Rp ' . number_format($submission->estimation_amount, 0, ',', '.');
+
+        if (! $submission->has_approved_amount_adjustment) {
+            return $requested;
+        }
+
+        $approved = 'Rp ' . number_format($submission->approved_movement_amount, 0, ',', '.');
+
+        return '<div class="fw-semibold text-success">' . $approved . '</div>'
+            . '<small class="text-muted">Requested: ' . $requested . '</small>';
     }
 }

@@ -221,7 +221,17 @@
                                                     <td>
                                                         <small>{{ Str::limit($submission->description, 50) }}</small>
                                                     </td>
-                                                    <td class="text-end">Rp {{ number_format($submission->estimation_amount, 0, ',', '.') }}
+                                                    <td class="text-end">
+                                                        @if ($submission->has_approved_amount_adjustment)
+                                                            <div class="fw-semibold text-success">
+                                                                Rp {{ number_format($submission->approved_movement_amount, 0, ',', '.') }}
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                Requested: Rp {{ number_format($submission->estimation_amount, 0, ',', '.') }}
+                                                            </small>
+                                                        @else
+                                                            Rp {{ number_format($submission->estimation_amount, 0, ',', '.') }}
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         <small>{{ $submission->budget_account_label }}</small>
@@ -463,6 +473,8 @@
                                 <dd class="col-sm-8" id="detailSourceBudgetAccount">-</dd>
                                 <dt class="col-sm-4">Estimation</dt>
                                 <dd class="col-sm-8" id="detailSubmissionAmount">-</dd>
+                                <dt class="col-sm-4 d-none" id="detailApprovedAmountLabel">Approved Amount</dt>
+                                <dd class="col-sm-8 d-none" id="detailApprovedAmount">-</dd>
                                 <dt class="col-sm-4">Description</dt>
                                 <dd class="col-sm-8" id="detailSubmissionDescription">-</dd>
                                 <dt class="col-sm-4">Status</dt>
@@ -597,8 +609,14 @@
         let dataTable;
         let pendingApprovals = [];
         let approvedApprovals = [];
+        let approvalSourceDivisionChoice;
+        let approvalSourceWorkPlanChoice;
         let approvalSourceBudgetAccountChoice;
         let approvalSourceBudgetAccountSearchTimer;
+        const APPROVAL_SOURCE_DIVISIONS = @json(($sourceDivisions ?? $divisions)->map(fn ($division) => [
+            'value' => (string) $division->id,
+            'label' => $division->name,
+        ])->values());
 
         const routeWithId = (template, id, placeholder = '__ID__') => {
             return template.replace(placeholder, String(id));
@@ -1394,6 +1412,15 @@
                     sourceValue.classList.toggle('d-none', !showSource);
                     sourceValue.textContent = data.source_budget_account || '-';
                     document.getElementById('detailSubmissionAmount').textContent = formatIdr(data.estimation_amount || 0);
+                    const approvedAmountLabel = document.getElementById('detailApprovedAmountLabel');
+                    const approvedAmountValue = document.getElementById('detailApprovedAmount');
+                    const showApprovedAmount = Boolean(data.approved_amount);
+                    approvedAmountLabel.classList.toggle('d-none', !showApprovedAmount);
+                    approvedAmountValue.classList.toggle('d-none', !showApprovedAmount);
+                    approvedAmountValue.innerHTML = data.has_approved_amount_adjustment
+                        ? `<span class="fw-semibold text-success">${formatIdr(data.approved_movement_amount || data.approved_amount)}</span>
+                            <small class="text-muted d-block">Adjusted at ${data.approved_amount_changed_at || '-'}</small>`
+                        : formatIdr(data.approved_movement_amount || data.approved_amount);
                     document.getElementById('detailSubmissionDescription').textContent = data.description || '-';
                     document.getElementById('detailSubmissionCreator').textContent = data.created_by || '-';
                     document.getElementById('detailSubmissionStatus').innerHTML =
@@ -1514,6 +1541,26 @@
             return 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value || 0));
         }
 
+        function getMovementApprovedAmount(submission) {
+            return Number(submission.approved_amount || submission.approved_movement_amount || submission.estimation_amount || 0);
+        }
+
+        function hasApprovedAmountAdjustment(submission) {
+            if (submission.has_approved_amount_adjustment) return true;
+            if (!submission.approved_amount) return false;
+
+            return Number(submission.approved_amount) !== Number(submission.estimation_amount || 0);
+        }
+
+        function formatMovementAmountSummary(submission) {
+            if (!hasApprovedAmountAdjustment(submission)) {
+                return formatIdr(submission.estimation_amount || 0);
+            }
+
+            return `<div class="fw-semibold text-success">${formatIdr(getMovementApprovedAmount(submission))}</div>
+                <small class="text-muted">Requested: ${formatIdr(submission.estimation_amount || 0)}</small>`;
+        }
+
         function toDateLabel(value) {
             if (!value) return '-';
             const date = new Date(value);
@@ -1603,14 +1650,16 @@
                 const submission = approval.submission || {};
                 const levelText = `${approval.level || 0} / ${approval.total_levels || 0}`;
                 const requiresSource = approvalNeedsSourceBudgetSelection(approval);
-                const checkboxState = requiresSource
-                    ? 'disabled title="Pilih source budget melalui detail approval"'
+                const requiresApprovedAmount = approvalNeedsApprovedAmountInput(approval);
+                const requiresManualInput = requiresSource || requiresApprovedAmount;
+                const checkboxState = requiresManualInput
+                    ? 'disabled title="Lengkapi approval melalui detail approval"'
                     : '';
-                const approveAction = requiresSource
+                const approveAction = requiresManualInput
                     ? `showSubmissionApprovalDetail(${index}, 'pending')`
                     : `approveSubmissionDetail(${approval.detail_id})`;
-                const approveTitle = requiresSource
-                    ? 'Select source budget before approve'
+                const approveTitle = requiresManualInput
+                    ? 'Complete approval inputs before approve'
                     : 'Approve';
                 html += `<tr>
                     <td class="text-center"><input type="checkbox" class="form-check-input submission-approval-checkbox" value="${approval.detail_id}" ${checkboxState}></td>
@@ -1620,7 +1669,7 @@
                     <td>${submission.description || '-'}</td>
                     <td>${submission.division_name || '-'}</td>
                     <td>${submission.type_label || '-'}</td>
-                    <td class="text-end">${formatIdr(submission.estimation_amount || 0)}</td>
+                    <td class="text-end">${formatMovementAmountSummary(submission)}</td>
                     <td class="text-center"><span class="badge bg-info">${levelText}</span></td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
@@ -1665,7 +1714,7 @@
                     <td>${submission.description || '-'}</td>
                     <td>${submission.division_name || '-'}</td>
                     <td>${submission.type_label || '-'}</td>
-                    <td class="text-end">${formatIdr(submission.estimation_amount || 0)}</td>
+                    <td class="text-end">${formatMovementAmountSummary(submission)}</td>
                     <td class="text-center"><span class="badge bg-success">${levelText}</span></td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
@@ -1823,6 +1872,13 @@
             return type === 'add' || typeLabel === 'add budget';
         }
 
+        function isRelocationSubmission(submission) {
+            const type = String(submission.type || '').toLowerCase();
+            const typeLabel = String(submission.type_label || '').toLowerCase();
+
+            return type === 'relocation' || typeLabel === 'relocation';
+        }
+
         function hasSourceBudgetAccount(submission) {
             const sourceId = submission.source_budget_account_id;
             const sourceLabel = String(submission.source_budget_account || '').trim();
@@ -1854,10 +1910,38 @@
                 );
         }
 
+        function approvalNeedsApprovedAmountInput(approval) {
+            const submission = approval ? (approval.submission || {}) : {};
+
+            return Boolean(submission.requires_approved_amount_input) ||
+                (
+                    (isAddBudgetSubmission(submission) || isRelocationSubmission(submission)) &&
+                    isFinalApprovalItem(approval)
+                );
+        }
+
         function approveSubmissionDetail(detailId) {
             const approval = findPendingApprovalByDetailId(detailId);
             const submission = approval ? (approval.submission || {}) : {};
             let sourceBudgetAccountId = null;
+            let approvedAmount = null;
+
+            if (approvalNeedsApprovedAmountInput(approval)) {
+                const approvedAmountInput = document.getElementById('approval_approved_amount_display');
+                if (!approvedAmountInput) {
+                    const approvalIndex = pendingApprovals.findIndex(item => Number(item.detail_id) === Number(detailId));
+                    if (approvalIndex >= 0) {
+                        showSubmissionApprovalDetail(approvalIndex, 'pending');
+                    }
+                    return;
+                }
+
+                approvedAmount = Number(getEstimationDigits(approvedAmountInput.value));
+                if (!approvedAmount || approvedAmount <= 0) {
+                    Swal.fire('Validation', 'Approved Amount wajib diisi dan harus lebih dari 0.', 'warning');
+                    return;
+                }
+            }
 
             if (approvalNeedsSourceBudgetSelection(approval)) {
                 const sourceSelect = document.getElementById('approval_source_budget_account_id');
@@ -1890,6 +1974,10 @@
 
                 if (sourceBudgetAccountId) {
                     payload.source_budget_account_id = sourceBudgetAccountId;
+                }
+
+                if (approvedAmount) {
+                    payload.approved_amount = approvedAmount;
                 }
 
                 fetch(routeWithDetailId(ROUTES.approvalDetailApprove, detailId), {
@@ -2025,7 +2113,8 @@
                             <tr><td>Work Plan</td><td>${submission.work_plan_activity || '-'}</td></tr>
                             ${submission.source_budget_account && submission.source_budget_account !== '-' ? `<tr><td>Source Budget Account</td><td>${submission.source_budget_account}</td></tr>` : ''}
                             <tr><td>Budget Account</td><td>${submission.budget_account || '-'}</td></tr>
-                            <tr><td>Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
+                            <tr><td>Requested Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
+                            ${submission.approved_amount ? `<tr><td>Approved Amount</td><td>${formatIdr(getMovementApprovedAmount(submission))}</td></tr>` : ''}
                             <tr><td>Requester</td><td>${requester}</td></tr>
                             <tr><td>Current Level</td><td><span class="badge bg-info">${levelText}</span></td></tr>
                             <tr><td>Current Approver</td><td class="fw-semibold">${currentApprover}</td></tr>
@@ -2076,24 +2165,50 @@
         }
 
         function destroyApprovalSourceBudgetAccountChoice() {
-            if (!approvalSourceBudgetAccountChoice) return;
+            [
+                approvalSourceBudgetAccountChoice,
+                approvalSourceWorkPlanChoice,
+                approvalSourceDivisionChoice
+            ].forEach(choice => {
+                if (!choice) return;
 
-            try {
-                approvalSourceBudgetAccountChoice.destroy();
-            } catch (error) {
-                // Choice may already be detached when the modal content is replaced.
-            }
+                try {
+                    choice.destroy();
+                } catch (error) {
+                    // Choice may already be detached when the modal content is replaced.
+                }
+            });
 
             approvalSourceBudgetAccountChoice = null;
+            approvalSourceWorkPlanChoice = null;
+            approvalSourceDivisionChoice = null;
         }
 
         function initApprovalSourceBudgetAccountChoice(submission) {
             destroyApprovalSourceBudgetAccountChoice();
 
-            const selectEl = document.getElementById('approval_source_budget_account_id');
-            if (!selectEl) return;
+            const divisionEl = document.getElementById('approval_source_division_id');
+            const workPlanEl = document.getElementById('approval_source_work_plan_id');
+            const budgetAccountEl = document.getElementById('approval_source_budget_account_id');
+            if (!divisionEl || !workPlanEl || !budgetAccountEl) return;
 
-            approvalSourceBudgetAccountChoice = new Choices(selectEl, {
+            approvalSourceDivisionChoice = new Choices(divisionEl, {
+                searchEnabled: true,
+                removeItemButton: false,
+                placeholder: true,
+                placeholderValue: 'Select Division',
+                shouldSort: false
+            });
+
+            approvalSourceWorkPlanChoice = new Choices(workPlanEl, {
+                searchEnabled: true,
+                removeItemButton: false,
+                placeholder: true,
+                placeholderValue: 'Select Work Plan',
+                shouldSort: false
+            });
+
+            approvalSourceBudgetAccountChoice = new Choices(budgetAccountEl, {
                 searchEnabled: true,
                 searchChoices: false,
                 removeItemButton: false,
@@ -2103,17 +2218,35 @@
                 shouldSort: false
             });
 
-            const loadOptions = (query = '') => {
-                if (!submission.work_plan_id) {
-                    approvalSourceBudgetAccountChoice.setChoices([{
-                        value: '',
-                        label: 'Work plan data is not available',
-                        disabled: true,
-                        selected: true
-                    }], 'value', 'label', true);
+            const resetApprovalSourceBudgetAccounts = (label = 'Select work plan first') => {
+                approvalSourceBudgetAccountChoice.clearStore();
+                approvalSourceBudgetAccountChoice.setChoices([{
+                    value: '',
+                    label,
+                    disabled: true,
+                    selected: true
+                }], 'value', 'label', true);
+            };
+
+            const resetApprovalSourceWorkPlans = (label = 'Select division first') => {
+                approvalSourceWorkPlanChoice.clearStore();
+                approvalSourceWorkPlanChoice.setChoices([{
+                    value: '',
+                    label,
+                    disabled: true,
+                    selected: true
+                }], 'value', 'label', true);
+                resetApprovalSourceBudgetAccounts();
+            };
+
+            const loadBudgetAccounts = (query = '') => {
+                const workPlanId = workPlanEl.value;
+                if (!workPlanId) {
+                    resetApprovalSourceBudgetAccounts();
                     return;
                 }
 
+                approvalSourceBudgetAccountChoice.clearStore();
                 approvalSourceBudgetAccountChoice.setChoices([{
                     value: '',
                     label: 'Loading source budget...',
@@ -2125,7 +2258,7 @@
                     q: query || '',
                     page: '1',
                     limit: '100',
-                    work_plan_id: String(submission.work_plan_id),
+                    work_plan_id: String(workPlanId),
                     exclude_id: String(submission.budget_account_id || ''),
                 });
 
@@ -2145,7 +2278,7 @@
                         approvalSourceBudgetAccountChoice.clearStore();
                         approvalSourceBudgetAccountChoice.setChoices([{
                             value: '',
-                            label: choices.length ? 'Select Source Budget Account' : 'No source budget available',
+                            label: choices.length ? 'Select Source Budget Account' : 'No budget account available for selected work plan',
                             disabled: true,
                             selected: true
                         }], 'value', 'label', true);
@@ -2161,13 +2294,113 @@
                     });
             };
 
-            selectEl.addEventListener('search', function(e) {
-                const query = (e && e.detail && e.detail.value) ? e.detail.value : '';
-                clearTimeout(approvalSourceBudgetAccountSearchTimer);
-                approvalSourceBudgetAccountSearchTimer = setTimeout(() => loadOptions(query), 300);
+            const loadWorkPlans = (divisionId, selectedWorkPlanId = null) => {
+                if (!divisionId) {
+                    resetApprovalSourceWorkPlans();
+                    return;
+                }
+
+                approvalSourceWorkPlanChoice.clearStore();
+                approvalSourceWorkPlanChoice.setChoices([{
+                    value: '',
+                    label: 'Loading work plans...',
+                    disabled: true,
+                    selected: true
+                }], 'value', 'label', true);
+                resetApprovalSourceBudgetAccounts();
+
+                fetch(`${ROUTES.workplansByDivision}?division_id=${divisionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const workPlans = Array.isArray(data) ? data : [];
+                        approvalSourceWorkPlanChoice.clearStore();
+
+                        if (!workPlans.length) {
+                            resetApprovalSourceWorkPlans('No approved work plans found');
+                            return;
+                        }
+
+                        approvalSourceWorkPlanChoice.setChoices([{
+                            value: '',
+                            label: 'Select Work Plan',
+                            disabled: true,
+                            selected: !selectedWorkPlanId
+                        }], 'value', 'label', true);
+
+                        approvalSourceWorkPlanChoice.setChoices(workPlans.map(item => ({
+                            value: String(item.value),
+                            label: item.label,
+                            selected: selectedWorkPlanId && String(item.value) === String(selectedWorkPlanId)
+                        })), 'value', 'label', false);
+
+                        if (selectedWorkPlanId && workPlans.some(item => String(item.value) === String(selectedWorkPlanId))) {
+                            loadBudgetAccounts();
+                        }
+                    })
+                    .catch(() => {
+                        resetApprovalSourceWorkPlans('Error loading work plans');
+                    });
+            };
+
+            approvalSourceDivisionChoice.clearStore();
+            approvalSourceDivisionChoice.setChoices([{
+                value: '',
+                label: 'Select Division',
+                disabled: true,
+                selected: !submission.division_id
+            }], 'value', 'label', true);
+
+            if (!APPROVAL_SOURCE_DIVISIONS.length) {
+                approvalSourceDivisionChoice.setChoices([{
+                    value: '',
+                    label: 'No division available',
+                    disabled: true,
+                    selected: true
+                }], 'value', 'label', true);
+            } else {
+                approvalSourceDivisionChoice.setChoices(APPROVAL_SOURCE_DIVISIONS.map(item => ({
+                    value: String(item.value),
+                    label: item.label,
+                    selected: submission.division_id && String(item.value) === String(submission.division_id)
+                })), 'value', 'label', false);
+            }
+
+            divisionEl.addEventListener('change', function() {
+                loadWorkPlans(this.value);
             });
 
-            loadOptions();
+            workPlanEl.addEventListener('change', function() {
+                loadBudgetAccounts();
+            });
+
+            budgetAccountEl.addEventListener('search', function(e) {
+                const query = (e && e.detail && e.detail.value) ? e.detail.value : '';
+                clearTimeout(approvalSourceBudgetAccountSearchTimer);
+                approvalSourceBudgetAccountSearchTimer = setTimeout(() => loadBudgetAccounts(query), 300);
+            });
+
+            if (submission.division_id) {
+                loadWorkPlans(String(submission.division_id), submission.work_plan_id ? String(submission.work_plan_id) : null);
+            } else {
+                resetApprovalSourceWorkPlans();
+            }
+        }
+
+        function initApprovalApprovedAmountInput(submission) {
+            const amountInput = document.getElementById('approval_approved_amount_display');
+            if (!amountInput) return;
+
+            const defaultAmount = getMovementApprovedAmount(submission);
+            amountInput.value = formatEstimationAmount(defaultAmount);
+
+            amountInput.addEventListener('input', function() {
+                const cursorAtEnd = this.selectionStart === this.value.length;
+                this.value = formatEstimationAmount(this.value);
+
+                if (cursorAtEnd) {
+                    this.setSelectionRange(this.value.length, this.value.length);
+                }
+            });
         }
 
         function showSubmissionApprovalDetail(index, mode) {
@@ -2178,22 +2411,57 @@
             const isPending = mode === 'pending';
             const detail = item;
             const requiresSource = isPending && approvalNeedsSourceBudgetSelection(item);
+            const requiresApprovedAmount = isPending && approvalNeedsApprovedAmountInput(item);
 
             const requester = detail.requester_name || '-';
             const refNo = detail.reference_number || '-';
 
             $('#submissionApprovalTimelineModalLabel').text('Approval Detail');
 
+            const approvedAmountHtml = requiresApprovedAmount ? `
+                <div class="border rounded p-3 mt-3">
+                    <label for="approval_approved_amount_display" class="form-label fw-semibold">
+                        Approved Amount <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="approval_approved_amount_display"
+                        inputmode="numeric" autocomplete="off"
+                        value="${formatEstimationAmount(getMovementApprovedAmount(submission))}">
+                    <div class="form-text">
+                        Default mengikuti nominal pengajuan: ${formatIdr(submission.estimation_amount || 0)}.
+                    </div>
+                </div>
+            ` : '';
+
             const sourceSelectorHtml = requiresSource ? `
                 <div class="border rounded p-3 mt-3">
-                    <label for="approval_source_budget_account_id" class="form-label fw-semibold">
-                        Source Budget Account <span class="text-danger">*</span>
-                    </label>
-                    <select class="form-select" id="approval_source_budget_account_id">
-                        <option value="">Loading source budget...</option>
-                    </select>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="approval_source_division_id" class="form-label fw-semibold">
+                                Source Division <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="approval_source_division_id">
+                                <option value="">Select Division</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="approval_source_work_plan_id" class="form-label fw-semibold">
+                                Source Work Plan <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="approval_source_work_plan_id">
+                                <option value="">Select division first</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="approval_source_budget_account_id" class="form-label fw-semibold">
+                                Source Budget Account <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="approval_source_budget_account_id">
+                                <option value="">Select work plan first</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-text">
-                        Budget ini akan didebit sebagai dasar penambahan budget tujuan.
+                        Pilih divisi, work plan, lalu budget account yang akan didebit sebagai dasar penambahan budget tujuan.
                     </div>
                 </div>
             ` : '';
@@ -2206,14 +2474,19 @@
                     <tr><td>Work Plan</td><td>${submission.work_plan_activity || '-'}</td></tr>
                     ${submission.source_budget_account && submission.source_budget_account !== '-' ? `<tr><td>Source Budget Account</td><td>${submission.source_budget_account}</td></tr>` : ''}
                     <tr><td>Budget Account</td><td>${submission.budget_account || '-'}</td></tr>
-                    <tr><td>Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
+                    <tr><td>Requested Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
+                    ${submission.approved_amount ? `<tr><td>Approved Amount</td><td>${formatIdr(getMovementApprovedAmount(submission))}</td></tr>` : ''}
                     <tr><td>Requester</td><td>${requester}</td></tr>
                     <tr><td>Type</td><td>${submission.type_label || '-'}</td></tr>
                 </table>
+                ${approvedAmountHtml}
                 ${sourceSelectorHtml}
             `;
 
             $('#submissionApprovalItemDetails').html(detailsHtml);
+            if (requiresApprovedAmount) {
+                initApprovalApprovedAmountInput(submission);
+            }
             if (requiresSource) {
                 initApprovalSourceBudgetAccountChoice(submission);
             } else {

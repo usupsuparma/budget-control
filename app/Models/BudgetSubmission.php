@@ -24,6 +24,9 @@ class BudgetSubmission extends Model
         'budget_account_id',
         'source_budget_account_id',
         'estimation_amount',
+        'approved_amount',
+        'approved_amount_changed_by',
+        'approved_amount_changed_at',
         'description',
         'status',
     ];
@@ -31,6 +34,8 @@ class BudgetSubmission extends Model
     protected $casts = [
         'submission_date' => 'date',
         'estimation_amount' => 'integer',
+        'approved_amount' => 'integer',
+        'approved_amount_changed_at' => 'datetime',
         'status' => 'integer',
     ];
 
@@ -148,6 +153,17 @@ class BudgetSubmission extends Model
             'relocation' => 'Relocation',
             default => $this->type
         };
+    }
+
+    public function getApprovedMovementAmountAttribute(): int
+    {
+        return (int) ($this->approved_amount ?? $this->estimation_amount);
+    }
+
+    public function getHasApprovedAmountAdjustmentAttribute(): bool
+    {
+        return ! is_null($this->approved_amount)
+            && (int) $this->approved_amount !== (int) $this->estimation_amount;
     }
 
     public function isPending()

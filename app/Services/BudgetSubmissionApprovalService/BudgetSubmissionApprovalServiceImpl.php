@@ -156,7 +156,8 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
         string $action,
         int $approverId,
         ?string $comments = null,
-        ?int $sourceBudgetAccountId = null
+        ?int $sourceBudgetAccountId = null,
+        int|float|null $approvedAmount = null
     ): array
     {
         try {
@@ -201,7 +202,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             DB::beginTransaction();
 
             if ($action === 'approve') {
-                $result = $this->handleApprove($detail, $request, $comments, $sourceBudgetAccountId);
+                $result = $this->handleApprove($detail, $request, $comments, $sourceBudgetAccountId, $approvedAmount);
             } elseif ($action === 'reject') {
                 $result = $this->handleReject($detail, $request, $comments);
             } else {
@@ -455,15 +456,20 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
         ApprovalRequestDetail $detail,
         ApprovalRequest $request,
         ?string $comments,
-        ?int $sourceBudgetAccountId = null
+        ?int $sourceBudgetAccountId = null,
+        int|float|null $approvedAmount = null
     ): array
     {
         $submission = BudgetSubmission::whereKey($request->reference_id)
             ->lockForUpdate()
             ->first();
 
-        if ($submission && $this->requiresFinalAddBudgetSourceSelection($submission, $detail)) {
-            $this->applyFinalAddBudgetSource($submission, $sourceBudgetAccountId);
+        if ($submission && $this->requiresFinalBudgetMovementApproval($submission, $detail)) {
+            $this->applyFinalApprovedAmount($submission, $detail, $approvedAmount);
+
+            if ($this->requiresFinalAddBudgetSourceSelection($submission, $detail)) {
+                $this->applyFinalAddBudgetSource($submission, $sourceBudgetAccountId);
+            }
         }
 
         $detail->update([
@@ -758,6 +764,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
         return [
             'id' => $submission->id,
             'submission_date' => $submission->submission_date?->format('Y-m-d'),
+            'division_id' => $submission->division_id,
             'division_name' => $submission->division?->name,
             'type' => $submission->type,
             'type_label' => $submission->type_label,
@@ -769,10 +776,28 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             'source_budget_account' => $submission->source_budget_account_label,
             'description' => $submission->description,
             'estimation_amount' => (int) $submission->estimation_amount,
+            'approved_amount' => $submission->approved_amount ? (int) $submission->approved_amount : null,
+            'approved_movement_amount' => $submission->approved_movement_amount,
+            'has_approved_amount_adjustment' => $submission->has_approved_amount_adjustment,
+            'approved_amount_changed_at' => $submission->approved_amount_changed_at?->format('Y-m-d H:i:s'),
             'requires_source_budget_selection' => $detail
                 ? $this->requiresFinalAddBudgetSourceSelection($submission, $detail)
                 : false,
+            'requires_approved_amount_input' => $detail
+                ? $this->requiresFinalBudgetMovementApproval($submission, $detail)
+                : false,
         ];
+    }
+
+    protected function requiresFinalBudgetMovementApproval(
+        BudgetSubmission $submission,
+        ApprovalRequestDetail $detail
+    ): bool {
+        if (! in_array($submission->type, ['add', 'relocation'], true)) {
+            return false;
+        }
+
+        return $this->isFinalApprovalLevel($detail) || $this->isFinalPendingApproval($detail);
     }
 
     protected function requiresFinalAddBudgetSourceSelection(
@@ -823,12 +848,11 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
 
         $sourceBudgetItem = WorkplanBudgetItem::approved()
             ->where('id', $sourceBudgetAccountId)
-            ->where('kpi_workplan_id', $submission->work_plan_id)
             ->lockForUpdate()
             ->first();
 
         if (! $sourceBudgetItem) {
-            throw new Exception('Budget item sumber tidak ditemukan pada workplan yang dipilih atau belum approved.');
+            throw new Exception('Budget item sumber tidak ditemukan atau belum approved.');
         }
 
         $balanceResult = $this->budgetLedgerService->getBudgetBalance($sourceBudgetItem->id);
@@ -836,7 +860,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             throw new Exception($balanceResult['message']);
         }
 
-        $amount = (float) $submission->estimation_amount;
+        $amount = (float) $submission->approved_movement_amount;
         $currentBalance = (float) $balanceResult['data']['current_balance'];
         if ($amount > $currentBalance) {
             throw new Exception(
@@ -850,6 +874,29 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
 
         $submission->update(['source_budget_account_id' => $sourceBudgetItem->id]);
         $submission->setRelation('sourceBudgetAccount', $sourceBudgetItem);
+    }
+
+    protected function applyFinalApprovedAmount(
+        BudgetSubmission $submission,
+        ApprovalRequestDetail $detail,
+        int|float|null $approvedAmount
+    ): void {
+        $amount = $approvedAmount ?? $submission->estimation_amount;
+        $amount = (int) round((float) $amount);
+
+        if ($amount <= 0) {
+            throw new Exception('Nominal approved harus lebih dari 0.');
+        }
+
+        $isAdjusted = $amount !== (int) $submission->estimation_amount;
+
+        $submission->update([
+            'approved_amount' => $amount,
+            'approved_amount_changed_by' => $isAdjusted ? $detail->employment_id : null,
+            'approved_amount_changed_at' => $isAdjusted ? now() : null,
+        ]);
+
+        $submission->approved_amount = $amount;
     }
 
     protected function generateReferenceNumber(BudgetSubmission $submission): string

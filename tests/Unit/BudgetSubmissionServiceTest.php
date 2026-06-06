@@ -91,6 +91,8 @@ class BudgetSubmissionServiceTest extends TestCase
         $this->assertFalse($data['isAdmin']);
         $this->assertEquals(2, $data['divisions']->count());
         $this->assertFalse($data['divisions']->contains('id', $otherDivision->id));
+        $this->assertEquals(3, $data['sourceDivisions']->count());
+        $this->assertTrue($data['sourceDivisions']->contains('id', $otherDivision->id));
     }
 
     public function test_store_creates_submission()
@@ -126,7 +128,8 @@ class BudgetSubmissionServiceTest extends TestCase
         $user = User::factory()->create();
         $division = $this->createDivision('IT Division');
         $workPlan = $this->createWorkPlan();
-        $sourceBudgetItem = $this->createBudgetItem($workPlan, 'Source item');
+        $sourceWorkPlan = $this->createWorkPlan('Source Workplan Test');
+        $sourceBudgetItem = $this->createBudgetItem($sourceWorkPlan, 'Source item');
         $targetBudgetItem = $this->createBudgetItem($workPlan, 'Target item');
         $this->recordInitialBudget($sourceBudgetItem, 1000000);
 
@@ -190,6 +193,112 @@ class BudgetSubmissionServiceTest extends TestCase
         $this->expectExceptionMessage('Budget item sumber wajib dipilih untuk Add Budget.');
 
         $this->budgetSubmissionService->approve($submission->id);
+    }
+
+    public function test_final_approval_can_adjust_budget_movement_amount_and_records_change()
+    {
+        $logService = Mockery::mock(LogService::class);
+        $approvalService = new BudgetSubmissionApprovalServiceImpl(
+            $logService,
+            new BudgetLedgerServiceImpl()
+        );
+
+        $user = User::factory()->create();
+        $division = $this->createDivision('IT Division');
+        $targetWorkPlan = $this->createWorkPlan('Target Workplan Test');
+        $sourceWorkPlan = $this->createWorkPlan('Source Workplan Test');
+        $sourceBudgetItem = $this->createBudgetItem($sourceWorkPlan, 'Source item');
+        $targetBudgetItem = $this->createBudgetItem($targetWorkPlan, 'Target item');
+        $this->recordInitialBudget($sourceBudgetItem, 1000000);
+
+        $submission = BudgetSubmission::create([
+            'user_id' => $user->id,
+            'division_id' => $division->id,
+            'division_name' => $division->name,
+            'work_plan_id' => $targetWorkPlan->id,
+            'submission_date' => '2026-06-02',
+            'type' => 'add',
+            'budget_account_id' => $targetBudgetItem->id,
+            'estimation_amount' => 750000,
+            'description' => 'Top up target item',
+            'status' => 0,
+        ]);
+
+        $moduleId = DB::table('approval_modules')->insertGetId([
+            'module_name' => 'Budget Submission',
+            'table_name' => 'budget_submissions',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $templateId = DB::table('approval_flow_templates')->insertGetId([
+            'module_id' => $moduleId,
+            'template_name' => 'Budget Submission Flow',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $requesterEmploymentId = $this->createEmployment('Requester');
+        $approverEmploymentId = $this->createEmployment('Final Approver');
+
+        $requestId = DB::table('approval_requests')->insertGetId([
+            'module_id' => $moduleId,
+            'reference_id' => $submission->id,
+            'reference_number' => 'BS-APR-AMOUNT',
+            'template_id' => $templateId,
+            'template_snapshot' => json_encode([]),
+            'status' => 'pending',
+            'current_phase' => 'master_flow',
+            'current_level' => 1,
+            'total_levels' => 1,
+            'requester_id' => $requesterEmploymentId,
+            'requested_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $detailId = DB::table('approval_request_details')->insertGetId([
+            'request_id' => $requestId,
+            'phase' => 'master_flow',
+            'level_sequence' => 1,
+            'employment_id' => $approverEmploymentId,
+            'employment_name' => 'Final Approver',
+            'status' => 'pending',
+            'approved_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = $approvalService->processApproval(
+            $detailId,
+            'approve',
+            $approverEmploymentId,
+            null,
+            $sourceBudgetItem->id,
+            600000
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertDatabaseHas('budget_submissions', [
+            'id' => $submission->id,
+            'status' => 1,
+            'source_budget_account_id' => $sourceBudgetItem->id,
+            'approved_amount' => 600000,
+            'approved_amount_changed_by' => $approverEmploymentId,
+        ]);
+        $this->assertNotNull($submission->fresh()->approved_amount_changed_at);
+        $this->assertDatabaseHas('budget_mutations', [
+            'budget_submission_id' => $submission->id,
+            'workplan_budget_item_id' => $sourceBudgetItem->id,
+            'mutation_type' => BudgetMutation::TYPE_DEBIT,
+            'amount' => 600000,
+        ]);
+        $this->assertDatabaseHas('budget_mutations', [
+            'budget_submission_id' => $submission->id,
+            'workplan_budget_item_id' => $targetBudgetItem->id,
+            'mutation_type' => BudgetMutation::TYPE_CREDIT,
+            'amount' => 600000,
+        ]);
     }
 
     public function test_approve_relocation_records_source_debit_and_target_credit_mutations()
@@ -347,13 +456,13 @@ class BudgetSubmissionServiceTest extends TestCase
         ]);
     }
 
-    private function createWorkPlan(): KPIWorkPlan
+    private function createWorkPlan(string $activity = 'Workplan Test'): KPIWorkPlan
     {
         return KPIWorkPlan::create([
             'kpi_type' => 'department',
             'kpi_id' => 1,
             'year' => 2026,
-            'activity' => 'Workplan Test',
+            'activity' => $activity,
             'status' => 'approved',
         ]);
     }

@@ -297,7 +297,7 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                     ];
                 }
 
-                $amount = (float) $submission->estimation_amount;
+                $amount = (float) $submission->approved_movement_amount;
                 if ($amount <= 0) {
                     return ['success' => false, 'message' => 'Nilai budget movement harus lebih dari 0.'];
                 }
@@ -335,9 +335,8 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                         return ['success' => false, 'message' => 'Budget item sumber dan tujuan Add Budget tidak boleh sama.'];
                     }
 
-                    $sourceValidation = $this->validateSubmissionBudgetItem($sourceBudgetItem, $submission->work_plan_id, 'sumber');
-                    if (! $sourceValidation['success']) {
-                        return $sourceValidation;
+                    if (! $sourceBudgetItem->isApproved()) {
+                        return ['success' => false, 'message' => 'Budget item sumber belum approved.'];
                     }
 
                     $balanceResult = $this->getBudgetBalance($sourceBudgetItem->id);

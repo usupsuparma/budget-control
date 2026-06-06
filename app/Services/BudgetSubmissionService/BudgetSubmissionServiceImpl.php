@@ -42,7 +42,9 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
             $query->whereIn('id', $divisionIds);
         })->get();
 
-        return compact('budgetSubmissions', 'divisions', 'user', 'isAdmin');
+        $sourceDivisions = Division::orderBy('name')->get();
+
+        return compact('budgetSubmissions', 'divisions', 'sourceDivisions', 'user', 'isAdmin');
     }
 
     public function getAjaxData(mixed $user): Collection
@@ -76,6 +78,10 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
             'source_budget_account' => $submission->source_budget_account_label,
             'description' => $submission->description ?? '-',
             'estimation_amount' => (int) $submission->estimation_amount,
+            'approved_amount' => $submission->approved_amount ? (int) $submission->approved_amount : null,
+            'approved_movement_amount' => $submission->approved_movement_amount,
+            'has_approved_amount_adjustment' => $submission->has_approved_amount_adjustment,
+            'approved_amount_changed_at' => $submission->approved_amount_changed_at?->format('d/m/Y H:i'),
             'status_label' => $submission->status_label,
             'status_color' => $submission->status_color,
             'created_by' => $submission->user?->first_name ?: ($submission->user?->full_name ?? '-'),
@@ -288,6 +294,9 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
                 'budget_account_id' => $data->budget_account_id,
                 'source_budget_account_id' => $data->type === 'relocation' ? $data->source_budget_account_id : null,
                 'estimation_amount' => $data->estimation_amount,
+                'approved_amount' => null,
+                'approved_amount_changed_by' => null,
+                'approved_amount_changed_at' => null,
                 'description' => $data->description,
             ]);
         });

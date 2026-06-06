@@ -17,7 +17,8 @@ interface BudgetSubmissionApprovalService
         string $action,
         int $approverId,
         ?string $comments = null,
-        ?int $sourceBudgetAccountId = null
+        ?int $sourceBudgetAccountId = null,
+        int|float|null $approvedAmount = null
     ): array;
 
     /**

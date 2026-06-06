@@ -9,6 +9,7 @@ use App\Models\BudgetSubmission;
 use App\Models\BudgetCategory;
 use App\Models\BudgetMutation;
 use App\Models\WorkplanBudgetItem;
+use App\Exceptions\DomainException;
 use App\Services\BudgetLedgerService\BudgetLedgerServiceImpl;
 use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalServiceImpl;
 use App\Services\BudgetSubmissionService\BudgetSubmissionServiceImpl;
@@ -120,7 +121,52 @@ class BudgetSubmissionServiceTest extends TestCase
         ]);
     }
 
-    public function test_approve_add_budget_records_credit_amendment_mutation()
+    public function test_approve_add_budget_records_source_debit_and_target_credit_amendment_mutations()
+    {
+        $user = User::factory()->create();
+        $division = $this->createDivision('IT Division');
+        $workPlan = $this->createWorkPlan();
+        $sourceBudgetItem = $this->createBudgetItem($workPlan, 'Source item');
+        $targetBudgetItem = $this->createBudgetItem($workPlan, 'Target item');
+        $this->recordInitialBudget($sourceBudgetItem, 1000000);
+
+        $submission = BudgetSubmission::create([
+            'user_id' => $user->id,
+            'division_id' => $division->id,
+            'division_name' => $division->name,
+            'work_plan_id' => $workPlan->id,
+            'submission_date' => '2026-06-02',
+            'type' => 'add',
+            'source_budget_account_id' => $sourceBudgetItem->id,
+            'budget_account_id' => $targetBudgetItem->id,
+            'estimation_amount' => 750000,
+            'description' => 'Top up target item',
+            'status' => 0,
+        ]);
+
+        $this->budgetSubmissionService->approve($submission->id);
+
+        $this->assertDatabaseHas('budget_submissions', [
+            'id' => $submission->id,
+            'status' => 1,
+        ]);
+        $this->assertDatabaseHas('budget_mutations', [
+            'budget_submission_id' => $submission->id,
+            'workplan_budget_item_id' => $sourceBudgetItem->id,
+            'mutation_type' => BudgetMutation::TYPE_DEBIT,
+            'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
+            'amount' => 750000,
+        ]);
+        $this->assertDatabaseHas('budget_mutations', [
+            'budget_submission_id' => $submission->id,
+            'workplan_budget_item_id' => $targetBudgetItem->id,
+            'mutation_type' => BudgetMutation::TYPE_CREDIT,
+            'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
+            'amount' => 750000,
+        ]);
+    }
+
+    public function test_approve_add_budget_without_source_budget_account_fails()
     {
         $user = User::factory()->create();
         $division = $this->createDivision('IT Division');
@@ -140,19 +186,10 @@ class BudgetSubmissionServiceTest extends TestCase
             'status' => 0,
         ]);
 
-        $this->budgetSubmissionService->approve($submission->id);
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Budget item sumber wajib dipilih untuk Add Budget.');
 
-        $this->assertDatabaseHas('budget_submissions', [
-            'id' => $submission->id,
-            'status' => 1,
-        ]);
-        $this->assertDatabaseHas('budget_mutations', [
-            'budget_submission_id' => $submission->id,
-            'workplan_budget_item_id' => $targetBudgetItem->id,
-            'mutation_type' => BudgetMutation::TYPE_CREDIT,
-            'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
-            'amount' => 750000,
-        ]);
+        $this->budgetSubmissionService->approve($submission->id);
     }
 
     public function test_approve_relocation_records_source_debit_and_target_credit_mutations()

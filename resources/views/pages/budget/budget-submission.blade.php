@@ -597,6 +597,8 @@
         let dataTable;
         let pendingApprovals = [];
         let approvedApprovals = [];
+        let approvalSourceBudgetAccountChoice;
+        let approvalSourceBudgetAccountSearchTimer;
 
         const routeWithId = (template, id, placeholder = '__ID__') => {
             return template.replace(placeholder, String(id));
@@ -1600,8 +1602,18 @@
             items.forEach((approval, index) => {
                 const submission = approval.submission || {};
                 const levelText = `${approval.level || 0} / ${approval.total_levels || 0}`;
+                const requiresSource = Boolean(submission.requires_source_budget_selection);
+                const checkboxState = requiresSource
+                    ? 'disabled title="Pilih source budget melalui detail approval"'
+                    : '';
+                const approveAction = requiresSource
+                    ? `showSubmissionApprovalDetail(${index}, 'pending')`
+                    : `approveSubmissionDetail(${approval.detail_id})`;
+                const approveTitle = requiresSource
+                    ? 'Select source budget before approve'
+                    : 'Approve';
                 html += `<tr>
-                    <td class="text-center"><input type="checkbox" class="form-check-input submission-approval-checkbox" value="${approval.detail_id}"></td>
+                    <td class="text-center"><input type="checkbox" class="form-check-input submission-approval-checkbox" value="${approval.detail_id}" ${checkboxState}></td>
                     <td>${index + 1}</td>
                     <td><span class="fw-semibold text-primary">${approval.reference_number || '-'}</span></td>
                     <td>${toDateLabel(approval.requested_at)}</td>
@@ -1615,7 +1627,7 @@
                             <button type="button" class="btn btn-outline-info" onclick="showSubmissionApprovalDetail(${index}, 'pending')" title="Detail">
                                 <i class="ri-eye-line"></i>
                             </button>
-                            <button type="button" class="btn btn-success" onclick="approveSubmissionDetail(${approval.detail_id})" title="Approve">
+                            <button type="button" class="btn btn-success" onclick="${approveAction}" title="${approveTitle}">
                                 <i class="ri-check-line"></i>
                             </button>
                             <button type="button" class="btn btn-danger" onclick="openSubmissionReject(${approval.detail_id})" title="Reject">
@@ -1672,20 +1684,20 @@
         function initSubmissionApprovalCheckboxListeners() {
             $('#selectAllSubmissionApprovals').off('change').on('change', function() {
                 const checked = $(this).is(':checked');
-                $('.submission-approval-checkbox').prop('checked', checked);
+                $('.submission-approval-checkbox:not(:disabled)').prop('checked', checked);
                 updateBulkApprovalActionState();
             });
 
             $('.submission-approval-checkbox').off('change').on('change', function() {
-                const total = $('.submission-approval-checkbox').length;
-                const checked = $('.submission-approval-checkbox:checked').length;
-                $('#selectAllSubmissionApprovals').prop('checked', total === checked);
+                const total = $('.submission-approval-checkbox:not(:disabled)').length;
+                const checked = $('.submission-approval-checkbox:not(:disabled):checked').length;
+                $('#selectAllSubmissionApprovals').prop('checked', total > 0 && total === checked);
                 updateBulkApprovalActionState();
             });
         }
 
         function updateBulkApprovalActionState() {
-            const checkedCount = $('.submission-approval-checkbox:checked').length;
+            const checkedCount = $('.submission-approval-checkbox:not(:disabled):checked').length;
             if (checkedCount > 0) {
                 $('#selectedApprovalCount').text(`(${checkedCount}) selected`);
                 $('#bulkApprovalActions').fadeIn();
@@ -1696,7 +1708,7 @@
 
         function handleBulkApproveSubmission() {
             const detailIds = [];
-            $('.submission-approval-checkbox:checked').each(function() {
+            $('.submission-approval-checkbox:not(:disabled):checked').each(function() {
                 detailIds.push($(this).val());
             });
 
@@ -1720,7 +1732,7 @@
 
         function handleBulkRejectSubmission() {
             const detailIds = [];
-            $('.submission-approval-checkbox:checked').each(function() {
+            $('.submission-approval-checkbox:not(:disabled):checked').each(function() {
                 detailIds.push($(this).val());
             });
 
@@ -1800,7 +1812,32 @@
                 });
         }
 
+        function findPendingApprovalByDetailId(detailId) {
+            return pendingApprovals.find(item => Number(item.detail_id) === Number(detailId));
+        }
+
         function approveSubmissionDetail(detailId) {
+            const approval = findPendingApprovalByDetailId(detailId);
+            const submission = approval ? (approval.submission || {}) : {};
+            let sourceBudgetAccountId = null;
+
+            if (submission.requires_source_budget_selection) {
+                const sourceSelect = document.getElementById('approval_source_budget_account_id');
+                if (!sourceSelect) {
+                    const approvalIndex = pendingApprovals.findIndex(item => Number(item.detail_id) === Number(detailId));
+                    if (approvalIndex >= 0) {
+                        showSubmissionApprovalDetail(approvalIndex, 'pending');
+                    }
+                    return;
+                }
+
+                sourceBudgetAccountId = sourceSelect.value;
+                if (!sourceBudgetAccountId) {
+                    Swal.fire('Validation', 'Source Budget Account wajib dipilih untuk Add Budget.', 'warning');
+                    return;
+                }
+            }
+
             Swal.fire({
                 title: 'Approve this submission?',
                 icon: 'question',
@@ -1809,6 +1846,14 @@
             }).then(result => {
                 if (!result.isConfirmed) return;
 
+                const payload = {
+                    comments: ''
+                };
+
+                if (sourceBudgetAccountId) {
+                    payload.source_budget_account_id = sourceBudgetAccountId;
+                }
+
                 fetch(routeWithDetailId(ROUTES.approvalDetailApprove, detailId), {
                         method: 'POST',
                         headers: {
@@ -1816,9 +1861,7 @@
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            comments: ''
-                        })
+                        body: JSON.stringify(payload)
                     })
                     .then(response => response.json())
                     .then(result => {
@@ -1994,6 +2037,101 @@
                 });
         }
 
+        function destroyApprovalSourceBudgetAccountChoice() {
+            if (!approvalSourceBudgetAccountChoice) return;
+
+            try {
+                approvalSourceBudgetAccountChoice.destroy();
+            } catch (error) {
+                // Choice may already be detached when the modal content is replaced.
+            }
+
+            approvalSourceBudgetAccountChoice = null;
+        }
+
+        function initApprovalSourceBudgetAccountChoice(submission) {
+            destroyApprovalSourceBudgetAccountChoice();
+
+            const selectEl = document.getElementById('approval_source_budget_account_id');
+            if (!selectEl) return;
+
+            approvalSourceBudgetAccountChoice = new Choices(selectEl, {
+                searchEnabled: true,
+                searchChoices: false,
+                removeItemButton: false,
+                placeholder: true,
+                placeholderValue: 'Select Source Budget Account',
+                searchPlaceholderValue: 'Search source budget account...',
+                shouldSort: false
+            });
+
+            const loadOptions = (query = '') => {
+                if (!submission.work_plan_id) {
+                    approvalSourceBudgetAccountChoice.setChoices([{
+                        value: '',
+                        label: 'Work plan data is not available',
+                        disabled: true,
+                        selected: true
+                    }], 'value', 'label', true);
+                    return;
+                }
+
+                approvalSourceBudgetAccountChoice.setChoices([{
+                    value: '',
+                    label: 'Loading source budget...',
+                    disabled: true,
+                    selected: true
+                }], 'value', 'label', true);
+
+                const params = new URLSearchParams({
+                    q: query || '',
+                    page: '1',
+                    limit: '100',
+                    work_plan_id: String(submission.work_plan_id),
+                    exclude_id: String(submission.budget_account_id || ''),
+                });
+
+                fetch(`${ROUTES.budgetCodesAll}?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(payload => {
+                        if (!payload || !payload.success) {
+                            throw new Error('Failed to load source budget accounts.');
+                        }
+
+                        const results = payload.data || [];
+                        const choices = results.map(item => ({
+                            value: String(item.value),
+                            label: item.label || normalizeLabel(item),
+                        }));
+
+                        approvalSourceBudgetAccountChoice.clearStore();
+                        approvalSourceBudgetAccountChoice.setChoices([{
+                            value: '',
+                            label: choices.length ? 'Select Source Budget Account' : 'No source budget available',
+                            disabled: true,
+                            selected: true
+                        }], 'value', 'label', true);
+                        approvalSourceBudgetAccountChoice.setChoices(choices, 'value', 'label', false);
+                    })
+                    .catch(() => {
+                        approvalSourceBudgetAccountChoice.setChoices([{
+                            value: '',
+                            label: 'Error loading source budget',
+                            disabled: true,
+                            selected: true
+                        }], 'value', 'label', true);
+                    });
+            };
+
+            selectEl.addEventListener('search', function(e) {
+                const query = (e && e.detail && e.detail.value) ? e.detail.value : '';
+                clearTimeout(approvalSourceBudgetAccountSearchTimer);
+                approvalSourceBudgetAccountSearchTimer = setTimeout(() => loadOptions(query), 300);
+            });
+
+            loadOptions();
+        }
+
         function showSubmissionApprovalDetail(index, mode) {
             const list = mode === 'history' ? approvedApprovals : pendingApprovals;
             const item = list[index];
@@ -2001,26 +2139,48 @@
             const submission = item.submission || {};
             const isPending = mode === 'pending';
             const detail = item;
+            const requiresSource = isPending && Boolean(submission.requires_source_budget_selection);
 
             const requester = detail.requester_name || '-';
             const refNo = detail.reference_number || '-';
 
             $('#submissionApprovalTimelineModalLabel').text('Approval Detail');
 
+            const sourceSelectorHtml = requiresSource ? `
+                <div class="border rounded p-3 mt-3">
+                    <label for="approval_source_budget_account_id" class="form-label fw-semibold">
+                        Source Budget Account <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="approval_source_budget_account_id">
+                        <option value="">Loading source budget...</option>
+                    </select>
+                    <div class="form-text">
+                        Budget ini akan didebit sebagai dasar penambahan budget tujuan.
+                    </div>
+                </div>
+            ` : '';
+
             const detailsHtml = `
                 <table class="table table-sm table-borderless mb-0 submission-item-details">
                     <tr><td>Ref Number</td><td class="fw-semibold">${refNo}</td></tr>
                     <tr><td>Submission</td><td>${submission.description || '-'}</td></tr>
                     <tr><td>Division</td><td>${submission.division_name || '-'}</td></tr>
+                    <tr><td>Work Plan</td><td>${submission.work_plan_activity || '-'}</td></tr>
                     ${submission.source_budget_account && submission.source_budget_account !== '-' ? `<tr><td>Source Budget Account</td><td>${submission.source_budget_account}</td></tr>` : ''}
                     <tr><td>Budget Account</td><td>${submission.budget_account || '-'}</td></tr>
                     <tr><td>Amount</td><td>${formatIdr(submission.estimation_amount || 0)}</td></tr>
                     <tr><td>Requester</td><td>${requester}</td></tr>
                     <tr><td>Type</td><td>${submission.type_label || '-'}</td></tr>
                 </table>
+                ${sourceSelectorHtml}
             `;
 
             $('#submissionApprovalItemDetails').html(detailsHtml);
+            if (requiresSource) {
+                initApprovalSourceBudgetAccountChoice(submission);
+            } else {
+                destroyApprovalSourceBudgetAccountChoice();
+            }
 
             const timeline = item.timeline || [];
             if (!timeline.length) {

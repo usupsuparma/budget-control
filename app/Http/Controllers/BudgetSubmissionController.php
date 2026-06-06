@@ -135,6 +135,7 @@ class BudgetSubmissionController extends Controller
         try {
             $request->validate([
                 'comments' => 'nullable|string|max:1000',
+                'source_budget_account_id' => 'nullable|integer|exists:workplan_budget_items,id',
             ]);
 
             $employmentId = $this->getEmploymentIdForCurrentUser();
@@ -149,7 +150,10 @@ class BudgetSubmissionController extends Controller
                 $detailId,
                 'approve',
                 $employmentId,
-                $request->input('comments')
+                $request->input('comments'),
+                $request->filled('source_budget_account_id')
+                    ? $request->integer('source_budget_account_id')
+                    : null
             );
 
             return response()->json($result, $result['success'] ? 200 : 400);

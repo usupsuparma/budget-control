@@ -139,11 +139,19 @@ Budget movement memiliki dua tipe:
 
 1. **Add Budget**
    * `budget_submissions.budget_account_id` menunjuk ke `workplan_budget_items.id` tujuan.
-   * Saat approved, insert satu mutasi:
-     * `mutation_type`: **'C'**
+   * Pada approval terakhir, approver wajib memilih `budget_submissions.source_budget_account_id`.
+   * Saat approved, insert dua mutasi dalam satu transaksi database:
+     * Sumber: `mutation_type`: **'D'**
      * `category`: **'BUDGET_AMENDMENT'**
      * `amount`: `budget_submissions.estimation_amount`
      * `budget_submission_id`: ID submission
+     * Tujuan: `mutation_type`: **'C'**
+     * `category`: **'BUDGET_AMENDMENT'**
+     * `amount`: `budget_submissions.estimation_amount`
+     * `budget_submission_id`: ID submission
+   * Source dan target tidak boleh sama.
+   * Source wajib merupakan budget item approved dari workplan yang dipilih pada submission.
+   * Saldo source wajib cukup berdasarkan rumus pure ledger sebelum mutasi dicatat.
 
 2. **Relocation Budget**
    * `budget_submissions.source_budget_account_id` menunjuk ke `workplan_budget_items.id` sumber.

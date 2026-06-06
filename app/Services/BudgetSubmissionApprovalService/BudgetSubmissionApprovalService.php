@@ -12,7 +12,13 @@ interface BudgetSubmissionApprovalService
     /**
      * Process an approval action (approve/reject) by approval request detail id.
      */
-    public function processApproval(int $detailId, string $action, int $approverId, ?string $comments = null): array;
+    public function processApproval(
+        int $detailId,
+        string $action,
+        int $approverId,
+        ?string $comments = null,
+        ?int $sourceBudgetAccountId = null
+    ): array;
 
     /**
      * Process multiple approval actions at once.

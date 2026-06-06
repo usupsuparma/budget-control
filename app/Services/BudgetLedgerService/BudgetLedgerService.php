@@ -43,7 +43,7 @@ interface BudgetLedgerService
     /**
      * Record budget movement after a budget submission is fully approved.
      *
-     * Add budget: CREDIT target budget item.
+     * Add budget: DEBIT source budget item and CREDIT target budget item.
      * Relocation: DEBIT source budget item and CREDIT target budget item.
      *
      * @param int $submissionId budget_submissions.id

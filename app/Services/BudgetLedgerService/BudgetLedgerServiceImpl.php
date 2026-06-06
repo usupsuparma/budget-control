@@ -326,7 +326,52 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                 }
 
                 if ($submission->type === 'add') {
-                    $mutation = BudgetMutation::create([
+                    $sourceBudgetItem = $budgetItems->get($submission->source_budget_account_id);
+                    if (! $sourceBudgetItem) {
+                        return ['success' => false, 'message' => 'Budget item sumber wajib dipilih untuk Add Budget.'];
+                    }
+
+                    if ($sourceBudgetItem->id === $targetBudgetItem->id) {
+                        return ['success' => false, 'message' => 'Budget item sumber dan tujuan Add Budget tidak boleh sama.'];
+                    }
+
+                    $sourceValidation = $this->validateSubmissionBudgetItem($sourceBudgetItem, $submission->work_plan_id, 'sumber');
+                    if (! $sourceValidation['success']) {
+                        return $sourceValidation;
+                    }
+
+                    $balanceResult = $this->getBudgetBalance($sourceBudgetItem->id);
+                    if (! $balanceResult['success']) {
+                        return $balanceResult;
+                    }
+
+                    $currentBalance = (float) $balanceResult['data']['current_balance'];
+                    if ($amount > $currentBalance) {
+                        return [
+                            'success' => false,
+                            'message' => 'Saldo budget sumber tidak mencukupi. Saldo tersedia Rp '
+                                . number_format($currentBalance, 0, ',', '.')
+                                . ', nilai Add Budget Rp '
+                                . number_format($amount, 0, ',', '.')
+                                . '.',
+                        ];
+                    }
+
+                    $sourceMutation = BudgetMutation::create([
+                        'workplan_budget_item_id' => $sourceBudgetItem->id,
+                        'transaction_id' => null,
+                        'transaction_detail_id' => null,
+                        'transaction_lpj_submission_id' => null,
+                        'budget_submission_id' => $submission->id,
+                        'mutation_type' => BudgetMutation::TYPE_DEBIT,
+                        'amount' => $amount,
+                        'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
+                        'description' => 'Add Budget Movement #' . $submission->id . ' keluar ke '
+                            . BudgetSubmission::formatBudgetItemLabel($targetBudgetItem),
+                        'created_at' => now(),
+                    ]);
+
+                    $targetMutation = BudgetMutation::create([
                         'workplan_budget_item_id' => $targetBudgetItem->id,
                         'transaction_id' => null,
                         'transaction_detail_id' => null,
@@ -335,14 +380,15 @@ class BudgetLedgerServiceImpl implements BudgetLedgerService
                         'mutation_type' => BudgetMutation::TYPE_CREDIT,
                         'amount' => $amount,
                         'category' => BudgetMutation::CATEGORY_BUDGET_AMENDMENT,
-                        'description' => 'Add Budget Movement #' . $submission->id . ': ' . BudgetSubmission::formatBudgetItemLabel($targetBudgetItem),
+                        'description' => 'Add Budget Movement #' . $submission->id . ' masuk dari '
+                            . BudgetSubmission::formatBudgetItemLabel($sourceBudgetItem),
                         'created_at' => now(),
                     ]);
 
                     return [
                         'success' => true,
                         'message' => 'Mutasi add budget berhasil dicatat.',
-                        'data' => [$mutation],
+                        'data' => [$sourceMutation, $targetMutation],
                     ];
                 }
 

@@ -111,6 +111,7 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
         $limit = min(100, max(1, (int) ($filters['limit'] ?? 20)));
         $selectedId = $filters['id'] ?? null;
         $workPlanId = $filters['work_plan_id'] ?? null;
+        $excludeId = $filters['exclude_id'] ?? null;
 
         if (! empty($selectedId)) {
             $selected = WorkplanBudgetItem::approved()->find($selectedId);
@@ -156,6 +157,10 @@ class BudgetSubmissionServiceImpl implements BudgetSubmissionService
             ->approved()
             ->where('kpi_workplan_id', $workPlanId)
             ->select('id', 'kpi_workplan_id', 'budget_code', 'stock_code', 'description', 'total');
+
+        if (! empty($excludeId)) {
+            $queryBuilder->where('id', '!=', $excludeId);
+        }
 
         if ($query !== '') {
             $queryBuilder->where(function ($builder) use ($query) {

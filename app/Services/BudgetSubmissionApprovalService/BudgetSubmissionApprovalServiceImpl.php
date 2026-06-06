@@ -11,6 +11,7 @@ use App\Models\ApprovalRequestDetail;
 use App\Models\BudgetSubmission;
 use App\Models\Employment;
 use App\Models\Employee;
+use App\Models\WorkplanBudgetItem;
 use App\Services\BudgetLedgerService\BudgetLedgerService;
 use App\Services\LogService\LogService;
 use Exception;
@@ -150,7 +151,13 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
         }
     }
 
-    public function processApproval(int $detailId, string $action, int $approverId, ?string $comments = null): array
+    public function processApproval(
+        int $detailId,
+        string $action,
+        int $approverId,
+        ?string $comments = null,
+        ?int $sourceBudgetAccountId = null
+    ): array
     {
         try {
             $detail = ApprovalRequestDetail::with(['request.module', 'request'])
@@ -194,7 +201,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             DB::beginTransaction();
 
             if ($action === 'approve') {
-                $result = $this->handleApprove($detail, $request, $comments);
+                $result = $this->handleApprove($detail, $request, $comments, $sourceBudgetAccountId);
             } elseif ($action === 'reject') {
                 $result = $this->handleReject($detail, $request, $comments);
             } else {
@@ -299,17 +306,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
                     'requester_name' => Employment::with('employee')->find($request->requester_id)?->employee?->name ?? '-',
                     'current_approver' => $currentPending['employment_name'] ?? '-',
                     'timeline' => $timeline,
-                    'submission' => [
-                        'id' => $submission->id,
-                        'submission_date' => $submission->submission_date?->format('Y-m-d'),
-                        'division_name' => $submission->division?->name,
-                        'type_label' => $submission->type_label,
-                        'work_plan_activity' => $submission->workPlan?->activity ?? '-',
-                        'budget_account' => $submission->budget_account_label,
-                        'source_budget_account' => $submission->source_budget_account_label,
-                        'description' => $submission->description,
-                        'estimation_amount' => (int) $submission->estimation_amount,
-                    ],
+                    'submission' => $this->buildSubmissionPayload($submission),
                 ],
             ];
         } catch (Exception $e) {
@@ -365,17 +362,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
                         'requested_at' => $detail->request->requested_at?->format('Y-m-d H:i:s'),
                         'requester_name' => Employment::with('employee')->find($detail->request->requester_id)?->employee?->name ?? '-',
                         'timeline' => $timeline,
-                        'submission' => [
-                            'id' => $submission->id,
-                            'submission_date' => $submission->submission_date?->format('Y-m-d'),
-                            'division_name' => $submission->division?->name,
-                            'type_label' => $submission->type_label,
-                            'work_plan_activity' => $submission->workPlan?->activity ?? '-',
-                            'budget_account' => $submission->budget_account_label,
-                            'source_budget_account' => $submission->source_budget_account_label,
-                            'description' => $submission->description,
-                            'estimation_amount' => (int) $submission->estimation_amount,
-                        ],
+                        'submission' => $this->buildSubmissionPayload($submission, $detail),
                     ];
                 })
                 ->values();
@@ -433,17 +420,7 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
                         'approved_at' => $detail->approved_at?->format('Y-m-d H:i:s'),
                         'requester_name' => Employment::with('employee')->find($detail->request->requester_id)?->employee?->name ?? '-',
                         'timeline' => $timeline,
-                        'submission' => [
-                            'id' => $submission->id,
-                            'submission_date' => $submission->submission_date?->format('Y-m-d'),
-                            'division_name' => $submission->division?->name,
-                            'type_label' => $submission->type_label,
-                            'work_plan_activity' => $submission->workPlan?->activity ?? '-',
-                            'budget_account' => $submission->budget_account_label,
-                            'source_budget_account' => $submission->source_budget_account_label,
-                            'description' => $submission->description,
-                            'estimation_amount' => (int) $submission->estimation_amount,
-                        ],
+                        'submission' => $this->buildSubmissionPayload($submission, $detail),
                     ];
                 })
                 ->filter()
@@ -474,9 +451,20 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
         return $submission->status === 0;
     }
 
-    protected function handleApprove(ApprovalRequestDetail $detail, ApprovalRequest $request, ?string $comments): array
+    protected function handleApprove(
+        ApprovalRequestDetail $detail,
+        ApprovalRequest $request,
+        ?string $comments,
+        ?int $sourceBudgetAccountId = null
+    ): array
     {
-        $submission = BudgetSubmission::find($request->reference_id);
+        $submission = BudgetSubmission::whereKey($request->reference_id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($submission && $this->requiresFinalAddBudgetSourceSelection($submission, $detail)) {
+            $this->applyFinalAddBudgetSource($submission, $sourceBudgetAccountId);
+        }
 
         $detail->update([
             'status' => 'approved',
@@ -763,6 +751,91 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             })
             ->values()
             ->toArray();
+    }
+
+    protected function buildSubmissionPayload(BudgetSubmission $submission, ?ApprovalRequestDetail $detail = null): array
+    {
+        return [
+            'id' => $submission->id,
+            'submission_date' => $submission->submission_date?->format('Y-m-d'),
+            'division_name' => $submission->division?->name,
+            'type' => $submission->type,
+            'type_label' => $submission->type_label,
+            'work_plan_id' => $submission->work_plan_id,
+            'work_plan_activity' => $submission->workPlan?->activity ?? '-',
+            'budget_account_id' => $submission->budget_account_id,
+            'budget_account' => $submission->budget_account_label,
+            'source_budget_account_id' => $submission->source_budget_account_id,
+            'source_budget_account' => $submission->source_budget_account_label,
+            'description' => $submission->description,
+            'estimation_amount' => (int) $submission->estimation_amount,
+            'requires_source_budget_selection' => $detail
+                ? $this->requiresFinalAddBudgetSourceSelection($submission, $detail)
+                : false,
+        ];
+    }
+
+    protected function requiresFinalAddBudgetSourceSelection(
+        BudgetSubmission $submission,
+        ApprovalRequestDetail $detail
+    ): bool {
+        if ($submission->type !== 'add' || ! empty($submission->source_budget_account_id)) {
+            return false;
+        }
+
+        return $this->isFinalPendingApproval($detail);
+    }
+
+    protected function isFinalPendingApproval(ApprovalRequestDetail $detail): bool
+    {
+        if ($detail->status !== 'pending') {
+            return false;
+        }
+
+        return ApprovalRequestDetail::where('request_id', $detail->request_id)
+            ->where('status', 'pending')
+            ->count() === 1;
+    }
+
+    protected function applyFinalAddBudgetSource(BudgetSubmission $submission, ?int $sourceBudgetAccountId): void
+    {
+        if (! $sourceBudgetAccountId) {
+            throw new Exception('Budget sumber wajib dipilih pada approval terakhir untuk Add Budget.');
+        }
+
+        if ((int) $sourceBudgetAccountId === (int) $submission->budget_account_id) {
+            throw new Exception('Budget item sumber dan tujuan Add Budget tidak boleh sama.');
+        }
+
+        $sourceBudgetItem = WorkplanBudgetItem::approved()
+            ->where('id', $sourceBudgetAccountId)
+            ->where('kpi_workplan_id', $submission->work_plan_id)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $sourceBudgetItem) {
+            throw new Exception('Budget item sumber tidak ditemukan pada workplan yang dipilih atau belum approved.');
+        }
+
+        $balanceResult = $this->budgetLedgerService->getBudgetBalance($sourceBudgetItem->id);
+        if (! $balanceResult['success']) {
+            throw new Exception($balanceResult['message']);
+        }
+
+        $amount = (float) $submission->estimation_amount;
+        $currentBalance = (float) $balanceResult['data']['current_balance'];
+        if ($amount > $currentBalance) {
+            throw new Exception(
+                'Saldo budget sumber tidak mencukupi. Saldo tersedia Rp '
+                . number_format($currentBalance, 0, ',', '.')
+                . ', nilai Add Budget Rp '
+                . number_format($amount, 0, ',', '.')
+                . '.'
+            );
+        }
+
+        $submission->update(['source_budget_account_id' => $sourceBudgetItem->id]);
+        $submission->setRelation('sourceBudgetAccount', $sourceBudgetItem);
     }
 
     protected function generateReferenceNumber(BudgetSubmission $submission): string

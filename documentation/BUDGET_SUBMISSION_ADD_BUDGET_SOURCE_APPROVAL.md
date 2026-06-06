@@ -9,7 +9,7 @@ Flow ini memastikan `Add Budget` tetap memiliki dasar pengambilan budget. User p
 1. User membuat Budget Movement dengan tipe `Add Budget`.
 2. User memilih work plan, budget account tujuan, nominal, dan submit for approval.
 3. Approval berjalan sesuai matriks approval aktif.
-4. Pada approval terakhir untuk tipe `Add Budget`, sistem menampilkan input `Source Budget Account`.
+4. Pada approval terakhir untuk tipe `Add Budget`, sistem menampilkan input `Source Budget Account` di modal detail approval.
 5. Approver terakhir wajib memilih source budget account sebelum approve.
 6. Sistem menyimpan pilihan tersebut ke `budget_submissions.source_budget_account_id`.
 7. Setelah semua approval selesai, ledger mencatat dua mutasi:

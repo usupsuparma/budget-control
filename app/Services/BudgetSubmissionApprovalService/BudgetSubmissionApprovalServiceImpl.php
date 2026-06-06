@@ -783,7 +783,21 @@ class BudgetSubmissionApprovalServiceImpl implements BudgetSubmissionApprovalSer
             return false;
         }
 
-        return $this->isFinalPendingApproval($detail);
+        return $this->isFinalApprovalLevel($detail) || $this->isFinalPendingApproval($detail);
+    }
+
+    protected function isFinalApprovalLevel(ApprovalRequestDetail $detail): bool
+    {
+        if ($detail->status !== 'pending') {
+            return false;
+        }
+
+        $totalLevels = (int) ($detail->request?->total_levels ?? 0);
+        if ($totalLevels <= 0) {
+            return false;
+        }
+
+        return (int) $detail->level_sequence >= $totalLevels;
     }
 
     protected function isFinalPendingApproval(ApprovalRequestDetail $detail): bool

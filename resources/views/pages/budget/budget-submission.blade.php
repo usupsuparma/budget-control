@@ -1602,7 +1602,7 @@
             items.forEach((approval, index) => {
                 const submission = approval.submission || {};
                 const levelText = `${approval.level || 0} / ${approval.total_levels || 0}`;
-                const requiresSource = Boolean(submission.requires_source_budget_selection);
+                const requiresSource = approvalNeedsSourceBudgetSelection(approval);
                 const checkboxState = requiresSource
                     ? 'disabled title="Pilih source budget melalui detail approval"'
                     : '';
@@ -1816,12 +1816,50 @@
             return pendingApprovals.find(item => Number(item.detail_id) === Number(detailId));
         }
 
+        function isAddBudgetSubmission(submission) {
+            const type = String(submission.type || '').toLowerCase();
+            const typeLabel = String(submission.type_label || '').toLowerCase();
+
+            return type === 'add' || typeLabel === 'add budget';
+        }
+
+        function hasSourceBudgetAccount(submission) {
+            const sourceId = submission.source_budget_account_id;
+            const sourceLabel = String(submission.source_budget_account || '').trim();
+
+            return Boolean(sourceId) || (sourceLabel !== '' && sourceLabel !== '-');
+        }
+
+        function isFinalApprovalItem(approval) {
+            const level = Number(approval.level || 0);
+            const totalLevels = Number(approval.total_levels || 0);
+            if (totalLevels > 0 && level >= totalLevels) {
+                return true;
+            }
+
+            const timeline = Array.isArray(approval.timeline) ? approval.timeline : [];
+            const pendingTimeline = timeline.filter(item => item.status === 'pending');
+
+            return pendingTimeline.length === 1 && Number(pendingTimeline[0].id) === Number(approval.detail_id);
+        }
+
+        function approvalNeedsSourceBudgetSelection(approval) {
+            const submission = approval ? (approval.submission || {}) : {};
+
+            return Boolean(submission.requires_source_budget_selection) ||
+                (
+                    isAddBudgetSubmission(submission) &&
+                    !hasSourceBudgetAccount(submission) &&
+                    isFinalApprovalItem(approval)
+                );
+        }
+
         function approveSubmissionDetail(detailId) {
             const approval = findPendingApprovalByDetailId(detailId);
             const submission = approval ? (approval.submission || {}) : {};
             let sourceBudgetAccountId = null;
 
-            if (submission.requires_source_budget_selection) {
+            if (approvalNeedsSourceBudgetSelection(approval)) {
                 const sourceSelect = document.getElementById('approval_source_budget_account_id');
                 if (!sourceSelect) {
                     const approvalIndex = pendingApprovals.findIndex(item => Number(item.detail_id) === Number(detailId));
@@ -2139,7 +2177,7 @@
             const submission = item.submission || {};
             const isPending = mode === 'pending';
             const detail = item;
-            const requiresSource = isPending && Boolean(submission.requires_source_budget_selection);
+            const requiresSource = isPending && approvalNeedsSourceBudgetSelection(item);
 
             const requester = detail.requester_name || '-';
             const refNo = detail.reference_number || '-';

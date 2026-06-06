@@ -10,6 +10,44 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
     <style>
+        .nav-tabs-custom {
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .nav-tabs-custom .nav-item {
+            margin-bottom: -2px;
+        }
+
+        .nav-tabs-custom .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            background: transparent;
+            white-space: nowrap;
+        }
+
+        .nav-tabs-custom .nav-link:hover {
+            border-color: transparent;
+            border-bottom-color: #dee2e6;
+            color: #495057;
+            background: #f8f9fa;
+        }
+
+        .nav-tabs-custom .nav-link.active {
+            border-color: transparent;
+            border-bottom-color: #f97316;
+            color: #f97316;
+            background: transparent;
+            font-weight: 600;
+        }
+
+        .nav-tabs-custom .nav-link i {
+            font-size: 16px;
+        }
+
         .badge {
             padding: 0.35em 0.65em;
             font-size: 0.85em;
@@ -92,34 +130,38 @@
     <div id="layout-wrapper">
         <div class="row">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" href="#dataTab" data-bs-toggle="tab" role="tab">
-                                    Budget Movement
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#approvalTab" data-bs-toggle="tab" role="tab">
-                                    Approval <span class="badge bg-danger d-none" id="approvalPendingBadge">0</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#approvalHistoryTab" data-bs-toggle="tab" role="tab">
-                                    Approval History
-                                </a>
-                            </li>
-                        </ul>
-                        <div class="mt-2 d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">Budget Movement</h5>
+                <div class="card card-h-100 shadow-sm border">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <h6 class="text-muted text-uppercase small mb-0">Budget Movement</h6>
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#budgetSubmissionModal" onclick="resetForm()">
                                 <i class="ri-add-line align-bottom me-1"></i> Add Data
                             </button>
                         </div>
-                    </div>
-                    <div class="card-body">
+
+                        <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#dataTab" role="tab">
+                                    <i class="ri-exchange-funds-line me-2"></i>
+                                    Budget Movement
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#approvalTab" role="tab">
+                                    <i class="ri-check-double-line me-2"></i>
+                                    Approval
+                                    <span class="badge bg-danger ms-2 d-none" id="approvalPendingBadge">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#approvalHistoryTab" role="tab">
+                                    <i class="ri-history-line me-2"></i>
+                                    Approval History
+                                </a>
+                            </li>
+                        </ul>
+
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 {{ session('success') }}

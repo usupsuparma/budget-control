@@ -11,6 +11,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 
 **Key Documentation:**
 - [Budget User Cancel Verification Flow](documentation/BUDGET_USER_CANCEL_VERIFICATION_FLOW.md) - Cancel pending price verification before verifier processing, clean stale workflow notifications, reset item editability, and regenerate verifier snapshot on resubmit.
+- [Budget Submission Tab UI](documentation/BUDGET_SUBMISSION_TAB_UI.md) - Consistent custom tab styling for the Budget Movement page, aligned with Budget User tabs.
 - [Laravel CI Workflow](documentation/LARAVEL_CI_WORKFLOW.md) - GitHub Actions pipeline for Laravel/PHP/MySQL backend tests.
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md) - Bug fix history and rules for level-aware Division name resolution (`getDivisionName()`).

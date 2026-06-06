@@ -134,10 +134,6 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                             <h6 class="text-muted text-uppercase small mb-0">Budget Movement</h6>
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                data-bs-target="#budgetSubmissionModal" onclick="resetForm()">
-                                <i class="ri-add-line align-bottom me-1"></i> Add Data
-                            </button>
                         </div>
 
                         <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
@@ -180,6 +176,13 @@
 
                         <div class="tab-content">
                             <div class="tab-pane fade show active" id="dataTab">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                    <h5 class="card-title mb-0">Budget Movement</h5>
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#budgetSubmissionModal" onclick="resetForm()">
+                                        <i class="ri-add-line align-bottom me-1"></i> Add Data
+                                    </button>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-hover" id="budgetSubmissionTable">
                                         <thead class="table-light">
@@ -338,8 +341,12 @@
                             <div class="row mb-3">
                                 <label for="user_name" class="col-sm-3 col-form-label">User</label>
                                 <div class="col-sm-9">
+                                    @php
+                                        $currentUser = $user ?? Auth::user();
+                                        $currentUserName = trim(($currentUser->first_name ?? '') . ' ' . ($currentUser->last_name ?? ''));
+                                    @endphp
                                     <input type="text" class="form-control" id="user_name"
-                                        value="{{ $user->first_name ?? Auth::user()->first_name }}" readonly>
+                                        value="{{ $currentUserName ?: ($currentUser->name ?? '-') }}" readonly>
                                 </div>
                             </div>
 

@@ -14,6 +14,14 @@ interface VerificationBudgetService
     public function submitForVerification(int $itemId): array;
 
     /**
+     * Cancel pending budget item verification before any verifier processes it.
+     *
+     * @param int $itemId WorkplanBudgetItem ID
+     * @return array ['success' => bool, 'message' => string, 'data' => mixed]
+     */
+    public function cancelVerification(int $itemId): array;
+
+    /**
      * Verify budget item (set fix price and auto-submit for approval)
      * 
      * @param int $itemId WorkplanBudgetItem ID

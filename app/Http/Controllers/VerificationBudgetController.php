@@ -36,6 +36,15 @@ class VerificationBudgetController extends Controller
     }
 
     /**
+     * Cancel pending verification before it is processed by any verifier
+     */
+    public function cancelVerification(int $itemId)
+    {
+        $result = $this->verificationService->cancelVerification($itemId);
+        return response()->json($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
      * Verify budget item (approve verification and set fix price)
      */
     public function verify(Request $request, int $itemId)

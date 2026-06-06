@@ -1393,6 +1393,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/{itemId}/submit', [VerificationBudgetController::class, 'submitForVerification'])
                 ->name('verification.budget.submit');
 
+            // Cancel pending verification before any verifier processes it
+            Route::post('/{itemId}/cancel', [VerificationBudgetController::class, 'cancelVerification'])
+                ->name('verification.budget.cancel');
+
             // Verify item (approve and set fix price)
             Route::post('/{itemId}/verify', [VerificationBudgetController::class, 'verify'])
                 ->name('verification.budget.verify');

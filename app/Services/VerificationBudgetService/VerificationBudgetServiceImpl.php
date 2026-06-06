@@ -135,6 +135,86 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
     }
 
     /**
+     * Cancel pending budget item verification before any verifier processes it.
+     */
+    public function cancelVerification(int $itemId): array
+    {
+        try {
+            DB::beginTransaction();
+
+            $item = WorkplanBudgetItem::lockForUpdate()->findOrFail($itemId);
+
+            if ($item->verification_status !== 'pending') {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'message' => 'Item tidak sedang dalam proses verifikasi.',
+                ];
+            }
+
+            if ($item->status !== 'draft') {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'message' => 'Verifikasi tidak dapat dibatalkan karena item sudah masuk proses approval.',
+                ];
+            }
+
+            $hasExecutor = WorkplanBudgetApprover::where('workplan_budget_item_id', $itemId)
+                ->where('is_executor', true)
+                ->exists();
+
+            if ($hasExecutor) {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'message' => 'Verifikasi tidak dapat dibatalkan karena sudah diproses oleh verifikator.',
+                ];
+            }
+
+            $deletedCandidates = WorkplanBudgetApprover::where('workplan_budget_item_id', $itemId)->delete();
+
+            $item->update([
+                'verification_status' => 'unverified',
+                'status' => 'draft',
+                'price_final' => 0,
+            ]);
+
+            DB::commit();
+
+            Log::info('Budget item verification cancelled', [
+                'item_id' => $itemId,
+                'deleted_candidates' => $deletedCandidates,
+                'user_id' => Auth::id(),
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Proses verifikasi berhasil dibatalkan. Item dapat diedit atau dihapus kembali.',
+                'data' => [
+                    'item_id' => $itemId,
+                    'deleted_candidates' => $deletedCandidates,
+                ],
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('VerificationBudgetService.cancelVerification', [
+                'item_id' => $itemId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal membatalkan verifikasi: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Verify budget item (set fix price and auto-submit for approval)
      */
     public function verifyBudget(int $itemId, float $fixPrice, ?string $notes = null): array

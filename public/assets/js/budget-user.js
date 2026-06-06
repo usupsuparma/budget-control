@@ -2201,6 +2201,9 @@ function renderActionButtons(item) {
                     <button type="button" class="btn btn-sm btn-secondary btn-action-item ms-1" onclick="showVerificationStatus(${item.id})" title="View Verification Status">
                         <i class="bi bi-eye"></i>
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-action-item ms-1" onclick="cancelVerification(${item.id})" title="Cancel Verification">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
                 `;
                 return html;
 
@@ -2719,6 +2722,72 @@ function submitForVerification(itemId) {
                     const msg =
                         xhr.responseJSON?.message ||
                         "Error submitting for verification";
+                    showToast(msg, "error");
+                },
+            });
+        }
+    });
+}
+
+/**
+ * Cancel pending verification
+ */
+function cancelVerification(itemId) {
+    const item = allItemsData.find((i) => i.id === itemId);
+
+    if (!item) {
+        showToast("Item not found", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: "Cancel Verification?",
+        html: `
+            <p>This will cancel the current price verification process.</p>
+            <p class="text-muted">Verifier candidates will be cleared, and this item can be edited or deleted again.</p>
+            <hr>
+            <small><strong>Description:</strong> ${item.description || "-"}</small><br>
+            <small><strong>Cost Center:</strong> ${item.cost_center || "-"}</small>
+        `,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545",
+        confirmButtonText: "Yes, Cancel Verification",
+        cancelButtonText: "Close",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+
+            $.ajax({
+                url: `/budget-verification/${itemId}/cancel`,
+                method: "POST",
+                data: { _token: CSRF_TOKEN },
+                success: function (response) {
+                    hideLoading();
+                    if (response.success) {
+                        showToast(
+                            response.message ||
+                                "Verification cancelled successfully",
+                            "success",
+                        );
+                        loadAllBudgetItems();
+
+                        if (typeof loadPendingVerificationItems === "function") {
+                            loadPendingVerificationItems();
+                        }
+                    } else {
+                        showToast(
+                            response.message ||
+                                "Failed to cancel verification",
+                            "error",
+                        );
+                    }
+                },
+                error: function (xhr) {
+                    hideLoading();
+                    const msg =
+                        xhr.responseJSON?.message ||
+                        "Error cancelling verification";
                     showToast(msg, "error");
                 },
             });

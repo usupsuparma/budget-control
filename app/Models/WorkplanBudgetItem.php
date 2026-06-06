@@ -257,7 +257,8 @@ class WorkplanBudgetItem extends Model
 
     public function canBeEdited(): bool
     {
-        return in_array($this->status, ['draft', 'rejected']);
+        return in_array($this->status, ['draft', 'rejected'])
+            && $this->verification_status !== 'pending';
     }
 
     public function canBeApproved(): bool

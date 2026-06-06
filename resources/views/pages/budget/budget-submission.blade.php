@@ -123,6 +123,10 @@
         .approval-status-badge {
             cursor: pointer;
         }
+
+        #submission_date {
+            cursor: pointer;
+        }
     </style>
 @endsection
 
@@ -642,6 +646,7 @@
             initSourceBudgetAccountChoices();
             toggleMovementTypeFields();
             initEstimationAmountFormatter();
+            initSubmissionDatePicker();
 
             document.getElementById('budgetSubmissionForm').addEventListener('submit', handleFormSubmit);
 
@@ -649,6 +654,28 @@
             loadPendingSubmissionApprovals();
             loadApprovedSubmissionApprovals();
         });
+
+        function initSubmissionDatePicker() {
+            const dateInput = document.getElementById('submission_date');
+            if (!dateInput) return;
+
+            const openDatePicker = () => {
+                if (dateInput.disabled || dateInput.readOnly) return;
+
+                if (typeof dateInput.showPicker === 'function') {
+                    try {
+                        dateInput.showPicker();
+                        return;
+                    } catch (error) {
+                        // Some browsers restrict showPicker outside direct user interaction.
+                    }
+                }
+
+                dateInput.focus();
+            };
+
+            dateInput.addEventListener('click', openDatePicker);
+        }
 
         function initTabEvents() {
             document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {

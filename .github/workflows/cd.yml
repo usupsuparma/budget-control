@@ -44,16 +44,8 @@ jobs:
             echo "STEP 3: Run database migration..."
             php artisan migrate --force
 
-            echo "STEP 4: Clear and cache configuration, routes, and views..."
-            php artisan config:cache
+            echo "STEP 4: Clear and optimize application..."
+            php artisan optimize:clear
 
-            echo "STEP 5: Cache routes and views..."
-            php artisan route:cache
-
-            echo "STEP 6: Cache views and restart queues..."
-            php artisan view:cache
-
-            echo "STEP 7: Restarting queues..."
-            php artisan queue:restart
-
+            
             echo "✅ Deployment finished."

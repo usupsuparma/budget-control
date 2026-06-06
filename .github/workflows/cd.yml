@@ -38,14 +38,17 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            echo "================================="
             echo "STEP 2: Install production dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
             
+            echo "================================="
             echo "STEP 3: Run database migration..."
             php artisan migrate --force
 
+            echo "================================="
             echo "STEP 4: Clear and optimize application..."
             php artisan optimize:clear
 
-            
+            echo "================================="
             echo "✅ Deployment finished."

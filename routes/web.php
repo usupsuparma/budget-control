@@ -1066,6 +1066,10 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/', [BudgetResumeController::class, 'index'])
                 ->name('budget-resume.index');
+            Route::get('/budget-codes/search', [BudgetResumeController::class, 'searchBudgetCodes'])
+                ->name('budget-resume.budget-codes.search');
+            Route::get('/budget-codes/by-code', [BudgetResumeController::class, 'getBudgetCodeByCode'])
+                ->name('budget-resume.budget-codes.by-code');
         });
 
     /* ========================

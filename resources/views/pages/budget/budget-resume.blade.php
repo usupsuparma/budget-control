@@ -124,14 +124,18 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Budget Code</label>
+                                    @php
+                                        $selectedBudgetCodeValue = $budgetCode && $budgetCode !== 'all' ? (string) $budgetCode : '';
+                                        $selectedBudgetCodeLabel =
+                                            $selectedBudgetCode['text'] ?? ($selectedBudgetCodeValue ?: 'All Budget Codes');
+                                    @endphp
                                     <select name="budget_code" class="form-select form-select-sm" id="budget-code-filter">
-                                        <option value="all">All Budget Codes</option>
-                                        @foreach ($budgetCodes as $code)
-                                            <option value="{{ $code->budget_code }}"
-                                                {{ $budgetCode == $code->budget_code ? 'selected' : '' }}>
-                                                {{ $code->budget_code }} - {{ $code->name }}
+                                        <option value="all" {{ $selectedBudgetCodeValue === '' ? 'selected' : '' }}>All Budget Codes</option>
+                                        @if ($selectedBudgetCodeValue !== '')
+                                            <option value="{{ $selectedBudgetCodeValue }}" selected>
+                                                {{ $selectedBudgetCodeLabel }}
                                             </option>
-                                        @endforeach
+                                        @endif
                                     </select>
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end gap-2">
@@ -300,9 +304,13 @@
     <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
 
     <script>
-        // Initialize Choices.js for all select elements
+        window.budgetResumeRoutes = {
+            budgetCodeSearch: "{{ route('budget-resume.budget-codes.search') }}",
+            budgetCodeByCode: "{{ route('budget-resume.budget-codes.by-code') }}"
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
-            const selects = ['#year-filter', '#category-filter', '#division-filter', '#budget-code-filter'];
+            const selects = ['#year-filter', '#category-filter', '#division-filter'];
             selects.forEach(selector => {
                 const element = document.querySelector(selector);
                 if (element) {
@@ -313,7 +321,199 @@
                     });
                 }
             });
+
+            initializeBudgetCodeFilter();
         });
+
+        function initializeBudgetCodeFilter() {
+            const select = document.querySelector('#budget-code-filter');
+
+            if (!select) {
+                return;
+            }
+
+            const choices = new Choices(select, {
+                searchEnabled: true,
+                searchChoices: false,
+                searchFloor: 0,
+                searchResultLimit: 10,
+                searchPlaceholderValue: 'Search budget code...',
+                noResultsText: 'No budget codes found.',
+                noChoicesText: 'Open or type to load budget codes.',
+                itemSelectText: '',
+                shouldSort: false
+            });
+
+            const pageSize = 10;
+            let currentQuery = '';
+            let currentPage = 1;
+            let isLoading = false;
+            let hasMore = true;
+            let scrollBound = false;
+            let searchTimer = null;
+            let loadedValues = new Set();
+
+            function getSelectedChoice() {
+                const selectedOption = Array.from(select.options).find(option => option.selected);
+
+                if (!selectedOption || selectedOption.value === '' || selectedOption.value === 'all') {
+                    return null;
+                }
+
+                return {
+                    value: selectedOption.value,
+                    label: selectedOption.textContent.trim(),
+                    selected: true
+                };
+            }
+
+            function makeBudgetCodeChoice(item) {
+                const code = item.budget_code || item.value || '';
+                const label = item.text || [code, item.name].filter(Boolean).join(' - ');
+
+                return {
+                    value: code,
+                    label: label || code
+                };
+            }
+
+            function addUniqueChoice(collection, choice) {
+                if (!choice.value || loadedValues.has(choice.value)) {
+                    return;
+                }
+
+                loadedValues.add(choice.value);
+                collection.push(choice);
+            }
+
+            function setBudgetCodeChoices(results, replace) {
+                const options = [];
+                const selectedChoice = getSelectedChoice();
+
+                if (replace) {
+                    loadedValues = new Set();
+                    addUniqueChoice(options, {
+                        value: 'all',
+                        label: 'All Budget Codes',
+                        selected: !selectedChoice
+                    });
+
+                    if (selectedChoice) {
+                        addUniqueChoice(options, selectedChoice);
+                    }
+                }
+
+                results.forEach(item => addUniqueChoice(options, makeBudgetCodeChoice(item)));
+                choices.setChoices(options, 'value', 'label', replace);
+
+                if (selectedChoice) {
+                    choices.setChoiceByValue(selectedChoice.value);
+                } else {
+                    choices.setChoiceByValue('all');
+                }
+            }
+
+            function fetchBudgetCodes(query, page, replace) {
+                if (isLoading || (!replace && !hasMore)) {
+                    return;
+                }
+
+                isLoading = true;
+
+                $.ajax({
+                    url: window.budgetResumeRoutes.budgetCodeSearch,
+                    method: 'GET',
+                    data: {
+                        q: query,
+                        limit: pageSize,
+                        page: page
+                    },
+                    success: function(response) {
+                        isLoading = false;
+
+                        if (!response.success) {
+                            hasMore = false;
+                            return;
+                        }
+
+                        currentPage = response.page || page;
+                        hasMore = Boolean(response.has_more);
+                        setBudgetCodeChoices(response.data || [], replace);
+                    },
+                    error: function() {
+                        isLoading = false;
+                        hasMore = false;
+                    }
+                });
+            }
+
+            function bindInfiniteScroll() {
+                if (scrollBound) {
+                    return;
+                }
+
+                const listElement = choices.choiceList && choices.choiceList.element;
+
+                if (!listElement) {
+                    return;
+                }
+
+                scrollBound = true;
+                listElement.addEventListener('scroll', function() {
+                    const threshold = 60;
+                    const reachedBottom = listElement.scrollTop + listElement.clientHeight >=
+                        listElement.scrollHeight - threshold;
+
+                    if (reachedBottom && !isLoading && hasMore) {
+                        fetchBudgetCodes(currentQuery, currentPage + 1, false);
+                    }
+                });
+            }
+
+            function loadFirstPage() {
+                currentPage = 1;
+                hasMore = true;
+                fetchBudgetCodes(currentQuery, currentPage, true);
+                bindInfiniteScroll();
+            }
+
+            select.addEventListener('showDropdown', loadFirstPage);
+            select.addEventListener('search', function(event) {
+                clearTimeout(searchTimer);
+
+                searchTimer = setTimeout(function() {
+                    currentQuery = event.detail.value || '';
+                    currentPage = 1;
+                    hasMore = true;
+                    fetchBudgetCodes(currentQuery, currentPage, true);
+                }, 300);
+            });
+
+            setTimeout(function() {
+                const inputElement = choices.input && choices.input.element;
+                const containerElement = choices.containerOuter && choices.containerOuter.element;
+
+                if (containerElement) {
+                    containerElement.addEventListener('click', function() {
+                        if (choices.isOpen) {
+                            loadFirstPage();
+                        }
+                    });
+                }
+
+                if (inputElement) {
+                    inputElement.addEventListener('input', function() {
+                        if (this.value === '') {
+                            clearTimeout(searchTimer);
+                            currentQuery = '';
+                            currentPage = 1;
+                            hasMore = true;
+                            fetchBudgetCodes('', currentPage, true);
+                        }
+                    });
+                }
+            }, 0);
+        }
 
         function exportToExcel() {
             // Get current filter values

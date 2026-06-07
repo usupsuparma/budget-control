@@ -179,4 +179,63 @@ class BudgetResumeServiceTest extends TestCase
         $this->assertSame(20.0, $itemRow['months']['MAR']['realization']);
         $this->assertSame(120.0, $itemRow['months']['APR']['submission']);
     }
+
+    public function test_budget_resume_budget_code_search_is_paginated_and_excludes_inactive_codes(): void
+    {
+        for ($i = 1; $i <= 15; $i++) {
+            BudgetCode::create([
+                'budget_code' => sprintf('BC-PAGE-%02d', $i),
+                'name' => 'Paged Budget ' . $i,
+                'active_flag' => 1,
+            ]);
+        }
+
+        BudgetCode::create([
+            'budget_code' => 'BC-PAGE-INACTIVE',
+            'name' => 'Inactive Budget',
+            'active_flag' => 0,
+        ]);
+
+        $pageOne = $this->service->searchBudgetCodes('BC-PAGE', 10, 1);
+        $pageTwo = $this->service->searchBudgetCodes('BC-PAGE', 10, 2);
+
+        $this->assertTrue($pageOne['success']);
+        $this->assertSame(15, $pageOne['total']);
+        $this->assertTrue($pageOne['has_more']);
+        $this->assertCount(10, $pageOne['data']);
+        $this->assertSame('BC-PAGE-01', $pageOne['data']->first()['budget_code']);
+
+        $this->assertTrue($pageTwo['success']);
+        $this->assertSame(15, $pageTwo['total']);
+        $this->assertFalse($pageTwo['has_more']);
+        $this->assertCount(5, $pageTwo['data']);
+        $this->assertNotContains(
+            'BC-PAGE-INACTIVE',
+            $pageOne['data']->merge($pageTwo['data'])->pluck('budget_code')->all()
+        );
+    }
+
+    public function test_budget_resume_budget_code_lookup_returns_only_active_exact_code(): void
+    {
+        BudgetCode::create([
+            'budget_code' => 'BC-LOOKUP',
+            'name' => 'Lookup Budget',
+            'active_flag' => 1,
+        ]);
+
+        BudgetCode::create([
+            'budget_code' => 'BC-HIDDEN',
+            'name' => 'Hidden Budget',
+            'active_flag' => 0,
+        ]);
+
+        $active = $this->service->getBudgetCodeByCode('BC-LOOKUP');
+        $inactive = $this->service->getBudgetCodeByCode('BC-HIDDEN');
+
+        $this->assertTrue($active['success']);
+        $this->assertSame('BC-LOOKUP', $active['data']['budget_code']);
+        $this->assertSame('BC-LOOKUP - Lookup Budget', $active['data']['text']);
+        $this->assertTrue($inactive['success']);
+        $this->assertNull($inactive['data']);
+    }
 }

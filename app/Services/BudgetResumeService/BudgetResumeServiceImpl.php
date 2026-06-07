@@ -33,6 +33,9 @@ class BudgetResumeServiceImpl implements BudgetResumeService
         $categoryId = $filters['category_id'] ?? null;
         $divisionId = $filters['division_id'] ?? null;
         $budgetCode = $filters['budget_code'] ?? null;
+        $selectedBudgetCode = ($budgetCode && $budgetCode !== 'all')
+            ? $this->getBudgetCodeByCode((string) $budgetCode)['data']
+            : null;
 
         $budgetRows = $this->getLedgerBudgetRows($year, $categoryId, $divisionId, $budgetCode);
         $budgetItemIds = $budgetRows->pluck('item_id')->all();
@@ -47,12 +50,65 @@ class BudgetResumeServiceImpl implements BudgetResumeService
             'years' => range((int) date('Y') + 2, (int) date('Y') - 5),
             'categories' => BudgetCategory::active()->ordered()->get(),
             'divisions' => Division::orderBy('name')->get(),
-            'budgetCodes' => BudgetCode::active()->orderBy('budget_code')->get(),
+            'selectedBudgetCode' => $selectedBudgetCode,
             'budgetData' => $budgetData,
             'summary' => $this->buildSummary($budgetData),
             'categoryId' => $categoryId,
             'divisionId' => $divisionId,
             'budgetCode' => $budgetCode,
+        ];
+    }
+
+    public function searchBudgetCodes(string $query, int $limit = 10, int $page = 1): array
+    {
+        $query = trim($query);
+        $limit = max(1, min($limit, 100));
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+
+        $budgetCodeQuery = BudgetCode::active()
+            ->select('id', 'budget_code', 'name', 'inchargeCode')
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($inner) use ($query) {
+                    $inner->where('budget_code', 'LIKE', "%{$query}%")
+                        ->orWhere('name', 'LIKE', "%{$query}%");
+                });
+            })
+            ->orderBy('budget_code');
+
+        $total = (clone $budgetCodeQuery)->count();
+        $data = $budgetCodeQuery
+            ->offset($offset)
+            ->limit($limit)
+            ->get()
+            ->map(fn (BudgetCode $budgetCode): array => $this->formatBudgetCode($budgetCode))
+            ->values();
+
+        return [
+            'success' => true,
+            'data' => $data,
+            'has_more' => ($offset + $limit) < $total,
+            'page' => $page,
+            'total' => $total,
+        ];
+    }
+
+    public function getBudgetCodeByCode(string $code): array
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return ['success' => true, 'data' => null];
+        }
+
+        $budgetCode = BudgetCode::active()
+            ->select('id', 'budget_code', 'name', 'inchargeCode')
+            ->where('budget_code', $code)
+            ->first();
+
+        return [
+            'success' => true,
+            'data' => $budgetCode ? $this->formatBudgetCode($budgetCode) : null,
         ];
     }
 
@@ -253,5 +309,18 @@ class BudgetResumeServiceImpl implements BudgetResumeService
         }
 
         return $summary;
+    }
+
+    private function formatBudgetCode(BudgetCode $budgetCode): array
+    {
+        $name = (string) ($budgetCode->name ?? '');
+
+        return [
+            'id' => $budgetCode->id,
+            'budget_code' => $budgetCode->budget_code,
+            'name' => $name,
+            'inchargeCode' => $budgetCode->inchargeCode,
+            'text' => trim($budgetCode->budget_code . ($name !== '' ? ' - ' . $name : '')),
+        ];
     }
 }

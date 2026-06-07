@@ -31,15 +31,28 @@ Per `workplan_budget_items` row:
 
 Rows without `budget_mutations` are not shown because they do not represent approved ledger-backed budget.
 
+## Budget Code Filter
+
+Budget Resume must not preload every row from `budget_code` into the Blade page. The Budget Code filter uses Choices.js with server-side search and infinite scroll:
+
+- Initial page load renders only `All Budget Codes` and, when an existing filter is active, the single selected budget code label.
+- `GET /budget-resume/budget-codes/search?q=&limit=10&page=1` returns active budget codes in pages.
+- The dropdown loads page 1 when opened, filters on typed search text, and requests the next page when the Choices.js list is scrolled near the bottom.
+- `GET /budget-resume/budget-codes/by-code?code=<budget_code>` supports exact active-code lookup for filter preselection.
+- AJAX URLs are passed from Blade through `window.budgetResumeRoutes`; JavaScript must not hardcode these endpoints.
+
 ## Touched Modules
 
 - `app/Services/BudgetResumeService/`
   - Holds all Budget Resume business logic and ledger calculations.
+  - Provides paginated active budget code search for the filter dropdown.
 - `app/Http/Controllers/BudgetResumeController.php`
-  - Controller now only delegates request filters to the service and renders the Blade view.
+  - Controller only delegates request filters/search parameters to the service and returns Blade/JSON responses.
+- `routes/web.php`
+  - Registers named routes for Budget Resume index and budget code search/preselection endpoints.
 - `resources/views/pages/budget/budget-resume.blade.php`
   - Displays ledger-backed summary cards and table values.
-  - Budget code filter uses `budget_code.budget_code`.
+  - Budget code filter uses `budget_code.budget_code` through Choices.js server-side search instead of rendering all options.
 - `app/Providers/CustomServiceProvider.php`
   - Binds `BudgetResumeService` to `BudgetResumeServiceImpl`.
 
@@ -50,3 +63,5 @@ Covered by `tests/Feature/Services/BudgetResumeServiceTest.php`:
 - Realization is net usage after LPJ refund/reimburse.
 - Pending approval submissions are included as in-process exposure.
 - Approved/draft transactions are not counted as pending submission.
+- Budget code search is paginated and excludes inactive codes.
+- Budget code exact lookup returns only active codes for filter preselection.

@@ -196,6 +196,78 @@ class NotificationService
         }
     }
 
+    /**
+     * Delete task notifications with the same title/reference that are no longer actionable.
+     */
+    public function deleteTaskNotificationsExceptReferences(
+        string $categoryName,
+        string $title,
+        string $referenceType,
+        array $activeReferenceIds,
+        ?array $employeeIds = null
+    ): int {
+        try {
+            $category = NotificationCategory::where('name', $categoryName)->first();
+
+            if (! $category) {
+                return 0;
+            }
+
+            $activeReferenceIds = array_values(array_unique(array_map(
+                fn ($referenceId) => (int) $referenceId,
+                array_filter($activeReferenceIds, fn ($referenceId) => $referenceId !== null && $referenceId !== '')
+            )));
+
+            $query = Notification::where('category_id', $category->id)
+                ->where('title', $title)
+                ->where(function ($query) use ($referenceType) {
+                    $query->where('reference_type', $referenceType)
+                        ->orWhereNull('reference_type');
+                });
+
+            if (! empty($activeReferenceIds)) {
+                $query->where(function ($query) use ($activeReferenceIds) {
+                    $query->whereNull('reference_id')
+                        ->orWhereNotIn('reference_id', $activeReferenceIds);
+                });
+            }
+
+            if ($employeeIds !== null) {
+                $employeeIds = $this->normalizeEmployeeIds($employeeIds);
+
+                if (empty($employeeIds)) {
+                    return 0;
+                }
+
+                $query->whereIn('employee_id', $employeeIds);
+            }
+
+            $deleted = $query->delete();
+
+            Log::info('Stale task notifications deleted', [
+                'category' => $categoryName,
+                'title' => $title,
+                'reference_type' => $referenceType,
+                'active_reference_ids' => $activeReferenceIds,
+                'employee_ids' => $employeeIds,
+                'deleted_count' => $deleted,
+            ]);
+
+            return $deleted;
+        } catch (\Exception $e) {
+            Log::error('Failed to delete stale task notifications: ' . $e->getMessage(), [
+                'category' => $categoryName,
+                'title' => $title,
+                'reference_type' => $referenceType,
+                'active_reference_ids' => $activeReferenceIds,
+                'employee_ids' => $employeeIds,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
+        }
+    }
+
     protected function normalizeEmployeeIds(array $employeeIds): array
     {
         return array_values(array_unique(array_map(

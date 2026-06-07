@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Log;
 
 class WorkplanBudgetItemApprovalService
 {
+    private const APPROVAL_CATEGORY = 'approval';
+    private const APPROVAL_TASK_TITLE = 'Permintaan Approval Workplan Budget';
+    private const APPROVAL_TASK_REFERENCE_TYPE = 'workplan_budget_item_approval';
+
     protected BudgetLedgerService $budgetLedgerService;
     protected NotificationService $notificationService;
 
@@ -867,7 +871,10 @@ class WorkplanBudgetItemApprovalService
         ])
             ->where('employment_id', $employmentId)
             ->where('status', 'pending')
-            ->whereHas('request', fn ($q) => $q->where('status', 'pending'))
+            ->whereHas('request', function ($query) {
+                $query->where('status', 'pending')
+                    ->whereHas('module', fn ($moduleQuery) => $moduleQuery->where('table_name', 'workplan_budget_items'));
+            })
             ->get()
             ->filter(function ($detail) {
                 // Only return if this is the next in sequence
@@ -880,8 +887,8 @@ class WorkplanBudgetItemApprovalService
             })
             ->map(function ($detail) {
                 $item = WorkplanBudgetItem::with([
-                'workplan.KPIDepartment.department',
-                'workplan.KPIDepartment.kpiDivision.division',
+                    'workplan.KPIDepartment.department',
+                    'workplan.KPIDepartment.kpiDivision.division',
                     'workplan.kpiSection.section.department',
                     'category',
                     'approvalRequest.details',
@@ -907,9 +914,9 @@ class WorkplanBudgetItemApprovalService
                 $divisionName = null;
                 $departmentName = null;
                 if ($item && $item->workplan) {
-                if ($item->workplan->kpi_type === 'department' && $item->workplan->KPIDepartment) {
-                    $departmentName = $item->workplan->KPIDepartment->department?->name;
-                    $divisionName = $item->workplan->KPIDepartment->kpiDivision?->division?->name;
+                    if ($item->workplan->kpi_type === 'department' && $item->workplan->KPIDepartment) {
+                        $departmentName = $item->workplan->KPIDepartment->department?->name;
+                        $divisionName = $item->workplan->KPIDepartment->kpiDivision?->division?->name;
                     } elseif ($item->workplan->kpi_type === 'section' && $item->workplan->kpiSection) {
                         $departmentName = $item->workplan->kpiSection->section?->department?->name;
                         $divisionName = $item->workplan->kpiSection->section?->department?->division?->name ?? null;
@@ -965,13 +972,34 @@ class WorkplanBudgetItemApprovalService
                     ] : null,
                 ];
             })
-            ->sortBy('requested_at');
+            ->filter(fn ($approval) => $approval['item'] !== null)
+            ->sortBy('requested_at')
+            ->values();
+
+        $this->deleteStaleApprovalTaskNotifications($employmentId, $pendingDetails->pluck('item.id')->all());
 
         return [
             'success' => true,
-            'data' => $pendingDetails->values()->toArray(),
+            'data' => $pendingDetails->toArray(),
             'count' => $pendingDetails->count(),
         ];
+    }
+
+    protected function deleteStaleApprovalTaskNotifications(int $employmentId, array $activeItemIds): void
+    {
+        $employeeId = Employment::whereKey($employmentId)->value('employee_id');
+
+        if (! $employeeId) {
+            return;
+        }
+
+        $this->notificationService->deleteTaskNotificationsExceptReferences(
+            self::APPROVAL_CATEGORY,
+            self::APPROVAL_TASK_TITLE,
+            self::APPROVAL_TASK_REFERENCE_TYPE,
+            $activeItemIds,
+            [(int) $employeeId]
+        );
     }
 
     /**

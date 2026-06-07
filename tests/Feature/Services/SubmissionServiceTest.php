@@ -57,14 +57,16 @@ class SubmissionServiceTest extends TestCase
             'status' => 'active',
         ]);
 
-        Employment::create([
-            'employee_id' => $employee->id,
-            'job_level_id' => '2',
-            'job_level_name' => 'Division',
-            'job_position_id' => (string) $jobPosition->id,
-            'job_position_name' => $jobPosition->job_position_name,
-            'status' => 'active',
-        ]);
+        Employment::updateOrCreate(
+            ['employee_id' => $employee->id],
+            [
+                'job_level_id' => '2',
+                'job_level_name' => 'Division',
+                'job_position_id' => (string) $jobPosition->id,
+                'job_position_name' => $jobPosition->job_position_name,
+                'status' => 'active',
+            ],
+        );
     }
 
     private function createDepartmentWorkplan(Division $division, string $activity, int $year): KPIWorkPlan
@@ -86,6 +88,8 @@ class SubmissionServiceTest extends TestCase
             'strategic_goal' => 'Goal ' . $activity,
             'description' => 'Desc',
             'target' => 'Target',
+            'strategic_goal_id' => 'Goal Source ' . $activity,
+            'description_id' => 'Description Source ' . $activity,
         ]);
 
         $kpiDivision = KPIDivision::create([
@@ -119,6 +123,8 @@ class SubmissionServiceTest extends TestCase
 
         $wpA = $this->createDepartmentWorkplan($divA, 'Program A', $year);
         $wpB = $this->createDepartmentWorkplan($divB, 'Program B', $year);
+        $pastWorkplan = $this->createDepartmentWorkplan($divA, 'Program Past', $year - 1);
+        $futureWorkplan = $this->createDepartmentWorkplan($divB, 'Program Future', $year + 1);
 
         $admin = $this->createEmployeeWithRole('Super Admin', 'admin-submission@example.test');
         $this->actingAs($admin, 'web');
@@ -129,6 +135,8 @@ class SubmissionServiceTest extends TestCase
         $this->assertCount(2, $workplanIds);
         $this->assertContains($wpA->id, $workplanIds);
         $this->assertContains($wpB->id, $workplanIds);
+        $this->assertNotContains($pastWorkplan->id, $workplanIds);
+        $this->assertNotContains($futureWorkplan->id, $workplanIds);
     }
 
     public function test_get_user_page_data_non_admin_only_sees_login_division_workplans(): void
@@ -138,10 +146,13 @@ class SubmissionServiceTest extends TestCase
         $divB = Division::create(['name' => 'Division B', 'status' => 'active']);
 
         $wpA = $this->createDepartmentWorkplan($divA, 'Program A', $year);
+        $pastWorkplan = $this->createDepartmentWorkplan($divA, 'Program Past', $year - 1);
+        $futureWorkplan = $this->createDepartmentWorkplan($divA, 'Program Future', $year + 1);
         $this->createDepartmentWorkplan($divB, 'Program B', $year);
 
         $user = $this->createEmployeeWithRole('User', 'user-submission@example.test');
         $this->attachDivisionEmployment($user, $divA);
+        $user = $user->fresh(['employment.jobPosition']);
         $this->actingAs($user, 'web');
 
         $data = $this->service->getUserPageData();
@@ -149,6 +160,8 @@ class SubmissionServiceTest extends TestCase
 
         $this->assertCount(1, $workplanIds);
         $this->assertEquals($wpA->id, $workplanIds[0]);
+        $this->assertNotContains($pastWorkplan->id, $workplanIds);
+        $this->assertNotContains($futureWorkplan->id, $workplanIds);
     }
 
     public function test_get_programs_by_job_level_admin_sees_all_division_programs(): void
@@ -156,8 +169,10 @@ class SubmissionServiceTest extends TestCase
         $year = (int) now()->format('Y');
         $divA = Division::create(['name' => 'Division A', 'status' => 'active']);
         $divB = Division::create(['name' => 'Division B', 'status' => 'active']);
-        $this->createDepartmentWorkplan($divA, 'Program A', $year);
-        $this->createDepartmentWorkplan($divB, 'Program B', $year);
+        $wpA = $this->createDepartmentWorkplan($divA, 'Program A', $year);
+        $wpB = $this->createDepartmentWorkplan($divB, 'Program B', $year);
+        $pastWorkplan = $this->createDepartmentWorkplan($divA, 'Program Past', $year - 1);
+        $futureWorkplan = $this->createDepartmentWorkplan($divB, 'Program Future', $year + 1);
 
         $jobLevel = JobLevel::create([
             'job_level_name' => 'Manager',
@@ -168,9 +183,14 @@ class SubmissionServiceTest extends TestCase
         $this->actingAs($admin, 'web');
 
         $result = $this->service->getProgramsByJobLevel($jobLevel->id);
+        $programIds = collect($result['data'])->pluck('id')->all();
 
         $this->assertTrue($result['success']);
         $this->assertCount(2, $result['data']);
+        $this->assertContains($wpA->id, $programIds);
+        $this->assertContains($wpB->id, $programIds);
+        $this->assertNotContains($pastWorkplan->id, $programIds);
+        $this->assertNotContains($futureWorkplan->id, $programIds);
     }
 
     public function test_get_programs_by_job_level_non_admin_only_sees_login_division_programs(): void
@@ -179,6 +199,8 @@ class SubmissionServiceTest extends TestCase
         $divA = Division::create(['name' => 'Division A', 'status' => 'active']);
         $divB = Division::create(['name' => 'Division B', 'status' => 'active']);
         $wpA = $this->createDepartmentWorkplan($divA, 'Program A', $year);
+        $pastWorkplan = $this->createDepartmentWorkplan($divA, 'Program Past', $year - 1);
+        $futureWorkplan = $this->createDepartmentWorkplan($divA, 'Program Future', $year + 1);
         $this->createDepartmentWorkplan($divB, 'Program B', $year);
 
         $jobLevel = JobLevel::create([
@@ -188,6 +210,7 @@ class SubmissionServiceTest extends TestCase
 
         $user = $this->createEmployeeWithRole('User', 'user-programs@example.test');
         $this->attachDivisionEmployment($user, $divA);
+        $user = $user->fresh(['employment.jobPosition']);
         $this->actingAs($user, 'web');
 
         $result = $this->service->getProgramsByJobLevel($jobLevel->id);
@@ -195,6 +218,8 @@ class SubmissionServiceTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertCount(1, $result['data']);
         $this->assertEquals($wpA->id, $result['data'][0]['id']);
+        $programIds = collect($result['data'])->pluck('id')->all();
+        $this->assertNotContains($pastWorkplan->id, $programIds);
+        $this->assertNotContains($futureWorkplan->id, $programIds);
     }
 }
-

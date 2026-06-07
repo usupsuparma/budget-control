@@ -77,7 +77,10 @@ class SubmissionServiceImpl implements SubmissionService
         $jobLevels = JobLevel::all();
         $jobPositions = JobPosition::all();
 
-        $workplansQuery = KPIWorkPlan::with(['KPIDepartment', 'kpiSection']);
+        $currentYear = (int) now()->year;
+
+        $workplansQuery = KPIWorkPlan::with(['KPIDepartment', 'kpiSection'])
+            ->where('year', $currentYear);
         if (! $isAdmin) {
             $divisionIds = $this->userRoleService->getDivisionIds($employee);
             $workplansQuery->whereDivisionIn($divisionIds);
@@ -590,7 +593,10 @@ class SubmissionServiceImpl implements SubmissionService
         $isAdmin = $this->userRoleService->isAdmin($user);
         $divisionIds = $isAdmin ? [] : $this->userRoleService->getDivisionIds($user);
 
+        $currentYear = (int) now()->year;
+
         $query = KPIWorkPlan::with(['KPIDepartment.department', 'kpiSection.section'])
+            ->where('year', $currentYear)
             ->orderBy('year', 'desc')
             ->orderBy('activity');
 

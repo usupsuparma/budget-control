@@ -189,10 +189,10 @@ Every feature change, workflow change, status mapping change, API/route change, 
 
 **Rules:**
 - New flow/workflow documentation MUST be created under `docs/`.
-- Every new flow document under `docs/` MUST be linked from `GEMINI.md` in the same change set.
+- Every new flow document under `docs/` MUST be linked from `AGENTS.md` in the same change set.
 - Update the relevant file under `documentasi/` when existing documentation covers the feature.
 - Create a new focused document under `docs/` when no suitable document exists.
-- Update `GEMINI.md` when the change introduces a durable rule, architectural convention, workflow invariant, or important reference document.
+- Update `AGENTS.md` when the change introduces a durable rule, architectural convention, workflow invariant, or important reference document.
 - Documentation updates must describe the business behavior, touched modules/files, status codes or data contract changes, and any testing or operational caveats.
 
 ## Critical Rules (Auto-Reject if Violated)
@@ -210,7 +210,7 @@ Every feature change, workflow change, status mapping change, API/route change, 
 11. **Mandatory Choices.js:** Every select dropdown must implement Choices.js individual instances.
 12. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
 13. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
-14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `docs/` or `documentasi/` file and, when the rule is durable, `GEMINI.md` in the same change set. New flow documentation belongs in `docs/`.
+14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `docs/` or `documentasi/` file and, when the rule is durable, `AGENTS.md` in the same change set. New flow documentation belongs in `docs/`.
 15. **Level-Aware Division Resolution:** NEVER use `$jobPosition->structure` (i.e. `JobPosition::structure()`) directly to display a Division name. It is only valid for L2. For all levels use `Employment::getDivisionName()`. See [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md).
 
 ## Technology Stack

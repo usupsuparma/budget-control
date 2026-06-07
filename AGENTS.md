@@ -10,9 +10,11 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 3. **Status 4 (Completed):** Final state set via external API/Webhook (`/api/v1/webhook/transaction/complete`) to synchronize with external payment/finance systems.
 
 **Key Documentation:**
+- [Budget User Pending Approval Notification Sync](docs/BUDGET_USER_PENDING_APPROVAL_NOTIFICATION_SYNC.md) - Keeps Budget User pending approval badge/list in sync and removes stale approval task notifications.
 - [Budget User Cancel Verification Flow](docs/BUDGET_USER_CANCEL_VERIFICATION_FLOW.md) - Cancel pending price verification before verifier processing, clean stale workflow notifications, reset item editability, and regenerate verifier snapshot on resubmit.
 - [Budget Submission Tab UI](docs/BUDGET_SUBMISSION_TAB_UI.md) - Consistent custom tab styling for the Budget Movement page, aligned with Budget User tabs.
 - [Laravel CI Workflow](docs/LARAVEL_CI_WORKFLOW.md) - GitHub Actions pipeline for Laravel/PHP/MySQL backend tests.
+- [User Submission Program Current Year Filter](docs/USER_SUBMISSION_PROGRAM_CURRENT_YEAR_FILTER.md) - Program ID dropdowns on User Submission only load KPI Workplans from the current year.
 - [Employee Org Resolution](documentasi/EMPLOYEE_ORG_RESOLUTION.md) - How to determine user's Division, Department, and Section.
 - [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md) - Bug fix history and rules for level-aware Division name resolution (`getDivisionName()`).
 - [MacframeGA Import](documentasi/MACFRAME_GA_IMPORT.md) - Two-phase import workflow for external MacframeGA data.
@@ -189,10 +191,10 @@ Every feature change, workflow change, status mapping change, API/route change, 
 
 **Rules:**
 - New flow/workflow documentation MUST be created under `docs/`.
-- Every new flow document under `docs/` MUST be linked from `GEMINI.md` in the same change set.
+- Every new flow document under `docs/` MUST be linked from `AGENTS.md` in the same change set.
 - Update the relevant file under `documentasi/` when existing documentation covers the feature.
 - Create a new focused document under `docs/` when no suitable document exists.
-- Update `GEMINI.md` when the change introduces a durable rule, architectural convention, workflow invariant, or important reference document.
+- Update `AGENTS.md` when the change introduces a durable rule, architectural convention, workflow invariant, or important reference document.
 - Documentation updates must describe the business behavior, touched modules/files, status codes or data contract changes, and any testing or operational caveats.
 
 ## Critical Rules (Auto-Reject if Violated)
@@ -210,7 +212,7 @@ Every feature change, workflow change, status mapping change, API/route change, 
 11. **Mandatory Choices.js:** Every select dropdown must implement Choices.js individual instances.
 12. **Data-Driven Updates:** Synchronize related form fields using JavaScript data objects instead of DOM `data-*` attributes.
 13. **Library Stewardship:** ALWAYS check `public/assets/libs/` and `TECHNICAL_STACK.md` before adding any new frontend libraries or CDN links. Use local assets via `asset()` helper whenever possible.
-14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `docs/` or `documentasi/` file and, when the rule is durable, `GEMINI.md` in the same change set. New flow documentation belongs in `docs/`.
+14. **Documentation Must Stay Current:** Every feature or workflow change must update the relevant `docs/` or `documentasi/` file and, when the rule is durable, `AGENTS.md` in the same change set. New flow documentation belongs in `docs/`.
 15. **Level-Aware Division Resolution:** NEVER use `$jobPosition->structure` (i.e. `JobPosition::structure()`) directly to display a Division name. It is only valid for L2. For all levels use `Employment::getDivisionName()`. See [Employee Division Display Fix](documentasi/EMPLOYEE_DIVISION_DISPLAY_FIX.md).
 
 ## Technology Stack

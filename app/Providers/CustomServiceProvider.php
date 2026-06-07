@@ -15,6 +15,8 @@ use App\Services\StockCodeService\StockCodeService;
 use App\Services\StockCodeService\StockCodeServiceImpl;
 use App\Services\BudgetUserService\BudgetUserService;
 use App\Services\BudgetUserService\BudgetUserServiceImpl;
+use App\Services\BudgetResumeService\BudgetResumeService;
+use App\Services\BudgetResumeService\BudgetResumeServiceImpl;
 use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalService;
 use App\Services\BudgetSubmissionApprovalService\BudgetSubmissionApprovalServiceImpl;
 use App\Services\NotificationService\NotificationService;
@@ -58,6 +60,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(BudgetLedgerService::class, BudgetLedgerServiceImpl::class);
         $this->app->bind(StockCodeService::class, StockCodeServiceImpl::class);
         $this->app->bind(BudgetUserService::class, BudgetUserServiceImpl::class);
+        $this->app->bind(BudgetResumeService::class, BudgetResumeServiceImpl::class);
         $this->app->bind(NotificationService::class, NotificationServiceImpl::class);
         $this->app->bind(DashboardService::class, DashboardServiceImpl::class);
         $this->app->bind(MasterDataService::class, MasterDataServiceImpl::class);

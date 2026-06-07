@@ -51,6 +51,27 @@
         .filter-card {
             background-color: #f8f9fa;
         }
+
+        .summary-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 14px;
+            background: #ffffff;
+            min-height: 92px;
+        }
+
+        .summary-card .label {
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .summary-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
     </style>
 @endsection
 @section('content')
@@ -71,14 +92,10 @@
                                     <label class="form-label">Year</label>
 
                                     <select name="year" class="form-select form-select-sm" id="year-filter">
-                                        @foreach ($years as $year)
-                                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>
-                                                {{ $year }}</option>
+                                        @foreach ($years as $availableYear)
+                                            <option value="{{ $availableYear }}" {{ (int) $availableYear === (int) $year ? 'selected' : '' }}>
+                                                {{ $availableYear }}</option>
                                         @endforeach
-                                        <option value="2025" {{ $year == 2025 ? 'selected' : '' }}>2025</option>
-                                        <option value="2024" {{ $year == 2024 ? 'selected' : '' }}>2024</option>
-                                        <option value="2023" {{ $year == 2023 ? 'selected' : '' }}>2023</option>
-                                        <option value="2022" {{ $year == 2022 ? 'selected' : '' }}>2022</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -110,9 +127,9 @@
                                     <select name="budget_code" class="form-select form-select-sm" id="budget-code-filter">
                                         <option value="all">All Budget Codes</option>
                                         @foreach ($budgetCodes as $code)
-                                            <option value="{{ $code->stock_code }}"
-                                                {{ $budgetCode == $code->stock_code ? 'selected' : '' }}>
-                                                {{ $code->stock_code }} - {{ $code->name }}
+                                            <option value="{{ $code->budget_code }}"
+                                                {{ $budgetCode == $code->budget_code ? 'selected' : '' }}>
+                                                {{ $code->budget_code }} - {{ $code->name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -130,6 +147,34 @@
                                 </div>
                             </div>
                         </form>
+
+                        <!-- Summary Section -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <div class="summary-card">
+                                    <div class="label">Total Anggaran</div>
+                                    <div class="value text-primary">{{ number_format($summary['total_budget'] ?? 0, 2) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card">
+                                    <div class="label">Sudah Digunakan</div>
+                                    <div class="value text-danger">{{ number_format($summary['total_realization'] ?? 0, 2) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card">
+                                    <div class="label">Proses Pengajuan</div>
+                                    <div class="value text-warning">{{ number_format($summary['total_submission'] ?? 0, 2) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card">
+                                    <div class="label">Sisa Saldo</div>
+                                    <div class="value text-success">{{ number_format($summary['total_balance'] ?? 0, 2) }}</div>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Table Section -->
                         <div class="table-responsive">
@@ -174,7 +219,9 @@
                                     @forelse($budgetData as $divisionName => $items)
                                         @php
                                             $divisionTotalBudget = collect($items)->sum('total');
+                                            $divisionTotalRealization = collect($items)->sum('realization');
                                             $divisionTotalSubmission = collect($items)->sum('total_submission');
+                                            $divisionTotalBalance = collect($items)->sum('balance');
                                         @endphp
 
                                         <!-- Division Header Row -->
@@ -185,22 +232,24 @@
                                             <td class="text-end">
                                                 <strong>{{ number_format($divisionTotalBudget, 2) }}</strong>
                                             </td>
-                                            <td class="text-end"><strong>0.00</strong></td>
+                                            <td class="text-end"><strong>{{ number_format($divisionTotalRealization, 2) }}</strong></td>
                                             <td class="text-end">
                                                 <strong>{{ number_format($divisionTotalSubmission, 2) }}</strong>
                                             </td>
                                             <td class="text-end">
-                                                <strong>{{ number_format($divisionTotalBudget - $divisionTotalSubmission, 2) }}</strong>
+                                                <strong>{{ number_format($divisionTotalBalance, 2) }}</strong>
                                             </td>
                                             @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
                                                 @php
-                                                    $monthBudget = collect($items)->sum("months.$month");
-                                                    $monthSubmission = collect($items)->sum("submission_months.$month");
+                                                    $monthBudget = collect($items)->sum("months.$month.budget");
+                                                    $monthRealization = collect($items)->sum("months.$month.realization");
+                                                    $monthSubmission = collect($items)->sum("months.$month.submission");
+                                                    $monthBalance = collect($items)->sum("months.$month.balance");
                                                 @endphp
-                                                <td class="text-end">{{ number_format($monthBudget, 0) }}</td>
-                                                <td class="text-end">0</td>
-                                                <td class="text-end">{{ number_format($monthSubmission, 0) }}</td>
-                                                <td class="text-end">{{ number_format($monthBudget - $monthSubmission, 0) }}</td>
+                                                <td class="text-end">{{ number_format($monthBudget, 2) }}</td>
+                                                <td class="text-end">{{ number_format($monthRealization, 2) }}</td>
+                                                <td class="text-end">{{ number_format($monthSubmission, 2) }}</td>
+                                                <td class="text-end">{{ number_format($monthBalance, 2) }}</td>
                                             @endforeach
                                         </tr>
 
@@ -211,17 +260,17 @@
                                                 <td>{{ $item['budget_code'] }}</td>
                                                 <td>{{ $item['budget_name'] }}</td>
                                                 <td class="text-end">{{ number_format($item['total'], 2) }}</td>
-                                                <td class="text-end">0.00</td>
+                                                <td class="text-end">{{ number_format($item['realization'], 2) }}</td>
                                                 <td class="text-end">{{ number_format($item['total_submission'], 2) }}</td>
-                                                <td class="text-end">{{ number_format($item['total'] - $item['total_submission'], 2) }}</td>
+                                                <td class="text-end">{{ number_format($item['balance'], 2) }}</td>
 
                                                 @foreach (['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as $month)
-                                                    <td class="text-end">{{ number_format($item['months'][$month], 0) }}
+                                                    <td class="text-end">{{ number_format($item['months'][$month]['budget'], 2) }}
                                                     </td>
-                                                    <td class="text-end">0</td>
-                                                    <td class="text-end">{{ number_format($item['submission_months'][$month], 0) }}
+                                                    <td class="text-end">{{ number_format($item['months'][$month]['realization'], 2) }}</td>
+                                                    <td class="text-end">{{ number_format($item['months'][$month]['submission'], 2) }}
                                                     </td>
-                                                    <td class="text-end">{{ number_format($item['months'][$month] - $item['submission_months'][$month], 0) }}
+                                                    <td class="text-end">{{ number_format($item['months'][$month]['balance'], 2) }}
                                                     </td>
                                                 @endforeach
                                             </tr>

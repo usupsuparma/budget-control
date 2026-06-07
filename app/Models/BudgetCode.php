@@ -8,6 +8,7 @@ class BudgetCode extends Model
 {
     protected $table = 'budget_code';
     protected $guarded = [];
+    public $timestamps = false;
 
     protected $fillable = [
         'budget_code',

@@ -2,25 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\PermissionHelper;
-use App\Models\Employee;
-use App\Models\ModulMenu;
-use App\Models\Permission;
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use App\Services\UserSettingsService\UserSettingsService;
 
 class UsersController extends Controller
 {
+    public function __construct(
+        private readonly UserSettingsService $userSettingsService,
+    ) {
+    }
+
     public function index()
     {
         $title = "Users Data";
-        $roles = Role::all();
-        $employees = Employee::select('id', 'first_name', 'email')
-            ->orderBy('first_name')
-            ->get();
-        $permissions = Permission::with('modul')->OrderBy('id', 'DESC')->get();
-        $moduls = ModulMenu::orderBy('modul_name')->orderBy('menu_name')->get();
-        $routePermissionKeys = PermissionHelper::routePermissionKeys();
-        return view('pages.settings.users', compact('employees', 'title', 'roles', 'permissions', 'moduls', 'routePermissionKeys'));
+        $data = $this->userSettingsService->getPageData();
+
+        return view('pages.settings.users', array_merge(compact('title'), $data));
     }
 }

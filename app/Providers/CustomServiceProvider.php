@@ -37,6 +37,8 @@ use App\Services\KPISectionService\KPISectionService;
 use App\Services\KPISectionService\KPISectionServiceImpl;
 use App\Services\UserRoleService\UserRoleService;
 use App\Services\UserRoleService\UserRoleServiceImpl;
+use App\Services\UserSettingsService\UserSettingsService;
+use App\Services\UserSettingsService\UserSettingsServiceImpl;
 
 use App\Services\LogService\LogService;
 use App\Services\LogService\LogServiceImpl;
@@ -70,6 +72,7 @@ class CustomServiceProvider extends ServiceProvider
         $this->app->bind(KPIDepartmentService::class, KPIDepartmentServiceImpl::class);
         $this->app->bind(KPISectionService::class, KPISectionServiceImpl::class);
         $this->app->bind(UserRoleService::class, UserRoleServiceImpl::class);
+        $this->app->bind(UserSettingsService::class, UserSettingsServiceImpl::class);
         $this->app->bind(\App\Services\EmployeeService\EmployeeService::class, \App\Services\EmployeeService\EmployeeServiceImpl::class);
         $this->app->bind(\App\Services\BudgetSubmissionService\BudgetSubmissionService::class, \App\Services\BudgetSubmissionService\BudgetSubmissionServiceImpl::class);
         $this->app->bind(

@@ -49,6 +49,11 @@
                                 <i class="bi bi-shield-lock me-1"></i> Permissions
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#module">
+                                <i class="bi bi-grid me-1"></i> Modul
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
@@ -64,6 +69,11 @@
                         <!-- TAB 2: Permissions Management -->
                         <div class="tab-pane fade" id="permission">
                             @include('authorization.permissions')
+                        </div>
+
+                        <!-- TAB 3: Module Management -->
+                        <div class="tab-pane fade" id="module">
+                            @include('authorization.modules')
                         </div>
 
                     </div>

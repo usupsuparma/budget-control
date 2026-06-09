@@ -46,6 +46,7 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\ModulMenuController;
 use App\Http\Controllers\VerificationBudgetController;
 use App\Http\Controllers\WorkPlanItemController;
 use App\Http\Controllers\WorkplanBudgetItemMasterApprovalController;
@@ -1445,6 +1446,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [UsersController::class, 'index'])
                 ->name('users.index');
+            Route::post('/modules', [ModulMenuController::class, 'store'])
+                ->name('users.modules.store');
+            Route::put('/modules/{id}', [ModulMenuController::class, 'update'])
+                ->name('users.modules.update');
+            Route::delete('/modules/{id}', [ModulMenuController::class, 'destroy'])
+                ->name('users.modules.destroy');
         });
 
     Route::middleware('permission:setting.history.view')

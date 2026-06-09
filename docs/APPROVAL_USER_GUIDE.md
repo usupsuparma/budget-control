@@ -132,11 +132,14 @@ Level 3: Komisaris  → WAJIB
 
 ### Fungsi
 
-Menentukan **siapa saja** yang menjadi approver dan urutannya.
+Menentukan **siapa saja** yang menjadi approver dan urutannya. Pada tab ini, daftar ditampilkan dalam bentuk accordion:
+
+-   Setiap **Template** memiliki panel expand/collapse sendiri untuk melihat approver.
+-   **LPJ Master Approvers** tampil sebagai panel accordion terakhir di bagian paling bawah dalam card yang sama.
 
 ### Cara Menggunakan
 
-1. **Pilih Template** terlebih dahulu dari dropdown
+1. Buka panel template yang ingin diatur
 2. Klik **+ Tambah Approver**
 3. Isi form:
 
@@ -146,6 +149,12 @@ Menentukan **siapa saja** yang menjadi approver dan urutannya.
 | **Employee (Approver)** | Pilih karyawan               | `Budi - Finance Manager` |
 | **Threshold Amount**    | Batas nominal (opsional)     | `50.000.000`             |
 | **Required**            | Wajib approve?               | ✅ Wajib                 |
+
+### LPJ Master Approvers
+
+-   Buka panel **LPJ Master Approvers** yang berada paling bawah pada accordion.
+-   Klik **+ Tambah Approver** untuk menambah approver LPJ.
+-   Data LPJ menggunakan pola tampilan yang sama seperti Flow Details template: expand/collapse, daftar approver, dan aksi edit/hapus di dalam panel.
 
 ### Penjelasan Threshold Amount
 

@@ -5,7 +5,7 @@
             <div>
                 <h5 class="mb-1"><i class="ri-user-settings-line me-2"></i>Flow Details (Approvers)</h5>
                 <p class="text-muted small mb-0">Daftar template approval dengan approver masing-masing. Klik template
-                    untuk melihat detail approver.</p>
+                    atau LPJ Master Approvers untuk melihat detail approver.</p>
             </div>
         </div>
     </div>
@@ -20,44 +20,6 @@
         {{-- Accordion untuk menampilkan templates --}}
         <div id="templatesAccordion" class="accordion">
             {{-- Templates akan di-render di sini oleh JavaScript --}}
-        </div>
-    </div>
-</div>
-
-{{-- LPJ Approval Master Section --}}
-<div class="card shadow-sm border-0 mt-4">
-    <div class="card-header bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-1"><i class="ri-file-list-3-line me-2"></i>LPJ Master Approvers</h5>
-                <p class="text-muted small mb-0">Master approval untuk modul LPJ (Laporan Pertanggungjawaban). Tentukan urutan approver untuk semua LPJ.</p>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="showAddLpjApproverModal()">
-                <i class="ri-add-line me-1"></i> Tambah Approver
-            </button>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th width="5%">#</th>
-                        <th width="10%">Sequence</th>
-                        <th width="30%">Employee</th>
-                        <th width="25%">Job Position</th>
-                        <th width="15%">Status</th>
-                        <th width="15%" class="text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="lpjApproversTableBody">
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">
-                            <i class="ri-loader-4-line"></i> Loading data...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 </div>

@@ -157,6 +157,7 @@
         let upplineConfigEditMode = false;
         let selectedTemplateId = null;
         let employmentsData = [];
+        let isLoadingLpjApprovers = false;
 
         $(document).ready(function() {
             // Load templates on page load (Modules is hidden)
@@ -780,14 +781,15 @@
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
+                        $('#templatesAccordion').show();
+
                         if (response.data.length === 0) {
-                            $('#templatesAccordion').hide();
                             $('#noTemplatesPlaceholder').show();
                         } else {
-                            $('#templatesAccordion').show();
                             $('#noTemplatesPlaceholder').hide();
-                            renderTemplatesAccordion(response.data);
                         }
+
+                        renderTemplatesAccordion(response.data);
                     } else {
                         showAlert(response.message, 'error');
                     }
@@ -848,6 +850,8 @@
 
                 accordion.append(accordionItem);
             });
+
+            accordion.append(renderLpjApproversAccordionItem());
         }
 
         function renderApproversTable(templateId, approvers) {
@@ -902,6 +906,50 @@
                 <div class="text-center text-muted py-4">
                     <i class="ri-user-unfollow-line" style="font-size: 2.5rem; opacity: 0.3;"></i>
                     <p class="mt-2 mb-0">Belum ada approver. Klik "Tambah Approver" untuk menambahkan.</p>
+                </div>
+            `;
+        }
+
+        function renderLpjApproversAccordionItem() {
+            const hasApprovers = lpjApproversData.length > 0;
+
+            return `
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header" id="heading-lpj-master-approvers">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#lpjMasterApproversAccordion"
+                                aria-expanded="false"
+                                aria-controls="lpjMasterApproversAccordion">
+                            <div class="d-flex align-items-center w-100 justify-content-between pe-3">
+                                <div>
+                                    <strong>LPJ Master Approvers</strong>
+                                    <span class="badge bg-secondary ms-2">LPJ</span>
+                                    <span id="lpjMasterApproversCountBadge" class="badge bg-${hasApprovers ? 'success' : 'secondary'} ms-1">
+                                        ${lpjApproversData.length} Approver(s)
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="lpjMasterApproversAccordion" class="accordion-collapse collapse"
+                         aria-labelledby="heading-lpj-master-approvers"
+                         data-bs-parent="#templatesAccordion">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted small">
+                                    <i class="ri-information-line"></i>
+                                    Master approval untuk modul LPJ (Laporan Pertanggungjawaban). Tentukan urutan approver untuk semua LPJ.
+                                </span>
+                                <button class="btn btn-sm btn-primary" onclick="showAddLpjApproverModal()">
+                                    <i class="ri-add-line me-1"></i> Tambah Approver
+                                </button>
+                            </div>
+                            <div id="lpjApproversAccordionContent">
+                                ${renderLpjApproversContent(lpjApproversData)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -1396,46 +1444,58 @@
          * Load all LPJ approvers
          */
         function loadLpjApprovers() {
+            isLoadingLpjApprovers = true;
+            renderLpjApproversTable(lpjApproversData);
+
             $.ajax({
                 url: '{{ route('lpjApprovalMaster.data') }}',
                 method: 'GET',
                 success: function(response) {
+                    isLoadingLpjApprovers = false;
+
                     if (response.success) {
                         lpjApproversData = response.data;
                         renderLpjApproversTable(response.data);
                     }
                 },
                 error: function(xhr) {
+                    isLoadingLpjApprovers = false;
+                    renderLpjApproversTable(lpjApproversData);
                     showAlert('Gagal memuat data LPJ approvers', 'error');
                 }
             });
         }
 
         /**
-         * Render LPJ approvers table
+         * Render LPJ approvers content inside the accordion item
          */
-        function renderLpjApproversTable(data) {
-            const tbody = $('#lpjApproversTableBody');
-            tbody.empty();
+        function renderLpjApproversContent(data) {
+            if (isLoadingLpjApprovers) {
+                return `
+                    <div class="text-center text-muted py-4">
+                        <i class="ri-loader-4-line ri-spin" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <p class="mt-2 mb-0">Loading data approver LPJ...</p>
+                    </div>
+                `;
+            }
 
             if (data.length === 0) {
-                tbody.append(`
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            <i class="ri-inbox-line" style="font-size: 2rem; opacity: 0.3;"></i>
-                            <p class="mt-2 mb-0">Belum ada approver LPJ</p>
-                        </td>
-                    </tr>
-                `);
-                return;
+                return `
+                    <div class="text-center text-muted py-4">
+                        <i class="ri-inbox-line" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p class="mt-2 mb-0">Belum ada approver LPJ</p>
+                    </div>
+                `;
             }
+
+            let rows = '';
 
             data.forEach((item, index) => {
                 const statusBadge = item.is_active
                     ? '<span class="badge bg-success-subtle text-success">Active</span>'
                     : '<span class="badge bg-secondary-subtle text-secondary">Inactive</span>';
 
-                tbody.append(`
+                rows += `
                     <tr>
                         <td>${index + 1}</td>
                         <td>
@@ -1455,8 +1515,43 @@
                             </button>
                         </td>
                     </tr>
-                `);
+                `;
             });
+
+            return `
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="10%">Sequence</th>
+                                <th width="30%">Employee</th>
+                                <th width="25%">Job Position</th>
+                                <th width="15%">Status</th>
+                                <th width="15%" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLpjApproversTable(data) {
+            const contentContainer = $('#lpjApproversAccordionContent');
+            if (contentContainer.length) {
+                contentContainer.html(renderLpjApproversContent(data));
+            }
+
+            const countBadge = $('#lpjMasterApproversCountBadge');
+            if (countBadge.length) {
+                countBadge
+                    .removeClass('bg-success bg-secondary')
+                    .addClass(data.length > 0 ? 'bg-success' : 'bg-secondary')
+                    .text(`${data.length} Approver(s)`);
+            }
         }
 
         /**

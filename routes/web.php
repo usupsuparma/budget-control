@@ -620,7 +620,7 @@ Route::middleware('auth')->group(function () {
                 ->name('anggaran.destroy');
         });
 
-    Route::prefix('pengajuan.anggaran')
+    Route::prefix('pengajuan-anggaran')
         // ->middleware('permission:pengajuan.anggaran.view')
         ->group(function () {
 

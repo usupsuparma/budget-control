@@ -16,6 +16,7 @@ use App\Models\Section;
 use App\Models\WorkplanBudgetItem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WorkplanImportServiceImpl implements WorkplanImportService
 {
@@ -123,6 +124,7 @@ class WorkplanImportServiceImpl implements WorkplanImportService
             });
         } catch (\Exception $e) {
             fclose($handle);
+            Log::error('Import transaction failed: ' . $e->getMessage(), ['exception' => $e]);
             throw $e;
         }
 

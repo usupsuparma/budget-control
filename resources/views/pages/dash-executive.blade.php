@@ -275,11 +275,7 @@
         };
 
         let budgetChart = null;
-        let currentYear = {
-            {
-                now() - > year
-            }
-        };
+        let currentYear = {{ now()->year }};
 
         // ── Helpers ───────────────────────────────────────────────────────────
         function formatRupiah(value) {

@@ -11,6 +11,7 @@ Budget Control is a Laravel 12 enterprise application for budget management, KPI
 
 **Key Documentation:**
 - [Budget Resume Ledger Source](docs/BUDGET_RESUME_LEDGER_SOURCE.md) - Budget Resume / Budget Control uses `budget_mutations` as source of truth and paged Choices.js search for the Budget Code filter.
+- [Budget Verification Auto-Submit Logging](docs/BUDGET_VERIFICATION_AUTO_SUBMIT_LOGGING.md) - Adds `debug_ref` tracing from verification to workplan budget item approval so auto-submit failures can be traced from UI messages into Laravel logs.
 - [Budget User Pending Approval Notification Sync](docs/BUDGET_USER_PENDING_APPROVAL_NOTIFICATION_SYNC.md) - Keeps Budget User pending approval badge/list in sync and removes stale approval task notifications.
 - [Budget User Cancel Verification Flow](docs/BUDGET_USER_CANCEL_VERIFICATION_FLOW.md) - Cancel pending price verification before verifier processing, clean stale workflow notifications, reset item editability, and regenerate verifier snapshot on resubmit.
 - [Budget Submission Tab UI](docs/BUDGET_SUBMISSION_TAB_UI.md) - Consistent custom tab styling for the Budget Movement page, aligned with Budget User tabs.

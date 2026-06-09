@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WorkplanBudgetItemApprovalService
 {
@@ -36,8 +37,18 @@ class WorkplanBudgetItemApprovalService
      */
     public function submitForApproval(int $itemId): array
     {
+        $debugRef = (string) Str::uuid();
+        $authEmployee = Auth::user();
+        $authEmployment = $authEmployee?->employment;
+
         try {
             $item = WorkplanBudgetItem::with('workplan')->findOrFail($itemId);
+            $baseContext = $this->buildSubmitApprovalContext($debugRef, $item, [
+                'auth_employee_id' => $authEmployee?->id,
+                'auth_employment_id' => $authEmployment?->id,
+            ]);
+
+            Log::info('WorkplanBudgetItemApprovalService.submitForApproval started', $baseContext);
 
             // Check if already has pending approval
             $existingRequest = ApprovalRequest::where('reference_id', $itemId)
@@ -46,10 +57,14 @@ class WorkplanBudgetItemApprovalService
                 ->first();
 
             if ($existingRequest) {
-                return [
-                    'success' => false,
-                    'message' => 'Item sudah dalam proses approval.',
-                ];
+                return $this->buildSubmitApprovalFailure(
+                    $debugRef,
+                    'Item sudah dalam proses approval.',
+                    array_merge($baseContext, [
+                        'existing_request_id' => $existingRequest->id,
+                        'existing_request_status' => $existingRequest->status,
+                    ])
+                );
             }
 
             // Find module for workplan_budget_items
@@ -58,10 +73,11 @@ class WorkplanBudgetItemApprovalService
                 ->first();
 
             if (! $module) {
-                return [
-                    'success' => false,
-                    'message' => 'Approval module untuk workplan_budget_items belum dikonfigurasi.',
-                ];
+                return $this->buildSubmitApprovalFailure(
+                    $debugRef,
+                    'Approval module untuk workplan_budget_items belum dikonfigurasi.',
+                    $baseContext
+                );
             }
 
             Log::info('WorkplanBudgetItemApprovalService: Module found', [
@@ -80,10 +96,14 @@ class WorkplanBudgetItemApprovalService
             ]);
 
             if (! $template) {
-                return [
-                    'success' => false,
-                    'message' => 'Approval template belum dikonfigurasi untuk module ini.',
-                ];
+                return $this->buildSubmitApprovalFailure(
+                    $debugRef,
+                    'Approval template belum dikonfigurasi untuk module ini.',
+                    array_merge($baseContext, [
+                        'module_id' => $module->id,
+                        'module_name' => $module->module_name,
+                    ])
+                );
             }
 
             // Get current user's employment
@@ -102,10 +122,14 @@ class WorkplanBudgetItemApprovalService
             ]);
 
             if (! $requesterEmployment) {
-                return [
-                    'success' => false,
-                    'message' => 'Data employment Anda tidak ditemukan.',
-                ];
+                return $this->buildSubmitApprovalFailure(
+                    $debugRef,
+                    'Data employment Anda tidak ditemukan.',
+                    array_merge($baseContext, [
+                        'module_id' => $module->id,
+                        'template_id' => $template->id,
+                    ])
+                );
             }
 
             // Get division from the workplan budget item
@@ -115,10 +139,17 @@ class WorkplanBudgetItemApprovalService
             $approvalChain = $this->buildApprovalChain($template, $requesterEmployment, $divisionId, $item->total);
 
             if (empty($approvalChain)) {
-                return [
-                    'success' => false,
-                    'message' => 'Tidak ada approver yang sesuai untuk request ini.',
-                ];
+                return $this->buildSubmitApprovalFailure(
+                    $debugRef,
+                    'Tidak ada approver yang sesuai untuk request ini.',
+                    array_merge($baseContext, [
+                        'module_id' => $module->id,
+                        'template_id' => $template->id,
+                        'requester_employment_id' => $requesterEmployment->id,
+                        'division_id' => $divisionId,
+                        'amount' => $item->total,
+                    ])
+                );
             }
 
             Log::info('Final approval chain ready for submission', [
@@ -184,18 +215,29 @@ class WorkplanBudgetItemApprovalService
                 'data' => [
                     'request_id' => $request->id,
                     'total_approvers' => count($approvalChain),
+                    'debug_ref' => $debugRef,
                 ],
+                'debug_ref' => $debugRef,
             ];
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('WorkplanBudgetItemApprovalService.submitForApproval', [
+            Log::error('WorkplanBudgetItemApprovalService.submitForApproval exception', [
+                'debug_ref' => $debugRef,
+                'item_id' => $itemId,
+                'auth_employee_id' => $authEmployee?->id,
+                'auth_employment_id' => $authEmployment?->id,
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
                 'message' => 'Gagal mengajukan approval: '.$e->getMessage(),
+                'debug_ref' => $debugRef,
+                'data' => [
+                    'debug_ref' => $debugRef,
+                ],
             ];
         }
     }
@@ -1116,5 +1158,39 @@ class WorkplanBudgetItemApprovalService
         $sequence = ApprovalRequest::whereDate('created_at', now())->count() + 1;
 
         return sprintf('%s-%s-%04d', $prefix, $date, $sequence);
+    }
+
+    protected function buildSubmitApprovalFailure(string $debugRef, string $message, array $context = []): array
+    {
+        Log::warning('WorkplanBudgetItemApprovalService.submitForApproval failed', array_merge(
+            ['debug_ref' => $debugRef, 'message' => $message],
+            $context
+        ));
+
+        return [
+            'success' => false,
+            'message' => $message,
+            'debug_ref' => $debugRef,
+            'data' => [
+                'debug_ref' => $debugRef,
+            ],
+        ];
+    }
+
+    protected function buildSubmitApprovalContext(string $debugRef, WorkplanBudgetItem $item, array $extra = []): array
+    {
+        return array_merge([
+            'debug_ref' => $debugRef,
+            'item_id' => $item->id,
+            'item_status' => $item->status,
+            'verification_status' => $item->verification_status,
+            'item_total' => $item->total,
+            'price_estimation' => $item->price_estimation,
+            'price_final' => $item->price_final,
+            'workplan_id' => $item->kpi_workplan_id,
+            'workplan_year' => $item->workplan?->year,
+            'cost_center' => $item->cost_center,
+            'budget_code' => $item->budget_code,
+        ], $extra);
     }
 }

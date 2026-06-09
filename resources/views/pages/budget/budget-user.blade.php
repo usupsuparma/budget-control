@@ -2037,10 +2037,15 @@
                     $('#verifyModal').modal('hide');
 
                     if (response.success) {
+                        const responseMessage = appendDebugReference(
+                            response.message,
+                            response
+                        );
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Verified!',
-                            text: response.message,
+                            text: responseMessage,
                             timer: 2000,
                             showConfirmButton: false
                         });
@@ -2056,7 +2061,11 @@
                 },
                 error: function(xhr) {
                     hideLoading();
-                    const msg = xhr.responseJSON?.message || 'Error processing verification';
+                    const response = xhr.responseJSON || {};
+                    const msg = appendDebugReference(
+                        response.message || 'Error processing verification',
+                        response
+                    );
                     showToast(msg, 'error');
                 }
             });

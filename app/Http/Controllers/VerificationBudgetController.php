@@ -60,6 +60,15 @@ class VerificationBudgetController extends Controller
             $request->input('notes')
         );
 
+        if (($result['success'] ?? false) && (($result['data']['approval_submitted'] ?? true) === false)) {
+            Log::warning('VerificationBudgetController.verify partial success', [
+                'item_id' => $itemId,
+                'approval_debug_ref' => $result['data']['approval_debug_ref'] ?? $result['debug_ref'] ?? null,
+                'verification_debug_ref' => $result['data']['verification_debug_ref'] ?? null,
+                'message' => $result['message'] ?? null,
+            ]);
+        }
+
         return response()->json($result, $result['success'] ? 200 : 400);
     }
 

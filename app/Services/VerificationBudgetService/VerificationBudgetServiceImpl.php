@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class VerificationBudgetServiceImpl implements VerificationBudgetService
 {
@@ -246,6 +247,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
      */
     public function verifyBudget(int $itemId, float $fixPrice, ?string $notes = null): array
     {
+        $verificationDebugRef = (string) Str::uuid();
+
         try {
             $item = WorkplanBudgetItem::lockForUpdate()->findOrFail($itemId);
             $employee = Auth::user();
@@ -322,23 +325,50 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             DB::commit();
 
             Log::info('Budget item verified', [
+                'verification_debug_ref' => $verificationDebugRef,
                 'item_id' => $itemId,
                 'verifier_id' => $verifierId,
                 'old_price' => $item->price_estimation,
                 'verified_price_final' => $fixPrice,
                 'total_qty' => $totalQty,
                 'calculated_total' => $calculatedTotal,
+                'notes' => $notes,
             ]);
 
             // 4. Auto-submit for approval after verification
+            Log::info('VerificationBudgetService.verifyBudget auto-submit approval started', [
+                'verification_debug_ref' => $verificationDebugRef,
+                'item_id' => $itemId,
+                'verifier_id' => $verifierId,
+                'item_status' => $item->status,
+                'verification_status' => $item->verification_status,
+                'calculated_total' => $calculatedTotal,
+            ]);
+
             $approvalResult = $this->approvalService->submitForApproval($itemId);
 
             if (!$approvalResult['success']) {
-                Log::warning('Auto-submit approval failed after verification', [
+                $approvalDebugRef = $approvalResult['debug_ref']
+                    ?? $approvalResult['data']['debug_ref']
+                    ?? (string) Str::uuid();
+
+                Log::error('VerificationBudgetService.verifyBudget auto-submit approval failed', [
+                    'verification_debug_ref' => $verificationDebugRef,
+                    'approval_debug_ref' => $approvalDebugRef,
                     'item_id' => $itemId,
-                    'approval_message' => $approvalResult['message'],
+                    'verifier_id' => $verifierId,
+                    'approval_message' => $approvalResult['message'] ?? null,
+                    'approval_result' => $approvalResult,
+                    'item_snapshot' => [
+                        'status' => $item->fresh()?->status,
+                        'verification_status' => $item->fresh()?->verification_status,
+                        'price_final' => $item->fresh()?->price_final,
+                        'total' => $item->fresh()?->total,
+                        'cost_center' => $item->cost_center,
+                        'budget_code' => $item->budget_code,
+                    ],
                 ]);
-                
+
                 return [
                     'success' => true,
                     'message' => 'Verifikasi berhasil, tetapi auto-submit approval gagal: ' . $approvalResult['message'],
@@ -348,7 +378,11 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                         'total_qty' => $totalQty,
                         'calculated_total' => $calculatedTotal,
                         'approval_submitted' => false,
+                        'approval_debug_ref' => $approvalDebugRef,
+                        'verification_debug_ref' => $verificationDebugRef,
+                        'approval_response' => $approvalResult,
                     ],
+                    'debug_ref' => $approvalDebugRef,
                 ];
             }
 
@@ -362,11 +396,15 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                     'calculated_total' => $calculatedTotal,
                     'approval_submitted' => true,
                     'approval_data' => $approvalResult['data'] ?? null,
+                    'approval_debug_ref' => $approvalResult['debug_ref'] ?? $approvalResult['data']['debug_ref'] ?? null,
+                    'verification_debug_ref' => $verificationDebugRef,
                 ],
+                'debug_ref' => $verificationDebugRef,
             ];
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('VerificationBudgetService.verifyBudget', [
+                'verification_debug_ref' => $verificationDebugRef,
                 'item_id' => $itemId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -375,6 +413,10 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             return [
                 'success' => false,
                 'message' => 'Gagal memverifikasi: ' . $e->getMessage(),
+                'debug_ref' => $verificationDebugRef,
+                'data' => [
+                    'debug_ref' => $verificationDebugRef,
+                ],
             ];
         }
     }

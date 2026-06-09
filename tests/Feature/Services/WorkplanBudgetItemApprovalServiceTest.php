@@ -175,4 +175,19 @@ class WorkplanBudgetItemApprovalServiceTest extends TestCase
         $this->assertSame($item->id, $result['data'][0]['item']['id']);
         $this->assertDatabaseHas('notifications', ['id' => $notification->id]);
     }
+
+    public function test_submit_for_approval_returns_debug_reference_when_module_is_missing(): void
+    {
+        $approver = $this->createEmployment('missing-module@example.test');
+        $item = $this->createWorkplanBudgetItem();
+
+        $this->actingAs($approver->employee);
+
+        $result = $this->service->submitForApproval($item->id);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('Approval module untuk workplan_budget_items belum dikonfigurasi.', $result['message']);
+        $this->assertNotEmpty($result['debug_ref'] ?? null);
+        $this->assertSame($result['debug_ref'], $result['data']['debug_ref'] ?? null);
+    }
 }

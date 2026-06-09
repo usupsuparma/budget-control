@@ -2137,6 +2137,20 @@ function showToast(message, type = "info") {
     });
 }
 
+function appendDebugReference(message, response) {
+    const debugRef =
+        response?.data?.approval_debug_ref ||
+        response?.debug_ref ||
+        response?.data?.debug_ref ||
+        response?.data?.verification_debug_ref;
+
+    if (!debugRef) {
+        return message;
+    }
+
+    return `${message} [Ref: ${debugRef}]`;
+}
+
 /**
  * Format currency
  */
@@ -2474,22 +2488,30 @@ function submitForApproval(itemId) {
                     hideLoading();
                     if (response.success) {
                         showToast(
-                            response.message || "Item submitted for approval",
+                            appendDebugReference(
+                                response.message || "Item submitted for approval",
+                                response,
+                            ),
                             "success",
                         );
                         loadAllBudgetItems(); // Refresh data
                     } else {
                         showToast(
-                            response.message || "Failed to submit for approval",
+                            appendDebugReference(
+                                response.message || "Failed to submit for approval",
+                                response,
+                            ),
                             "error",
                         );
                     }
                 },
                 error: function (xhr) {
                     hideLoading();
-                    const msg =
-                        xhr.responseJSON?.message ||
-                        "Error submitting for approval";
+                    const response = xhr.responseJSON || {};
+                    const msg = appendDebugReference(
+                        response.message || "Error submitting for approval",
+                        response,
+                    );
                     showToast(msg, "error");
                 },
             });

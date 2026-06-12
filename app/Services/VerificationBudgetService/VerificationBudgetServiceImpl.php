@@ -44,7 +44,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Hanya item dengan status draft yang dapat disubmit untuk verifikasi.',
+                    'message' => 'Only draft items can be submitted for verification.',
                 ];
             }
 
@@ -53,7 +53,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Item sudah dalam proses verifikasi.',
+                    'message' => 'This item is already in the verification process.',
                 ];
             }
 
@@ -62,7 +62,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Item sudah terverifikasi.',
+                    'message' => 'This item has already been verified.',
                 ];
             }
 
@@ -72,7 +72,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Cost center belum diisi. Silakan edit item terlebih dahulu.',
+                    'message' => 'Cost center has not been filled in. Please edit the item first.',
                 ];
             }
 
@@ -84,7 +84,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Tidak ditemukan verifikator untuk cost center: ' . $item->cost_center . '. Silakan hubungi admin untuk mengatur mapping verifikator.',
+                    'message' => 'No verifier was found for cost center: ' . $item->cost_center . '. Please contact an admin to configure the verifier mapping.',
                 ];
             }
 
@@ -103,8 +103,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 $this->notificationService->send(
                     $verifierId,
                     'verification',
-                    'Permintaan Verifikasi Budget',
-                    "Ada item budget baru yang perlu diverifikasi: {$item->description}",
+                    'Budget Verification Request',
+                    "A new budget item needs verification: {$item->description}",
                     'workplan_budget_item_verification',
                     $itemId
                 );
@@ -126,7 +126,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Item berhasil diajukan untuk verifikasi.',
+                'message' => 'Item submitted for verification successfully.',
                 'data' => [
                     'item_id' => $itemId,
                     'verifier_count' => count($verifierIds),
@@ -142,7 +142,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengajukan verifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to submit verification: ' . $e->getMessage(),
             ];
         }
     }
@@ -162,7 +162,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Item tidak sedang dalam proses verifikasi.',
+                    'message' => 'This item is not currently in the verification process.',
                 ];
             }
 
@@ -171,7 +171,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Verifikasi tidak dapat dibatalkan karena item sudah masuk proses approval.',
+                    'message' => 'Verification cannot be cancelled because this item has already entered the approval process.',
                 ];
             }
 
@@ -184,7 +184,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => false,
-                    'message' => 'Verifikasi tidak dapat dibatalkan karena sudah diproses oleh verifikator.',
+                    'message' => 'Verification cannot be cancelled because it has already been processed by a verifier.',
                 ];
             }
 
@@ -196,8 +196,8 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             $deletedLegacyNotifications = $this->notificationService->deleteMatching(
                 'verification',
-                'Permintaan Verifikasi Budget',
-                ["Ada item budget baru yang perlu diverifikasi: {$item->description}"]
+                'Budget Verification Request',
+                ["A new budget item needs verification: {$item->description}"]
             );
 
             $deletedCandidates = WorkplanBudgetApprover::where('workplan_budget_item_id', $itemId)->delete();
@@ -220,7 +220,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Proses verifikasi berhasil dibatalkan. Item dapat diedit atau dihapus kembali.',
+                'message' => 'Verification process cancelled successfully. The item can be edited or deleted again.',
                 'data' => [
                     'item_id' => $itemId,
                     'deleted_candidates' => $deletedCandidates,
@@ -237,7 +237,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal membatalkan verifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to cancel verification: ' . $e->getMessage(),
             ];
         }
     }
@@ -257,7 +257,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee tidak ditemukan.',
+                    'message' => 'Employee was not found.',
                 ];
             }
 
@@ -265,7 +265,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if ($item->verification_status !== 'pending') {
                 return [
                     'success' => false,
-                    'message' => 'Item tidak dalam status pending verification.',
+                    'message' => 'This item is not in pending verification status.',
                 ];
             }
 
@@ -277,7 +277,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$candidate) {
                 return [
                     'success' => false,
-                    'message' => 'Anda tidak memiliki hak untuk memverifikasi item ini.',
+                    'message' => 'You do not have permission to verify this item.',
                 ];
             }
 
@@ -285,7 +285,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if ($fixPrice <= 0) {
                 return [
                     'success' => false,
-                    'message' => 'Harga verifikasi harus lebih dari 0.',
+                    'message' => 'Verification price must be greater than 0.',
                 ];
             }
 
@@ -371,7 +371,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
                 return [
                     'success' => true,
-                    'message' => 'Verifikasi berhasil, tetapi auto-submit approval gagal: ' . $approvalResult['message'],
+                    'message' => 'Verification succeeded, but approval auto-submit failed: ' . $approvalResult['message'],
                     'data' => [
                         'item_id' => $itemId,
                         'price_final' => $fixPrice,
@@ -388,7 +388,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Verifikasi berhasil dan item telah diajukan untuk approval.',
+                'message' => 'Verification succeeded and the item has been submitted for approval.',
                 'data' => [
                     'item_id' => $itemId,
                     'price_final' => $fixPrice,
@@ -412,7 +412,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memverifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to verify: ' . $e->getMessage(),
                 'debug_ref' => $verificationDebugRef,
                 'data' => [
                     'debug_ref' => $verificationDebugRef,
@@ -434,7 +434,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee tidak ditemukan.',
+                    'message' => 'Employee was not found.',
                 ];
             }
 
@@ -442,7 +442,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if ($item->verification_status !== 'pending') {
                 return [
                     'success' => false,
-                    'message' => 'Item tidak dalam status pending verification.',
+                    'message' => 'This item is not in pending verification status.',
                 ];
             }
 
@@ -454,14 +454,14 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$candidate) {
                 return [
                     'success' => false,
-                    'message' => 'Anda tidak memiliki hak untuk memverifikasi item ini.',
+                    'message' => 'You do not have permission to verify this item.',
                 ];
             }
 
             if (empty($notes)) {
                 return [
                     'success' => false,
-                    'message' => 'Alasan penolakan wajib diisi.',
+                    'message' => 'Rejection reason is required.',
                 ];
             }
 
@@ -497,7 +497,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Verifikasi ditolak. User dapat mengedit dan mengajukan kembali.',
+                'message' => 'Verification rejected. The user can edit and resubmit the item.',
                 'data' => [
                     'item_id' => $itemId,
                 ],
@@ -512,7 +512,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal menolak verifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to reject verification: ' . $e->getMessage(),
             ];
         }
     }
@@ -529,7 +529,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee tidak ditemukan.',
+                    'message' => 'Employee was not found.',
                     'data' => [],
                 ];
             }
@@ -548,7 +548,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Data berhasil dimuat.',
+                'message' => 'Data loaded successfully.',
                 'data' => $items,
             ];
         } catch (Exception $e) {
@@ -558,7 +558,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memuat data: ' . $e->getMessage(),
+                'message' => 'Failed to load data: ' . $e->getMessage(),
                 'data' => [],
             ];
         }
@@ -576,7 +576,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if (!$verifierId) {
                 return [
                     'success' => false,
-                    'message' => 'Employee tidak ditemukan.',
+                    'message' => 'Employee was not found.',
                     'data' => [],
                 ];
             }
@@ -661,7 +661,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => true,
-                'message' => 'Data berhasil dimuat.',
+                'message' => 'Data loaded successfully.',
                 'data' => $verifications->toArray(),
                 'count' => $verifications->count(),
             ];
@@ -672,7 +672,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memuat data: ' . $e->getMessage(),
+                'message' => 'Failed to load data: ' . $e->getMessage(),
                 'data' => [],
                 'count' => 0,
             ];
@@ -730,7 +730,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memuat status verifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to load verification status: ' . $e->getMessage(),
             ];
         }
     }
@@ -837,7 +837,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                     $results[] = [
                         'item_id' => $itemId,
                         'success' => false,
-                        'message' => 'Harga verifikasi tidak valid (harus > 0).',
+                        'message' => 'Invalid verification price (must be greater than 0).',
                     ];
                     $failCount++;
                     continue;
@@ -862,7 +862,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => $successCount > 0,
-                'message' => "Proses bulk verifikasi selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'message' => "Bulk verification process completed. Successful: $successCount, Failed: $failCount.",
                 'data' => [
                     'results' => $results,
                     'success_count' => $successCount,
@@ -877,7 +877,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memproses bulk verifikasi: ' . $e->getMessage(),
+                'message' => 'Failed to process bulk verification: ' . $e->getMessage(),
             ];
         }
     }
@@ -913,7 +913,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => $successCount > 0,
-                'message' => "Proses bulk reject selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'message' => "Bulk rejection process completed. Successful: $successCount, Failed: $failCount.",
                 'data' => [
                     'results' => $results,
                     'success_count' => $successCount,
@@ -928,7 +928,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memproses bulk reject: ' . $e->getMessage(),
+                'message' => 'Failed to process bulk rejection: ' . $e->getMessage(),
             ];
         }
     }
@@ -950,7 +950,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
                 fclose($handle);
                 return [
                     'success' => false,
-                    'message' => 'Format CSV salah. Pastikan kolom "item_id" dan "verified_price" tersedia.',
+                    'message' => 'Invalid CSV format. Make sure the "item_id" and "verified_price" columns are available.',
                 ];
             }
 
@@ -973,7 +973,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
             if ($count === 0) {
                 return [
                     'success' => false,
-                    'message' => 'Tidak ada data valid yang ditemukan di file CSV.',
+                    'message' => 'No valid data was found in the CSV file.',
                 ];
             }
 
@@ -985,7 +985,7 @@ class VerificationBudgetServiceImpl implements VerificationBudgetService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memproses file CSV: ' . $e->getMessage(),
+                'message' => 'Failed to process CSV file: ' . $e->getMessage(),
             ];
         }
     }

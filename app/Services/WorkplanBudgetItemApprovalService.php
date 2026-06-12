@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 class WorkplanBudgetItemApprovalService
 {
     private const APPROVAL_CATEGORY = 'approval';
-    private const APPROVAL_TASK_TITLE = 'Permintaan Approval Workplan Budget';
+    private const APPROVAL_TASK_TITLE = 'Workplan Budget Approval Request';
     private const APPROVAL_TASK_REFERENCE_TYPE = 'workplan_budget_item_approval';
 
     protected BudgetLedgerService $budgetLedgerService;
@@ -59,7 +59,7 @@ class WorkplanBudgetItemApprovalService
             if ($existingRequest) {
                 return $this->buildSubmitApprovalFailure(
                     $debugRef,
-                    'Item sudah dalam proses approval.',
+                    'This item is already in the approval process.',
                     array_merge($baseContext, [
                         'existing_request_id' => $existingRequest->id,
                         'existing_request_status' => $existingRequest->status,
@@ -75,7 +75,7 @@ class WorkplanBudgetItemApprovalService
             if (! $module) {
                 return $this->buildSubmitApprovalFailure(
                     $debugRef,
-                    'Approval module untuk workplan_budget_items belum dikonfigurasi.',
+                    'The approval module for workplan_budget_items has not been configured.',
                     $baseContext
                 );
             }
@@ -98,7 +98,7 @@ class WorkplanBudgetItemApprovalService
             if (! $template) {
                 return $this->buildSubmitApprovalFailure(
                     $debugRef,
-                    'Approval template belum dikonfigurasi untuk module ini.',
+                    'The approval template has not been configured for this module.',
                     array_merge($baseContext, [
                         'module_id' => $module->id,
                         'module_name' => $module->module_name,
@@ -124,7 +124,7 @@ class WorkplanBudgetItemApprovalService
             if (! $requesterEmployment) {
                 return $this->buildSubmitApprovalFailure(
                     $debugRef,
-                    'Data employment Anda tidak ditemukan.',
+                    'Your employment data was not found.',
                     array_merge($baseContext, [
                         'module_id' => $module->id,
                         'template_id' => $template->id,
@@ -141,7 +141,7 @@ class WorkplanBudgetItemApprovalService
             if (empty($approvalChain)) {
                 return $this->buildSubmitApprovalFailure(
                     $debugRef,
-                    'Tidak ada approver yang sesuai untuk request ini.',
+                    'No eligible approver was found for this request.',
                     array_merge($baseContext, [
                         'module_id' => $module->id,
                         'template_id' => $template->id,
@@ -203,15 +203,15 @@ class WorkplanBudgetItemApprovalService
             $this->notificationService->sendToEmployment(
                 $firstApprover['employment_id'],
                 'approval',
-                'Permintaan Approval Workplan Budget',
-                "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.'),
+                self::APPROVAL_TASK_TITLE,
+                "There is a new approval request for Workplan Budget Item: {$item->description} with amount " . number_format($item->total, 0, ',', '.'),
                 'workplan_budget_item_approval',
                 $itemId
             );
 
             return [
                 'success' => true,
-                'message' => 'Item berhasil diajukan untuk approval.',
+                'message' => 'Item submitted for approval successfully.',
                 'data' => [
                     'request_id' => $request->id,
                     'total_approvers' => count($approvalChain),
@@ -233,7 +233,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengajukan approval: '.$e->getMessage(),
+                'message' => 'Failed to submit approval: '.$e->getMessage(),
                 'debug_ref' => $debugRef,
                 'data' => [
                     'debug_ref' => $debugRef,
@@ -477,15 +477,15 @@ class WorkplanBudgetItemApprovalService
     /**
      * Get master flow approvers from ApprovalFlowDetails.
      * 
-     * Logic untuk threshold-based approval:
-     * - Ambil semua level dengan threshold < amount (mereka harus approve karena perlu escalate)
-     * - Ambil level pertama dengan threshold >= amount (ini final level yang cukup)
+     * Threshold-based approval logic:
+     * - Include every level with threshold < amount (they must approve because escalation is needed)
+     * - Include the first level with threshold >= amount (this is the sufficient final level)
      * 
-     * Contoh: Amount 120jt
-     * - Threshold 10jt: INCLUDE (120jt > 10jt, perlu approve)
-     * - Threshold 100jt: INCLUDE (120jt > 100jt, perlu approve)  
-     * - Threshold 200jt: INCLUDE (120jt <= 200jt, final level)
-     * - Threshold 1M: SKIP (tidak perlu level setinggi ini)
+     * Example: Amount 120 million
+     * - Threshold 10 million: INCLUDE (120 million > 10 million, approval needed)
+     * - Threshold 100 million: INCLUDE (120 million > 100 million, approval needed)
+     * - Threshold 200 million: INCLUDE (120 million <= 200 million, final level)
+     * - Threshold 1 billion: SKIP (this level is not needed)
      * 
      * @param ApprovalFlowTemplate $template
      * @param mixed $amount
@@ -610,7 +610,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => $successCount > 0,
-                'message' => "Proses bulk $action selesai. Berhasil: $successCount, Gagal: $failCount.",
+                'message' => "Bulk $action process completed. Successful: $successCount, Failed: $failCount.",
                 'data' => [
                     'results' => $results,
                     'success_count' => $successCount,
@@ -623,7 +623,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memproses bulk approval: ' . $e->getMessage(),
+                'message' => 'Failed to process bulk approval: ' . $e->getMessage(),
             ];
         }
     }
@@ -649,7 +649,7 @@ class WorkplanBudgetItemApprovalService
             if ($detail->employment_id != $approverId) {
                 return [
                     'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk melakukan approval ini.',
+                    'message' => 'You do not have access to perform this approval.',
                 ];
             }
 
@@ -657,7 +657,7 @@ class WorkplanBudgetItemApprovalService
             if ($detail->status !== 'pending') {
                 return [
                     'success' => false,
-                    'message' => 'Approval ini sudah diproses sebelumnya.',
+                    'message' => 'This approval has already been processed.',
                 ];
             }
 
@@ -670,7 +670,7 @@ class WorkplanBudgetItemApprovalService
             if ($nextPending && $nextPending->id !== $detail->id) {
                 return [
                     'success' => false,
-                    'message' => 'Menunggu approval dari level sebelumnya.',
+                    'message' => 'Waiting for approval from the previous level.',
                 ];
             }
 
@@ -694,7 +694,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => false,
-                'message' => 'Gagal memproses approval: '.$e->getMessage(),
+                'message' => 'Failed to process approval: '.$e->getMessage(),
             ];
         }
     }
@@ -747,8 +747,8 @@ class WorkplanBudgetItemApprovalService
                 $this->notificationService->sendToEmployment(
                     $request->requester_id,
                     'approval',
-                    'Workplan Budget Disetujui',
-                    "Workplan Budget Item Anda: {$item->description} telah disetujui sepenuhnya.",
+                    'Workplan Budget Approved',
+                    "Your Workplan Budget Item: {$item->description} has been fully approved.",
                     'workplan_budget_item_approval',
                     $item->id
                 );
@@ -756,7 +756,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => true,
-                'message' => 'Item telah disetujui sepenuhnya.',
+                'message' => 'This item has been fully approved.',
                 'is_fully_approved' => true,
             ];
         } else {
@@ -777,8 +777,8 @@ class WorkplanBudgetItemApprovalService
                 $this->notificationService->sendToEmployment(
                     $nextApprover->employment_id,
                     'approval',
-                    'Permintaan Approval Workplan Budget',
-                    "Ada permintaan approval baru untuk Workplan Budget Item: " . ($item->description ?? 'N/A'),
+                    self::APPROVAL_TASK_TITLE,
+                    "There is a new approval request for Workplan Budget Item: " . ($item->description ?? 'N/A'),
                     'workplan_budget_item_approval',
                     $request->reference_id
                 );
@@ -786,7 +786,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => true,
-                'message' => 'Approval berhasil. Menunggu approver selanjutnya.',
+                'message' => 'Approval completed. Waiting for the next approver.',
                 'is_fully_approved' => false,
                 'pending_approvers' => $pendingCount,
             ];
@@ -827,8 +827,8 @@ class WorkplanBudgetItemApprovalService
             $this->notificationService->sendToEmployment(
                 $request->requester_id,
                 'approval',
-                'Workplan Budget Ditolak',
-                "Workplan Budget Item Anda: {$item->description} telah ditolak oleh {$detail->employment_name}.",
+                'Workplan Budget Rejected',
+                "Your Workplan Budget Item: {$item->description} has been rejected by {$detail->employment_name}.",
                 'workplan_budget_item_approval',
                 $item->id
             );
@@ -836,7 +836,7 @@ class WorkplanBudgetItemApprovalService
 
         return [
             'success' => true,
-            'message' => 'Item telah ditolak.',
+            'message' => 'This item has been rejected.',
             'rejected_by' => $detail->employment_name,
         ];
     }
@@ -852,7 +852,7 @@ class WorkplanBudgetItemApprovalService
         if (! $item) {
             return [
                 'success' => false,
-                'message' => 'Item tidak ditemukan.',
+                'message' => 'Item not found.',
             ];
         }
 
@@ -1058,7 +1058,7 @@ class WorkplanBudgetItemApprovalService
             if (! $request) {
                 return [
                     'success' => false,
-                    'message' => 'Tidak ada approval request yang aktif untuk item ini.',
+                    'message' => 'There is no active approval request for this item.',
                 ];
             }
 
@@ -1086,10 +1086,10 @@ class WorkplanBudgetItemApprovalService
             if ($item) {
                 $deletedLegacyNotifications = $this->notificationService->deleteMatching(
                     'approval',
-                    'Permintaan Approval Workplan Budget',
+                    self::APPROVAL_TASK_TITLE,
                     [
-                        "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description} senilai " . number_format($item->total, 0, ',', '.'),
-                        "Ada permintaan approval baru untuk Workplan Budget Item: {$item->description}",
+                        "There is a new approval request for Workplan Budget Item: {$item->description} with amount " . number_format($item->total, 0, ',', '.'),
+                        "There is a new approval request for Workplan Budget Item: {$item->description}",
                     ],
                     $pendingEmployeeIds
                 );
@@ -1115,7 +1115,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => true,
-                'message' => 'Approval request berhasil dibatalkan.',
+                'message' => 'Approval request cancelled successfully.',
                 'data' => [
                     'deleted_notifications' => $deletedReferencedNotifications + $deletedLegacyNotifications,
                 ],
@@ -1127,7 +1127,7 @@ class WorkplanBudgetItemApprovalService
 
             return [
                 'success' => false,
-                'message' => 'Gagal membatalkan approval: '.$e->getMessage(),
+                'message' => 'Failed to cancel approval: '.$e->getMessage(),
             ];
         }
     }

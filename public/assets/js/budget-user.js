@@ -494,7 +494,7 @@ function openAddItemModalWithWorkplan(workplanId) {
     $("#itemId").val("");
 
     Swal.fire({
-        title: "Memuat data...",
+        title: "Loading data...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
     });
@@ -531,7 +531,7 @@ function openAddItemModal() {
     $("#itemId").val("");
 
     Swal.fire({
-        title: "Memuat data...",
+        title: "Loading data...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
     });
@@ -580,7 +580,7 @@ function editItemFromWorkplan(itemId, workplanId) {
     );
 
     Swal.fire({
-        title: "Memuat data...",
+        title: "Loading data...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
     });
@@ -622,7 +622,7 @@ function editItem(itemId) {
     );
 
     Swal.fire({
-        title: "Memuat data...",
+        title: "Loading data...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
     });
